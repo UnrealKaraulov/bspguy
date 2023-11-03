@@ -50,9 +50,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include=".\..\..\fmt\CMakeLists.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include=".\..\..\fmt\README.rst" />
     <None Include=".\..\..\fmt\ChangeLog.rst" />
   </ItemGroup>

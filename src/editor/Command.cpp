@@ -404,7 +404,8 @@ void CreateBspModelCommand::execute()
 	vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
 	vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
 	int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, empty);
-	BSPMODEL& model = map->models[modelIdx];
+	//BSPMODEL& model = map->models[modelIdx];
+
 	if (!initialized)
 	{
 		entData->addKeyvalue("model", "*" + std::to_string(modelIdx));

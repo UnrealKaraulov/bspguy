@@ -438,7 +438,7 @@ public:
 
 	std::string filename;
 
-	StudioModel(std::string modelname)
+	StudioModel(const std::string modelname)
 	{
 		fps = 30.0;
 		frametime = 99999.0f;

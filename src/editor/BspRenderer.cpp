@@ -733,27 +733,32 @@ void BspRenderer::deleteRenderModel(RenderModel* renderModel)
 	{
 		return;
 	}
-	for (int k = 0; k < renderModel->groupCount; k++)
-	{
-		RenderGroup& group = renderModel->renderGroups[k];
 
-		if (group.verts)
-			delete[] group.verts;
-		if (group.wireframeVerts)
-			delete[] group.wireframeVerts;
-		if (group.buffer)
-			delete group.buffer;
-		if (group.wireframeBuffer)
-			delete group.wireframeBuffer;
 
-		group.verts = NULL;
-		group.wireframeVerts = NULL;
-		group.buffer = NULL;
-		group.wireframeBuffer = NULL;
-	}
 
 	if (renderModel->renderGroups)
+	{
+		for (int k = 0; k < renderModel->groupCount; k++)
+		{
+			RenderGroup& group = renderModel->renderGroups[k];
+
+			if (group.verts)
+				delete[] group.verts;
+			if (group.wireframeVerts)
+				delete[] group.wireframeVerts;
+			if (group.buffer)
+				delete group.buffer;
+			if (group.wireframeBuffer)
+				delete group.wireframeBuffer;
+
+			group.verts = NULL;
+			group.wireframeVerts = NULL;
+			group.buffer = NULL;
+			group.wireframeBuffer = NULL;
+		}
 		delete[] renderModel->renderGroups;
+	}
+
 	if (renderModel->renderFaces)
 		delete[] renderModel->renderFaces;
 
@@ -1187,7 +1192,7 @@ void BspRenderer::loadClipnodes()
 	clipnodesBufferCache.clear();
 	nodesBufferCache.clear();
 
-	numRenderClipnodes = map->modelCount;
+	numRenderClipnodes = map->modelCount; //-V595
 	renderClipnodes = new RenderClipnodes[numRenderClipnodes];
 
 	for (int i = 0; i < numRenderClipnodes; i++)
@@ -2457,10 +2462,9 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
 
 
-	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
+	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end()) //-V1051
 	{
 		oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
-
 	}
 	else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
 	{

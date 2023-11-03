@@ -19,7 +19,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{94C10DCA-6ED7-3AC5-87DF-14B22017E799}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
     <ProjectName>glfw</ProjectName>

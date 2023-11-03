@@ -1192,7 +1192,7 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 {
 	bool transformingVerts = transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_MOVE;
 	bool scalingObject = transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_SCALE;
-	bool movingOrigin = transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE;
+	//bool movingOrigin = transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE;
 
 	bool anyVertsChanged = false;
 	for (int i = 0; i < modelVerts.size(); i++)

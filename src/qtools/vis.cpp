@@ -384,6 +384,8 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 		if (i + 1 >= maxLeafs)
 		{
 			logf("Fatal error! leaf array overflow leafs[{}] of {}\n", i + 1, maxLeafs);
+			delete[] sharedRows;
+			delete[] compressed;
 			return (int)(vismap_p - output);
 		}
 
@@ -392,6 +394,8 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 			if (sharedRows[i] + 1 >= maxLeafs)
 			{
 				logf("Fatal error! leaf array overflow leafs[{}] of {} (in sharedRows)\n", (int)(sharedRows[i] + 1), maxLeafs);
+				delete[] sharedRows;
+				delete[] compressed;
 				return (int)(vismap_p - output);
 			}
 			leafs[i + 1].nVisOffset = leafs[sharedRows[i] + 1].nVisOffset;
@@ -411,6 +415,8 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 		if (vismap_p >= output + bufferSize)
 		{
 			logf("Fatal error! Vismap expansion overflow {} > {}\n", (void*)vismap_p, (void*)(output + bufferSize));
+
+			delete[] sharedRows;
 			return (int)(vismap_p - output);
 		}
 

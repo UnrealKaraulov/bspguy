@@ -117,10 +117,7 @@ public:
 
 
 	Fgd(std::string path);
-	Fgd()
-	{
-
-	}
+	Fgd() = default;
 	~Fgd();
 
 	bool parse();
@@ -129,7 +126,7 @@ public:
 	FgdClass* getFgdClass(std::string cname);
 
 private:
-	int lineNum;
+	int lineNum = 0;
 	std::string line; // current line being parsed
 
 	void parseClassHeader(FgdClass& fgdClass);

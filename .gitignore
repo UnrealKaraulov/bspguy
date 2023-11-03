@@ -24,6 +24,7 @@ vs-project/Release/bspguy.exe
 *.lock
 *.exe
 /build/*
+/vs-project/bspguy.dir*
 vs-project/Release/bspguy.cfg
 vs-project/glfw/src/Debug/glfw3.lib
 vs-project/glfw/src/Release/glfw3.lib

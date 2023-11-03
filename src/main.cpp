@@ -94,7 +94,7 @@
 // Removing HULL 0 from solid model crashes game when standing on it
 
 
-std::string g_version_string = "bspguy v4.08";
+std::string g_version_string = "bspguy v4.09";
 
 bool g_verbose = false;
 

@@ -1183,7 +1183,7 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, COLOR
 		if (texOffset < 0)
 			continue;
 
-		BSPMIPTEX& tex = *((BSPMIPTEX*)(textures + texOffset));
+		//BSPMIPTEX& tex = *((BSPMIPTEX*)(textures + texOffset));
 
 		int size[2];
 		GetFaceLightmapSize(this, i, size);
@@ -1240,8 +1240,8 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, COLOR
 				newLight.luxelFlags = new unsigned char[newLight.width * newLight.height];
 				qrad_get_lightmap_flags(this, i, newLight.luxelFlags);
 
-				int maxWidth = std::min(newLight.width, oldLight.width);
-				int maxHeight = std::min(newLight.height, oldLight.height);
+				//int maxWidth = std::min(newLight.width, oldLight.width);
+				// maxHeight = std::min(newLight.height, oldLight.height);
 
 				int srcOffsetX, srcOffsetY;
 				get_lightmap_shift(oldLight, newLight, srcOffsetX, srcOffsetY);
@@ -1696,7 +1696,7 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 		}
 		else
 		{
-			BSPMIPTEX* tex = (BSPMIPTEX*)(textures + oldOffset);
+			//BSPMIPTEX* tex = (BSPMIPTEX*)(textures + oldOffset);
 			int sz = getBspTextureSize(i);
 
 			memcpy(newTexData + newOffset, textures + oldOffset, sz);
@@ -1896,7 +1896,7 @@ bool operator == (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2)
 
 void Bsp::clean_unused_texinfos()
 {
-	int unusedtexinfos = 0;
+	//int unusedtexinfos = 0;
 	for (int i = 0; i < faceCount; i++)
 	{
 		if (faces[i].iTextureInfo >= 0)
@@ -2811,7 +2811,7 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_LIGHTING] = (unsigned char*)freelighting;
 
 
-		int offset = 0;
+		//int offset = 0;
 
 		for (int n = 0; n < faceCount; n++)
 		{
@@ -5200,7 +5200,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		}
 	}
 
-	if (only_copy_data)
+	if (only_copy_data && oldtex)
 	{
 		int newTexOffset = ((int*)textures)[oldtexid + 1];
 
@@ -5208,6 +5208,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		memcpy(textures + newTexOffset + oldtex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
 		memcpy(textures + newTexOffset + oldtex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 		memcpy(textures + newTexOffset + oldtex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
+
 
 		size_t palleteOffset = oldtex->nOffsets[3] + (width >> 3) * (height >> 3);
 
@@ -6017,7 +6018,8 @@ int Bsp::create_plane()
 	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 1]{};
 	memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
 
-	BSPPLANE& newPlane = newPlanes[planeCount];
+	newPlanes[planeCount] = BSPPLANE();
+	//BSPPLANE& newPlane = newPlanes[planeCount];
 
 	replace_lump(LUMP_PLANES, newPlanes, (planeCount + 1) * sizeof(BSPPLANE));
 
@@ -6029,12 +6031,12 @@ int Bsp::create_model()
 	BSPMODEL* newModels = new BSPMODEL[modelCount + 1]{};
 	memcpy(newModels, models, modelCount * sizeof(BSPMODEL));
 
-	BSPMODEL& newModel = newModels[modelCount];
+	newModels[modelCount] = BSPMODEL();
+	//BSPMODEL& newModel = newModels[modelCount];
 
-	int newModelIdx = modelCount;
 	replace_lump(LUMP_MODELS, newModels, (modelCount + 1) * sizeof(BSPMODEL));
 
-	return newModelIdx;
+	return modelCount - 1;
 }
 
 int Bsp::create_texinfo()
@@ -6042,7 +6044,7 @@ int Bsp::create_texinfo()
 	BSPTEXTUREINFO* newTexinfos = new BSPTEXTUREINFO[texinfoCount + 1]{};
 	memcpy(newTexinfos, texinfos, texinfoCount * sizeof(BSPTEXTUREINFO));
 
-	BSPTEXTUREINFO& newTexinfo = newTexinfos[texinfoCount];
+	newTexinfos[texinfoCount] = BSPTEXTUREINFO();
 
 	replace_lump(LUMP_TEXINFO, newTexinfos, (texinfoCount + 1) * sizeof(BSPTEXTUREINFO));
 

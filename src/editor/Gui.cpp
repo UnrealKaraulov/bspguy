@@ -68,11 +68,11 @@ void Gui::init()
 		//glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return (void*)(uint64_t)tex;
-	};
+		};
 	ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
 		GLuint texID = (GLuint)((uintptr_t)tex);
 		glDeleteTextures(1, &texID);
-	};
+		};
 
 	loadFonts();
 
@@ -1721,7 +1721,7 @@ void Gui::drawMenuBar()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::MenuItem("Close", NULL, false, !app->isLoading))
+		if (ImGui::MenuItem("Close", NULL, false, !app->isLoading && map))
 		{
 			filterNeeded = true;
 			int mapRenderId = map->getBspRenderId();
@@ -2177,50 +2177,50 @@ void Gui::drawMenuBar()
 								{
 
 									logf("Importing {} from workdir {} wad.\n", basename(file), basename(wad->filename));
-							COLOR4* image_bytes = NULL;
-							unsigned int w2, h2;
-							auto error = lodepng_decode_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str(),
-								LodePNGColorType::LCT_RGBA, 8);
-							COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
-							if (error == 0 && image_bytes)
-							{
-								for (unsigned int i = 0; i < w2 * h2; i++)
-								{
-									COLOR4& curPixel = image_bytes[i];
-
-									if (curPixel.a == 0)
+									COLOR4* image_bytes = NULL;
+									unsigned int w2, h2;
+									auto error = lodepng_decode_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str(),
+										LodePNGColorType::LCT_RGBA, 8);
+									COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
+									if (error == 0 && image_bytes)
 									{
-										image_bytes_rgb[i] = COLOR3(0, 0, 255);
+										for (unsigned int i = 0; i < w2 * h2; i++)
+										{
+											COLOR4& curPixel = image_bytes[i];
+
+											if (curPixel.a == 0)
+											{
+												image_bytes_rgb[i] = COLOR3(0, 0, 255);
+											}
+											else
+											{
+												image_bytes_rgb[i] = COLOR3(curPixel.r, curPixel.g, curPixel.b);
+											}
+										}
+
+										int oldcolors = 0;
+										if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
+										{
+											logf("Need apply quantizer to {}\n", basename(file));
+											Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+
+											if (ditheringEnabled)
+												tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
+											else
+												tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
+
+											logf("Reduce color of image from >{} to {}\n", oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
+
+											delete tmpCQuantizer;
+										}
+										std::string tmpTexName = stripExt(basename(file));
+
+										WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
+										g_mutex_list[1].lock();
+										textureList.push_back(tmpWadTex);
+										g_mutex_list[1].unlock();
+										free(image_bytes);
 									}
-									else
-									{
-										image_bytes_rgb[i] = COLOR3(curPixel.r, curPixel.g, curPixel.b);
-									}
-								}
-
-								int oldcolors = 0;
-								if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
-								{
-									logf("Need apply quantizer to {}\n", basename(file));
-									Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-
-									if (ditheringEnabled)
-										tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
-									else
-										tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
-
-									logf("Reduce color of image from >{} to {}\n", oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
-
-									delete tmpCQuantizer;
-								}
-								std::string tmpTexName = stripExt(basename(file));
-
-								WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
-								g_mutex_list[1].lock();
-								textureList.push_back(tmpWadTex);
-								g_mutex_list[1].unlock();
-								free(image_bytes);
-							}
 								});
 							logf("Success load all textures\n");
 
@@ -3516,7 +3516,7 @@ void Gui::drawDebugWidget()
 						if (model1 < map->modelCount &&
 							model2 < map->modelCount)
 						{
-							std::swap(map->models[model1], map->models[model1]);
+							std::swap(map->models[model1], map->models[model2]);
 
 
 							for (int i = 0; i < map->ents.size(); i++)
@@ -6794,7 +6794,7 @@ void Gui::drawEntityReport()
 						needhover = true;
 
 					bool isSelectableSelected = false;
-					if (!app->fgd || !app->fgd->getFgdClass(cname) || ent->hide)
+					if (!app->fgd || !app->fgd->getFgdClass(cname) || (ent && ent->hide))
 					{
 						if (!app->fgd || !app->fgd->getFgdClass(cname))
 						{
