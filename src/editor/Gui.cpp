@@ -5527,10 +5527,10 @@ void Gui::drawSettings()
 			ImGui::Separator();
 
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::Checkbox("Merge verts", &g_settings.merge_verts);
+			ImGui::Checkbox("Merge verts [WIP, CAN CAUSE PROBLEMS]", &g_settings.merge_verts);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Additional cleanup option for clean similar verts.");
+				ImGui::TextUnformatted("Additional cleanup option for clean similar verts.\nWarning!! CAN CRASH YOUR MAP!");
 				ImGui::EndTooltip();
 			}
 			ImGui::SetNextItemWidth(pathWidth);

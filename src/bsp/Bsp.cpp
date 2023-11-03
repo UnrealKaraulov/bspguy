@@ -1966,6 +1966,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	int merged_verts = 0;
 	if (g_settings.merge_verts && target & CLEAN_VERTICES)
 	{
+		logf("WARNING! Option \"Merge verts\" can cause problems with map!\n");
 		merged_verts = merge_all_verts() + merge_all_verts();
 	}
 
