@@ -4592,12 +4592,14 @@ void Gui::drawGOTOWidget()
 
 	if (ImGui::Begin("GO TO MENU", &showGOTOWidget, 0))
 	{
-		entid = g_app->pickInfo.GetSelectedEnt();
+		if (entid == -1)
+			entid = g_app->pickInfo.GetSelectedEnt();
 		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
 		float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.33f;
 		if (showGOTOWidget_update)
 		{
+			entid = g_app->pickInfo.GetSelectedEnt();
 			coordinates = cameraOrigin;
 			angles = cameraAngles;
 			showGOTOWidget_update = false;
@@ -5348,7 +5350,7 @@ void Gui::drawSettings()
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted("Verbose logging can't be disabled in DEBUG MODE");
 				ImGui::EndTooltip();
-			}
+		}
 #endif
 			ImGui::SameLine();
 
@@ -5426,7 +5428,7 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted("Warning! You want to return all settings to default values?!");
 				ImGui::EndTooltip();
 			}
-		}
+	}
 		else if (settingsTab == 1)
 		{
 			for (int i = 0; i < g_settings.fgdPaths.size(); i++)
@@ -5905,7 +5907,7 @@ void Gui::drawSettings()
 		ImGui::EndChild();
 
 		ImGui::EndGroup();
-	}
+}
 	ImGui::End();
 
 
