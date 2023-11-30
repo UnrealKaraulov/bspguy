@@ -94,7 +94,7 @@
 // Removing HULL 0 from solid model crashes game when standing on it
 
 
-std::string g_version_string = "bspguy v4.09";
+std::string g_version_string = "bspguy v4.10";
 
 bool g_verbose = false;
 
@@ -121,7 +121,7 @@ bool start_viewer(const char* map)
 	{
 		map = "";
 	}
-	Renderer renderer = Renderer();
+	Renderer renderer{};
 	renderer.addMap(new Bsp(map));
 	renderer.reloadBspModels();
 	hideConsoleWindow();
@@ -209,6 +209,7 @@ int merge_maps(CommandLine& cli)
 		Bsp* map = new Bsp(input_maps[i]);
 		if (!map->bsp_valid)
 		{
+			delete map;
 			return 1;
 		}
 		maps.push_back(map);
@@ -305,6 +306,7 @@ int print_info(CommandLine& cli)
 		delete map;
 		return 0;
 	}
+	delete map;
 	return 1;
 }
 
@@ -324,6 +326,7 @@ int noclip(CommandLine& cli)
 			if (hull < 0 || hull >= MAX_MAP_HULLS)
 			{
 				logf("ERROR: hull number must be 0-3\n");
+				delete map;
 				return 1;
 			}
 		}
@@ -442,6 +445,7 @@ int simplify(CommandLine& cli)
 		if (!cli.hasOption("-model"))
 		{
 			logf("ERROR: -model is required\n");
+			delete map;
 			return 1;
 		}
 
@@ -545,6 +549,7 @@ int deleteCmd(CommandLine& cli)
 		delete map;
 		return 0;
 	}
+	delete map;
 	return 1;
 }
 
@@ -567,6 +572,7 @@ int transform(CommandLine& cli)
 		else
 		{
 			logf("ERROR: at least one transformation option is required\n");
+			delete map;
 			return 1;
 		}
 
@@ -593,6 +599,7 @@ int unembed(CommandLine& cli)
 		delete map;
 		return 0;
 	}
+	delete map;
 	return 1;
 }
 

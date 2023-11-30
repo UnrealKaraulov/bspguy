@@ -133,7 +133,8 @@
       </HeapCommitSize>
       <StackCommitSize>
       </StackCommitSize>
-      <BaseAddress>0x10000000</BaseAddress>
+      <BaseAddress>
+      </BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <FixedBaseAddress>true</FixedBaseAddress>
       <Profile>true</Profile>

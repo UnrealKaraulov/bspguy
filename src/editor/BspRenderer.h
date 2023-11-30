@@ -291,9 +291,9 @@ public:
 	std::vector<Command*> undoHistory;
 	std::vector<Command*> redoHistory;
 	std::map<int, Entity> undoEntityState;
-	LumpState undoLumpState = LumpState();
+	LumpState undoLumpState{};
 
-	void pushModelUndoState(const std::string& actionDesc, unsigned int targetLumps);
+	void pushModelUndoState(const std::string& actionDesc, unsigned int targets);
 	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
 	void pushUndoCommand(Command* cmd);
 	void undo();
@@ -302,7 +302,7 @@ public:
 	void clearRedoCommands();
 	void calcUndoMemoryUsage();
 	void updateEntityState(int entIdx);
-	void saveLumpState(int targetLumps, bool deleteOldState);
+	void saveLumpState();
 	void clearDrawCache();
 
 	vec3 renderCameraOrigin;

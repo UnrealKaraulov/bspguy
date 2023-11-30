@@ -79,9 +79,7 @@ public:
 	int oldModelIdx;
 	int newModelIdx; // TODO: could break redos if this is ever not deterministic
 	int entIdx;
-	LumpState oldLumps = LumpState();
-	bool initialized = false;
-
+	LumpState oldLumps{};
 	DuplicateBspModelCommand(std::string desc, int entIdx);
 	~DuplicateBspModelCommand();
 
@@ -95,8 +93,7 @@ class CreateBspModelCommand : public Command
 {
 public:
 	Entity* entData;
-	LumpState oldLumps = LumpState();
-	bool initialized = false;
+	LumpState oldLumps{};
 	float mdl_size;
 	bool empty = false;
 
@@ -118,12 +115,13 @@ class EditBspModelCommand : public Command
 public:
 	int modelIdx;
 	int entIdx;
+	unsigned int targetLumps;
 	vec3 oldOrigin;
 	vec3 newOrigin;
-	LumpState oldLumps = LumpState();
-	LumpState newLumps = LumpState();
+	LumpState oldLumps{};
+	LumpState newLumps{};
 
-	EditBspModelCommand(std::string desc, int entIdx, LumpState oldLumps, LumpState newLumps, vec3 oldOrigin);
+	EditBspModelCommand(std::string desc, int entIdx, LumpState oldLumps, LumpState newLumps, vec3 oldOrigin, unsigned int targetLumps);
 	~EditBspModelCommand();
 
 	void execute() override;
@@ -136,7 +134,7 @@ public:
 class CleanMapCommand : public Command
 {
 public:
-	LumpState oldLumps = LumpState();
+	LumpState oldLumps{};
 
 	CleanMapCommand(std::string desc, int mapIdx, LumpState oldLumps);
 	~CleanMapCommand();
@@ -151,7 +149,7 @@ public:
 class OptimizeMapCommand : public Command
 {
 public:
-	LumpState oldLumps = LumpState();
+	LumpState oldLumps{};
 
 	OptimizeMapCommand(std::string desc, int mapIdx, LumpState oldLumps);
 	~OptimizeMapCommand();

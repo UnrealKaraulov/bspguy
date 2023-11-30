@@ -268,7 +268,7 @@ public:
 	// returns the current lump contents
 	LumpState duplicate_lumps(int targets);
 
-	void replace_lumps(LumpState& state);
+	void replace_lumps(const LumpState& state);
 
 	int delete_embedded_textures();
 

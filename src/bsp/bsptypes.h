@@ -46,21 +46,21 @@
 
 enum lump_copy_targets
 {
-	ENTITIES = 1,
-	PLANES = 2,
-	TEXTURES = 4,
-	VERTICES = 8,
-	VISIBILITY = 16,
-	NODES = 32,
-	TEXINFO = 64,
-	FACES = 128,
-	LIGHTING = 256,
-	CLIPNODES = 512,
-	LEAVES = 1024,
-	MARKSURFACES = 2048,
-	EDGES = 4096,
-	SURFEDGES = 8192,
-	MODELS = 16384
+	FL_ENTITIES = 1,
+	FL_PLANES = 2,
+	FL_TEXTURES = 4,
+	FL_VERTICES = 8,
+	FL_VISIBILITY = 16,
+	FL_NODES = 32,
+	FL_TEXINFO = 64,
+	FL_FACES = 128,
+	FL_LIGHTING = 256,
+	FL_CLIPNODES = 512,
+	FL_LEAVES = 1024,
+	FL_MARKSURFACES = 2048,
+	FL_EDGES = 4096,
+	FL_SURFEDGES = 8192,
+	FL_MODELS = 16384
 };
 
 
@@ -175,8 +175,7 @@ struct BSPHEADER_EX
 
 struct LumpState
 {
-	unsigned char* lumps[HEADER_LUMPS];
-	int lumpLen[HEADER_LUMPS];
+	std::vector<unsigned char> lumps[HEADER_LUMPS];
 };
 
 struct BSPPLANE

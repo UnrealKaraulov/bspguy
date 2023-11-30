@@ -29,7 +29,7 @@ bool LightmapNode::insert(int iw, int ih, int& outX, int& outY)
 
 	// must be in a leaf. Try adding the image here
 
-	if (iw > w || ih > h || filled) // too big or we already have an image
+	if (iw > w || ih > h || filled || ih < 0 || iw < 0) // too big or we already have an image
 		return false;
 	if (iw == w && ih == h) // just right
 	{

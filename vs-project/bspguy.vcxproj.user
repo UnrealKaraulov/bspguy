@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>"c:\Program Files (x86)\Steam\steamapps\common\Half-Life\cstrike\maps\de_dust2.bsp"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"d:\SteamLibrary\steamapps\common\Half-Life\cstrike\maps\de_dust2.bsp"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">
@@ -9,7 +9,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>"c:\Users\Admin\Downloads\ad_v1_80p1final\pak2\maps\ad_akalakha.bsp"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"d:\SteamLibrary\steamapps\common\Half-Life\cstrike\maps\de_dust2.bsp"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

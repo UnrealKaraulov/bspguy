@@ -33,10 +33,10 @@ Wad::~Wad(void)
 
 void W_CleanupName(const char* in, char* out)
 {
-	int			i;
-	int			c;
+	int	i;
 
 	for (i = 0; i < MAXTEXTURENAME; i++) {
+		char		c;
 		c = in[i];
 		if (!c)
 			break;

@@ -28,7 +28,7 @@ std::future<void> Renderer::fgdFuture;
 
 void error_callback(int error, const char* description)
 {
-	logf("GLFW Error: {}\n", description);
+	logf("GLFW Error: {} {}\n", error, description);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -401,10 +401,6 @@ void Renderer::renderLoop()
 				{
 					invalidSolid = true;
 				}
-			}
-			else
-			{
-				invalidSolid = true;
 			}
 		}
 		matmodel.loadIdentity();
@@ -949,7 +945,7 @@ void Renderer::drawTransformAxes()
 	}
 	if (SelectedMap && pickInfo.selectedEnts.size() > 0 && transformMode == TRANSFORM_MODE_MOVE)
 	{
-		if ((transformTarget == TRANSFORM_VERTEX && (anyVertSelected || anyEdgeSelected)) || transformTarget != TRANSFORM_VERTEX)
+		if (transformTarget != TRANSFORM_VERTEX || (anyVertSelected || anyEdgeSelected))
 		{
 			glDisable(GL_DEPTH_TEST);
 			updateDragAxes();
@@ -1791,7 +1787,7 @@ bool Renderer::transformAxisControls()
 						if (invalidSolid)
 							revertInvalidSolid(map, modelIdx);
 						else
-							map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
+							map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
 						map->getBspRender()->refreshEnt(entIdx);
 						map->getBspRender()->refreshModel(modelIdx);
 						map->getBspRender()->refreshModelClipnodes(modelIdx);
@@ -1820,10 +1816,9 @@ bool Renderer::transformAxisControls()
 							{
 								if (pickInfo.selectedEnts[i] >= 0)
 								{
+									g_progress.hide = true;
 									pickCount++;
 									vertPickCount++;
-									g_progress.hide = true;
-									g_progress.hide = false;
 
 									Entity* tmpent = map->ents[pickInfo.selectedEnts[i]];
 									tmpent->setOrAddKeyvalue("origin", (tmpent->getOrigin() + origin_delta).toKeyvalueString());
@@ -1831,12 +1826,14 @@ bool Renderer::transformAxisControls()
 									if (tmpent->getBspModelIdx() >= 0)
 									{
 										map->move(origin_delta * -1, tmpent->getBspModelIdx());
-										map->getBspRender()->pushModelUndoState("Move origin of model", EDIT_MODEL_LUMPS | ENTITIES);
+										map->getBspRender()->pushModelUndoState("Move origin of model", EDIT_MODEL_LUMPS | FL_ENTITIES);
 									}
 									else
 									{
 										map->getBspRender()->pushEntityUndoState("Move model origin", pickInfo.selectedEnts[i]);
 									}
+
+									g_progress.hide = false;
 								}
 							}
 						}
@@ -3293,14 +3290,15 @@ bool Renderer::splitModelFace()
 		modelEdges[i].selected = false;
 	}
 
-	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
-
 	mapRenderer->updateLightmapInfos();
 	mapRenderer->calcFaceMaths();
 	mapRenderer->refreshModel(modelIdx);
 	updateModelVerts();
 
 	gui->reloadLimits();
+
+	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
+
 	return true;
 }
 
@@ -3437,7 +3435,6 @@ void Renderer::cutEnt()
 			continue;
 		copiedEnts.push_back(new Entity(*map->ents[ents[i]]));
 		DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Cut Entity", ents[i]);
-		deleteCommand->execute();
 		map->getBspRender()->pushUndoCommand(deleteCommand);
 	}
 }
@@ -3508,7 +3505,6 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 		}
 
 		CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), copiedEnts[i]);
-		createCommand->execute();
 		map->getBspRender()->pushUndoCommand(createCommand);
 	}
 
@@ -3525,7 +3521,6 @@ void Renderer::deleteEnt(int entIdx)
 		return;
 	PickInfo tmpPickInfo = pickInfo;
 	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Delete Entity", entIdx);
-	deleteCommand->execute();
 	map->getBspRender()->pushUndoCommand(deleteCommand);
 }
 
@@ -3644,8 +3639,6 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 	updateEntConnections();
 
 	map->getBspRender()->updateEntityState(entIdx);
-	if (ent && ent->isBspModel())
-		map->getBspRender()->saveLumpState(0xffffffff, true);
 	pickCount++; // force transform window update
 }
 void Renderer::goToFace(Bsp* map, int faceIdx)

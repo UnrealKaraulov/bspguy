@@ -131,6 +131,8 @@ Bsp::Bsp()
 	is_blue_shift = false;
 	is_colored_lightmap = true;
 
+	extralumps = NULL;
+
 	force_skip_crc = false;
 
 	bsp_header = BSPHEADER();
@@ -1450,19 +1452,15 @@ bool Bsp::does_model_use_shared_structures(int modelIdx)
 
 LumpState Bsp::duplicate_lumps(int targets)
 {
-	LumpState state = LumpState();
+	LumpState state{};
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		if ((targets & (1 << i)) == 0)
 		{
-			state.lumps[i] = NULL;
-			state.lumpLen[i] = 0;
 			continue;
 		}
-		state.lumps[i] = new unsigned char[bsp_header.lump[i].nLength];
-		state.lumpLen[i] = bsp_header.lump[i].nLength;
-		memcpy(state.lumps[i], lumps[i], bsp_header.lump[i].nLength);
+		state.lumps[i] = std::vector<unsigned char>(lumps[i], lumps[i] + bsp_header.lump[i].nLength);
 	}
 
 	return state;
@@ -1515,26 +1513,19 @@ int Bsp::delete_embedded_textures()
 	return numRemoved;
 }
 
-void Bsp::replace_lumps(LumpState& state)
+void Bsp::replace_lumps(const LumpState& state)
 {
 	for (unsigned int i = 0; i < HEADER_LUMPS; i++)
 	{
-		if (!state.lumps[i])
+		if (state.lumps[i].size())
 		{
-			continue;
-		}
-
-		delete[] lumps[i];
-		lumps[i] = new unsigned char[state.lumpLen[i]];
-		memcpy(lumps[i], state.lumps[i], state.lumpLen[i]);
-		bsp_header.lump[i].nLength = state.lumpLen[i];
-
-		if (i == LUMP_ENTITIES)
-		{
-			load_ents();
+			unsigned char * tmplump = new unsigned char[state.lumps[i].size()];
+			std::copy(state.lumps[i].begin(), state.lumps[i].end(), tmplump);
+			replace_lump(i, tmplump, state.lumps[i].size());
 		}
 	}
 
+	load_ents();
 	update_lump_pointers();
 }
 
@@ -2715,8 +2706,11 @@ void Bsp::update_ent_lump(bool stripNodes)
 	std::string str_data = ent_data.str();
 
 	unsigned char* newEntData = new unsigned char[str_data.size() + 1];
-	memcpy(newEntData, str_data.c_str(), str_data.size());
-	newEntData[str_data.size()] = 0; // null terminator required too(?)
+
+	if (str_data.size())
+		memcpy(newEntData, str_data.c_str(), str_data.size());
+
+	newEntData[str_data.size()] = 0;
 
 	replace_lump(LUMP_ENTITIES, newEntData, str_data.size() + 1);
 }
@@ -4231,13 +4225,18 @@ bool Bsp::validate()
 			int texlen = getBspTextureSize(i);
 			int dataOffset = (textureCount + 1) * sizeof(int);
 			BSPMIPTEX* tex = (BSPMIPTEX*)(textures + texOffset);
-			if (tex->szName[0] == '\0' || strlen(tex->szName) >= MAXTEXTURENAME)
+			if (tex->szName[0] == '\0')
 			{
 				logf("Warning: invalid texture name in {} texture.\n", i);
 			}
+			else if (strlen(tex->szName) >= MAXTEXTURENAME)
+			{
+				logf("Error: found memory leak in texture->name of {} texture.\n", i);
+			}
 			if (tex->nOffsets[0] > 0 && dataOffset + texOffset + texlen > bsp_header.lump[LUMP_TEXTURES].nLength)
 			{
-				logf("Warning: texture data buffer overrun in {} texture.\n", i);
+				logf("Warning: texture data buffer overrun in {} texture. {} > {}.\n", i, dataOffset + texOffset + texlen, bsp_header.lump[LUMP_TEXTURES].nLength);
+				logf("Tex size {}. Tex name \"{}\". Tex offset {}. Data offset {}. \n", i, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
 			}
 		}
 	}
@@ -5362,18 +5361,18 @@ int Bsp::add_texture(WADTEX* tex)
 			logf("Wad texture with name {} found in map.\n", tex->szName);
 			if (oldtex->nWidth != tex->nWidth || oldtex->nHeight != tex->nHeight)
 			{
-				oldtex->szName[0] = '\0';
 				logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 					oldtex->nWidth, oldtex->nHeight, tex->nWidth, tex->nHeight);
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
+				oldtex->szName[0] = '\0';
 			}
 			else
 			{
+				logf("Warning! Wad texture with same name found in map.\nNeed replace by new texture.\n");
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
 				oldtex->szName[0] = '\0';
-				logf("Warning! Wad texture with same name found in map.\nNeed replace by new texture.\n");
 			}
 		}
 	}
@@ -5395,13 +5394,19 @@ int Bsp::add_texture(WADTEX* tex)
 
 	if (oldtex && oldtexid >= 0)
 	{
+		int tex_usage = 0;
 		for (int i = 0; i < texinfoCount; i++)
 		{
 			BSPTEXTUREINFO& texinfo = texinfos[i];
 			if (texinfo.iMiptex == oldtexid)
 			{
 				texinfo.iMiptex = textureCount;
+				tex_usage++;
 			}
+		}
+		if (tex_usage > 0)
+		{
+			logf("Replaced {} texture indices in map.\n", tex_usage);
 		}
 	}
 
@@ -5949,12 +5954,14 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 
 	BSPPLANE* newPlanes = new BSPPLANE[planeCount + addPlanes.size()];
 	memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
-	memcpy(newPlanes + planeCount, &addPlanes[0], addPlanes.size() * sizeof(BSPPLANE));
+	if (addPlanes.size())
+		std::copy(addPlanes.begin(), addPlanes.end(), newPlanes + planeCount);
 	replace_lump(LUMP_PLANES, newPlanes, (planeCount + addPlanes.size()) * sizeof(BSPPLANE));
 
 	BSPCLIPNODE32* newClipnodes = new BSPCLIPNODE32[clipnodeCount + addNodes.size()];
 	memcpy(newClipnodes, clipnodes, clipnodeCount * sizeof(BSPCLIPNODE32));
-	memcpy(newClipnodes + clipnodeCount, &addNodes[0], addNodes.size() * sizeof(BSPCLIPNODE32));
+	if (addNodes.size())
+		std::copy(addNodes.begin(), addNodes.end(), newClipnodes + clipnodeCount);
 	replace_lump(LUMP_CLIPNODES, newClipnodes, (clipnodeCount + addNodes.size()) * sizeof(BSPCLIPNODE32));
 
 	return solidNodeIdx;
@@ -7426,8 +7433,6 @@ int Bsp::getBspTextureSize(int textureid)
 		{
 			sz += (tex->nWidth >> i) * (tex->nHeight >> i);
 		}
-
-		//	sz = (sz + 3) & ~3; //  + padding align by 4
 	}
 	return sz;
 }

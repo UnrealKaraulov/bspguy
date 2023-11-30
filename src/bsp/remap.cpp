@@ -85,6 +85,12 @@ bool STRUCTCOUNT::allZero()
 
 void print_stat(int indent, int stat, const char* data)
 {
+	if (stat == 0)
+	{
+		return;
+	}
+	int statabs = abs(stat);
+
 	for (int i = 0; i < indent; i++)
 		logf("    ");
 	const char* plural = "s";
@@ -92,21 +98,18 @@ void print_stat(int indent, int stat, const char* data)
 	{
 		plural = "es";
 	}
-	int statabs = abs(stat);
 
 	logf("{} {} {}{}\n", stat > 0 ? "Deleted" : "Added", statabs, data, statabs > 1 ? plural : "");
 }
 
 void print_stat_mem(int indent, int bytes, const char* data)
 {
-	if (!bytes)
-		return;
-	for (int i = 0; i < indent; i++)
-		logf("    ");
 	if (bytes == 0)
 	{
 		return;
 	}
+	for (int i = 0; i < indent; i++)
+		logf("    ");
 	logf("{} {:.2f} KB of {}\n", bytes > 0 ? "Deleted" : "Added", (abs(bytes) / 1024.0f), data);
 }
 
