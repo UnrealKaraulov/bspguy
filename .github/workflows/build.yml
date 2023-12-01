@@ -51,7 +51,10 @@ jobs:
               uses: softprops/action-gh-release@v1
               with:
                   tag_name: ${{ needs.get_time_build.outputs.release_tag }}
-                  files: build/bspguy
+                  files: |
+                    build/bspguy
+                    cfg/bspguy.cfg
+                    cfg/language.ini
 
     window_build:
 
@@ -83,7 +86,10 @@ jobs:
               uses: softprops/action-gh-release@v1
               with:
                   tag_name: ${{ needs.get_time_build.outputs.release_tag }}
-                  files: ./vs-project/Release/bspguy.exe
+                  files: |
+                    vs-project/Release/bspguy_debug.exe
+                    cfg/bspguy.cfg
+                    cfg/language.ini
             
             - name: Build app for debug
               run: |
@@ -93,5 +99,8 @@ jobs:
               uses: softprops/action-gh-release@v1
               with:
                   tag_name: ${{ needs.get_time_build.outputs.release_tag }}
-                  files: ./vs-project/Release/bspguy_debug.exe
+                  files: |
+                    vs-project/Release/bspguy_debug.exe
+                    cfg/bspguy.cfg
+                    cfg/language.ini
             
