@@ -1,6 +1,7 @@
 #pragma once
 #include "lang.h"
 #include "Settings.h"
+#include "util.h"
 #include <fmt/format.h>
 
 INI::File * ft = NULL;
@@ -19,6 +20,7 @@ std::string get_localized_string(int id)
 	if (itr == lang_db.end())
 	{
 		std::string value = ft->GetSection(g_settings.language)->GetValue(fmt::format("LANG_{:04}",id), fmt::format("LANG_{:04}", id)).AsString();
+		replaceAll(value, "\\n", "\n");
 		lang_db[id] = value;
 		return value;
 	}
