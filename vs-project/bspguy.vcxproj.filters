@@ -4,9 +4,6 @@
     <ClCompile Include=".\..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include=".\..\src\util\lang.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include=".\..\src\cli\CommandLine.cpp">
       <Filter>Source Files\cli</Filter>
     </ClCompile>
@@ -134,6 +131,9 @@
       <Filter>Source Files\util</Filter>
     </ClCompile>
     <ClCompile Include=".\..\src\util\quantizer.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\util\lang.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
   </ItemGroup>

@@ -62,6 +62,8 @@ struct AppSettings
 	std::string workingdir;
 	std::string lastdir;
 
+	std::string language;
+
 	bool settingLoaded; // Settings loaded
 	bool verboseLogs;
 	bool save_windows;

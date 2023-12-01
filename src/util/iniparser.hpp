@@ -257,7 +257,7 @@ namespace INI
     // Replace every occurrence of @param what to @param ret in @param str
     static inline std::string& str_replace(std::string& str, const std::string& what, const std::string& rep)
     {
-        int diff = rep.size() - what.size() + 1;
+        size_t diff = rep.size() - what.size() + 1;
         for (size_t pos = 0; ;pos += diff)
         {
             pos = str.find(what.c_str(),pos);
@@ -1391,21 +1391,21 @@ namespace INI
                 // Add section (or modify comment of existing one if needed)
                 if (lt == LEKSYSINI_SECTION)
                 {
-                    SectionMap::iterator it = pmap.find(section_key);
-                    if (it == pmap.end())
+                    SectionMap::iterator it2 = pmap.find(section_key);
+                    if (it2 == pmap.end())
                     {
                         cur_sect = new Section(this,section_key,pcomment);
                         pmap.insert(SectionPair(section_key, cur_sect));
                     }
                     else
                     {
-                        cur_sect = it->second;
+                        cur_sect = it2->second;
                         if (!pcomment.empty())
                         {
-                            if (!it->second->_comment.empty())
-                                it->second->_comment += stream.widen('\n') + pcomment;
+                            if (!it2->second->_comment.empty())
+                                it2->second->_comment += stream.widen('\n') + pcomment;
                             else
-                                it->second->_comment = pcomment;
+                                it2->second->_comment = pcomment;
                         }
                     }
                     pcomment.clear();

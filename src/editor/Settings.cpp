@@ -6,9 +6,10 @@
 #include <fstream>
 #include <string>
 
-AppSettings g_settings;
 std::string g_settings_path = "";
 std::string g_config_dir = "";
+
+AppSettings g_settings;
 
 void AppSettings::loadDefault()
 {
@@ -28,6 +29,7 @@ void AppSettings::loadDefault()
 	workingdir = "./bspguy_work/";
 
 	lastdir = "";
+	language = "EN";
 	undoLevels = 64;
 
 	verboseLogs = false;
@@ -308,6 +310,11 @@ void AppSettings::load()
 		else if (key == "lastdir")
 		{
 			g_settings.lastdir = val;
+		}
+		else if (key == "language")
+		{
+			g_settings.language = val;
+			set_localize_lang(g_settings.language);
 		}
 		else if (key == "fgd")
 		{
@@ -601,6 +608,7 @@ void AppSettings::save(std::string path)
 	file << "gamedir=" << g_settings.gamedir << std::endl;
 	file << "workingdir=" << g_settings.workingdir << std::endl;
 	file << "lastdir=" << g_settings.lastdir << std::endl;
+	file << "language=" << g_settings.language << std::endl;
 
 	for (int i = 0; i < fgdPaths.size(); i++)
 	{
