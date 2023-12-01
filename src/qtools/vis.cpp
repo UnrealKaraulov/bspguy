@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "vis.h"
 #include "bsptypes.h"
 #include "Bsp.h"
@@ -65,7 +66,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 
 	if (g_debug_shift)
 	{
-		logf("\nSHIFT\n");
+		logf(get_localized_string(LANG_0992));
 	}
 
 	int overflow = 0;
@@ -139,7 +140,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 		}
 	}
 	if (overflow)
-		logf("Fatal error! OVERFLOWED {} VIS LEAVES WHILE SHIFTING\n", overflow);
+		logf(get_localized_string(LANG_0993),overflow);
 
 
 	if (byteShifts > 0)
@@ -195,7 +196,7 @@ void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned c
 		{
 			if ((i + 1) * sizeof(BSPLEAF32) >= leafMemSize)
 			{
-				logf("Fatal error! Overflow decompressing VIS lump! {} leaf of {} #0\n", i + 1, leafMemSize / sizeof(BSPLEAF32));
+				logf(get_localized_string(LANG_0994),i + 1,leafMemSize / sizeof(BSPLEAF32));
 				return;
 			}
 
@@ -208,11 +209,11 @@ void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned c
 
 			if (leafLump[i + 1].nVisOffset >= visLumpMemSize)
 			{
-				logf("Fatal error! Overflow decompressing VIS lump! {} of {} #1\n",leafLump[i + 1].nVisOffset,visLumpMemSize);
+				logf(get_localized_string(LANG_0995),leafLump[i + 1].nVisOffset,visLumpMemSize);
 				return;
 			}
 			// Tracing ... 
-			// logf("Leaef vis offset : {} of {} lump size\n", leafLump[i].nVisOffset, visLumpMemSize);
+			// logf(get_localized_string(LANG_0996),leafLump[i].nVisOffset,visLumpMemSize);
 			DecompressVis((unsigned char*)(visLump + leafLump[i + 1].nVisOffset), dest, oldVisRowSize, visDataLeafCount, visLumpMemSize - leafLump[i + 1].nVisOffset);
 
 			// Leaf visibility row lengths are multiples of 64 leaves, so there are usually some unused bits at the end.
@@ -228,7 +229,7 @@ void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned c
 		}
 		else
 		{
-			logf("Fatal error! Overflow decompressing VIS lump! #1\n");
+			logf(get_localized_string(LANG_0997));
 			return;
 		}
 	}
@@ -258,12 +259,12 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 		{
 			if (out > startdst + dest_length)
 			{
-				logf("Fatal error! Decompress vis dest overflow {} > {} #0!\n", (int)(out - startdst), dest_length);
+				logf(get_localized_string(LANG_0998),(int)(out - startdst),dest_length);
 				return;
 			}
 			if (src > startsrc + src_length)
 			{
-				logf("Fatal error! Decompress vis src overflow {} > {} #1!\n", (int)(src - startsrc), src_length);
+				logf(get_localized_string(LANG_0999),(int)(src - startsrc),src_length);
 				return;
 			}
 			*out = *src;
@@ -278,7 +279,7 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 		{
 			if (out > startdst + dest_length)
 			{
-				logf("Fatal error! Decompress vis dest overflow {} > {} #0!\n", (int)(out - startdst), dest_length);
+				logf(get_localized_string(LANG_1142),(int)(out - startdst),dest_length);
 				return;
 			}
 			*out = 0;
@@ -305,7 +306,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 
 		if (current_length > dest_length)
 		{
-			logf("Fatal error! Decompress vis overflow {} > {} #0!", current_length, dest_length);
+			logf(get_localized_string(LANG_1000),current_length,dest_length);
 			return (int)(dest_p - dest);
 		}
 
@@ -334,7 +335,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 		current_length++;
 		if (current_length > dest_length)
 		{
-			logf("Fatal error! Decompress vis overflow {} > {} #0!", current_length, dest_length);
+			logf(get_localized_string(LANG_1143),current_length,dest_length);
 			return (int)(dest_p - dest);
 		}
 		*dest_p = rep;
@@ -383,7 +384,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	{
 		if (i + 1 >= maxLeafs)
 		{
-			logf("Fatal error! leaf array overflow leafs[{}] of {}\n", i + 1, maxLeafs);
+			logf(get_localized_string(LANG_1001),i + 1,maxLeafs);
 			delete[] sharedRows;
 			delete[] compressed;
 			return (int)(vismap_p - output);
@@ -393,7 +394,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 		{
 			if (sharedRows[i] + 1 >= maxLeafs)
 			{
-				logf("Fatal error! leaf array overflow leafs[{}] of {} (in sharedRows)\n", (int)(sharedRows[i] + 1), maxLeafs);
+				logf(get_localized_string(LANG_1002),(int)(sharedRows[i] + 1),maxLeafs);
 				delete[] sharedRows;
 				delete[] compressed;
 				return (int)(vismap_p - output);
@@ -414,7 +415,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 
 		if (vismap_p >= output + bufferSize)
 		{
-			logf("Fatal error! Vismap expansion overflow {} > {}\n", (void*)vismap_p, (void*)(output + bufferSize));
+			logf(get_localized_string(LANG_1003),(void*)vismap_p,(void*)(output + bufferSize));
 
 			delete[] sharedRows;
 			return (int)(vismap_p - output);
@@ -458,7 +459,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf("Fatal error! Fatal Error! Decompress leaf vis overflow {} > {} #1!\n", (int)(out - dest), dest_length);
+				logf(get_localized_string(LANG_1004),(int)(out - dest),dest_length);
 				return;
 			}
 
@@ -475,13 +476,13 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf("Fatal error! Fatal Error! Decompress leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+				logf(get_localized_string(LANG_1005),(int)(out - dest),dest_length);
 				return;
 			}
 
 			if (src > src_start + src_len)
 			{
-				logf("Fatal error! Fatal Error! Decompress src leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+				logf(get_localized_string(LANG_1006),(int)(out - dest),dest_length);
 				return;
 			}
 
@@ -495,7 +496,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 
 		if (src > src_start + src_len)
 		{
-			logf("Fatal error! Fatal Error! Decompress src leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+			logf(get_localized_string(LANG_1144),(int)(out - dest),dest_length);
 			return;
 		}
 
@@ -503,7 +504,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf("Fatal error! Fatal Error! Decompress leaf vis overflow {} > {} #3!\n", (int)(out - dest), dest_length);
+				logf(get_localized_string(LANG_1007),(int)(out - dest),dest_length);
 				return;
 			}
 

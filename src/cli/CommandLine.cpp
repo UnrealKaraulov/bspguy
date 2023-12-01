@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "CommandLine.h"
 #ifdef WIN32
 #include <Windows.h>
@@ -82,7 +83,7 @@ bool CommandLine::hasOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		logf("ERROR: invalid number of coordinates for option {}\n", optionName);
+		logf(get_localized_string(LANG_0265),optionName);
 		return false;
 	}
 
@@ -106,7 +107,7 @@ vec3 CommandLine::getOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		logf("ERROR: invalid number of coordinates for option {}\n", optionName);
+		logf(get_localized_string(LANG_1045),optionName);
 		return ret;
 	}
 

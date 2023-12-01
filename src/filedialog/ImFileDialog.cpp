@@ -1,3 +1,4 @@
+#include "lang.h"
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -161,7 +162,7 @@ namespace ifd
 				ImGui::PushID(static_cast<int>(i));
 				if (!isFirstElement)
 				{
-					ImGui::ArrowButtonEx("##dir_dropdown", ImGuiDir_Right, ImVec2(GUI_ELEMENT_SIZE, GUI_ELEMENT_SIZE));
+					ImGui::ArrowButtonEx(get_localized_string(LANG_0930).c_str(),ImGuiDir_Right,ImVec2(GUI_ELEMENT_SIZE,GUI_ELEMENT_SIZE));
 					anyOtherHC = ImGui::IsItemHovered() || ImGui::IsItemClicked();
 					ImGui::SameLine();
 				}
@@ -228,7 +229,7 @@ namespace ifd
 				if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 					*state |= 0b100;
 			}
-			if (ImGui::InputTextEx("##pathbox_input", "", pathBuffer, 1024, size_arg, ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::InputTextEx(get_localized_string(LANG_0931).c_str(),"",pathBuffer,1024,size_arg,ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				std::string tempStr(pathBuffer);
 				if (std::filesystem::exists(tempStr))
@@ -1188,12 +1189,12 @@ namespace ifd
 		// table view
 		if (m_zoom == 1.0f)
 		{
-			if (ImGui::BeginTable("##contentTable", 3, /*ImGuiTableFlags_Resizable |*/ ImGuiTableFlags_Sortable, ImVec2(0, -FLT_MIN)))
+			if (ImGui::BeginTable(get_localized_string(LANG_0932).c_str(),3,/*ImGuiTableFlags_Resizable |*/ ImGuiTableFlags_Sortable,ImVec2(0,-FLT_MIN)))
 			{
 				// header
-				ImGui::TableSetupColumn("Name##filename", ImGuiTableColumnFlags_WidthStretch, 0.0f - 1.0f, 0);
-				ImGui::TableSetupColumn("Date modified##filedate", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f, 1);
-				ImGui::TableSetupColumn("Size##filesize", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f, 2);
+				ImGui::TableSetupColumn(get_localized_string(LANG_0933).c_str(),ImGuiTableColumnFlags_WidthStretch,0.0f - 1.0f,0);
+				ImGui::TableSetupColumn(get_localized_string(LANG_0934).c_str(),ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize,0.0f,1);
+				ImGui::TableSetupColumn(get_localized_string(LANG_0935).c_str(),ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize,0.0f,2);
 				ImGui::TableSetupScrollFreeze(0, 1);
 				ImGui::TableHeadersRow();
 
@@ -1257,7 +1258,7 @@ namespace ifd
 
 					// size
 					ImGui::TableSetColumnIndex(2);
-					ImGui::Text("%.3f KiB", entry.Size / 1024.0f);
+					ImGui::Text(get_localized_string(LANG_0936).c_str(),entry.Size / 1024.0f);
 				}
 
 				ImGui::EndTable();
@@ -1313,31 +1314,31 @@ namespace ifd
 	void FileDialog::m_renderPopups()
 	{
 		bool openAreYouSureDlg = false, openNewFileDlg = false, openNewDirectoryDlg = false;
-		if (ImGui::BeginPopupContextItem("##dir_context"))
+		if (ImGui::BeginPopupContextItem(get_localized_string(LANG_0937).c_str()))
 		{
-			if (ImGui::Selectable("New file"))
+			if (ImGui::Selectable(get_localized_string(LANG_0938).c_str()))
 				openNewFileDlg = true;
-			if (ImGui::Selectable("New directory"))
+			if (ImGui::Selectable(get_localized_string(LANG_0939).c_str()))
 				openNewDirectoryDlg = true;
-			if (m_selectedFileItem != -1 && ImGui::Selectable("Delete"))
+			if (m_selectedFileItem != -1 && ImGui::Selectable(get_localized_string(LANG_1171).c_str()))
 				openAreYouSureDlg = true;
 			ImGui::EndPopup();
 		}
 		if (openAreYouSureDlg)
-			ImGui::OpenPopup("Are you sure?##delete");
+			ImGui::OpenPopup(get_localized_string(LANG_0940).c_str());
 		if (openNewFileDlg)
-			ImGui::OpenPopup("Enter file name##newfile");
+			ImGui::OpenPopup(get_localized_string(LANG_0941).c_str());
 		if (openNewDirectoryDlg)
-			ImGui::OpenPopup("Enter directory name##newdir");
-		if (ImGui::BeginPopupModal("Are you sure?##delete"))
+			ImGui::OpenPopup(get_localized_string(LANG_0942).c_str());
+		if (ImGui::BeginPopupModal(get_localized_string(LANG_1132).c_str()))
 		{
 			if (m_selectedFileItem >= static_cast<int>(m_content.size()) || m_content.empty())
 				ImGui::CloseCurrentPopup();
 			else
 			{
 				const FileData& data = m_content[m_selectedFileItem];
-				ImGui::TextWrapped(fmt::format("Are you sure you want to delete {}?", data.Path.filename().string().c_str()).c_str());
-				if (ImGui::Button("Yes"))
+				ImGui::TextWrapped(fmt::format(fmt::runtime(get_localized_string(LANG_0929)),data.Path.filename().string().c_str()).c_str());
+				if (ImGui::Button(get_localized_string(LANG_0943).c_str()))
 				{
 					std::error_code ec;
 					std::filesystem::remove_all(data.Path, ec);
@@ -1350,10 +1351,10 @@ namespace ifd
 			}
 			ImGui::EndPopup();
 		}
-		if (ImGui::BeginPopupModal("Enter file name##newfile"))
+		if (ImGui::BeginPopupModal(get_localized_string(LANG_1133).c_str()))
 		{
 			ImGui::PushItemWidth(250.0f);
-			ImGui::InputText("##newfilename", m_newEntryBuffer, 1024); // TODO: remove hardcoded literals
+			ImGui::InputText(get_localized_string(LANG_0944).c_str(),m_newEntryBuffer,1024); // TODO: remove hardcoded literals
 			ImGui::PopItemWidth();
 
 			if (ImGui::Button("OK"))
@@ -1368,17 +1369,17 @@ namespace ifd
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Cancel"))
+			if (ImGui::Button(get_localized_string(LANG_0945).c_str()))
 			{
 				m_newEntryBuffer[0] = 0;
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
 		}
-		if (ImGui::BeginPopupModal("Enter directory name##newdir"))
+		if (ImGui::BeginPopupModal(get_localized_string(LANG_1134).c_str()))
 		{
 			ImGui::PushItemWidth(250.0f);
-			ImGui::InputText("##newfilename", m_newEntryBuffer, 1024); // TODO: remove hardcoded literals
+			ImGui::InputText(get_localized_string(LANG_1135).c_str(),m_newEntryBuffer,1024); // TODO: remove hardcoded literals
 			ImGui::PopItemWidth();
 
 			if (ImGui::Button("OK"))
@@ -1390,7 +1391,7 @@ namespace ifd
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Cancel"))
+			if (ImGui::Button(get_localized_string(LANG_1136).c_str()))
 			{
 				ImGui::CloseCurrentPopup();
 				m_newEntryBuffer[0] = 0;
@@ -1405,7 +1406,7 @@ namespace ifd
 
 		ImGui::PushStyleColor(ImGuiCol_Button, 0);
 		if (noBackHistory) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-		if (ImGui::ArrowButtonEx("##back", ImGuiDir_Left, ImVec2(GUI_ELEMENT_SIZE, GUI_ELEMENT_SIZE), m_backHistory.empty() * ImGuiItemFlags_Disabled))
+		if (ImGui::ArrowButtonEx(get_localized_string(LANG_0946).c_str(),ImGuiDir_Left,ImVec2(GUI_ELEMENT_SIZE,GUI_ELEMENT_SIZE),m_backHistory.empty() * ImGuiItemFlags_Disabled))
 		{
 			std::filesystem::path newPath = m_backHistory.top();
 			m_backHistory.pop();
@@ -1417,7 +1418,7 @@ namespace ifd
 		ImGui::SameLine();
 
 		if (noForwardHistory) ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-		if (ImGui::ArrowButtonEx("##forward", ImGuiDir_Right, ImVec2(GUI_ELEMENT_SIZE, GUI_ELEMENT_SIZE), m_forwardHistory.empty() * ImGuiItemFlags_Disabled))
+		if (ImGui::ArrowButtonEx(get_localized_string(LANG_0947).c_str(),ImGuiDir_Right,ImVec2(GUI_ELEMENT_SIZE,GUI_ELEMENT_SIZE),m_forwardHistory.empty() * ImGuiItemFlags_Disabled))
 		{
 			std::filesystem::path newPath = m_forwardHistory.top();
 			m_forwardHistory.pop();
@@ -1449,29 +1450,29 @@ namespace ifd
 		ImGui::SameLine();
 		ImGui::PopStyleColor();
 
-		if (ImGui::InputTextEx("##searchTB", "Search", m_searchBuffer, 128, ImVec2(-FLT_MIN, GUI_ELEMENT_SIZE), 0)) // TODO: no hardcoded literals
+		if (ImGui::InputTextEx(get_localized_string(LANG_0948).c_str(),get_localized_string(LANG_0949).c_str(),m_searchBuffer,128,ImVec2(-FLT_MIN,GUI_ELEMENT_SIZE),0)) // TODO: no hardcoded literals
 			m_setDirectory(m_currentDirectory, false); // refresh
 
 
 
 		/***** CONTENT *****/
 		float bottomBarHeight = (GImGui->FontSize + ImGui::GetStyle().FramePadding.y + ImGui::GetStyle().ItemSpacing.y * 2.0f) * 2;
-		if (ImGui::BeginTable("##table", 2, ImGuiTableFlags_Resizable, ImVec2(0, -bottomBarHeight)))
+		if (ImGui::BeginTable(get_localized_string(LANG_0950).c_str(),2,ImGuiTableFlags_Resizable,ImVec2(0,-bottomBarHeight)))
 		{
-			ImGui::TableSetupColumn("##tree", ImGuiTableColumnFlags_WidthFixed, 125.0f);
-			ImGui::TableSetupColumn("##content", ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableSetupColumn(get_localized_string(LANG_0951).c_str(),ImGuiTableColumnFlags_WidthFixed,125.0f);
+			ImGui::TableSetupColumn(get_localized_string(LANG_0952).c_str(),ImGuiTableColumnFlags_WidthStretch);
 			ImGui::TableNextRow();
 
 			// the tree on the left side
 			ImGui::TableSetColumnIndex(0);
-			ImGui::BeginChild("##treeContainer", ImVec2(0, -bottomBarHeight));
+			ImGui::BeginChild(get_localized_string(LANG_0953).c_str(),ImVec2(0,-bottomBarHeight));
 			for (auto node : m_treeCache)
 				m_renderTree(node);
 			ImGui::EndChild();
 
 			// content on the right side
 			ImGui::TableSetColumnIndex(1);
-			ImGui::BeginChild("##contentContainer", ImVec2(0, -bottomBarHeight));
+			ImGui::BeginChild(get_localized_string(LANG_0954).c_str(),ImVec2(0,-bottomBarHeight));
 			m_renderContent();
 			ImGui::EndChild();
 			if (ImGui::IsItemHovered() && ImGui::GetIO().KeyCtrl && ImGui::GetIO().MouseWheel != 0.0f)
@@ -1489,9 +1490,9 @@ namespace ifd
 
 
 		/***** BOTTOM BAR *****/
-		ImGui::Text("File name:");
+		ImGui::Text(get_localized_string(LANG_0955).c_str());
 		ImGui::SameLine();
-		if (ImGui::InputTextEx("##file_input", "Filename", m_inputTextbox, 1024, ImVec2((m_type != IFD_DIALOG_DIRECTORY) ? -250.0f : -FLT_MIN, 0), ImGuiInputTextFlags_EnterReturnsTrue))
+		if (ImGui::InputTextEx(get_localized_string(LANG_0956).c_str(),get_localized_string(LANG_0957).c_str(),m_inputTextbox,1024,ImVec2((m_type != IFD_DIALOG_DIRECTORY) ? -250.0f : -FLT_MIN, 0), ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			bool success = m_finalize(std::string(m_inputTextbox));
 #ifdef _WIN32
@@ -1506,7 +1507,7 @@ namespace ifd
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(-FLT_MIN);
 			int sel = static_cast<int>(m_filterSelection);
-			if (ImGui::Combo("##ext_combo", &sel, m_filter.c_str()))
+			if (ImGui::Combo(get_localized_string(LANG_0958).c_str(),&sel,m_filter.c_str()))
 			{
 				m_filterSelection = static_cast<size_t>(sel);
 				m_setDirectory(m_currentDirectory, false); // refresh
@@ -1530,7 +1531,7 @@ namespace ifd
 #endif
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(-FLT_MIN, 0.0f)))
+		if (ImGui::Button(get_localized_string(LANG_1172).c_str(),ImVec2(-FLT_MIN,0.0f)))
 		{
 			if (m_type == IFD_DIALOG_DIRECTORY)
 				m_isOpen = false;

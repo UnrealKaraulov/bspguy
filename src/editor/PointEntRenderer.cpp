@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "PointEntRenderer.h"
 #include "primitives.h"
 #include <string.h>
@@ -73,7 +74,7 @@ void PointEntRenderer::genPointEntCubes()
 		}
 	}
 
-	logf("Generated {} point entities cubes\n", entCubes.size());
+	logf(get_localized_string(LANG_0894),entCubes.size());
 }
 
 EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube)

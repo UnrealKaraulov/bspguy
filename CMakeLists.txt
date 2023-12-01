@@ -65,8 +65,9 @@ set(SOURCE_FILES
 	# utils
 	src/util/lodepng.h				src/util/lodepng.cpp
 	src/util/quantizer.h			src/util/quantizer.cpp
-	src/util/ini.h					src/util/ini.c
-	src/util/INIReader.h			src/util/INIReader.cpp
+	src/util/iniparser.hpp
+	src/util/lang_defs.h
+	src/util/lang.h					src/util/lang.cpp
 	src/util/quantizer.h			src/util/quantizer.cpp
 	
 	# 3D model viewer

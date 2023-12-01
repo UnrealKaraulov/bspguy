@@ -1,3 +1,4 @@
+#include "lang.h"
 #include <GL/glew.h>
 #include "ShaderProgram.h"
 #include "util.h"
@@ -33,10 +34,10 @@ void ShaderProgram::link()
 		char* log = new char[1024];
 		int len;
 		glGetProgramInfoLog(ID, 1024, &len, log);
-		logf("Shader Program Link Failure:\n");
+		logf(get_localized_string(LANG_0961));
 		logf(log);
 		if (len > 1024)
-			logf("\nLog too big to fit!\n");
+			logf(get_localized_string(LANG_0962));
 		delete[] log;
 	}
 }
@@ -92,13 +93,13 @@ void ShaderProgram::setMatrixNames(const char* _modelViewMat, const char* _model
 	{
 		modelViewID = glGetUniformLocation(ID, _modelViewMat);
 		if (modelViewID == -1)
-			logf("Could not find modelView uniform: {}\n", _modelViewMat);
+			logf(get_localized_string(LANG_0963),_modelViewMat);
 	}
 	if (_modelViewProjMat)
 	{
 		modelViewProjID = glGetUniformLocation(ID, _modelViewProjMat);
 		if (modelViewProjID == -1)
-			logf("Could not find modelViewProjection uniform: {}\n", _modelViewProjMat);
+			logf(get_localized_string(LANG_0964),_modelViewProjMat);
 	}
 }
 
@@ -107,17 +108,17 @@ void ShaderProgram::setVertexAttributeNames(const char* posAtt, const char* colo
 	if (posAtt)
 	{
 		vposID = glGetAttribLocation(ID, posAtt);
-		if (vposID == -1) logf("Could not find vposition attribute: {}\n", posAtt);
+		if (vposID == -1) logf(get_localized_string(LANG_0965),posAtt);
 	}
 	if (colorAtt)
 	{
 		vcolorID = glGetAttribLocation(ID, colorAtt);
-		if (vcolorID == -1) logf("Could not find vcolor attribute: {}\n", colorAtt);
+		if (vcolorID == -1) logf(get_localized_string(LANG_0966),colorAtt);
 	}
 	if (texAtt)
 	{
 		vtexID = glGetAttribLocation(ID, texAtt);
-		if (vtexID == -1) logf("Could not find vtexture attribute: {}\n", texAtt);
+		if (vtexID == -1) logf(get_localized_string(LANG_0967),texAtt);
 	}
 }
 
@@ -142,7 +143,7 @@ void ShaderProgram::popMatrix(int matType)
 				stack.pop_back();
 			}
 			else
-				logf("Can't pop matrix. Stack is empty.\n");
+				logf(get_localized_string(LANG_0968));
 		}
 	}
 

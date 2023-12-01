@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "util.h"
 #include <iostream>
 #include <fstream>
@@ -773,7 +774,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 	if (i1 == -1)
 	{
-		//logf("Only 1 unique vert!\n");
+		//logf(get_localized_string(LANG_1011));
 		return std::vector<vec3>();
 	}
 
@@ -798,7 +799,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 	if (i2 == -1)
 	{
-		//logf("All verts are colinear!\n");
+		//logf(get_localized_string(LANG_1012));
 		return std::vector<vec3>();
 	}
 
@@ -959,7 +960,7 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 	fopen_s(&outputFile, fileName.c_str(), "wb");
 	if (!outputFile)
 	{
-		logf("Can't write to output file!\n");
+		logf(get_localized_string(LANG_1013));
 		return;
 	}
 	//*****HEADER************//
@@ -1225,7 +1226,7 @@ void print_color(int colors)
 {
 	if (!colors)
 	{
-		logf("\x1B[0m");
+		logf(get_localized_string(LANG_1014));
 		return;
 	}
 	const char* mode = colors & PRINT_BRIGHT ? "1" : "0";
@@ -1240,7 +1241,7 @@ void print_color(int colors)
 	case PRINT_GREEN | PRINT_BLUE:				color = "36"; break;
 	case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
 	}
-	logf("\x1B[{};{}m", mode, color);
+	logf(get_localized_string(LANG_1015),mode,color);
 }
 
 std::string getConfigDir()

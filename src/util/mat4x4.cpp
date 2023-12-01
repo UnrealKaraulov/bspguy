@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "mat4x4.h"
 #include "util.h"
 #include <string.h>
@@ -391,7 +392,7 @@ mat4x4 mat4x4::invert()
 
 	if (abs(det) < EPSILON)
 	{
-		logf("Matrix inversion failed (determinant is zero)\n");
+		logf(get_localized_string(LANG_1010));
 		return out;
 	}
 

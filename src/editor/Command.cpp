@@ -1,3 +1,4 @@
+#include "lang.h"
 #include <string.h>
 #include "Command.h"
 #include "Gui.h"
@@ -473,7 +474,7 @@ int CreateBspModelCommand::getDefaultTextureIdx()
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 			if (tex.szName[0] != '\0' && strcasecmp(tex.szName, "aaatrigger") == 0)
 			{
-				logf("Found default texture in map file.\n");
+				logf(get_localized_string(LANG_0295));
 				return i;
 			}
 		}
@@ -640,7 +641,7 @@ void CleanMapCommand::execute()
 	BspRenderer* renderer = getBspRenderer();
 	if (!renderer)
 		return;
-	logf("Cleaning {}\n", map->bsp_name);
+	logf(get_localized_string(LANG_0296),map->bsp_name);
 	map->remove_unused_model_structures().print_delete_stats(1);
 
 	refresh();
@@ -708,10 +709,10 @@ void OptimizeMapCommand::execute()
 		return;
 	map->update_ent_lump();
 
-	logf("Optimizing {}\n", map->bsp_name);
+	logf(get_localized_string(LANG_0297),map->bsp_name);
 	if (!map->has_hull2_ents())
 	{
-		logf("    Redirecting hull 2 to hull 1 because there are no large monsters/pushables\n");
+		logf(get_localized_string(LANG_0298));
 		map->delete_hull(2, 1);
 	}
 

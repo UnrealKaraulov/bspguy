@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "util.h"
 #include "BspMerger.h"
 #include <string>
@@ -166,7 +167,7 @@ int test()
 		{
 			logf("");
 		}
-		logf("Preprocess {}\n", maps[i]->bsp_name);
+		logf(get_localized_string(LANG_0002),maps[i]->bsp_name);
 		maps[i]->delete_hull(2, 1);
 		//removed.add(maps[i]->delete_unused_hulls());
 		removed.add(maps[i]->remove_unused_model_structures());
@@ -198,7 +199,7 @@ int merge_maps(CommandLine& cli)
 
 	if (input_maps.size() < 2)
 	{
-		logf("ERROR: at least 2 input maps are required\n");
+		logf(get_localized_string(LANG_0003));
 		return 1;
 	}
 
@@ -217,23 +218,23 @@ int merge_maps(CommandLine& cli)
 
 	for (int i = 0; i < maps.size(); i++)
 	{
-		logf("Preprocessing {}:\n", maps[i]->bsp_name);
+		logf(get_localized_string(LANG_0004),maps[i]->bsp_name);
 
-		logf("    Deleting unused data...\n");
+		logf(get_localized_string(LANG_0005));
 		STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
 		g_progress.clear();
 		removed.print_delete_stats(2);
 
 		if (cli.hasOption("-nohull2") || (cli.hasOption("-optimize") && !maps[i]->has_hull2_ents()))
 		{
-			logf("    Deleting hull 2...\n");
+			logf(get_localized_string(LANG_0006));
 			maps[i]->delete_hull(2, 1);
 			maps[i]->remove_unused_model_structures().print_delete_stats(2);
 		}
 
 		if (cli.hasOption("-optimize"))
 		{
-			logf("    Optmizing...\n");
+			logf(get_localized_string(LANG_0007));
 			maps[i]->delete_unused_hulls().print_delete_stats(2);
 		}
 
@@ -292,7 +293,7 @@ int print_info(CommandLine& cli)
 			}
 			else
 			{
-				logf("ERROR: invalid limit name: {}\n", limitName);
+				logf(get_localized_string(LANG_0008),limitName);
 				delete map;
 				return 0;
 			}
@@ -325,7 +326,7 @@ int noclip(CommandLine& cli)
 
 			if (hull < 0 || hull >= MAX_MAP_HULLS)
 			{
-				logf("ERROR: hull number must be 0-3\n");
+				logf(get_localized_string(LANG_0009));
 				delete map;
 				return 1;
 			}
@@ -335,19 +336,19 @@ int noclip(CommandLine& cli)
 		{
 			if (!cli.hasOption("-hull"))
 			{
-				logf("ERROR: -redirect must be used with -hull\n");
+				logf(get_localized_string(LANG_0010));
 				return 1;
 			}
 			redirect = cli.getOptionInt("-redirect");
 
 			if (redirect < 1 || redirect >= MAX_MAP_HULLS)
 			{
-				logf("ERROR: redirect hull number must be 1-3\n");
+				logf(get_localized_string(LANG_0011));
 				return 1;
 			}
 			if (redirect == hull)
 			{
-				logf("ERROR: Can't redirect hull to itself\n");
+				logf(get_localized_string(LANG_0012));
 				return 1;
 			}
 		}
@@ -356,7 +357,7 @@ int noclip(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf("Deleting unused data:\n");
+			logf(get_localized_string(LANG_0013));
 			removed.print_delete_stats(1);
 			g_progress.clear();
 			logf("\n");
@@ -368,22 +369,22 @@ int noclip(CommandLine& cli)
 
 			if (model < 0 || model >= map->modelCount)
 			{
-				logf("ERROR: model number must be 0 - {}\n", map->modelCount);
+				logf(get_localized_string(LANG_0014),map->modelCount);
 				return 1;
 			}
 
 			if (hull != -1)
 			{
 				if (redirect)
-					logf("Redirecting HULL {} to HULL {} in model {}:\n", hull, redirect, model);
+					logf(get_localized_string(LANG_0015),hull,redirect,model);
 				else
-					logf("Deleting HULL {} from model {}:\n", hull, model);
+					logf(get_localized_string(LANG_0016),hull,model);
 
 				map->delete_hull(hull, model, redirect);
 			}
 			else
 			{
-				logf("Deleting HULL 1, 2, and 3 from model {}:\n", model);
+				logf(get_localized_string(LANG_0017),model);
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, model, redirect);
@@ -394,7 +395,7 @@ int noclip(CommandLine& cli)
 		{
 			if (hull == 0)
 			{
-				logf("HULL 0 can't be stripped globally. The entire map would be invisible!\n");
+				logf(get_localized_string(LANG_0018));
 				delete map;
 				return 0;
 			}
@@ -402,14 +403,14 @@ int noclip(CommandLine& cli)
 			if (hull != -1)
 			{
 				if (redirect)
-					logf("Redirecting HULL {} to HULL {}:\n", hull, redirect);
+					logf(get_localized_string(LANG_0019),hull,redirect);
 				else
-					logf("Deleting HULL {}:\n", hull);
+					logf(get_localized_string(LANG_0020),hull);
 				map->delete_hull(hull, redirect);
 			}
 			else
 			{
-				logf("Deleting HULL 1, 2, and 3:\n", hull);
+				logf(get_localized_string(LANG_0021),hull);
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, redirect);
@@ -422,7 +423,7 @@ int noclip(CommandLine& cli)
 		if (!removed.allZero())
 			removed.print_delete_stats(1);
 		else if (redirect == 0)
-			logf("    Model hull(s) was previously deleted or redirected.");
+			logf(get_localized_string(LANG_0022));
 		logf("\n");
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
@@ -444,7 +445,7 @@ int simplify(CommandLine& cli)
 
 		if (!cli.hasOption("-model"))
 		{
-			logf("ERROR: -model is required\n");
+			logf(get_localized_string(LANG_0023));
 			delete map;
 			return 1;
 		}
@@ -455,7 +456,7 @@ int simplify(CommandLine& cli)
 
 			if (hull < 1 || hull >= MAX_MAP_HULLS)
 			{
-				logf("ERROR: hull number must be 1-3\n");
+				logf(get_localized_string(LANG_0024));
 				return 1;
 			}
 		}
@@ -466,7 +467,7 @@ int simplify(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf("Deleting unused data:\n");
+			logf(get_localized_string(LANG_1017));
 			removed.print_delete_stats(1);
 			g_progress.clear();
 			logf("\n");
@@ -476,17 +477,17 @@ int simplify(CommandLine& cli)
 
 		if (modelIdx < 0 || modelIdx >= map->modelCount)
 		{
-			logf("ERROR: model number must be 0 - {}\n", map->modelCount);
+			logf(get_localized_string(LANG_1018),map->modelCount);
 			return 1;
 		}
 
 		if (hull != 0)
 		{
-			logf("Simplifying HULL {} in model {}:\n", hull, modelIdx);
+			logf(get_localized_string(LANG_0025),hull,modelIdx);
 		}
 		else
 		{
-			logf("Simplifying collision hulls in model {}:\n", modelIdx);
+			logf(get_localized_string(LANG_0026),modelIdx);
 		}
 
 		map->simplify_model_collision(modelIdx, hull);
@@ -522,7 +523,7 @@ int deleteCmd(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf("Deleting unused data:\n");
+			logf(get_localized_string(LANG_1145));
 			removed.print_delete_stats(1);
 			g_progress.clear();
 			logf("\n");
@@ -532,7 +533,7 @@ int deleteCmd(CommandLine& cli)
 		{
 			int modelIdx = cli.getOptionInt("-model");
 
-			logf("Deleting model {}:\n", modelIdx);
+			logf(get_localized_string(LANG_0027),modelIdx);
 			map->delete_model(modelIdx);
 			map->update_ent_lump();
 			removed = map->remove_unused_model_structures();
@@ -571,7 +572,7 @@ int transform(CommandLine& cli)
 		}
 		else
 		{
-			logf("ERROR: at least one transformation option is required\n");
+			logf(get_localized_string(LANG_0028));
 			delete map;
 			return 1;
 		}
@@ -592,7 +593,7 @@ int unembed(CommandLine& cli)
 	if (map->bsp_valid)
 	{
 		int deleted = map->delete_embedded_textures();
-		logf("Deleted {} embedded textures\n", deleted);
+		logf(get_localized_string(LANG_0029),deleted);
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
 		logf("\n");
@@ -795,7 +796,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 				"_%4d%02d%02d_%02d%02d%02d(%d).dmp",
 				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
 
-	logf("Generating minidump at path {}\n", name);
+	logf(get_localized_string(LANG_0030),name);
 
 	auto hFile = CreateFileA(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -849,7 +850,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 
-			logf("Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void *)GetModuleHandleA(0));
+			logf(get_localized_string(LANG_0031),GetLastError(),e->ExceptionRecord->ExceptionCode,e->ExceptionRecord->ExceptionAddress,(void *)GetModuleHandleA(0));
 			
 			if (crashdumps > 0)
 			{
@@ -953,7 +954,7 @@ int main(int argc, char* argv[])
 	else 
 	{
 		if (cli.bspfile.size() == 0)
-			logf("{}\n", "Open editor with empty map.");
+			logf("{}\n",get_localized_string(LANG_0032));
 		else
 		{
 			if (cli.askingForHelp)
@@ -963,10 +964,10 @@ int main(int argc, char* argv[])
 			}
 		}
 		logf("{}\n", ("Start bspguy editor with: " + cli.bspfile));
-		logf("Load settings from : {}\n", g_settings_path);
+		logf(get_localized_string(LANG_0033),g_settings_path);
 		if (!start_viewer(cli.bspfile.c_str()))
 		{
-			logf("ERROR: File not found: {}", cli.bspfile);
+			logf(get_localized_string(LANG_0034),cli.bspfile);
 		}
 	}
 	return 0;

@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "Settings.h"
 #include "Renderer.h"
 #include "ShaderProgram.h"
@@ -28,7 +29,7 @@ std::future<void> Renderer::fgdFuture;
 
 void error_callback(int error, const char* description)
 {
-	logf("GLFW Error: {} {}\n", error, description);
+	logf(get_localized_string(LANG_0895),error,description);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -51,27 +52,27 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 		{
 			if (lowerPath.ends_with(".bsp"))
 			{
-				logf("Loading map {}...\n", tmpPath.string());
+				logf(get_localized_string(LANG_0896),tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
 			else if (lowerPath.ends_with(".mdl"))
 			{
-				logf("Loading model {}...\n", tmpPath.string());
+				logf(get_localized_string(LANG_0897),tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
 			else
 			{
-				logf("Skipping unsupported file {}...\n", tmpPath.string());
+				logf(get_localized_string(LANG_0898),tmpPath.string());
 			}
 		}
 		else
 		{
-			logf("{} file not found!\n", tmpPath.string());
+			logf(get_localized_string(LANG_0899),tmpPath.string());
 		}
 	}
 	else if (g_app->isLoading)
 	{
-		logf("Can't load file while loading!\n");
+		logf(get_localized_string(LANG_0900));
 	}
 }
 
@@ -109,7 +110,7 @@ void window_focus_callback(GLFWwindow* window, int focused)
 void window_close_callback(GLFWwindow* window)
 {
 	g_settings.save();
-	logf("adios\n");
+	logf(get_localized_string(LANG_0901));
 	std::quick_exit(0);
 }
 
@@ -124,7 +125,7 @@ Renderer::Renderer()
 {
 	if (!glfwInit())
 	{
-		logf("GLFW initialization failed\n");
+		logf(get_localized_string(LANG_0902));
 		return;
 	}
 	showDragAxes = true;
@@ -154,7 +155,7 @@ Renderer::Renderer()
 
 	if (!window)
 	{
-		logf("Window creation failed. Maybe your PC doesn't support OpenGL 3.0\n");
+		logf(get_localized_string(LANG_0903));
 		return;
 	}
 
@@ -218,7 +219,7 @@ void Renderer::renderLoop()
 
 	if (LIGHTMAP_ATLAS_SIZE > value)
 	{
-		logf("Decrease LIGHTMAP_ATLAS_SIZE to {}\n", value);
+		logf(get_localized_string(LANG_0904),value);
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -632,7 +633,7 @@ void Renderer::renderLoop()
 		int glerror = glGetError();
 		if (glerror != GL_NO_ERROR)
 		{
-			logf("Got OpenGL Error: {}\n", glerror);
+			logf(get_localized_string(LANG_0905),glerror);
 		}
 
 		if (updatePickCount)
@@ -670,7 +671,7 @@ void Renderer::postLoadFgdsAndTextures()
 {
 	if (reloading)
 	{
-		logf("Previous reload not finished. Aborting reload.");
+		logf(get_localized_string(LANG_0906));
 		return;
 	}
 	reloading = reloadingGameDir = true;
@@ -685,7 +686,7 @@ void Renderer::clearMaps()
 	}
 	mapRenderers.clear();
 	clearSelection();
-	logf("Cleared map list\n");
+	logf(get_localized_string(LANG_0907));
 }
 
 void Renderer::reloadMaps()
@@ -704,7 +705,7 @@ void Renderer::reloadMaps()
 	}
 
 	reloadBspModels();
-	logf("Reloaded maps\n");
+	logf(get_localized_string(LANG_0908));
 }
 
 void Renderer::saveSettings()
@@ -766,7 +767,7 @@ void Renderer::loadFgds()
 			Fgd* tmp = new Fgd(newFgdPath);
 			if (!tmp->parse())
 			{
-				logf("Fgd {} parsing failed.\n", g_settings.fgdPaths[i].path);
+				logf(get_localized_string(LANG_0909),g_settings.fgdPaths[i].path);
 				continue;
 			}
 			if (mergedFgd == NULL)
@@ -781,7 +782,7 @@ void Renderer::loadFgds()
 		}
 		else
 		{
-			logf("Missing fgd {}. Now this path disabled.\n", g_settings.fgdPaths[i].path);
+			logf(get_localized_string(LANG_0910),g_settings.fgdPaths[i].path);
 			FindPathInAssets(NULL, g_settings.fgdPaths[i].path, newFgdPath, true);
 			g_settings.fgdPaths[i].enabled = false;
 			continue;
@@ -2116,7 +2117,7 @@ void Renderer::reloadBspModels()
 						}
 						else
 						{
-							logf("Missing {} model file.\n", modelPath);
+							logf(get_localized_string(LANG_0911),modelPath);
 							FindPathInAssets(bsprend->map, modelPath, newBspPath, true);
 						}
 					}
@@ -2132,7 +2133,7 @@ void Renderer::addMap(Bsp* map)
 {
 	if (!map->bsp_valid)
 	{
-		logf("Invalid map!\n");
+		logf(get_localized_string(LANG_0912));
 		return;
 	}
 
@@ -2566,7 +2567,7 @@ void Renderer::updateModelVerts()
 	size_t numCubes = modelVerts.size() + modelEdges.size();
 	modelVertCubes = new cCube[numCubes];
 	modelVertBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, modelVertCubes, (int)(6 * 6 * numCubes), GL_TRIANGLES);
-	//logf("{} intersection points\n", modelVerts.size());
+	//logf(get_localized_string(LANG_0913),modelVerts.size());
 }
 
 void Renderer::updateSelectionSize()
@@ -2777,7 +2778,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 		if (verts.size() < 2)
 		{
 			if (g_settings.verboseLogs)
-				logf("Plane with less than 2 verts!?\n"); // hl_c00 pipe in green water place
+				logf(get_localized_string(LANG_0914)); // hl_c00 pipe in green water place
 			return false;
 		}
 
@@ -2848,7 +2849,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 			if (planeCount != 2)
 			{
 				if (g_settings.verboseLogs)
-					logf("ERROR: Edge connected to {} planes!\n", planeCount);
+					logf(get_localized_string(LANG_0915),planeCount);
 				return false;
 			}
 
@@ -3081,7 +3082,7 @@ bool Renderer::splitModelFace()
 	int entIdx = pickInfo.GetSelectedEnt();
 	if (!map)
 	{
-		logf("No selected map\n");
+		logf(get_localized_string(LANG_0916));
 		return false;
 	}
 	BspRenderer* mapRenderer = map->getBspRender();
@@ -3097,12 +3098,12 @@ bool Renderer::splitModelFace()
 
 	if (selectedEdges.size() != 2)
 	{
-		logf("Exactly 2 edges must be selected before splitting a face\n");
+		logf(get_localized_string(LANG_0917));
 		return false;
 	}
 	if (entIdx < 0)
 	{
-		logf("No selected entity\n");
+		logf(get_localized_string(LANG_0918));
 		return false;
 	}
 	Entity* ent = map->ents[entIdx];
@@ -3126,7 +3127,7 @@ bool Renderer::splitModelFace()
 
 	if (commonPlane == -1)
 	{
-		logf("Can't split edges that don't share a plane\n");
+		logf(get_localized_string(LANG_0919));
 		return false;
 	}
 
@@ -3153,7 +3154,7 @@ bool Renderer::splitModelFace()
 	}
 	if (commonPlaneIdx == -1)
 	{
-		logf("Failed to find splitting plane");
+		logf(get_localized_string(LANG_0920));
 		return false;
 	}
 
@@ -3217,14 +3218,14 @@ bool Renderer::splitModelFace()
 	std::vector<TransformVert> newHullVerts;
 	if (!map->getModelPlaneIntersectVerts(ent->getBspModelIdx(), modelPlanes, newHullVerts))
 	{
-		logf("Can't split here because the model would not be convex\n");
+		logf(get_localized_string(LANG_0921));
 		return false;
 	}
 
 	Solid newSolid;
 	if (!getModelSolid(newHullVerts, map, newSolid))
 	{
-		logf("Splitting here would invalidate the solid\n");
+		logf(get_localized_string(LANG_0922));
 		return false;
 	}
 
@@ -3245,7 +3246,7 @@ bool Renderer::splitModelFace()
 
 			if (verts.size() < 3)
 			{
-				logf("Can't split here because a face with less than 3 verts would be created\n");
+				logf(get_localized_string(LANG_0923));
 				return false;
 			}
 		}
@@ -3358,7 +3359,7 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 	}
 	else
 	{
-		logf("No map selected!\n");
+		logf(get_localized_string(LANG_0924));
 	}
 }
 
@@ -3477,7 +3478,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 	Bsp* map = SelectedMap;
 	if (!map)
 	{
-		logf("Select a map before pasting an ent\n");
+		logf(get_localized_string(LANG_0925));
 		return;
 	}
 

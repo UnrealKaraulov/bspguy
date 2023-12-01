@@ -1,3 +1,4 @@
+#include "lang.h"
 #pragma warning(disable: 4018) //amckern - 64bit - '<' Singed/Unsigned Mismatch
 
 #include "winding.h"
@@ -71,7 +72,7 @@ Winding::Winding(const BSPPLANE& plane, float epsilon)
 		}
 		if (x == -1)
 		{
-			logf("Winding::initFromPlane no major axis found\n");
+			logf(get_localized_string(LANG_1008));
 		}
 
 		
@@ -304,7 +305,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 
 	if (newNumPoints > maxpts)
 	{
-		logf("Winding::Clip : points exceeded estimate\n");
+		logf(get_localized_string(LANG_1009));
 	}
 
 	delete[] m_Points;

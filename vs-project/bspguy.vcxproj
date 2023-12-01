@@ -287,10 +287,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include=".\..\src\main.cpp" />
-    <ClInclude Include=".\..\src\util\ini.h" />
-    <ClCompile Include=".\..\src\util\ini.c" />
-    <ClInclude Include=".\..\src\util\INIReader.h" />
-    <ClCompile Include=".\..\src\util\INIReader.cpp" />
+    <ClCompile Include=".\..\src\util\lang.cpp" />
+    <ClInclude Include=".\..\src\util\lang.h" />
+    <ClInclude Include=".\..\src\util\lang_defs.h" />
+    <ClInclude Include=".\..\src\util\iniparser.hpp" />
     <ClInclude Include=".\..\src\util\quantizer.h" />
     <ClCompile Include=".\..\src\util\quantizer.cpp" />
     <ClInclude Include=".\..\src\cli\CommandLine.h" />

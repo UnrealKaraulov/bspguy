@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "ProgressMeter.h"
 #include <string>
 #include <stdio.h> 
@@ -40,7 +41,7 @@ void ProgressMeter::tick()
 	float percent = (progress / (float)progress_total) * 100;
 
 	for (int i = 0; i < 12; i++) logf("\b\b\b\b");
-	logf("\r          {:-32s} {:.0f}%", progress_title, percent);
+	logf(get_localized_string(LANG_0266),progress_title,percent);
 }
 
 void ProgressMeter::clear()

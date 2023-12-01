@@ -1,3 +1,4 @@
+#include "lang.h"
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
@@ -52,7 +53,7 @@ void StudioModel::CalcBoneAdj()
 				if (value > 1.0f) value = 1.0f;
 				value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
-			// logf( "{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt );
+			// logf("{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt );
 		}
 		else
 		{
@@ -488,13 +489,13 @@ void StudioModel::SetupModel(int bodypart)
 
 	if (bodypart >= m_pstudiohdr->numbodyparts || bodypart < 0)
 	{
-		logf ("StudioModel::SetupModel: no such bodypart {}\n", bodypart);
+		logf(get_localized_string(LANG_0979),bodypart);
 		bodypart = 0;
 	}
 
 	if (m_pstudiohdr->bodypartindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error m_pstudiohdr->bodypartindex is {}\n", m_pstudiohdr->bodypartindex);
+		logf(get_localized_string(LANG_0980),m_pstudiohdr->bodypartindex);
 	}
 
 	mstudiobodyparts_t* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex) + bodypart;
@@ -512,27 +513,27 @@ void StudioModel::SetupModel(int bodypart)
 
 	if (m_ptexturehdr->skinindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error m_ptexturehdr->skinindex is {}\n", m_ptexturehdr->skinindex);
+		logf(get_localized_string(LANG_0981),m_ptexturehdr->skinindex);
 	}
 
 	if (m_pmodel->normindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error m_pmodel->normindex is {}\n", m_pmodel->normindex);
+		logf(get_localized_string(LANG_0982),m_pmodel->normindex);
 	}
 
 	if (m_pmodel->vertindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error  m_pmodel->vertindex is {}\n", m_pmodel->vertindex);
+		logf(get_localized_string(LANG_0983),m_pmodel->vertindex);
 	}
 
 	if (m_pmodel->vertinfoindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error  m_pmodel->vertinfoindex is {}\n", m_pmodel->vertinfoindex);
+		logf(get_localized_string(LANG_0984),m_pmodel->vertinfoindex);
 	}
 
 	if (m_ptexturehdr->textureindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error  m_ptexturehdr->textureindex is {}\n", m_ptexturehdr->textureindex);
+		logf(get_localized_string(LANG_0985),m_ptexturehdr->textureindex);
 	}
 }
 
@@ -585,27 +586,27 @@ void StudioModel::RefreshMeshList(int body)
 
 	if (m_ptexturehdr->skinindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error m_ptexturehdr->skinindex is {}\n", m_ptexturehdr->skinindex);
+		logf(get_localized_string(LANG_1137),m_ptexturehdr->skinindex);
 	}
 
 	if (m_pmodel->normindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error m_pmodel->normindex is {}\n", m_pmodel->normindex);
+		logf(get_localized_string(LANG_1138),m_pmodel->normindex);
 	}
 
 	if (m_pmodel->vertindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error  m_pmodel->vertindex is {}\n", m_pmodel->vertindex);
+		logf(get_localized_string(LANG_1139),m_pmodel->vertindex);
 	}
 
 	if (m_pmodel->vertinfoindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error  m_pmodel->vertinfoindex is {}\n", m_pmodel->vertinfoindex);
+		logf(get_localized_string(LANG_1140),m_pmodel->vertinfoindex);
 	}
 
 	if (m_ptexturehdr->textureindex < 0)
 	{
-		logf("StudiModel::SetupModel fatal error  m_ptexturehdr->textureindex is {}\n", m_ptexturehdr->textureindex);
+		logf(get_localized_string(LANG_1141),m_ptexturehdr->textureindex);
 	}
 
 	if (m_skinnum >= 0 && m_skinnum < m_ptexturehdr->numskinfamilies)
@@ -855,7 +856,7 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname)
 	void* buffer = loadFile(modelname, size);
 	if (!buffer)
 	{
-		logf("Unable to open {}\n", modelname);
+		logf(get_localized_string(LANG_0986),modelname);
 		return NULL;
 	}
 	int i;
@@ -890,7 +891,7 @@ studioseqhdr_t* StudioModel::LoadDemandSequences(std::string modelname, int seqi
 	void* buffer = loadFile(str.str(), size);
 	if (!buffer)
 	{
-		logf("Unable to open sequence: {}\n", str.str());
+		logf(get_localized_string(LANG_0987),str.str());
 		return NULL;
 	}
 	return (studioseqhdr_t*)buffer;
@@ -991,12 +992,12 @@ void StudioModel::Init(std::string modelname)
 	m_pstudiohdr = LoadModel(modelname);
 	if (!m_pstudiohdr)
 	{
-		logf("Can't load model {}\n", modelname);
+		logf(get_localized_string(LANG_0988),modelname);
 		return;
 	}
 	if (g_settings.verboseLogs)
 	{
-		logf("Load model {} version {}\n", modelname, m_pstudiohdr->version);
+		logf(get_localized_string(LANG_0989),modelname,m_pstudiohdr->version);
 	}
 	// preload textures
 	if (m_pstudiohdr->numtextures == 0)

@@ -4,6 +4,9 @@
     <ClCompile Include=".\..\src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include=".\..\src\util\lang.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include=".\..\src\cli\CommandLine.cpp">
       <Filter>Source Files\cli</Filter>
     </ClCompile>
@@ -133,12 +136,6 @@
     <ClCompile Include=".\..\src\util\quantizer.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include=".\..\src\util\ini.c">
-      <Filter>Source Files\util</Filter>
-    </ClCompile>
-    <ClCompile Include=".\..\src\util\INIReader.cpp">
-      <Filter>Source Files\util</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -252,10 +249,13 @@
     <ClInclude Include=".\..\src\util\quantizer.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include=".\..\src\util\ini.h">
+    <ClInclude Include=".\..\src\util\iniparser.hpp">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include=".\..\src\util\INIReader.h">
+    <ClInclude Include=".\..\src\util\lang_defs.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\util\lang.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
   </ItemGroup>

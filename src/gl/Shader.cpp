@@ -1,3 +1,4 @@
+#include "lang.h"
 #include <GL/glew.h>
 #include "Shader.h"
 #include "util.h"
@@ -17,10 +18,10 @@ Shader::Shader(const char* sourceCode, int shaderType)
 		char* log = new char[512];
 		int len;
 		glGetShaderInfoLog(ID, 512, &len, log);
-		logf("Shader Compilation Failed (type {})\n", shaderType);
+		logf(get_localized_string(LANG_0959),shaderType);
 		logf(log);
 		if (len > 512)
-			logf("\nLog too big to fit!");
+			logf(get_localized_string(LANG_0960));
 		delete[] log;
 	}
 }

@@ -1,3 +1,4 @@
+#include "lang.h"
 #include <GL/glew.h>
 #include "Wad.h"
 #include "Texture.h"
@@ -16,7 +17,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 	this->id = this->format = this->iformat = 0;
 	snprintf(texName, 64, "%s", name);
 	if (g_settings.verboseLogs)
-		logf("Texture: {} {}/{} is loaded.\n", name, width, height);
+		logf(get_localized_string(LANG_0969),name,width,height);
 	this->transparentMode = IsTextureTransparent(name) ? 1 : 0;
 	if (name && name[0] == '{')
 	{
@@ -34,7 +35,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	this->id = this->format = this->iformat = 0;
 	snprintf(texName, 64, "%s", name);
 	if (g_settings.verboseLogs)
-		logf("Texture with data : {} {}/{} is loaded.\n", name, width, height);
+		logf(get_localized_string(LANG_0970),name,width,height);
 	this->transparentMode = IsTextureTransparent(name) ? 1 : 0;
 	if (name && name[0] == '{')
 	{
@@ -116,7 +117,7 @@ void Texture::upload(int _format, bool lightmap)
 	glTexImage2D(GL_TEXTURE_2D, 0, _format, width, height, 0, _format, GL_UNSIGNED_BYTE, data);
 
 	if (g_settings.verboseLogs)
-		logf("Load texture {} with {}/{} size\n", texName, width, height);
+		logf(get_localized_string(LANG_0971),texName,width,height);
 	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB, width, height);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
 

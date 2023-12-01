@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "VertexBuffer.h"
 #include "util.h"
 #include <string.h>
@@ -40,7 +41,7 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 			size = numValues * 4;
 			break;
 		default:
-			logf("Unknown attribute value type: {}", valueType);
+			logf(get_localized_string(LANG_0972),valueType);
 			handle = -1;
 			size = 0;
 	}
@@ -94,7 +95,7 @@ void VertexBuffer::addAttributes(int attFlags)
 			else if (i >= VBUF_TEX_START)
 				commonAttr[i].handle = shaderProgram->vtexID;
 			else
-				logf("Unused vertex buffer flag bit {}", i);
+				logf(get_localized_string(LANG_0973),i);
 
 			attribs.push_back(commonAttr[i]);
 			elementSize += commonAttr[i].size;
@@ -118,7 +119,7 @@ void VertexBuffer::addAttribute(int type, const char* varName) {
 	}
 
 	if (idx >= VBUF_FLAGBITS) {
-		logf("Invalid attribute type\n");
+		logf(get_localized_string(LANG_0974));
 		return;
 	}
 
@@ -159,7 +160,7 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 		attribs[i].handle = glGetAttribLocation(shaderProgram->ID, attribs[i].varName);
 
 		if (!hideErrors && attribs[i].handle == -1)
-			logf("Could not find vertex attribute: {}\n", attribs[i].varName);
+			logf(get_localized_string(LANG_0975),attribs[i].varName);
 	}
 
 	attributesBound = true;
@@ -233,11 +234,11 @@ void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors
 	}
 
 	if (start < 0 || start > numVerts || numVerts == 0)
-		logf("Invalid start index: {}. numVerts: {} \n", start, numVerts);
+		logf(get_localized_string(LANG_0976),start,numVerts);
 	else if (end > numVerts || end < 0)
-		logf("Invalid end index: {}\n", end);
+		logf(get_localized_string(LANG_0977),end);
 	else if (end - start <= 0)
-		logf("Invalid draw range: {} -> {}\n", start, end);
+		logf(get_localized_string(LANG_0978),start,end);
 	else
 		glDrawArrays(_primitive, start, end - start);
 

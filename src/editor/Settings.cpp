@@ -1,3 +1,4 @@
+#include "lang.h"
 #include "Settings.h"
 #include "Renderer.h"
 #include "util.h"
@@ -157,7 +158,7 @@ void AppSettings::load()
 	std::ifstream file(g_settings_path);
 	if (!file.is_open())
 	{
-		logf("No access to settings file {}!\n", g_settings_path);
+		logf(get_localized_string(LANG_0926),g_settings_path);
 		reset();
 		return;
 	}
@@ -276,7 +277,7 @@ void AppSettings::load()
 			g_settings.moveSpeed = (float)atof(val.c_str());
 			if (g_settings.moveSpeed < 100)
 			{
-				logf("Move speed can be 100 - 1000. Replaced to default value.\n");
+				logf(get_localized_string(LANG_0927));
 				g_settings.moveSpeed = 500;
 			}
 		}
@@ -479,7 +480,7 @@ void AppSettings::load()
 	if (lines_readed > 0)
 		g_settings.settingLoaded = true;
 	else
-		logf("Failed to load user config: {}\n", g_settings_path);
+		logf(get_localized_string(LANG_0928),g_settings_path);
 
 	if (defaultIsEmpty && fgdPaths.empty())
 	{
