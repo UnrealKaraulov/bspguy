@@ -87,7 +87,7 @@ jobs:
               with:
                   tag_name: ${{ needs.get_time_build.outputs.release_tag }}
                   files: |
-                    vs-project/Release/bspguy_debug.exe
+                    vs-project/Release/bspguy.exe
                     cfg/bspguy.cfg
                     cfg/language.ini
             
