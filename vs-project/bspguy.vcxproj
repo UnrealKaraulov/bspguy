@@ -290,7 +290,7 @@
     <ClCompile Include=".\..\src\util\lang.cpp" />
     <ClInclude Include=".\..\src\util\lang.h" />
     <ClInclude Include=".\..\src\util\lang_defs.h" />
-    <ClInclude Include=".\..\src\util\iniparser.hpp" />
+    <ClInclude Include=".\..\src\util\ini.h" />
     <ClInclude Include=".\..\src\util\quantizer.h" />
     <ClCompile Include=".\..\src\util\quantizer.cpp" />
     <ClInclude Include=".\..\src\cli\CommandLine.h" />

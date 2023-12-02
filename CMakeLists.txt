@@ -65,7 +65,7 @@ set(SOURCE_FILES
 	# utils
 	src/util/lodepng.h				src/util/lodepng.cpp
 	src/util/quantizer.h			src/util/quantizer.cpp
-	src/util/iniparser.hpp
+	src/util/ini.h
 	src/util/lang_defs.h
 	src/util/lang.h					src/util/lang.cpp
 	src/util/quantizer.h			src/util/quantizer.cpp

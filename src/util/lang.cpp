@@ -4,7 +4,7 @@
 #include "util.h"
 #include <fmt/format.h>
 
-INI::File * ft = NULL;
+inih::INIReader * ft = NULL;
 
 std::map<int, std::string> lang_db;
 std::map<std::string, std::string> lang_db_str;
@@ -20,7 +20,7 @@ std::string get_localized_string(int id)
 
 	if (itr == lang_db.end())
 	{
-		std::string value = ft->GetSection(g_settings.language)->GetValue(fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id)).AsString();
+		std::string value = ft->Get<std::string>(g_settings.language, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
 		replaceAll(value, "\\n", "\n");
 		lang_db[id] = value;
 		return value;
@@ -40,7 +40,7 @@ std::string get_localized_string(const std::string & str_id)
 
 	if (itr == lang_db_str.end())
 	{
-		std::string value = ft->GetSection(g_settings.language)->GetValue(str_id,str_id).AsString();
+		std::string value = ft->Get<std::string>(g_settings.language,str_id, fmt::format("NO {}", str_id));
 		replaceAll(value, "\\n", "\n");
 		lang_db_str[str_id] = value;
 		return value;
@@ -56,7 +56,7 @@ void set_localize_lang(std::string lang)
 		delete ft;
 	}
 
-	ft = new INI::File(g_config_dir + "language.ini");
+	ft = new inih::INIReader(g_config_dir + "language.ini");
 
 	g_settings.language = lang;
 	lang_db.clear();

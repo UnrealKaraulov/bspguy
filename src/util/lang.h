@@ -1,9 +1,9 @@
 #pragma once
 #include "lang_defs.h"
 #include <string>
-#include "iniparser.hpp"
+#include "ini.h"
 
-extern INI::File* ft;
+extern inih::INIReader * ft;
 
 extern std::map<int, std::string> lang_db;
 extern std::string lang_selected;

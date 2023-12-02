@@ -249,7 +249,7 @@
     <ClInclude Include=".\..\src\util\quantizer.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include=".\..\src\util\iniparser.hpp">
+    <ClInclude Include=".\..\src\util\ini.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
     <ClInclude Include=".\..\src\util\lang_defs.h">
