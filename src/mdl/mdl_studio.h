@@ -394,11 +394,11 @@ public:
 	float frametime;        //for small fps render
 	float m_frame;			// frame
 	int m_sequence;			// sequence index
-	int m_bodynum = 0;			// bodypart selection	
+	int m_bodynum;			// bodypart selection	
 	int m_skinnum;			// skin group selection
 	int m_iGroup;
 	int m_iGroupValue;      // subbody 
-	bool needForceUpdate = false;
+	bool needForceUpdate;
 	unsigned char m_controller[4];	// bone controllers
 	unsigned char m_blending[2];		// animation blending
 	unsigned char m_mouth = 0;			// mouth position
@@ -441,6 +441,8 @@ public:
 	StudioModel(const std::string modelname)
 	{
 		fps = 30.0;
+		m_bodynum = 0;
+		needForceUpdate = true;
 		frametime = 999999.0f;
 		filename = modelname;
 		g_vright = vec3();
@@ -486,13 +488,25 @@ public:
 			g_lightvalues[i][1] = 1.0f;
 			g_lightvalues[i][2] = 1.0f;
 		}
+
 		Init(filename);
+		SetSkin(0);
+
 		SetSequence(0);
 		SetController(0, 0.0f);
 		SetController(1, 0.0f);
 		SetController(2, 0.0f);
 		SetController(3, 0.0f);
 		SetMouth(0.0f);
+
+		if (m_pstudiohdr)
+		{
+			for (int n = 0; n < m_pstudiohdr->numbodyparts; ++n)
+			{
+				SetBodygroup(n, 0);
+			}
+		}
+		SetSkin(0);
 	}
 	~StudioModel()
 	{

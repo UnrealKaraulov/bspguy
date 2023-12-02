@@ -88,25 +88,6 @@ TEST(string_view_test, compare) {
   check_op<std::greater_equal>();
 }
 
-namespace test_ns {
-template <typename Char> class test_string {
- private:
-  std::basic_string<Char> s_;
-
- public:
-  test_string(const Char* s) : s_(s) {}
-  auto data() const -> const Char* { return s_.data(); }
-  auto length() const -> size_t { return s_.size(); }
-  operator const Char*() const { return s_.c_str(); }
-};
-
-template <typename Char>
-auto to_string_view(const test_string<Char>& s)
-    -> fmt::basic_string_view<Char> {
-  return {s.data(), s.length()};
-}
-}  // namespace test_ns
-
 TEST(core_test, is_output_iterator) {
   EXPECT_TRUE((fmt::detail::is_output_iterator<char*, char>::value));
   EXPECT_FALSE((fmt::detail::is_output_iterator<const char*, char>::value));
@@ -160,7 +141,7 @@ TEST(buffer_test, indestructible) {
 }
 
 template <typename T> struct mock_buffer final : buffer<T> {
-  MOCK_METHOD1(do_grow, size_t(size_t capacity));
+  MOCK_METHOD(size_t, do_grow, (size_t));
 
   void grow(size_t capacity) override {
     this->set(this->data(), do_grow(capacity));
@@ -292,7 +273,7 @@ struct custom_context {
   bool called = false;
 
   template <typename T> struct formatter_type {
-    auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+    FMT_CONSTEXPR auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
       return ctx.begin();
     }
 
@@ -309,7 +290,7 @@ struct test_struct {};
 
 FMT_BEGIN_NAMESPACE
 template <typename Char> struct formatter<test_struct, Char> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
@@ -346,8 +327,8 @@ template <typename T> struct mock_visitor {
     ON_CALL(*this, visit(_)).WillByDefault(Return(test_result()));
   }
 
-  MOCK_METHOD1_T(visit, test_result(T value));
-  MOCK_METHOD0_T(unexpected, void());
+  MOCK_METHOD(test_result, visit, (T));
+  MOCK_METHOD(void, unexpected, ());
 
   auto operator()(T value) -> test_result { return visit(value); }
 
@@ -380,10 +361,11 @@ VISIT_TYPE(unsigned long, unsigned long long);
     testing::StrictMock<mock_visitor<decltype(expected)>> visitor;        \
     EXPECT_CALL(visitor, visit(expected));                                \
     using iterator = std::back_insert_iterator<buffer<Char>>;             \
+    auto var = value;                                                     \
     fmt::visit_format_arg(                                                \
         visitor,                                                          \
         fmt::detail::make_arg<fmt::basic_format_context<iterator, Char>>( \
-            value));                                                      \
+            var));                                                        \
   }
 
 #define CHECK_ARG_SIMPLE(value)                             \
@@ -591,7 +573,7 @@ struct disabled_formatter_convertible {
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<enabled_formatter> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
   auto format(enabled_formatter, format_context& ctx) const
@@ -601,7 +583,7 @@ template <> struct formatter<enabled_formatter> {
 };
 
 template <> struct formatter<enabled_ptr_formatter*> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
   auto format(enabled_ptr_formatter*, format_context& ctx) const
@@ -625,7 +607,7 @@ struct nonconst_formattable {};
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<const_formattable> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
@@ -637,7 +619,7 @@ template <> struct formatter<const_formattable> {
 };
 
 template <> struct formatter<nonconst_formattable> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
@@ -659,7 +641,7 @@ struct convertible_to_pointer_formattable {
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<convertible_to_pointer_formattable> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
@@ -672,21 +654,6 @@ template <> struct formatter<convertible_to_pointer_formattable> {
 FMT_END_NAMESPACE
 
 enum class unformattable_scoped_enum {};
-
-namespace test {
-enum class scoped_enum_as_int {};
-auto format_as(scoped_enum_as_int) -> int { return 42; }
-
-enum class scoped_enum_as_string {};
-auto format_as(scoped_enum_as_string) -> fmt::string_view { return "foo"; }
-
-struct struct_as_int {};
-auto format_as(struct_as_int) -> int { return 42; }
-
-struct convertible_to_enum {
-  operator scoped_enum_as_int() const { return {}; }
-};
-}  // namespace test
 
 TEST(core_test, is_formattable) {
   static_assert(!fmt::is_formattable<wchar_t>::value, "");
@@ -706,7 +673,8 @@ TEST(core_test, is_formattable) {
   static_assert(fmt::is_formattable<enabled_formatter>::value, "");
   static_assert(!fmt::is_formattable<enabled_ptr_formatter*>::value, "");
   static_assert(!fmt::is_formattable<disabled_formatter>::value, "");
-  static_assert(fmt::is_formattable<disabled_formatter_convertible>::value, "");
+  static_assert(!fmt::is_formattable<disabled_formatter_convertible>::value,
+                "");
 
   static_assert(fmt::is_formattable<const_formattable&>::value, "");
   static_assert(fmt::is_formattable<const const_formattable&>::value, "");
@@ -726,7 +694,6 @@ TEST(core_test, is_formattable) {
   static_assert(!fmt::is_formattable<int(s::*)>::value, "");
   static_assert(!fmt::is_formattable<int (s::*)()>::value, "");
   static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
-  static_assert(fmt::is_formattable<test::scoped_enum_as_int>::value, "");
   static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
 }
 
@@ -736,12 +703,6 @@ TEST(core_test, format_to) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", 42);
   EXPECT_EQ(s, "42");
-}
-
-TEST(core_test, format_as) {
-  EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_int()), "42");
-  EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string()), "foo");
-  EXPECT_EQ(fmt::format("{}", test::struct_as_int()), "42");
 }
 
 #ifdef __cpp_lib_byte
@@ -760,7 +721,7 @@ struct convertible_to_cstring {
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<convertible_to_int> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
   auto format(convertible_to_int, format_context& ctx) const
@@ -789,15 +750,6 @@ TEST(core_test, formatter_overrides_implicit_conversion) {
 template <typename T> void check(T);
 TEST(core_test, adl_check) {
   EXPECT_EQ(fmt::format("{}", test_struct()), "test");
-}
-
-TEST(core_test, to_string_view_foreign_strings) {
-  using namespace test_ns;
-  EXPECT_EQ(to_string_view(test_string<char>("42")), "42");
-  fmt::detail::type type =
-      fmt::detail::mapped_type_constant<test_string<char>,
-                                        fmt::format_context>::value;
-  EXPECT_EQ(type, fmt::detail::type::string_type);
 }
 
 struct implicitly_convertible_to_string_view {
@@ -848,25 +800,6 @@ TEST(core_test, format_explicitly_convertible_to_std_string_view) {
 #  endif
 #endif
 
-struct convertible_to_long_long {
-  operator long long() const { return 1LL << 32; }
-};
-
-TEST(core_test, format_convertible_to_long_long) {
-  EXPECT_EQ("100000000", fmt::format("{:x}", convertible_to_long_long()));
-}
-
-struct disabled_rvalue_conversion {
-  operator const char*() const& { return "foo"; }
-  operator const char*() & { return "foo"; }
-  operator const char*() const&& = delete;
-  operator const char*() && = delete;
-};
-
-TEST(core_test, disabled_rvalue_conversion) {
-  EXPECT_EQ("foo", fmt::format("{}", disabled_rvalue_conversion()));
-}
-
 namespace adl_test {
 template <typename... T> void make_format_args(const T&...) = delete;
 
@@ -897,4 +830,29 @@ TEST(core_test, has_const_formatter) {
 
 TEST(core_test, format_nonconst) {
   EXPECT_EQ(fmt::format("{}", nonconst_formattable()), "test");
+}
+
+struct its_a_trap {
+  template <typename T> operator T() const {
+    auto v = T();
+    v.x = 42;
+    return v;
+  }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<its_a_trap> {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(its_a_trap, format_context& ctx) const -> decltype(ctx.out()) {
+    auto s = string_view("42");
+    return std::copy(s.begin(), s.end(), ctx.out());
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(core_test, trappy_conversion) {
+  EXPECT_EQ(fmt::format("{}", its_a_trap()), "42");
 }

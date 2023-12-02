@@ -320,5 +320,13 @@
     <Filter Include="Header Files\mdl">
       <UniqueIdentifier>{2e824899-a531-420a-9366-e0eff9a74666}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Langs">
+      <UniqueIdentifier>{a14cf2b6-d07f-4c0a-9f11-120d543080b8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\cfg\language.ini">
+      <Filter>Langs</Filter>
+    </None>
   </ItemGroup>
 </Project>

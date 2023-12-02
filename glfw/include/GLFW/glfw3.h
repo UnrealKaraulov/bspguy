@@ -1164,6 +1164,9 @@ extern "C" {
 #define GLFW_ANGLE_PLATFORM_TYPE_VULKAN  0x00037007
 #define GLFW_ANGLE_PLATFORM_TYPE_METAL   0x00037008
 
+#define GLFW_WAYLAND_PREFER_LIBDECOR    0x00038001
+#define GLFW_WAYLAND_DISABLE_LIBDECOR   0x00038002
+
 #define GLFW_ANY_POSITION           0x80000000
 
 /*! @defgroup shapes Standard cursor shapes
@@ -1307,6 +1310,11 @@ extern "C" {
  *  X11 specific [init hint](@ref GLFW_X11_XCB_VULKAN_SURFACE_hint).
  */
 #define GLFW_X11_XCB_VULKAN_SURFACE 0x00052001
+/*! @brief Wayland specific init hint.
+ *
+ *  Wayland specific [init hint](@ref GLFW_WAYLAND_LIBDECOR_hint).
+ */
+#define GLFW_WAYLAND_LIBDECOR       0x00053001
 /*! @} */
 
 /*! @addtogroup init
@@ -5050,9 +5058,9 @@ GLFWAPI void glfwSetCursor(GLFWwindow* window, GLFWcursor* cursor);
  *  [character callback](@ref glfwSetCharCallback) instead.
  *
  *  When a window loses input focus, it will generate synthetic key release
- *  events for all pressed keys.  You can tell these events from user-generated
- *  events by the fact that the synthetic ones are generated after the focus
- *  loss event has been processed, i.e. after the
+ *  events for all pressed named keys.  You can tell these events from
+ *  user-generated events by the fact that the synthetic ones are generated
+ *  after the focus loss event has been processed, i.e. after the
  *  [window focus callback](@ref glfwSetWindowFocusCallback) has been called.
  *
  *  The scancode of a key is specific to that platform or sometimes even to that

@@ -16,6 +16,7 @@
 #include "fmt/color.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
+#include "fmt/std.h"
 #include "gtest-extra.h"  // Contains
 #include "util.h"         // get_locale
 
@@ -29,25 +30,7 @@ using testing::Contains;
 #  define FMT_HAS_C99_STRFTIME 1
 #endif
 
-namespace test_ns {
-template <typename Char> class test_string {
- private:
-  std::basic_string<Char> s_;
-
- public:
-  test_string(const Char* s) : s_(s) {}
-  const Char* data() const { return s_.data(); }
-  size_t length() const { return s_.size(); }
-  operator const Char*() const { return s_.c_str(); }
-};
-
-template <typename Char>
-fmt::basic_string_view<Char> to_string_view(const test_string<Char>& s) {
-  return {s.data(), s.length()};
-}
-
 struct non_string {};
-}  // namespace test_ns
 
 template <typename T> class is_string_test : public testing::Test {};
 
@@ -69,8 +52,7 @@ TYPED_TEST(is_string_test, is_string) {
   using fmt_string_view = fmt::detail::std_string_view<TypeParam>;
   EXPECT_TRUE(std::is_empty<fmt_string_view>::value !=
               fmt::detail::is_string<fmt_string_view>::value);
-  EXPECT_TRUE(fmt::detail::is_string<test_ns::test_string<TypeParam>>::value);
-  EXPECT_FALSE(fmt::detail::is_string<test_ns::non_string>::value);
+  EXPECT_FALSE(fmt::detail::is_string<non_string>::value);
 }
 
 // std::is_constructible is broken in MSVC until version 2015.
@@ -120,10 +102,70 @@ struct custom_char {
   template <typename T>
   constexpr custom_char(T val) : value(static_cast<int>(val)) {}
 
-  operator char() const {
+  constexpr operator char() const {
     return value <= 0xff ? static_cast<char>(value) : '\0';
   }
+  constexpr bool operator<(custom_char c) const { return value < c.value; }
 };
+
+namespace std {
+
+template <> struct char_traits<custom_char> {
+  using char_type = custom_char;
+  using int_type = int;
+  using off_type = streamoff;
+  using pos_type = streampos;
+  using state_type = mbstate_t;
+
+  static constexpr void assign(char_type& r, const char_type& a) { r = a; }
+  static constexpr bool eq(char_type a, char_type b) { return a == b; }
+  static constexpr bool lt(char_type a, char_type b) { return a < b; }
+  static FMT_CONSTEXPR int compare(const char_type* s1, const char_type* s2,
+                                   size_t count) {
+    for (; count; count--, s1++, s2++) {
+      if (lt(*s1, *s2)) return -1;
+      if (lt(*s2, *s1)) return 1;
+    }
+    return 0;
+  }
+  static FMT_CONSTEXPR size_t length(const char_type* s) {
+    size_t count = 0;
+    while (!eq(*s++, custom_char(0))) count++;
+    return count;
+  }
+  static const char_type* find(const char_type*, size_t, const char_type&);
+  static FMT_CONSTEXPR char_type* move(char_type* dest, const char_type* src,
+                                       size_t count) {
+    if (count == 0) return dest;
+    char_type* ret = dest;
+    if (src < dest) {
+      dest += count;
+      src += count;
+      for (; count; count--) assign(*--dest, *--src);
+    } else if (src > dest)
+      copy(dest, src, count);
+    return ret;
+  }
+  static FMT_CONSTEXPR char_type* copy(char_type* dest, const char_type* src,
+                                       size_t count) {
+    char_type* ret = dest;
+    for (; count; count--) assign(*dest++, *src++);
+    return ret;
+  }
+  static FMT_CONSTEXPR char_type* assign(char_type* dest, std::size_t count,
+                                         char_type a) {
+    char_type* ret = dest;
+    for (; count; count--) assign(*dest++, a);
+    return ret;
+  }
+  static int_type not_eof(int_type);
+  static char_type to_char_type(int_type);
+  static int_type to_int_type(char_type);
+  static bool eq_int_type(int_type, int_type);
+  static int_type eof();
+};
+
+}  // namespace std
 
 auto to_ascii(custom_char c) -> char { return c; }
 
@@ -145,18 +187,6 @@ template <typename S> std::string from_u8str(const S& str) {
   return std::string(str.begin(), str.end());
 }
 
-TEST(xchar_test, format_utf8_precision) {
-  using str_type = std::basic_string<fmt::detail::char8_type>;
-  auto format =
-      str_type(reinterpret_cast<const fmt::detail::char8_type*>(u8"{:.4}"));
-  auto str = str_type(reinterpret_cast<const fmt::detail::char8_type*>(
-      u8"caf\u00e9s"));  // cafés
-  auto result = fmt::format(format, str);
-  EXPECT_EQ(fmt::detail::compute_width(result), 4);
-  EXPECT_EQ(result.size(), 5);
-  EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
-}
-
 TEST(xchar_test, format_to) {
   auto buf = std::vector<wchar_t>();
   fmt::format_to(std::back_inserter(buf), L"{}{}", 42, L'\0');
@@ -164,15 +194,19 @@ TEST(xchar_test, format_to) {
 }
 
 TEST(xchar_test, vformat_to) {
-  using wcontext = fmt::wformat_context;
-  fmt::basic_format_arg<wcontext> warg = fmt::detail::make_arg<wcontext>(42);
-  auto wargs = fmt::basic_format_args<wcontext>(&warg, 1);
+  auto args = fmt::make_wformat_args(42);
   auto w = std::wstring();
-  fmt::vformat_to(std::back_inserter(w), L"{}", wargs);
+  fmt::vformat_to(std::back_inserter(w), L"{}", args);
   EXPECT_EQ(L"42", w);
-  w.clear();
-  fmt::vformat_to(std::back_inserter(w), FMT_STRING(L"{}"), wargs);
-  EXPECT_EQ(L"42", w);
+}
+
+namespace test {
+struct struct_as_wstring_view {};
+auto format_as(struct_as_wstring_view) -> fmt::wstring_view { return L"foo"; }
+}  // namespace test
+
+TEST(xchar_test, format_as) {
+  EXPECT_EQ(fmt::format(L"{}", test::struct_as_wstring_view()), L"foo");
 }
 
 TEST(format_test, wide_format_to_n) {
@@ -210,7 +244,10 @@ TEST(xchar_test, named_arg_udl) {
 
 TEST(xchar_test, print) {
   // Check that the wide print overload compiles.
-  if (fmt::detail::const_check(false)) fmt::print(L"test");
+  if (fmt::detail::const_check(false)) {
+    fmt::print(L"test");
+    fmt::println(L"test");
+  }
 }
 
 TEST(xchar_test, join) {
@@ -382,9 +419,17 @@ TEST(xchar_test, color) {
 
 TEST(xchar_test, ostream) {
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 409
-  std::wostringstream wos;
-  fmt::print(wos, L"Don't {}!", L"panic");
-  EXPECT_EQ(wos.str(), L"Don't panic!");
+  {
+    std::wostringstream wos;
+    fmt::print(wos, L"Don't {}!", L"panic");
+    EXPECT_EQ(wos.str(), L"Don't panic!");
+  }
+
+  {
+    std::wostringstream wos;
+    fmt::println(wos, L"Don't {}!", L"panic");
+    EXPECT_EQ(wos.str(), L"Don't panic!\n");
+  }
 #endif
 }
 
@@ -438,6 +483,9 @@ TEST(locale_test, localized_double) {
   EXPECT_EQ(fmt::format(loc, "{:L}", 1234.5), "1~234?5");
   EXPECT_EQ(fmt::format(loc, "{:L}", 12000.0), "12~000");
   EXPECT_EQ(fmt::format(loc, "{:8L}", 1230.0), "   1~230");
+  EXPECT_EQ(fmt::format(loc, "{:15.6Lf}", 0.1), "       0?100000");
+  EXPECT_EQ(fmt::format(loc, "{:15.6Lf}", 1.0), "       1?000000");
+  EXPECT_EQ(fmt::format(loc, "{:15.6Lf}", 1e3), "   1~000?000000");
 }
 
 TEST(locale_test, format) {
@@ -446,8 +494,8 @@ TEST(locale_test, format) {
   EXPECT_EQ("1~234~567", fmt::format(loc, "{:L}", 1234567));
   EXPECT_EQ("-1~234~567", fmt::format(loc, "{:L}", -1234567));
   EXPECT_EQ("-256", fmt::format(loc, "{:L}", -256));
-  fmt::format_arg_store<fmt::format_context, int> as{1234567};
-  EXPECT_EQ("1~234~567", fmt::vformat(loc, "{:L}", fmt::format_args(as)));
+  auto n = 1234567;
+  EXPECT_EQ("1~234~567", fmt::vformat(loc, "{:L}", fmt::make_format_args(n)));
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), loc, "{:L}", 1234567);
   EXPECT_EQ("1~234~567", s);
@@ -480,10 +528,9 @@ TEST(locale_test, wformat) {
   auto loc = std::locale(std::locale(), new numpunct<wchar_t>());
   EXPECT_EQ(L"1234567", fmt::format(std::locale(), L"{:L}", 1234567));
   EXPECT_EQ(L"1~234~567", fmt::format(loc, L"{:L}", 1234567));
-  using wcontext = fmt::buffer_context<wchar_t>;
-  fmt::format_arg_store<wcontext, int> as{1234567};
+  int n = 1234567;
   EXPECT_EQ(L"1~234~567",
-            fmt::vformat(loc, L"{:L}", fmt::basic_format_args<wcontext>(as)));
+            fmt::vformat(loc, L"{:L}", fmt::make_wformat_args(n)));
   EXPECT_EQ(L"1234567", fmt::format(std::locale("C"), L"{:L}", 1234567));
 
   auto no_grouping_loc = std::locale(std::locale(), new no_grouping<wchar_t>());
@@ -555,23 +602,28 @@ TEST(locale_test, complex) {
 }
 
 TEST(locale_test, chrono_weekday) {
-  auto loc = get_locale("ru_RU.UTF-8", "Russian_Russia.1251");
+  auto loc = get_locale("es_ES.UTF-8", "Spanish_Spain.1252");
   auto loc_old = std::locale::global(loc);
-  auto mon = fmt::weekday(1);
-  EXPECT_EQ(fmt::format(L"{}", mon), L"Mon");
+  auto sat = fmt::weekday(6);
+  EXPECT_EQ(fmt::format(L"{}", sat), L"Sat");
   if (loc != std::locale::classic()) {
-    // {L"\x43F\x43D", L"\x41F\x43D", L"\x43F\x43D\x434", L"\x41F\x43D\x434"}
-    // {L"пн", L"Пн", L"пнд", L"Пнд"}
-    EXPECT_THAT(
-        (std::vector<std::wstring>{L"\x43F\x43D", L"\x41F\x43D",
-                                   L"\x43F\x43D\x434", L"\x41F\x43D\x434"}),
-        Contains(fmt::format(loc, L"{:L}", mon)));
+    // L'\xE1' is 'á'.
+    auto saturdays = std::vector<std::wstring>{L"s\xE1""b", L"s\xE1."};
+    EXPECT_THAT(saturdays, Contains(fmt::format(loc, L"{:L}", sat)));
   }
   std::locale::global(loc_old);
 }
 
 TEST(locale_test, sign) {
   EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
+}
+
+TEST(std_test_xchar, optional) {
+#  ifdef __cpp_lib_optional
+  EXPECT_EQ(fmt::format(L"{}", std::optional{L'C'}), L"optional(\'C\')");
+  EXPECT_EQ(fmt::format(L"{}", std::optional{std::wstring{L"wide string"}}),
+            L"optional(\"wide string\")");
+#  endif
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

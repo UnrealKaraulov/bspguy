@@ -134,6 +134,7 @@ private:
 	void drawKeyvalueEditor_FlagsTab(int entIdx);
 	void drawKeyvalueEditor_RawEditTab(int entIdx);
 	void drawGOTOWidget();
+	void drawMDLWidget();
 	void drawTransformWidget();
 	void drawLog();
 	void drawSettings();

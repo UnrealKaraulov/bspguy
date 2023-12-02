@@ -37,7 +37,7 @@ function(add_fmt_test name)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-weak-vtables)
     endif ()
   elseif (ADD_FMT_TEST_MODULE)
-    set(libs gtest test-module)
+    set(libs test-main test-module)
     set_source_files_properties(${name}.cc PROPERTIES OBJECT_DEPENDS test-module)
   else ()
     set(libs test-main fmt)
@@ -54,6 +54,10 @@ function(add_fmt_test name)
   endif ()
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
+
+if (FMT_MODULE)
+  return ()
+endif ()
 
 add_fmt_test(args-test)
 add_fmt_test(assert-test)
@@ -171,7 +175,12 @@ if (FMT_PEDANTIC)
 endif ()
 
 # These tests are disabled on Windows because they take too long.
-if (FMT_PEDANTIC AND NOT WIN32)
+# They are disabled on GCC < 4.9 because it can not parse UDLs without
+# a space after `operator""` but that is an incorrect syntax for any more
+# modern compiler.
+if (FMT_PEDANTIC AND NOT WIN32 AND NOT (
+    CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND
+    CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9))
   # Test if incorrect API usages produce compilation error.
   add_test(compile-error-test ${CMAKE_CTEST_COMMAND}
     --build-and-test

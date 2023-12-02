@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include "scan.h"
+#include "fmt/os.h"
 
 #include <time.h>
 
@@ -70,7 +71,7 @@ namespace fmt {
 template <> struct scanner<tm> {
   std::string format;
 
-  scan_parse_context::iterator parse(scan_parse_context& ctx) {
+  auto parse(scan_parse_context& ctx) -> scan_parse_context::iterator {
     auto it = ctx.begin();
     if (it != ctx.end() && *it == ':') ++it;
     auto end = it;
@@ -82,7 +83,7 @@ template <> struct scanner<tm> {
   }
 
   template <class ScanContext>
-  typename ScanContext::iterator scan(tm& t, ScanContext& ctx) {
+  auto scan(tm& t, ScanContext& ctx) const -> typename ScanContext::iterator {
     auto result = strptime(ctx.begin(), format.c_str(), &t);
     if (!result) throw format_error("failed to parse time");
     return result;
@@ -114,3 +115,16 @@ TEST(scan_test, example) {
   EXPECT_EQ(key, "answer");
   EXPECT_EQ(value, 42);
 }
+
+#if FMT_USE_FCNTL
+TEST(scan_test, file) {
+  fmt::file read_end, write_end;
+  fmt::file::pipe(read_end, write_end);
+  fmt::string_view input = "4";
+  write_end.write(input.data(), input.size());
+  write_end.close();
+  int value = 0;
+  fmt::scan(read_end.fdopen("r").get(), "{}", value);
+  EXPECT_EQ(value, 4);
+}
+#endif  // FMT_USE_FCNTL

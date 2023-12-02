@@ -22,6 +22,9 @@
    :alt: Ask questions at StackOverflow with the tag fmt
    :target: https://stackoverflow.com/questions/tagged/fmt
 
+.. image:: https://api.securityscorecards.dev/projects/github.com/fmtlib/fmt/badge
+   :target: https://securityscorecards.dev/viewer/?uri=github.com/fmtlib/fmt
+
 **{fmt}** is an open-source formatting library providing a fast and safe
 alternative to C stdio and C++ iostreams.
 
@@ -43,12 +46,14 @@ Features
 * Simple `format API <https://fmt.dev/latest/api.html>`_ with positional arguments
   for localization
 * Implementation of `C++20 std::format
-  <https://en.cppreference.com/w/cpp/utility/format>`__
+  <https://en.cppreference.com/w/cpp/utility/format>`__ and `C++23 std::print
+  <https://en.cppreference.com/w/cpp/io/print>`__
 * `Format string syntax <https://fmt.dev/latest/syntax.html>`_ similar to Python's
   `format <https://docs.python.org/3/library/stdtypes.html#str.format>`_
 * Fast IEEE 754 floating-point formatter with correct rounding, shortness and
   round-trip guarantees using the `Dragonbox <https://github.com/jk-jeon/dragonbox>`_
   algorithm
+* Portable Unicode support
 * Safe `printf implementation
   <https://fmt.dev/latest/api.html#printf-formatting>`_ including the POSIX
   extension for positional arguments
@@ -65,7 +70,7 @@ Features
   <https://github.com/fmtlib/fmt/tree/master/test>`_ and is `continuously fuzzed
   <https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20
   Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dfmt&can=1>`_
-* Safety: the library is fully type safe, errors in format strings can be
+* Safety: the library is fully type-safe, errors in format strings can be
   reported at compile time, automatic memory management prevents buffer overflow
   errors
 * Ease of use: small self-contained code base, no external dependencies,
@@ -75,7 +80,7 @@ Features
   consistent output across platforms and support for older compilers
 * Clean warning-free codebase even on high warning levels such as
   ``-Wall -Wextra -pedantic``
-* Locale-independence by default
+* Locale independence by default
 * Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro
 
 See the `documentation <https://fmt.dev>`_ for more details.
@@ -88,7 +93,7 @@ Examples
 .. code:: c++
 
     #include <fmt/core.h>
-    
+
     int main() {
       fmt::print("Hello, world!\n");
     }
@@ -173,15 +178,15 @@ This can be `5 to 9 times faster than fprintf
       fmt::print(fg(fmt::color::crimson) | fmt::emphasis::bold,
                  "Hello, {}!\n", "world");
       fmt::print(fg(fmt::color::floral_white) | bg(fmt::color::slate_gray) |
-                 fmt::emphasis::underline, "Hello, {}!\n", "мир");
+                 fmt::emphasis::underline, "Olá, {}!\n", "Mundo");
       fmt::print(fg(fmt::color::steel_blue) | fmt::emphasis::italic,
-                 "Hello, {}!\n", "世界");
+                 "你好{}！\n", "世界");
     }
 
-Output on a modern terminal:
+Output on a modern terminal with Unicode support:
 
-.. image:: https://user-images.githubusercontent.com/
-           576385/88485597-d312f600-cf2b-11ea-9cbe-61f535a86e28.png
+.. image:: https://github.com/fmtlib/fmt/assets/
+           576385/2a93c904-d6fa-4aa6-b453-2618e1c327d7
 
 Benchmarks
 ----------
@@ -225,7 +230,7 @@ The script `bloat-test.py
 from `format-benchmark <https://github.com/fmtlib/format-benchmark>`_
 tests compile time and code bloat for nontrivial projects.
 It generates 100 translation units and uses ``printf()`` or its alternative
-five times in each to simulate a medium sized project.  The resulting
+five times in each to simulate a medium-sized project.  The resulting
 executable size and compile time (Apple LLVM version 8.1.0 (clang-802.0.42),
 macOS Sierra, best of three) is shown in the following tables.
 
@@ -246,7 +251,7 @@ As you can see, {fmt} has 60% less overhead in terms of resulting binary code
 size compared to iostreams and comes pretty close to ``printf``. Boost Format
 and Folly Format have the largest overheads.
 
-``printf+string`` is the same as ``printf`` but with extra ``<string>``
+``printf+string`` is the same as ``printf`` but with an extra ``<string>``
 include to measure the overhead of the latter.
 
 **Non-optimized build**
@@ -262,14 +267,14 @@ Boost Format             54.1                  365                303
 Folly Format             79.9                  445                430
 ============= =============== ==================== ==================
 
-``libc``, ``lib(std)c++`` and ``libfmt`` are all linked as shared libraries to
+``libc``, ``lib(std)c++``, and ``libfmt`` are all linked as shared libraries to
 compare formatting function overhead only. Boost Format is a
 header-only library so it doesn't provide any linkage options.
 
 Running the tests
 ~~~~~~~~~~~~~~~~~
 
-Please refer to `Building the library`__ for the instructions on how to build
+Please refer to `Building the library`__ for instructions on how to build
 the library and run the unit tests.
 
 __ https://fmt.dev/latest/usage.html#building-the-library
@@ -290,13 +295,16 @@ Then you can run the speed test::
 or the bloat test::
 
     $ make bloat-test
-    
+
 Migrating code
 --------------
 
-`clang-tidy-fmt <https://github.com/mikecrowe/clang-tidy-fmt>`_ provides clang
-tidy checks for converting occurrences of ``printf`` and ``fprintf`` to
-``fmt::print``.
+`clang-tidy <https://clang.llvm.org/extra/clang-tidy/>`_ v17 (not yet
+released) provides the `modernize-use-std-print
+<https://clang.llvm.org/extra/clang-tidy/checks/modernize/use-std-print.html>`_
+check that is capable of converting occurrences of ``printf`` and
+``fprintf`` to ``fmt::print`` if configured to do so. (By default it
+converts to ``std::print``.)
 
 Projects using this library
 ---------------------------
@@ -304,19 +312,17 @@ Projects using this library
 * `0 A.D. <https://play0ad.com/>`_: a free, open-source, cross-platform
   real-time strategy game
 
-* `2GIS <https://2gis.ru/>`_: free business listings with a city map
-
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   an open-source library for mathematical programming
 
 * `Aseprite <https://github.com/aseprite/aseprite>`_:
-  animated sprite editor & pixel art tool 
+  animated sprite editor & pixel art tool
 
 * `AvioBook <https://www.aviobook.aero/en>`_: a comprehensive aircraft
   operations suite
-  
+
 * `Blizzard Battle.net <https://battle.net/>`_: an online gaming platform
-  
+
 * `Celestia <https://celestia.space/>`_: real-time 3D visualization of space
 
 * `Ceph <https://ceph.com/>`_: a scalable distributed storage system
@@ -325,7 +331,7 @@ Projects using this library
 
 * `ClickHouse <https://github.com/ClickHouse/ClickHouse>`_: an analytical database
   management system
-  
+
 * `Contour <https://github.com/contour-terminal/contour/>`_: a modern terminal emulator
 
 * `CUAUV <https://cuauv.org/>`_: Cornell University's autonomous underwater
@@ -386,7 +392,7 @@ Projects using this library
 
 * `quasardb <https://www.quasardb.net/>`_: a distributed, high-performance,
   associative database
-  
+
 * `Quill <https://github.com/odygrd/quill>`_: asynchronous low-latency logging library
 
 * `QKW <https://github.com/ravijanjam/qkw>`_: generalizing aliasing to simplify
@@ -396,7 +402,7 @@ Projects using this library
   proxy
 
 * `redpanda <https://vectorized.io/redpanda>`_: a 10x faster Kafka® replacement
-  for mission critical systems written in C++
+  for mission-critical systems written in C++
 
 * `rpclib <http://rpclib.net/>`_: a modern C++ msgpack-RPC server and client
   library
@@ -419,6 +425,9 @@ Projects using this library
 
 * `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: open-source
   MMORPG framework
+
+* `🐙 userver framework <https://userver.tech/>`_: open-source asynchronous
+  framework with a rich set of abstractions and database drivers
 
 * `Windows Terminal <https://github.com/microsoft/terminal>`_: the new Windows
   terminal
@@ -477,7 +486,7 @@ error handling is awkward.
 Boost Format
 ~~~~~~~~~~~~
 
-This is a very powerful library which supports both ``printf``-like format
+This is a very powerful library that supports both ``printf``-like format
 strings and positional arguments. Its main drawback is performance. According to
 various benchmarks, it is much slower than other methods considered here. Boost
 Format also has excessive build times and severe code bloat issues (see
@@ -486,7 +495,7 @@ Format also has excessive build times and severe code bloat issues (see
 FastFormat
 ~~~~~~~~~~
 
-This is an interesting library which is fast, safe and has positional arguments.
+This is an interesting library that is fast, safe, and has positional arguments.
 However, it has significant limitations, citing its author:
 
     Three features that have no hope of being accommodated within the
@@ -502,7 +511,7 @@ restrictive for using it in some projects.
 Boost Spirit.Karma
 ~~~~~~~~~~~~~~~~~~
 
-This is not really a formatting library but I decided to include it here for
+This is not a formatting library but I decided to include it here for
 completeness. As iostreams, it suffers from the problem of mixing verbatim text
 with arguments. The library is pretty fast, but slower on integer formatting
 than ``fmt::format_to`` with format string compilation on Karma's own benchmark,
@@ -513,7 +522,7 @@ License
 -------
 
 {fmt} is distributed under the MIT `license
-<https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_.
+<https://github.com/fmtlib/fmt/blob/master/LICENSE>`_.
 
 Documentation License
 ---------------------
@@ -521,7 +530,7 @@ Documentation License
 The `Format String Syntax <https://fmt.dev/latest/syntax.html>`_
 section in the documentation is based on the one from Python `string module
 documentation <https://docs.python.org/3/library/string.html#module-string>`_.
-For this reason the documentation is distributed under the Python Software
+For this reason, the documentation is distributed under the Python Software
 Foundation license available in `doc/python-license.txt
 <https://raw.github.com/fmtlib/fmt/master/doc/python-license.txt>`_.
 It only applies if you distribute the documentation of {fmt}.
@@ -530,9 +539,15 @@ Maintainers
 -----------
 
 The {fmt} library is maintained by Victor Zverovich (`vitaut
-<https://github.com/vitaut>`_) and Jonathan Müller (`foonathan
-<https://github.com/foonathan>`_) with contributions from many other people.
+<https://github.com/vitaut>`_) with contributions from many other people.
 See `Contributors <https://github.com/fmtlib/fmt/graphs/contributors>`_ and
 `Releases <https://github.com/fmtlib/fmt/releases>`_ for some of the names.
 Let us know if your contribution is not listed or mentioned incorrectly and
 we'll make it right.
+
+Security Policy
+---------------
+
+To report a security issue, please disclose it at `security advisory <https://github.com/fmtlib/fmt/security/advisories/new>`_.
+
+This project is maintained by a team of volunteers on a reasonable-effort basis. As such, please give us at least 90 days to work on a fix before public exposure.

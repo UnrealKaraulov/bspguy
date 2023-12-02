@@ -78,11 +78,13 @@ video tutorials.
  - Kovid Goyal
  - Kevin Grandemange
  - Eloi Marín Gratacós
+ - Grzesiek11
  - Stefan Gustavson
  - Andrew Gutekanst
  - Stephen Gutekanst
  - Jonathan Hale
  - hdf89shfdfs
+ - Moritz Heinemann
  - Sylvain Hellegouarch
  - Björn Hempel
  - Matthew Henry
@@ -141,6 +143,7 @@ video tutorials.
  - Marcel Metz
  - Liam Middlebrook
  - Ave Milia
+ - Icyllis Milica
  - Jonathan Miller
  - Kenneth Miller
  - Bruce Mitchener
@@ -188,6 +191,7 @@ video tutorials.
  - pthom
  - Martin Pulec
  - Guillaume Racicot
+ - Juan Ramos
  - Christian Rauch
  - Philip Rideout
  - Eddie Ringle
@@ -200,8 +204,10 @@ video tutorials.
  - Aleksey Rybalkin
  - Mikko Rytkönen
  - Riku Salminen
+ - Yoshinori Sano
  - Brandon Schaefer
  - Sebastian Schuberth
+ - Scr3amer
  - Christian Sdunek
  - Matt Sealey
  - Steve Sexton
@@ -211,6 +217,8 @@ video tutorials.
  - Dmitri Shuralyov
  - Joao da Silva
  - Daniel Sieger
+ - Daljit Singh
+ - Michael Skec
  - Daniel Skorupski
  - Slemmie
  - Anthony Smith
@@ -245,6 +253,7 @@ video tutorials.
  - Corentin Wallez
  - Torsten Walluhn
  - Patrick Walton
+ - Jim Wang
  - Xo Wang
  - Andre Weissflog
  - Jay Weisskopf

@@ -1289,7 +1289,7 @@ namespace INI
                 ret = LEKSYSINI_ENTRY;
                 key = input_line.substr(0,pos);
                 trim(key);
-                last_pos = input_line.find_first_of(INI_COMMENT_CHARS,pos+1);
+                last_pos = input_line.npos;
                 value = input_line.substr(pos+1,last_pos-pos-1);
                 trim(value);
                 if (last_pos != input_line.npos)

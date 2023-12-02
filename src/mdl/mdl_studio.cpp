@@ -285,8 +285,9 @@ void StudioModel::SlerpBones(vec4 q1[], vec3 pos1[], vec4 q2[], vec3 pos2[], flo
 
 void StudioModel::AdvanceFrame(float dt)
 {
-	mstudioseqdesc_t* pseqdesc;
-	pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex) + m_sequence;
+	if (!m_pstudiohdr)
+		return;
+	mstudioseqdesc_t* pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex) + m_sequence;
 
 
 	m_frame += dt * pseqdesc->fps;
@@ -914,6 +915,7 @@ void StudioModel::DrawModel(int meshnum)
 {
 	if (frametime < 0.0f)
 		frametime = g_app->curTime;
+
 	if (needForceUpdate || (g_app->curTime - frametime > (1.0f / fps) && (g_render_flags & RENDER_MODELS_ANIMATED)))
 	{
 		if (needForceUpdate)
@@ -941,12 +943,13 @@ void StudioModel::DrawModel(int meshnum)
 		UpdateModelMeshList();
 		this->frametime = -1.0f;
 	}
+
 	needForceUpdate = false;
 
 
 	if (meshnum >= 0)
 	{
-		if (meshnum < mdl_mesh_groups[0].size())
+		if (mdl_mesh_groups.size() && meshnum < mdl_mesh_groups[0].size())
 		{
 			Texture* validTexture = mdl_mesh_groups[0][meshnum].texture;
 
@@ -1033,11 +1036,13 @@ int StudioModel::GetSequence()
 
 int StudioModel::SetSequence(int iSequence)
 {
-	if (iSequence > m_pstudiohdr->numseq)
-		iSequence = 0;
-	if (iSequence < 0)
-		iSequence = m_pstudiohdr->numseq - 1;
-
+	if (m_pstudiohdr)
+	{
+		if (iSequence > m_pstudiohdr->numseq)
+			iSequence = 0;
+		if (iSequence < 0)
+			iSequence = m_pstudiohdr->numseq - 1;
+	}
 	if (iSequence != m_sequence)
 	{
 		needForceUpdate = true;
@@ -1088,7 +1093,9 @@ void StudioModel::GetSequenceInfo(float* pflFrameRate, float* pflGroundSpeed)
 
 float StudioModel::SetController(int iController, float flValue)
 {
-	int i;
+	if (!m_pstudiohdr)
+		return 0.0f;
+	int i = 0;
 	mstudiobonecontroller_t* pbonecontroller = (mstudiobonecontroller_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bonecontrollerindex);
 
 	// find first controller that matches the index
@@ -1136,6 +1143,8 @@ float StudioModel::SetController(int iController, float flValue)
 
 float StudioModel::SetMouth(float flValue)
 {
+	if (!m_pstudiohdr)
+		return 0.0f;
 	mstudiobonecontroller_t* pbonecontroller = (mstudiobonecontroller_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bonecontrollerindex);
 
 	// find first controller that matches the mouth
