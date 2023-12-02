@@ -441,7 +441,7 @@ public:
 	StudioModel(const std::string modelname)
 	{
 		fps = 30.0;
-		frametime = 99999.0f;
+		frametime = 999999.0f;
 		filename = modelname;
 		g_vright = vec3();
 		g_lambert = 1.0f;
@@ -455,6 +455,7 @@ public:
 		m_mouth = 0;
 		m_pstudiohdr = NULL;
 		m_pmodel = NULL;
+
 		for (int i = 0; i < 32; i++)
 		{
 			m_panimhdr[i] = NULL;
@@ -467,13 +468,6 @@ public:
 		{
 			m_blending[i] = 0;
 		}
-		Init(filename);
-		SetSequence(0);
-		SetController(0, 0.0f);
-		SetController(1, 0.0f);
-		SetController(2, 0.0f);
-		SetController(3, 0.0f);
-		SetMouth(0.0f);
 
 		g_ambientlight = 32;
 		g_shadelight = 192.0f;
@@ -492,7 +486,13 @@ public:
 			g_lightvalues[i][1] = 1.0f;
 			g_lightvalues[i][2] = 1.0f;
 		}
-
+		Init(filename);
+		SetSequence(0);
+		SetController(0, 0.0f);
+		SetController(1, 0.0f);
+		SetController(2, 0.0f);
+		SetController(3, 0.0f);
+		SetMouth(0.0f);
 	}
 	~StudioModel()
 	{
@@ -545,7 +545,7 @@ public:
 	int SetSkin(int iValue);
 	int SetSequence(int iSequence);
 	int GetSequence(void);
-	studiohdr_t* LoadModel(std::string modelname);
+	studiohdr_t* LoadModel(std::string modelname, bool IsTexture = false);
 	studioseqhdr_t* LoadDemandSequences(std::string modelname, int seqid);
 	void CalcBoneAdj(void);
 	void CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec4& q);

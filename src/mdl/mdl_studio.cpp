@@ -64,16 +64,16 @@ void StudioModel::CalcBoneAdj()
 		}
 		switch (pbonecontroller[j].type & STUDIO_TYPES)
 		{
-			case STUDIO_XR:
-			case STUDIO_YR:
-			case STUDIO_ZR:
-				m_adj[j] = value * (PI / 180.0f);
-				break;
-			case STUDIO_X:
-			case STUDIO_Y:
-			case STUDIO_Z:
-				m_adj[j] = value;
-				break;
+		case STUDIO_XR:
+		case STUDIO_YR:
+		case STUDIO_ZR:
+			m_adj[j] = value * (PI / 180.0f);
+			break;
+		case STUDIO_X:
+		case STUDIO_Y:
+		case STUDIO_Z:
+			m_adj[j] = value;
+			break;
 		}
 	}
 }
@@ -209,8 +209,7 @@ void StudioModel::CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mst
 void StudioModel::CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, mstudioanim_t* panim, float f)
 {
 	int		i, frame;
-	float		adj[MAXSTUDIOCONTROLLERS];
-	float		s, dadt;
+	float		s;
 	mstudiobone_t* pbone;
 
 	// bah, fix this bug with changing sequences too fast
@@ -489,13 +488,13 @@ void StudioModel::SetupModel(int bodypart)
 
 	if (bodypart >= m_pstudiohdr->numbodyparts || bodypart < 0)
 	{
-		logf(get_localized_string(LANG_0979),bodypart);
+		logf(get_localized_string(LANG_0979), bodypart);
 		bodypart = 0;
 	}
 
 	if (m_pstudiohdr->bodypartindex < 0)
 	{
-		logf(get_localized_string(LANG_0980),m_pstudiohdr->bodypartindex);
+		logf(get_localized_string(LANG_0980), m_pstudiohdr->bodypartindex);
 	}
 
 	mstudiobodyparts_t* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex) + bodypart;
@@ -511,29 +510,29 @@ void StudioModel::SetupModel(int bodypart)
 	}
 
 
-	if (m_ptexturehdr->skinindex < 0)
+	if (m_ptexturehdr && m_ptexturehdr->skinindex < 0)
 	{
-		logf(get_localized_string(LANG_0981),m_ptexturehdr->skinindex);
+		logf(get_localized_string(LANG_0981), m_ptexturehdr->skinindex);
 	}
 
 	if (m_pmodel->normindex < 0)
 	{
-		logf(get_localized_string(LANG_0982),m_pmodel->normindex);
+		logf(get_localized_string(LANG_0982), m_pmodel->normindex);
 	}
 
 	if (m_pmodel->vertindex < 0)
 	{
-		logf(get_localized_string(LANG_0983),m_pmodel->vertindex);
+		logf(get_localized_string(LANG_0983), m_pmodel->vertindex);
 	}
 
 	if (m_pmodel->vertinfoindex < 0)
 	{
-		logf(get_localized_string(LANG_0984),m_pmodel->vertinfoindex);
+		logf(get_localized_string(LANG_0984), m_pmodel->vertinfoindex);
 	}
 
-	if (m_ptexturehdr->textureindex < 0)
+	if (m_ptexturehdr && m_ptexturehdr->textureindex < 0)
 	{
-		logf(get_localized_string(LANG_0985),m_ptexturehdr->textureindex);
+		logf(get_localized_string(LANG_0985), m_ptexturehdr->textureindex);
 	}
 }
 
@@ -563,6 +562,8 @@ void StudioModel::UpdateModelMeshList()
 
 void StudioModel::RefreshMeshList(int body)
 {
+	if (!m_pstudiohdr)
+		return;
 	StudioMesh tmpStudioMesh = StudioMesh();
 	mstudiomesh_t* pmesh;
 	unsigned char* pvertbone;
@@ -575,41 +576,41 @@ void StudioModel::RefreshMeshList(int body)
 
 	pvertbone = ((unsigned char*)m_pstudiohdr + m_pmodel->vertinfoindex);
 	pnormbone = ((unsigned char*)m_pstudiohdr + m_pmodel->norminfoindex);
-	ptexture = (mstudiotexture_t*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->textureindex);
+	ptexture = m_ptexturehdr ? (mstudiotexture_t*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->textureindex) : NULL;
 
 	pmesh = (mstudiomesh_t*)((unsigned char*)m_pstudiohdr + m_pmodel->meshindex);
 
 	pstudioverts = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->vertindex);
 	pstudionorms = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->normindex);
 
-	pskinref = (short*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->skinindex);
+	pskinref = m_ptexturehdr ? (short*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->skinindex) : NULL;
 
-	if (m_ptexturehdr->skinindex < 0)
+	if (m_ptexturehdr && m_ptexturehdr->skinindex < 0)
 	{
-		logf(get_localized_string(LANG_1137),m_ptexturehdr->skinindex);
+		logf(get_localized_string(LANG_1137), m_ptexturehdr->skinindex);
 	}
 
 	if (m_pmodel->normindex < 0)
 	{
-		logf(get_localized_string(LANG_1138),m_pmodel->normindex);
+		logf(get_localized_string(LANG_1138), m_pmodel->normindex);
 	}
 
 	if (m_pmodel->vertindex < 0)
 	{
-		logf(get_localized_string(LANG_1139),m_pmodel->vertindex);
+		logf(get_localized_string(LANG_1139), m_pmodel->vertindex);
 	}
 
 	if (m_pmodel->vertinfoindex < 0)
 	{
-		logf(get_localized_string(LANG_1140),m_pmodel->vertinfoindex);
+		logf(get_localized_string(LANG_1140), m_pmodel->vertinfoindex);
 	}
 
-	if (m_ptexturehdr->textureindex < 0)
+	if (m_ptexturehdr && m_ptexturehdr->textureindex < 0)
 	{
-		logf(get_localized_string(LANG_1141),m_ptexturehdr->textureindex);
+		logf(get_localized_string(LANG_1141), m_ptexturehdr->textureindex);
 	}
 
-	if (m_skinnum >= 0 && m_skinnum < m_ptexturehdr->numskinfamilies)
+	if (pskinref && m_ptexturehdr && m_skinnum >= 0 && m_skinnum < m_ptexturehdr->numskinfamilies)
 		pskinref += (m_skinnum * m_ptexturehdr->numskinref);
 
 	for (int i = 0; i < m_pmodel->numverts; i++)
@@ -623,8 +624,11 @@ void StudioModel::RefreshMeshList(int body)
 
 	for (int j = 0; j < m_pmodel->nummesh; j++)
 	{
-		int flags;
-		flags = ptexture[pskinref[pmesh[j].skinref]].flags;
+		int flags = 0;
+		if (ptexture && pskinref)
+		{
+			flags = ptexture[pskinref[pmesh[j].skinref]].flags;
+		}
 		for (int i = 0; i < pmesh[j].numnorms; i++, pstudionorms++, pnormbone++)
 		{
 			Lighting(&lv_tmp, *pnormbone, flags, *pstudionorms);
@@ -662,7 +666,7 @@ void StudioModel::RefreshMeshList(int body)
 
 		pmesh = (mstudiomesh_t*)((unsigned char*)m_pstudiohdr + m_pmodel->meshindex) + j;
 		ptricmds = (short*)((unsigned char*)m_pstudiohdr + pmesh->triindex);
-		int texidx = ptexture[pskinref[pmesh->skinref]].index;
+		int texidx = ptexture && pskinref ? ptexture[pskinref[pmesh->skinref]].index : 0;
 		//glBindTexture(GL_TEXTURE_2D, ptexture[pskinref[pmesh->skinref]].index);
 		if (mdl_textures.size())
 		{
@@ -743,13 +747,15 @@ void StudioModel::RefreshMeshList(int body)
 					totalElements += 2;
 					elementsThisStrip += 2;
 				}
-
-
-				float s = 1.0 / (float)ptexture[pskinref[pmesh->skinref]].width;
-				float t = 1.0 / (float)ptexture[pskinref[pmesh->skinref]].height;
-
+				float s = 1.0;
+				float t = 1.0;
+				if (ptexture && pskinref)
+				{
+					s /= (float)ptexture[pskinref[pmesh->skinref]].width;
+					t /= (float)ptexture[pskinref[pmesh->skinref]].height;
+				}
 				// FIX: put these in as integer coords, not floats
-				if (ptexture[pskinref[pmesh->skinref]].flags & STUDIO_NF_CHROME)
+				if (ptexture && pskinref && ptexture[pskinref[pmesh->skinref]].flags & STUDIO_NF_CHROME)
 				{
 					texCoordData[texCoordIdx++] = g_chrome[ptricmds[1]][0] * s;
 					texCoordData[texCoordIdx++] = g_chrome[ptricmds[1]][1] * t;
@@ -766,7 +772,7 @@ void StudioModel::RefreshMeshList(int body)
 				colorData[colorIdx++] = lv->z;
 				colorData[colorIdx++] = 1.0;*/
 
-				vec3 * av = &g_xformverts[ptricmds[0]];
+				vec3* av = &g_xformverts[ptricmds[0]];
 				vertexData[vertexIdx++] = av->x;
 				vertexData[vertexIdx++] = av->y;
 				vertexData[vertexIdx++] = av->z;
@@ -826,6 +832,7 @@ void StudioModel::RefreshMeshList(int body)
 			mdl_mesh_groups[body][j].verts[z].pos.z = -vertexData[z * 3 + 1];
 		}
 	}
+
 }
 
 
@@ -850,27 +857,28 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 
 
 
-studiohdr_t* StudioModel::LoadModel(std::string modelname)
+studiohdr_t* StudioModel::LoadModel(std::string modelname, bool IsTexture)
 {
 	int size;
 	void* buffer = loadFile(modelname, size);
 	if (!buffer)
 	{
-		logf(get_localized_string(LANG_0986),modelname);
+		logf(get_localized_string(LANG_0986), modelname);
 		return NULL;
 	}
-	int i;
-	unsigned char* pin;
-	studiohdr_t* phdr;
-	mstudiotexture_t* ptexture;
 
-	pin = (unsigned char*)buffer;
-	phdr = (studiohdr_t*)pin;
+	unsigned char* pin = (unsigned char*)buffer;
+	studiohdr_t* phdr = (studiohdr_t*)buffer;
 
-	ptexture = (mstudiotexture_t*)(pin + phdr->textureindex);
+	if (phdr->id != 'TSDI' || (phdr->name[0] == '\0' && !IsTexture))
+	{
+		return NULL;
+	}
+
 	if (phdr->textureindex != 0)
 	{
-		for (i = 0; i < phdr->numtextures; i++)
+		mstudiotexture_t* ptexture = (mstudiotexture_t*)(pin + phdr->textureindex);
+		for (int i = 0; i < phdr->numtextures; i++)
 		{
 			// strncpy( name, mod->name );
 			// strncpy( name, ptexture[i].name );
@@ -891,7 +899,7 @@ studioseqhdr_t* StudioModel::LoadDemandSequences(std::string modelname, int seqi
 	void* buffer = loadFile(str.str(), size);
 	if (!buffer)
 	{
-		logf(get_localized_string(LANG_0987),str.str());
+		logf(get_localized_string(LANG_0987), str.str());
 		return NULL;
 	}
 	return (studioseqhdr_t*)buffer;
@@ -936,14 +944,11 @@ void StudioModel::DrawModel(int meshnum)
 	needForceUpdate = false;
 
 
-	Texture* validTexture = NULL;
-
 	if (meshnum >= 0)
 	{
 		if (meshnum < mdl_mesh_groups[0].size())
 		{
-			if (validTexture == NULL && mdl_mesh_groups[0][meshnum].texture)
-				validTexture = mdl_mesh_groups[0][meshnum].texture;
+			Texture* validTexture = mdl_mesh_groups[0][meshnum].texture;
 
 			if (mdl_mesh_groups[0][meshnum].texture)
 			{
@@ -960,14 +965,13 @@ void StudioModel::DrawModel(int meshnum)
 			mdl_mesh_groups[0][meshnum].buffer->drawFull();
 		}
 	}
-	else 
+	else
 	{
 		for (int group = 0; group < mdl_mesh_groups.size(); group++)
 		{
 			for (int meshid = 0; meshid < mdl_mesh_groups[group].size(); meshid++)
 			{
-				if (validTexture == NULL && mdl_mesh_groups[group][meshid].texture)
-					validTexture = mdl_mesh_groups[group][meshid].texture;
+				Texture* validTexture = mdl_mesh_groups[group][meshid].texture;
 
 				if (mdl_mesh_groups[group][meshid].texture)
 				{
@@ -992,17 +996,17 @@ void StudioModel::Init(std::string modelname)
 	m_pstudiohdr = LoadModel(modelname);
 	if (!m_pstudiohdr)
 	{
-		logf(get_localized_string(LANG_0988),modelname);
+		logf(get_localized_string(LANG_0988), modelname);
 		return;
 	}
 	if (g_settings.verboseLogs)
 	{
-		logf(get_localized_string(LANG_0989),modelname,m_pstudiohdr->version);
+		logf(get_localized_string(LANG_0989), modelname, m_pstudiohdr->version);
 	}
 	// preload textures
 	if (m_pstudiohdr->numtextures == 0)
 	{
-		m_ptexturehdr = LoadModel(modelname.substr(0, modelname.size() - 4) + "T.mdl");
+		m_ptexturehdr = LoadModel(modelname.substr(0, modelname.size() - 4) + "T.mdl", true);
 	}
 	else
 	{
@@ -1012,7 +1016,6 @@ void StudioModel::Init(std::string modelname)
 	// preload animations
 	if (m_pstudiohdr->numseqgroups > 1)
 	{
-		auto mdllen = strlen(modelname);
 		for (int i = 1; i < m_pstudiohdr->numseqgroups; i++)
 		{
 			m_panimhdr[i] = LoadDemandSequences(modelname, i);
@@ -1221,8 +1224,6 @@ int StudioModel::SetBodygroup(int iGroup, int iValue)
 	m_iGroup = iGroup;
 	m_iGroupValue = iValue;
 
-	needForceUpdate = true;
-
 	mstudiobodyparts_t* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex) + iGroup;
 
 	int iCurrent = (m_bodynum / pbodypart->base) % pbodypart->nummodels;
@@ -1252,9 +1253,9 @@ int StudioModel::SetSkin(int iValue)
 	return iValue;
 }
 
-std::map<int, StudioModel *> mdl_models;
+std::map<int, StudioModel*> mdl_models;
 
-StudioModel * AddNewModelToRender(const char * path,unsigned int sum)
+StudioModel* AddNewModelToRender(const char* path, unsigned int sum)
 {
 	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path, strlen(path), sum);
 
@@ -1264,7 +1265,7 @@ StudioModel * AddNewModelToRender(const char * path,unsigned int sum)
 	}
 	else
 	{
-		StudioModel * newModel = new StudioModel(path);
+		StudioModel* newModel = new StudioModel(path);
 		mdl_models[crc32] = newModel;
 		return newModel;
 	}
