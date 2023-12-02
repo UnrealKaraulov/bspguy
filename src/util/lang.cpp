@@ -20,7 +20,7 @@ std::string get_localized_string(int id)
 
 	if (itr == lang_db.end())
 	{
-		std::string value = ft->GetSection(g_settings.language)->GetValue(fmt::format("LANG_{:04}", id), fmt::format("LANG_{:04}", id)).AsString();
+		std::string value = ft->GetSection(g_settings.language)->GetValue(fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id)).AsString();
 		replaceAll(value, "\\n", "\n");
 		lang_db[id] = value;
 		return value;

@@ -307,12 +307,15 @@ void DuplicateBspModelCommand::undo()
 	Bsp* map = getBsp();
 	BspRenderer* renderer = getBspRenderer();
 
-	Entity* ent = map->ents[entIdx];
 
 	g_app->deselectObject();
 
 	map->replace_lumps(oldLumps);
 
+	map->update_ent_lump();
+
+
+	Entity* ent = map->ents[entIdx];
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(oldModelIdx));
 
 
