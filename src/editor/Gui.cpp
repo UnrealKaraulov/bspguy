@@ -4597,19 +4597,21 @@ void Gui::drawGOTOWidget()
 		}
 		ImGui::Text(get_localized_string(LANG_0677).c_str());
 		ImGui::PushItemWidth(inputWidth);
-		ImGui::DragFloat(get_localized_string(LANG_0678).c_str(), &coordinates.x, 0.1f, 0, 0, "X: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0678).c_str(), &coordinates.x, 0.1f, 0, 0, "Y: %.0f");
 		ImGui::SameLine();
-		ImGui::DragFloat(get_localized_string(LANG_0679).c_str(), &coordinates.y, 0.1f, 0, 0, "Y: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0679).c_str(), &coordinates.y, 0.1f, 0, 0, "X: %.0f");
 		ImGui::SameLine();
 		ImGui::DragFloat(get_localized_string(LANG_0680).c_str(), &coordinates.z, 0.1f, 0, 0, "Z: %.0f");
 		ImGui::PopItemWidth();
 		ImGui::Text(get_localized_string(LANG_0681).c_str());
 		ImGui::PushItemWidth(inputWidth);
-		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles.x, 0.1f, 0, 0, "X: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles.z, 0.1f, 0, 0, "Z: %.0f");
 		ImGui::SameLine();
-		ImGui::DragFloat(get_localized_string(LANG_0683).c_str(), &angles_y, 0.0f, 0, 0, "Y: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0683).c_str(), &angles.x, 0.1f, 0, 0, "X: %.0f");
 		ImGui::SameLine();
-		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles.z, 0.1f, 0, 0, "Z: %.0f");
+		ImGui::BeginDisabled();
+		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles_y, 0.0f, 0, 0, "Y: %.0f");
+		ImGui::EndDisabled();
 		ImGui::PopItemWidth();
 
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
@@ -4785,7 +4787,7 @@ void Gui::drawTransformWidget()
 			ImGui::Text(get_localized_string(LANG_0689).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			if (ImGui::DragFloat(get_localized_string(LANG_1107).c_str(), &x, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "X: %.2f" : "X: %.0f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_1107).c_str(), &x, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "Y: %.2f" : "Y: %.0f"))
 			{
 				originChanged = true;
 			}
@@ -4795,7 +4797,7 @@ void Gui::drawTransformWidget()
 				inputsAreDragging = true;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_1108).c_str(), &y, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "Y: %.2f" : "Y: %.0f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_1108).c_str(), &y, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "X: %.2f" : "X: %.0f"))
 			{
 				originChanged = true;
 			}
@@ -4822,7 +4824,7 @@ void Gui::drawTransformWidget()
 			ImGui::Text(get_localized_string(LANG_0690).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			if (ImGui::DragFloat(get_localized_string(LANG_0691).c_str(), &sx, 0.002f, 0, 0, "X: %.3f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_0691).c_str(), &sx, 0.002f, 0, 0, "Y: %.3f"))
 			{
 				scaled = true;
 			}
@@ -4832,7 +4834,7 @@ void Gui::drawTransformWidget()
 				inputsAreDragging = true;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_0692).c_str(), &sy, 0.002f, 0, 0, "Y: %.3f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_0692).c_str(), &sy, 0.002f, 0, 0, "X: %.3f"))
 			{
 				scaled = true;
 			}

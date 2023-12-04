@@ -4047,6 +4047,10 @@ bool Bsp::validate()
 			logf(get_localized_string(LANG_0116),i,faces[i].nLightmapOffset,lightDataLength);
 			isValid = false;
 		}
+		int bmins[2];
+		int bmaxs[2];
+		if (isValid)
+			isValid = GetFaceExtents(this, i, bmins, bmaxs);
 	}
 	for (int i = 0; i < leafCount; i++)
 	{
