@@ -1250,7 +1250,7 @@ int StudioModel::SetBodygroup(int iGroup, int iValue)
 
 int StudioModel::SetSkin(int iValue)
 {
-	if (iValue < m_pstudiohdr->numskinfamilies)
+	if (!m_pstudiohdr || iValue < m_pstudiohdr->numskinfamilies)
 	{
 		return m_skinnum;
 	}

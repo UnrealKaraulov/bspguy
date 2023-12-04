@@ -448,7 +448,7 @@ void Renderer::renderLoop()
 				bspShader->bind();
 				bspShader->modelMat->loadIdentity();
 				bspShader->updateMatrixes();
-				SelectedMap->mdl->DrawModel(0);
+				SelectedMap->mdl->DrawModel();
 				continue;
 			}
 

@@ -121,15 +121,12 @@ namespace Shaders
 		"			gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); \n"
 		"			return;\n"
 		"		}\n"
-		"	}\n"*/
+		"	}\n"
 		"	if (fcolor.g == 6.0)\n"
 		"	{\n"
 		"		color.rgb = color.rgb * fcolor.a;\n"
-		"	}\n"
-		"   if (fcolor.g > 1.0)\n"
-		"	{\n"
-		"		fcolor.g = 1.0;"
-		"	}\n"
+		"		fcolor.g = 1.0;\n"
+		"	}\n"*/
 		"	vec3 lightmap = texture2D(sLightmapTex0, fLightmapTex0.xy).rgb * fLightmapTex0.z;\n"
 		"	lightmap += texture2D(sLightmapTex1, fLightmapTex1.xy).rgb * fLightmapTex1.z;\n"
 		"	lightmap += texture2D(sLightmapTex2, fLightmapTex2.xy).rgb * fLightmapTex2.z;\n"
