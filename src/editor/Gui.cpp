@@ -66,7 +66,6 @@ void Gui::init()
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
-		//glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return (void*)(uint64_t)tex;
 		};

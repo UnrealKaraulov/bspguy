@@ -222,12 +222,6 @@ void Renderer::renderLoop()
 		logf(get_localized_string(LANG_0904),value);
 	}
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_FRONT);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	{
 		line_verts = new cVert[2];
 		lineBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, line_verts, 2, GL_LINES);
@@ -303,9 +297,24 @@ void Renderer::renderLoop()
 
 		glfwPollEvents();
 
-		/*tempmodel->AdvanceFrame(curTime - oldTime);
-		tempmodel->UpdateModelMeshList();*/
+		if (SelectedMap && SelectedMap->is_mdl_model)
+			glClearColor(0.25, 0.25, 0.25, 1.0);
+		else
+			glClearColor(0.0, 0.0, 0.0, 1.0);
 
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glEnable(GL_ALPHA_TEST);
+		glAlphaFunc(GL_GREATER, 0.05f);
+
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
 
 		{//Update keyboard / mouse state 
 			oldLeftMouse = curLeftMouse;
@@ -408,10 +417,6 @@ void Renderer::renderLoop()
 		matmodel.rotateZ((float)oldTime);
 		matmodel.rotateX((float)curTime);
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		if (SelectedMap && SelectedMap->is_mdl_model)
-			glClearColor(0.25, 0.25, 0.25, 1.0);
 		setupView();
 
 		drawEntConnections();
@@ -558,13 +563,13 @@ void Renderer::renderLoop()
 			}
 		}
 
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
 		if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS))
 		{
 			matmodel.loadIdentity();
 			colorShader->updateMatrixes();
-			glDisable(GL_DEPTH_TEST);
 			entConnectionPoints->drawFull();
-			glEnable(GL_DEPTH_TEST);
 		}
 
 		if (entIdx <= 0)
@@ -574,11 +579,14 @@ void Renderer::renderLoop()
 				SelectedMap->selectModelEnt();
 			}
 		}
+
 		if (modelIdx > 0 && pickMode == PICK_OBJECT)
 		{
 			if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid)
 			{
+				glDisable(GL_CULL_FACE);
 				drawModelVerts();
+				glEnable(GL_CULL_FACE);
 			}
 			if (transformTarget == TRANSFORM_ORIGIN)
 			{
@@ -593,6 +601,9 @@ void Renderer::renderLoop()
 				drawTransformAxes();
 			}
 		}
+
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
 
 		vec3 forward, right, up;
 		makeVectors(cameraAngles, forward, right, up);
@@ -933,7 +944,8 @@ void Renderer::drawTransformAxes()
 	{
 		if (SelectedMap->ents[pickInfo.selectedEnts[0]]->getBspModelIdx() > 0)
 		{
-			glDisable(GL_DEPTH_TEST);
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_ALWAYS);
 			updateDragAxes();
 			vec3 ori = scaleAxes.origin;
 			matmodel.translate(ori.x, ori.z, -ori.y);
@@ -941,14 +953,16 @@ void Renderer::drawTransformAxes()
 			glDisable(GL_CULL_FACE);
 			scaleAxes.buffer->drawFull();
 			glEnable(GL_CULL_FACE);
-			glEnable(GL_DEPTH_TEST);
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
 		}
 	}
 	if (SelectedMap && pickInfo.selectedEnts.size() > 0 && transformMode == TRANSFORM_MODE_MOVE)
 	{
 		if (transformTarget != TRANSFORM_VERTEX || (anyVertSelected || anyEdgeSelected))
 		{
-			glDisable(GL_DEPTH_TEST);
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_ALWAYS);
 			updateDragAxes();
 			vec3 ori = moveAxes.origin;
 			matmodel.translate(ori.x, ori.z, -ori.y);
@@ -956,7 +970,8 @@ void Renderer::drawTransformAxes()
 			glDisable(GL_CULL_FACE);
 			moveAxes.buffer->drawFull();
 			glEnable(GL_CULL_FACE);
-			glEnable(GL_DEPTH_TEST);
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
 		}
 	}
 	dragDelta = vec3();

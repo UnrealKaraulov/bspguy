@@ -668,7 +668,6 @@ void StudioModel::RefreshMeshList(int body)
 		pmesh = (mstudiomesh_t*)((unsigned char*)m_pstudiohdr + m_pmodel->meshindex) + j;
 		ptricmds = (short*)((unsigned char*)m_pstudiohdr + pmesh->triindex);
 		int texidx = ptexture && pskinref ? ptexture[pskinref[pmesh->skinref]].index : 0;
-		//glBindTexture(GL_TEXTURE_2D, ptexture[pskinref[pmesh->skinref]].index);
 		if (mdl_textures.size())
 		{
 			if (texidx < mdl_textures.size())

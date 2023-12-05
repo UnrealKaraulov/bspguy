@@ -354,17 +354,17 @@ void BspRenderer::loadTextures()
 
 		if (path.empty())
 		{
-			logf(get_localized_string(LANG_0268),wadNames[i]);
+			logf(get_localized_string(LANG_0268), wadNames[i]);
 			continue;
 		}
 
-		logf(get_localized_string(LANG_0269),path);
+		logf(get_localized_string(LANG_0269), path);
 		Wad* wad = new Wad(path);
 		if (wad->readInfo())
 			wads.push_back(wad);
 		else
 		{
-			logf(get_localized_string(LANG_0270),path);
+			logf(get_localized_string(LANG_0270), path);
 			delete wad;
 		}
 	}
@@ -429,11 +429,11 @@ void BspRenderer::loadTextures()
 	}
 
 	if (wadTexCount)
-		logf(get_localized_string(LANG_0271),wadTexCount);
+		logf(get_localized_string(LANG_0271), wadTexCount);
 	if (embedCount)
-		logf(get_localized_string(LANG_0272),embedCount);
+		logf(get_localized_string(LANG_0272), embedCount);
 	if (missingCount)
-		logf(get_localized_string(LANG_0273),missingCount);
+		logf(get_localized_string(LANG_0273), missingCount);
 }
 
 void BspRenderer::reload()
@@ -593,7 +593,7 @@ void BspRenderer::loadLightmaps()
 
 					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 					{
-						logf(get_localized_string(LANG_0275),info.w,info.h,LIGHTMAP_ATLAS_SIZE,LIGHTMAP_ATLAS_SIZE);
+						logf(get_localized_string(LANG_0275), info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
 						continue;
 					}
 				}
@@ -639,7 +639,7 @@ void BspRenderer::loadLightmaps()
 	numLightmapAtlases = atlasTextures.size();
 
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
-	logf(get_localized_string(LANG_0276),lightmapCount,atlases.size());
+	logf(get_localized_string(LANG_0276), lightmapCount, atlases.size());
 
 	lightmapsGenerated = true;
 }
@@ -672,7 +672,7 @@ void BspRenderer::updateLightmapInfos()
 	lightmaps = newLightmaps;
 	numRenderLightmapInfos = map->faceCount;
 
-	logf(get_localized_string(LANG_0278),addedFaces);
+	logf(get_localized_string(LANG_0278), addedFaces);
 }
 
 void BspRenderer::preRenderFaces()
@@ -1444,11 +1444,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 	cVert* output = new cVert[allVerts.size()];
 	if (allVerts.size())
-		std::copy(allVerts.begin(),allVerts.end(), output);
+		std::copy(allVerts.begin(), allVerts.end(), output);
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
 	if (wireframeVerts.size())
-		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput); 
+		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
 	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
 	renderClip.clipnodeBuffer[hullIdx]->ownData = true;
@@ -2012,7 +2012,7 @@ void BspRenderer::delayLoadData()
 		}
 
 		clipnodesLoaded = true;
-		logf(get_localized_string(LANG_0286),clipnodeLeafCount);
+		logf(get_localized_string(LANG_0286), clipnodeLeafCount);
 		updateClipnodeOpacity((g_render_flags & RENDER_TRANSPARENT) ? 128 : 255);
 	}
 }
@@ -2122,7 +2122,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 }
 
 
-void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull)
+void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, int clipnodeHull)
 {
 	ShaderProgram* activeShader; vec3 renderOffset;
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
@@ -2135,34 +2135,14 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 	activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	activeShader->updateMatrixes();
 
-	// draw highlighted ent first so other ent edges don't overlap the highlighted edges
-	if (highlightEnts.size() && !highlightAlwaysOnTop)
-	{
-		activeShader->bind();
-
-		for (int highlightEnt : highlightEnts)
-		{
-			if (highlightEnt > 0 && renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
-			{
-				if (renderEnts[highlightEnt].hide)
-					continue;
-				activeShader->pushMatrix(MAT_MODEL);
-				*activeShader->modelMat = renderEnts[highlightEnt].modelMatAngles;
-				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-				activeShader->updateMatrixes();
-
-				drawModel(&renderEnts[highlightEnt], false, true, true);
-				drawModel(&renderEnts[highlightEnt], true, true, true);
-
-				activeShader->popMatrix(MAT_MODEL);
-			}
-		}
-	}
-
 	for (int pass = 0; pass < 2; pass++)
 	{
 		bool drawTransparentFaces = pass == 1;
-
+		if (drawTransparentFaces)
+		{
+			//glDepthMask(GL_FALSE);
+			//glDepthFunc(GL_LESS);
+		}
 		if (!renderEnts[0].hide)
 			drawModel(0, drawTransparentFaces, false, false);
 
@@ -2182,7 +2162,11 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 				activeShader->popMatrix(MAT_MODEL);
 			}
 		}
-
+		if (drawTransparentFaces)
+		{
+			//glDepthMask(GL_TRUE);
+			//glDepthFunc(GL_LESS);
+		}
 		if ((g_render_flags & RENDER_POINT_ENTS) && pass == 0)
 		{
 			drawPointEntities(highlightEnts);
@@ -2237,7 +2221,9 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 		}
 	}
 
-	if (highlightEnts.size() && highlightAlwaysOnTop)
+	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_ALWAYS);
+	if (highlightEnts.size())
 	{
 		activeShader->bind();
 
@@ -2251,17 +2237,18 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 				*activeShader->modelMat = renderEnts[highlightEnt].modelMatAngles;
 				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				activeShader->updateMatrixes();
-
-				glDisable(GL_DEPTH_TEST);
+				if (modelVertsDraw)
+					glDisable(GL_CULL_FACE);
 				drawModel(&renderEnts[highlightEnt], false, true, true);
 				drawModel(&renderEnts[highlightEnt], true, true, true);
-				glEnable(GL_DEPTH_TEST);
-
+				if (modelVertsDraw)
+					glEnable(GL_CULL_FACE);
 				activeShader->popMatrix(MAT_MODEL);
 			}
 		}
 	}
-
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);
 	delayLoadData();
 }
 
@@ -2422,9 +2409,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			*activeShader->modelMat = ent->modelMatOrigin;
 			activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			activeShader->updateMatrixes();
-			glBlendFunc(GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR);
 			rgroup.buffer->drawFull();
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			activeShader->popMatrix(MAT_MODEL);
 		}
 	}
@@ -2928,7 +2913,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 			differences[i] = true;
 			if (g_verbose)
 			{
-				logf(get_localized_string(LANG_0291),g_lump_names[i],newLumps.lumps[i].size(),undoLumpState.lumps[i].size());
+				logf(get_localized_string(LANG_0291), g_lump_names[i], newLumps.lumps[i].size(), undoLumpState.lumps[i].size());
 			}
 			targetLumps = targetLumps | (1 << i);
 		}
@@ -2984,7 +2969,7 @@ void BspRenderer::undo()
 	Command* undoCommand = undoHistory[undoHistory.size() - 1];
 	if (!undoCommand->allowedDuringLoad && g_app->isLoading)
 	{
-		logf(get_localized_string(LANG_0293),undoCommand->desc);
+		logf(get_localized_string(LANG_0293), undoCommand->desc);
 		return;
 	}
 
@@ -3004,7 +2989,7 @@ void BspRenderer::redo()
 	Command* redoCommand = redoHistory[redoHistory.size() - 1];
 	if (!redoCommand->allowedDuringLoad && g_app->isLoading)
 	{
-		logf(get_localized_string(LANG_0294),redoCommand->desc);
+		logf(get_localized_string(LANG_0294), redoCommand->desc);
 		return;
 	}
 
