@@ -38,7 +38,7 @@ std::string get_localized_string(int id)
 
 		return itr->second;
 	}
-	return "LANG_ERROR_INDEX";
+	return "LANG_ERROR_INDEX\n";
 }
 
 std::string get_localized_string(const std::string & str_id)
@@ -62,23 +62,29 @@ std::string get_localized_string(const std::string & str_id)
 
 		return itr->second;
 	}
-	return "LANG_ERROR_STRING";
+	return "LANG_ERROR_STRING\n";
 }
 
 void set_localize_lang(std::string lang)
 {
-	if (ft != NULL)
-	{
-		delete ft;
-	}
+	static std::string last_lang = "";
 
-	try
+	if (last_lang != lang)
 	{
-		ft = new inih::INIReader(g_config_dir + "language.ini");
-	}
-	catch(std::runtime_error runtime)
-	{
-		logf("Language parse fatal error: {}", runtime.what());
+		if (ft != NULL)
+		{
+			delete ft;
+		}
+
+		try
+		{
+			ft = new inih::INIReader(g_config_dir + "language.ini");
+		}
+		catch (std::runtime_error runtime)
+		{
+			logf("Language parse from {} fatal error: {}\n", g_config_dir + "language.ini", runtime.what());
+		}
+		last_lang = lang;
 	}
 	g_settings.language = lang;
 	lang_db.clear();

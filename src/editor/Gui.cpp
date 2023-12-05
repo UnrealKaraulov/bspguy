@@ -8162,7 +8162,7 @@ void Gui::drawFaceEditorWidget()
 
 						for (int v = 0; v < map->vertCount; v++)
 						{
-							if (map->verts[v].z != vec.z && VectorCompare(map->verts[v], vec, verts_merge_epsilon))
+							if (map->verts[v].z == vec.z && VectorCompare(map->verts[v], vec, verts_merge_epsilon))
 							{
 								if (vec != lastvec)
 								{
