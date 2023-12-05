@@ -1759,9 +1759,9 @@ void Gui::drawMenuBar()
 			}
 		}
 
-		if (ImGui::BeginMenu(get_localized_string(LANG_0532).c_str(), !app->isLoading && map && !map->is_mdl_model))
+		if (ImGui::BeginMenu(get_localized_string(LANG_0532).c_str(), !app->isLoading && map))
 		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0533).c_str(), NULL))
+			if (ImGui::MenuItem(get_localized_string(LANG_0533).c_str(), NULL, false, map && !map->is_mdl_model))
 			{
 				std::string entFilePath;
 				if (g_settings.sameDirForEnt) {
@@ -1787,7 +1787,7 @@ void Gui::drawMenuBar()
 					entFile.write(entities.c_str(), entities.size());
 				}
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL))
+			if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL, false, map && !map->is_mdl_model))
 			{
 				logf(get_localized_string(LANG_0343), GetWorkDir(), map->bsp_name + ".wad");
 				if (ExportWad(map))
@@ -1804,7 +1804,7 @@ void Gui::drawMenuBar()
 					}
 				}
 			}
-			if (ImGui::BeginMenu("Wavefront (.obj) [WIP]"))
+			if (ImGui::BeginMenu("Wavefront (.obj) [WIP]", map && !map->is_mdl_model))
 			{
 				if (ImGui::MenuItem(get_localized_string(LANG_0535).c_str(), NULL))
 				{
@@ -1839,7 +1839,7 @@ void Gui::drawMenuBar()
 			}
 
 
-			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL, false, map))
+			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL, false, map && !map->is_mdl_model))
 			{
 				map->ExportToMapWIP(GetWorkDir());
 			}
@@ -1864,7 +1864,7 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0539).c_str(), NULL, false, map))
+			if (ImGui::MenuItem(get_localized_string(LANG_0539).c_str(), NULL, false, map && !map->is_mdl_model))
 			{
 				map->ExportExtFile();
 			}
@@ -1878,7 +1878,7 @@ void Gui::drawMenuBar()
 
 
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0540).c_str(), NULL, false, map))
+			if (ImGui::MenuItem(get_localized_string(LANG_0540).c_str(), NULL, false, map && !map->is_mdl_model))
 			{
 				map->ExportLightFile();
 			}
@@ -1892,7 +1892,7 @@ void Gui::drawMenuBar()
 
 
 
-			if (ImGui::BeginMenu(get_localized_string(LANG_1076).c_str()))
+			if (ImGui::BeginMenu(get_localized_string(LANG_1076).c_str(), map && !map->is_mdl_model))
 			{
 				int modelIdx = -1;
 
@@ -1944,7 +1944,7 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu(get_localized_string(LANG_0542).c_str()))
+			if (ImGui::BeginMenu(get_localized_string(LANG_0542).c_str(), map && !map->is_mdl_model))
 			{
 				std::string hash = "##1";
 				for (auto& wad : map->getBspRender()->wads)
@@ -1955,8 +1955,7 @@ void Gui::drawMenuBar()
 					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 					{
 						logf(get_localized_string(LANG_0345), basename(wad->filename));
-						createDir(GetWorkDir());
-						createDir(GetWorkDir() + "wads");
+
 						createDir(GetWorkDir() + "wads/" + basename(wad->filename));
 
 						std::vector<int> texturesIds;
@@ -1994,6 +1993,31 @@ void Gui::drawMenuBar()
 				}
 
 				ImGui::EndMenu();
+			}
+
+			if (ImGui::MenuItem(get_localized_string("LANG_DUMP_TEX").c_str(), NULL, false, map))
+			{
+				createDir(GetWorkDir() + map->bsp_name + "/dump_textures/");
+				
+				if (dumpTextures.size())
+				{
+						for (const auto & tex : dumpTextures)
+						{
+							if (tex != rend->missingTex)
+							{
+								if (tex->format == GL_RGBA)
+									lodepng_encode32_file((GetWorkDir() + map->bsp_name +"/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width,tex->height);
+								else 
+									lodepng_encode24_file((GetWorkDir() + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
+							}
+						}
+				}
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted(get_localized_string("LANG_DUMP_TEX_DESC").c_str());
+				ImGui::EndTooltip();
 			}
 
 			ImGui::EndMenu();
@@ -4559,14 +4583,14 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 
 void Gui::drawMDLWidget()
-{	
+{
 	Bsp* map = app->getSelectedMap();
 	ImGui::SetNextWindowSize(ImVec2(410.f, 200.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(410.f, 330.f), ImVec2(410.f, 330.f));
 	bool showMdlWidget = map && map->is_mdl_model;
 	if (ImGui::Begin(get_localized_string("LANG_MDL_WIDGET").c_str(), &showMdlWidget))
 	{
-	
+
 	}
 	ImGui::End();
 }
@@ -5905,7 +5929,6 @@ void Gui::drawSettings()
 
 	if (oldShowSettings && !showSettingsWidget || apply_settings_pressed)
 	{
-		FixupAllSystemPaths();
 		g_settings.save();
 		if (!app->reloading)
 		{

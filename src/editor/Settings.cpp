@@ -708,6 +708,7 @@ void AppSettings::save(std::string path)
 
 void AppSettings::save()
 {
+	FixupAllSystemPaths();
 	if (!dirExists(g_config_dir))
 	{
 		createDir(g_config_dir);

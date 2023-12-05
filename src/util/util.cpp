@@ -81,21 +81,17 @@ bool removeFile(const std::string& fileName)
 	return fs::exists(fileName) && fs::remove(fileName);
 }
 
-void copyFile(const std::string& fileName, const std::string& fileName2)
+bool copyFile(const std::string& fileName, const std::string& fileName2)
 {
-	if (fileExists(fileName2))
-		return;
-	if (!fileExists(fileName))
-		return;
-	int length = 0;
-	char* oldFileData = loadFile(fileName, length);
-	writeFile(fileName2, oldFileData, length);
-	delete[] oldFileData;
+	if (fileExists(fileName))
+		return false;
+	if (!fileExists(fileName2))
+		return false;
+	return fs::copy_file(fileName, fileName2);
 }
 
 std::streampos fileSize(const std::string& filePath)
 {
-
 	std::streampos fsize = 0;
 	std::ifstream file(filePath, std::ios::binary);
 
@@ -1091,22 +1087,18 @@ int mkdir_p(const char* dir, const mode_t mode)
 
 bool createDir(const std::string& dirName)
 {
-	std::string fixDirName = dirName;
-	fixupPath(fixDirName, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-	if (dirExists(fixDirName))
+	if (dirExists(dirName))
 		return true;
-	fs::create_directories(fixDirName);
-	if (dirExists(fixDirName))
+	fs::create_directories(dirName);
+	if (dirExists(dirName))
 		return true;
 	return false;
 }
 
 void removeDir(const std::string& dirName)
 {
-	std::string fixDirName = dirName;
-	fixupPath(fixDirName, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 	std::error_code e;
-	fs::remove_all(fixDirName, e);
+	fs::remove_all(dirName, e);
 }
 
 

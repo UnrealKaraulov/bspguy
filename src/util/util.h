@@ -69,7 +69,7 @@ inline void logf(const std::string & format, Args ...args) noexcept
 
 bool fileExists(const std::string& fileName);
 
-void copyFile(const std::string& fileName, const std::string& fileName2);
+bool copyFile(const std::string& fileName, const std::string& fileName2);
 
 char* loadFile(const std::string& fileName, int& length);
 

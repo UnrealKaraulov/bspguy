@@ -7,6 +7,8 @@
 #include "Settings.h"
 #include "Renderer.h"
 
+std::vector<Texture*> dumpTextures;
+
 Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 {
 	this->width = _width;
@@ -14,7 +16,8 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 	this->nearFilter = GL_LINEAR;
 	this->farFilter = GL_LINEAR;
 	this->data = new unsigned char[(unsigned int)(width * height) * sizeof(COLOR3)];
-	this->id = this->format = this->iformat = 0;
+	this->dataLen = (unsigned int)(width * height) * sizeof(COLOR3);
+	this->id = this->format = 0;
 	snprintf(texName, 64, "%s", name);
 	if (g_settings.verboseLogs)
 		logf(get_localized_string(LANG_0969),name,width,height);
@@ -23,6 +26,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 	{
 		this->transparentMode = 2;
 	}
+	dumpTextures.push_back(this);
 }
 
 Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char* name)
@@ -32,7 +36,8 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	this->nearFilter = GL_LINEAR;
 	this->farFilter = GL_LINEAR;
 	this->data = data;
-	this->id = this->format = this->iformat = 0;
+	this->dataLen = (unsigned int)(width * height) * sizeof(COLOR3);
+	this->id = this->format = 0;
 	snprintf(texName, 64, "%s", name);
 	if (g_settings.verboseLogs)
 		logf(get_localized_string(LANG_0970),name,width,height);
@@ -41,6 +46,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	{
 		this->transparentMode = 2;
 	}
+	dumpTextures.push_back(this);
 }
 
 Texture::~Texture()
@@ -48,6 +54,8 @@ Texture::~Texture()
 	if (uploaded)
 		glDeleteTextures(1, &id);
 	delete[] data;
+
+	std::remove(dumpTextures.begin(), dumpTextures.end(), this);
 }
 
 void Texture::upload(int _format, bool lightmap)
@@ -95,6 +103,7 @@ void Texture::upload(int _format, bool lightmap)
 				}
 				delete [] data;
 				data = (unsigned char*)rgbaData;
+				dataLen = (unsigned int)(width * height) * sizeof(COLOR4);
 			}
 		}
 	}
@@ -109,6 +118,7 @@ void Texture::upload(int _format, bool lightmap)
 	if (g_settings.verboseLogs)
 		logf(get_localized_string(LANG_0971),texName,width,height);
 
+	format = _format;
 	uploaded = true;
 }
 

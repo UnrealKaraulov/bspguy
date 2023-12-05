@@ -10,7 +10,6 @@ public:
 	int nearFilter;
 	int farFilter;
 	unsigned int format; // format of the data
-	unsigned int iformat; // format of the data when uploaded to GL
 	char texName[64];
 	int transparentMode;
 
@@ -25,8 +24,9 @@ public:
 	void bind(GLuint texnum);
 
 	unsigned char* data; // RGB(A) data
+	size_t dataLen;
 
 	bool uploaded = false;
 };
-
+extern std::vector<Texture*> dumpTextures;
 bool IsTextureTransparent(const char* texname);

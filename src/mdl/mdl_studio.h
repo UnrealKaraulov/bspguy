@@ -62,6 +62,7 @@ Studio models are position independent, so the cache manager can move them.
 #define STUDIO_NF_ALPHA         0x0010
 #define STUDIO_NF_ADDITIVE      0x0020
 #define STUDIO_NF_MASKED        0x0040
+#define STUDIO_NF_UV_COORDS		(1U<<31)
 
 // motion flags
 #define STUDIO_X		0x0001

@@ -28,6 +28,37 @@
 #include "forcecrc32.h"
 ////////////////////////////////////////////////////////////////////////
 
+float HalfToFloat(unsigned short h)
+{
+	unsigned int	f = (h << 16) & 0x80000000;
+	unsigned int	em = h & 0x7fff;
+
+	if (em > 0x03ff)
+	{
+		f |= (em << 13) + ((127 - 15) << 23);
+	}
+	else
+	{
+		unsigned int m = em & 0x03ff;
+
+		if (m != 0)
+		{
+			unsigned int e = (em >> 10) & 0x1f;
+
+			while ((m & 0x0400) == 0)
+			{
+				m <<= 1;
+				e--;
+			}
+
+			m &= 0x3ff;
+			f |= ((e + (127 - 14)) << 23) | (m << 13);
+		}
+	}
+
+	return *((float*)&f);
+}
+
 void StudioModel::CalcBoneAdj()
 {
 	int					i, j;
@@ -759,6 +790,11 @@ void StudioModel::RefreshMeshList(int body)
 				{
 					texCoordData[texCoordIdx++] = g_chrome[ptricmds[1]][0] * s;
 					texCoordData[texCoordIdx++] = g_chrome[ptricmds[1]][1] * t;
+				}
+				else if (ptexture && pskinref && ptexture[pskinref[pmesh->skinref]].flags & STUDIO_NF_UV_COORDS)
+				{
+					texCoordData[texCoordIdx++] = HalfToFloat(*(unsigned short*)&ptricmds[2]);
+					texCoordData[texCoordIdx++] = HalfToFloat(*(unsigned short*)&ptricmds[3]);
 				}
 				else
 				{
