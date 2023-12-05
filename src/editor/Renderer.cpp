@@ -123,6 +123,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 Renderer::Renderer()
 {
+	glfwSetErrorCallback(error_callback);
+
 	if (!glfwInit())
 	{
 		logf(get_localized_string(LANG_0902));
@@ -136,8 +138,6 @@ Renderer::Renderer()
 	gui = new Gui(this);
 
 	loadSettings();
-
-	glfwSetErrorCallback(error_callback);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);

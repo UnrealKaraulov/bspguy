@@ -56,8 +56,14 @@ void set_localize_lang(std::string lang)
 		delete ft;
 	}
 
-	ft = new inih::INIReader(g_config_dir + "language.ini");
-
+	try
+	{
+		ft = new inih::INIReader(g_config_dir + "language.ini");
+	}
+	catch(std::runtime_error runtime)
+	{
+		logf("Language parse fatal error: {}", runtime.what());
+	}
 	g_settings.language = lang;
 	lang_db.clear();
 	lang_db_str.clear();

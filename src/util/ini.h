@@ -398,7 +398,7 @@ inline T INIReader::Get(const std::string& section, const std::string& name,
                         T&& default_v) const {
     try {
         return Get<T>(section, name);
-    } catch (std::runtime_error& e) {
+    } catch (std::runtime_error) {
         return default_v;
     }
 }
