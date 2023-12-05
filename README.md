@@ -39,7 +39,8 @@ Added new features in this fork:
 
 ![image](https://user-images.githubusercontent.com/12087544/88471604-1768ac80-cec0-11ea-9ce5-13095e843ce7.png)
 
-**The editor is full of bugs, unstable, and has no undo button yet. Save early and often! Make backups before experimenting with anything.**
+**The editor is full of bugs, unstable, and has undo button not works for some cases. 
+Save early and often! Make backups before experimenting with anything.**
 
 Requires OpenGL 3.0 or later.
 
