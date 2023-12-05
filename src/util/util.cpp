@@ -1206,13 +1206,6 @@ void print_color(int colors)
 	colors = colors ? colors : (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 	SetConsoleTextAttribute(console, (WORD)colors);
 }
-
-std::string getConfigDir()
-{
-	wchar_t path[1024];
-	SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, path);
-	return fs::path(path).string() + "/AppData/Roaming/bspguy/";
-}
 #else 
 void print_color(int colors)
 {
@@ -1234,11 +1227,6 @@ void print_color(int colors)
 	case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
 	}
 	logf(get_localized_string(LANG_1015),mode,color);
-}
-
-std::string getConfigDir()
-{
-	return getenv("HOME") + std::string("/.config/bspguy/");
 }
 #endif
 

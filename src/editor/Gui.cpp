@@ -37,7 +37,7 @@ Gui::Gui(Renderer* app)
 
 void Gui::init()
 {
-	iniPath = getConfigDir() + "imgui.ini";
+	iniPath = g_config_dir + "imgui.ini";
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

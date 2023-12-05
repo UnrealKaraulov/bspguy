@@ -60,9 +60,11 @@ inline void logf(const std::string & format, Args ...args) noexcept
 	outfile.flush();
 #endif
 
-	std::cout << log_line;
-	g_log_buffer.push_back(log_line);
-
+	if (g_log_buffer.size() == 0 || g_log_buffer[g_log_buffer.size() - 1] != log_line)
+	{
+		std::cout << log_line;
+		g_log_buffer.push_back(log_line);
+	}
 	g_mutex_list[0].unlock();
 }
 
@@ -163,8 +165,6 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 void replaceAll(std::string& str, const std::string& from, const std::string& to);
 
 void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int height, int bytesPerPixel);
-
-std::string getConfigDir();
 
 extern fs::path g_current_dir;
 std::string GetCurrentDir();

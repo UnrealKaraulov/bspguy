@@ -642,9 +642,10 @@ void Renderer::renderLoop()
 		}
 
 		int glerror = glGetError();
-		if (glerror != GL_NO_ERROR)
+		while (glerror != GL_NO_ERROR)
 		{
 			logf(get_localized_string(LANG_0905),glerror);
+			glerror = glGetError();
 		}
 
 		if (updatePickCount)

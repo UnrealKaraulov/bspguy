@@ -55,7 +55,7 @@ Texture::~Texture()
 		glDeleteTextures(1, &id);
 	delete[] data;
 
-	std::remove(dumpTextures.begin(), dumpTextures.end(), this);
+	dumpTextures.erase(std::remove(dumpTextures.begin(), dumpTextures.end(), this), dumpTextures.end());
 }
 
 void Texture::upload(int _format, bool lightmap)

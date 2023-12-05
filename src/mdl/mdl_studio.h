@@ -33,21 +33,9 @@ Studio models are position independent, so the cache manager can move them.
 ==============================================================================
 */
 #pragma pack(push, 1)
-#define MAXSTUDIOTRIANGLES	20000	// TODO: tune this
+#define MAXSTUDIOTRIANGLES	32768	// TODO: tune this
 #define MAXSTUDIOVERTS		16384	// TODO: tune this
-#define MAXSTUDIOSEQUENCES	2048	// total animation sequences -- KSH incremented
-#define MAXSTUDIOSKINS		256		// total textures
-#define MAXSTUDIOSRCBONES	512		// bones allowed at source movement
-#define MAXSTUDIOBONES		128		// total bones actually used
-#define MAXSTUDIOMODELS		32		// sub-models per model
-#define MAXSTUDIOBODYPARTS	32
-#define MAXSTUDIOGROUPS		16
-#define MAXSTUDIOANIMATIONS	2048		
-#define MAXSTUDIOMESHES		256
-#define MAXSTUDIOEVENTS		1024
-#define MAXSTUDIOPIVOTS		256
-#define MAXSTUDIOCONTROLLERS 32
-
+#define MAXSTUDIOBONES		128		
 
 
 #define MAX_TRIS_PER_BODYGROUP  MAXSTUDIOTRIANGLES
@@ -83,17 +71,6 @@ Studio models are position independent, so the cache manager can move them.
 #define STUDIO_TYPES	0x7FFF
 #define STUDIO_RLOOP	0x8000	// controller that wraps shortest distance
 
-// sequence flags
-#define STUDIO_LOOPING	0x0001
-
-// bone flags
-#define STUDIO_HAS_NORMALS	0x0001
-#define STUDIO_HAS_VERTICES 0x0002
-#define STUDIO_HAS_BBOX		0x0004
-#define STUDIO_HAS_CHROME	0x0008	// if any of the textures have chrome on them
-
-#define RAD_TO_STUDIO		(32768.0/M_PI)
-#define STUDIO_TO_RAD		(M_PI/32768.0)
 #define MAXEVENTSTRING      64
 
 typedef struct

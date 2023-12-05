@@ -896,8 +896,8 @@ int main(int argc, char* argv[])
 	g_settings_path = GetCurrentDir() + "bspguy.cfg";
 	g_config_dir = GetCurrentDir();
 #else
-	g_settings_path = fileExists(getConfigDir() + "bspguy.cfg") ? getConfigDir() + "bspguy.cfg" : GetCurrentDir() + "bspguy.cfg";
-	g_config_dir = fileExists(getConfigDir() + "bspguy.cfg") ? getConfigDir() : GetCurrentDir();
+	g_settings_path = GetCurrentDir() + "bspguy.cfg";
+	g_config_dir = GetCurrentDir();
 #endif
 	// test svencoop merge
 	//return test();
