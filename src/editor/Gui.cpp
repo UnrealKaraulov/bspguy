@@ -3223,6 +3223,9 @@ void Gui::drawDebugWidget()
 		if (ImGui::CollapsingHeader(get_localized_string(LANG_0625).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0366)), (int)cameraOrigin.x, (int)cameraOrigin.y, (int)cameraOrigin.z).c_str());
+			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
+			ImGui::Text(fmt::format("Mouse left {} right {}", app->curLeftMouse, app->curRightMouse).c_str());
+			ImGui::Text(fmt::format("Time: {}", app->curTime).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0367)), (int)cameraAngles.x, (int)cameraAngles.y, (int)cameraAngles.z).c_str());
 
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0368)), (unsigned int)app->pickInfo.selectedFaces.size()).c_str());

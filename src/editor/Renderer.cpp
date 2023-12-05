@@ -289,13 +289,14 @@ void Renderer::renderLoop()
 
 	while (!glfwWindowShouldClose(window))
 	{
+		glfwPollEvents();
+
 		oldTime = curTime;
 		curTime = glfwGetTime();
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
-		mousePos = vec2((float)xpos, (float)ypos);
 
-		glfwPollEvents();
+		mousePos = vec2((float)xpos, (float)ypos);
 
 		if (SelectedMap && SelectedMap->is_mdl_model)
 			glClearColor(0.25, 0.25, 0.25, 1.0);
@@ -1949,7 +1950,7 @@ void Renderer::getPickRay(vec3& start, vec3& pickDir)
 {
 	double xpos, ypos;
 	glfwGetCursorPos(window, &xpos, &ypos);
-
+	
 	// invert ypos
 	ypos = windowHeight - ypos;
 
