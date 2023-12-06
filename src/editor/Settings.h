@@ -1,8 +1,12 @@
 #pragma once
 
 #include "bsptypes.h"
+
 extern std::string g_settings_path;
 extern std::string g_config_dir;
+extern std::string g_current_dir;
+extern std::string g_game_dir;
+extern std::string g_working_dir;
 
 extern int g_render_flags;
 

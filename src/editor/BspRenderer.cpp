@@ -313,7 +313,7 @@ void BspRenderer::loadTextures()
 		{
 			std::string tryPath = tryPaths[k] + wadNames[i];
 			if (!fileExists(tryPath))
-				tryPath = g_settings.gamedir + tryPaths[k] + wadNames[i];
+				tryPath = g_game_dir + tryPaths[k] + wadNames[i];
 			if (fileExists(tryPath))
 			{
 				path = std::move(tryPath);

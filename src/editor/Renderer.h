@@ -16,9 +16,6 @@
 
 #define EDIT_MODEL_LUMPS (FL_PLANES | FL_TEXTURES | FL_VERTICES | FL_NODES | FL_TEXINFO | FL_FACES | FL_LIGHTING | FL_CLIPNODES | FL_LEAVES | FL_EDGES | FL_SURFEDGES | FL_MODELS)
 
-extern std::string g_settings_path;
-extern std::string g_config_dir;
-
 class Gui;
 
 enum transform_modes

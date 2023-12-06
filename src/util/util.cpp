@@ -1168,35 +1168,9 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 	replaceAll(path, "\\", "/");
 	replaceAll(path, "//", "/");
 }
-fs::path g_current_dir = "./";
 std::string GetCurrentDir()
 {
-	return g_current_dir.string() + "/";
-}
-
-std::string GetWorkDir()
-{
-#ifdef WIN32
-	if (g_settings.workingdir.find(':') == std::string::npos &&
-		g_settings.gamedir.find(':') != std::string::npos)
-	{
-		return g_settings.gamedir + g_settings.workingdir;
-	}
-#endif
-	return g_settings.workingdir;
-}
-
-std::string GetGameDir()
-{
-#ifdef WIN32
-	std::string curDir = g_current_dir.string();
-	if (curDir.find(':') != std::string::npos &&
-		g_settings.gamedir.find(':') == std::string::npos)
-	{
-		return curDir + g_settings.gamedir;
-	}
-#endif
-	return g_settings.gamedir;
+	return g_current_dir + "/";
 }
 
 #ifdef WIN32
@@ -1403,17 +1377,6 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 
 	tracesearch = tracesearch && g_settings.verboseLogs;
 
-	//if (fileExists("./" + path))
-	//{
-	//	outpath = path;
-	//	return true;
-	//}
-	//if (fileExists("./../" + path))
-	//{
-	//	outpath = path;
-	//	return true;
-	//}
-
 	std::ostringstream outTrace;
 
 	if (tracesearch)
@@ -1437,21 +1400,21 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 	}
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetWorkDir() + path) << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_working_dir + path) << "]\n";
 	}
-	if (fileExists(GetWorkDir() + path))
+	if (fileExists(g_working_dir + path))
 	{
-		outpath = GetWorkDir() + path;
+		outpath = g_working_dir + path;
 		return true;
 	}
 
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetGameDir() + path) << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_game_dir + path) << "]\n";
 	}
-	if (fileExists(GetGameDir() + path))
+	if (fileExists(g_game_dir + path))
 	{
-		outpath = GetGameDir() + path;
+		outpath = g_game_dir + path;
 		return true;
 	}
 
@@ -1490,11 +1453,11 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 			}
 			if (tracesearch)
 			{
-				outTrace << "Search paths [" << fPathId++ << "] : [" << (GetGameDir() + dir.path + path) << "]\n";
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (g_game_dir + dir.path + path) << "]\n";
 			}
-			if (fileExists(GetGameDir() + dir.path + path))
+			if (fileExists(g_game_dir + dir.path + path))
 			{
-				outpath = GetGameDir() + dir.path + path;
+				outpath = g_game_dir + dir.path + path;
 				return true;
 			}
 
@@ -1528,45 +1491,74 @@ void FixupAllSystemPaths()
 {
 	/* fixup gamedir can be only like C:/gamedir/ or /gamedir/ */
 	fixupPath(g_settings.gamedir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-
-	if (g_settings.workingdir.find(':') == std::string::npos)
+	if (!dirExists(g_settings.gamedir))
 	{
-		/* fixup workingdir for relative to gamedir
-			like ./workidr/ or workir/
-		*/
-
-		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+		if (!dirExists(g_current_dir + g_settings.gamedir))
+		{
+			logf("Error{}: Gamedir {} not exits!", "[1]", g_settings.gamedir);
+			logf("Error{}: Gamedir {} not exits!", "[2]", g_current_dir + g_settings.gamedir);
+		}
+		else
+		{
+			g_game_dir = g_current_dir + g_settings.gamedir;
+		}
 	}
 	else
 	{
-		/* fixup absolute workdir like C:/Gamedir/ */
-		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+		g_game_dir = g_settings.gamedir;
+	}
+
+	// first fix slashes and check if dir exists
+	fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+
+	if (!dirExists(g_settings.workingdir))
+	{	
+		/* 
+			fixup workingdir to relative
+		*/
+		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+
+		if (!dirExists(g_current_dir + g_settings.workingdir))
+		{
+			if (!dirExists(g_game_dir + g_settings.workingdir))
+			{
+				logf("Error{}: Workdir {} not exits!", "[1]", g_settings.workingdir);
+				logf("Error{}: Workdir {} not exits!", "[2]", g_game_dir + g_settings.workingdir);
+			}
+			else
+			{
+				g_working_dir = g_game_dir + g_settings.workingdir;
+			}
+		}
+		else
+		{
+			g_working_dir = g_current_dir + g_settings.workingdir;
+		}
+	}
+	else
+	{
+		g_working_dir = g_settings.workingdir;
 	}
 
 	for (auto& s : g_settings.fgdPaths)
 	{
-		if (s.path.find(':') == std::string::npos)
+		// first fix slashes and check if file exists
+		fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
+		if (!fileExists(s.path))
 		{
 			// relative like relative/to/fgdname.fgd
 			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
 		}
-		else
-		{
-			// absolute like c:/absolute/to/fgdname.fgd
-			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
-		}
 	}
+
 	for (auto& s : g_settings.resPaths)
 	{
-		if (s.path.find(':') == std::string::npos)
+		// first fix slashes and check if file exists
+		fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+		if (!fileExists(s.path))
 		{
 			// relative like ./cstrike/ or valve/
 			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-		}
-		else
-		{
-			// absolute like c:/absolute/dirname/
-			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 		}
 	}
 }

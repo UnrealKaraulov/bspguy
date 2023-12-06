@@ -215,7 +215,7 @@ Bsp::Bsp(std::string fpath)
 		entFilePath = fpath.substr(0, fpath.size() - 4) + ".ent";
 	}
 	else {
-		entFilePath = GetWorkDir() + (bsp_name + ".ent");
+		entFilePath = g_working_dir + (bsp_name + ".ent");
 	}
 
 	if (g_settings.autoImportEnt && fileExists(entFilePath)) {

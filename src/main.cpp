@@ -7,6 +7,7 @@
 #include "CommandLine.h"
 #include "remap.h"
 #include "Renderer.h"
+#include "Settings.h"
 #include "winding.h"
 
 // super todo:

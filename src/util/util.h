@@ -166,9 +166,7 @@ void replaceAll(std::string& str, const std::string& from, const std::string& to
 
 void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int height, int bytesPerPixel);
 
-extern fs::path g_current_dir;
 std::string GetCurrentDir();
-std::string GetWorkDir();
 
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);
