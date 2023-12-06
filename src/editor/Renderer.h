@@ -217,9 +217,7 @@ public:
 	int oldScroll;
 
 	bool pressed[GLFW_KEY_LAST];
-	bool released[GLFW_KEY_LAST];
 	bool oldPressed[GLFW_KEY_LAST];
-	bool oldReleased[GLFW_KEY_LAST];
 
 	bool anyCtrlPressed;
 	bool anyAltPressed;

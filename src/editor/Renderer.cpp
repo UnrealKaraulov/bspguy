@@ -38,6 +38,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 		g_app->hideGui = !g_app->hideGui;
 	}
+
+	g_app->oldPressed[key] = g_app->pressed[key];
+	g_app->pressed[key] = action != GLFW_RELEASE; 
 }
 
 void drop_callback(GLFWwindow* window, int count, const char** paths)
@@ -348,18 +351,6 @@ void Renderer::renderLoop()
 			curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 			oldRightMouse = curRightMouse;
 			curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-
-			for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
-			{
-				oldPressed[i] = pressed[i];
-				oldReleased[i] = released[i];
-			}
-
-			for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
-			{
-				pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;
-				released[i] = glfwGetKey(window, i) == GLFW_RELEASE;
-			}
 
 			DebugKeyPressed = pressed[GLFW_KEY_F1];
 
