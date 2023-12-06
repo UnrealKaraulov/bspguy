@@ -123,6 +123,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 Renderer::Renderer()
 {
+	g_app = this;
+
 	glfwSetErrorCallback(error_callback);
 
 	if (!glfwInit())
@@ -182,22 +184,46 @@ Renderer::Renderer()
 	fullBrightBspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	fullBrightBspShader->setMatrixNames(NULL, "modelViewProjection");
 
+	modelShader = new ShaderProgram(Shaders::g_shader_model_vertex, Shaders::g_shader_model_fragment);
+	modelShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
+	modelShader->setMatrixNames(NULL, "modelViewProjection");
+
 	colorShader = new ShaderProgram(Shaders::g_shader_cVert_vertex, Shaders::g_shader_cVert_fragment);
 	colorShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	colorShader->setMatrixNames(NULL, "modelViewProjection");
 	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL);
 
+	g_app->bspShader->bind();
+	unsigned int sTexId = glGetUniformLocation(g_app->bspShader->ID, "sTex");
+	glUniform1i(sTexId, 0);
+	for (int s = 0; s < MAXLIGHTMAPS; s++)
+	{
+		unsigned int sLightmapTexIds = glGetUniformLocation(g_app->bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
+		// assign lightmap texture units (skips the normal texture unit)
+		glUniform1i(sLightmapTexIds, s + 1);
+	}
+
+	g_app->fullBrightBspShader->bind();
+	unsigned int sTexId2 = glGetUniformLocation(g_app->fullBrightBspShader->ID, "sTex");
+	glUniform1i(sTexId2, 0);
+
+	g_app->modelShader->bind();
+	sTexId2 = glGetUniformLocation(g_app->modelShader->ID, "sTex");
+	glUniform1i(sTexId2, 0);
+
 	colorShader->bind();
-	unsigned int colorMultId = glGetUniformLocation(colorShader->ID, "colorMult");
-	glUniform4f(colorMultId, 1, 1, 1, 1);
+	colorShaderMultId = glGetUniformLocation(g_app->colorShader->ID, "colorMult");
+	glUniform4f(colorShaderMultId, 1, 1, 1, 1);
+
+	activeShader = bspShader;
+
+
 	clearSelection();
 
 	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;
 
 
 	gui->init();
-
-	g_app = this;
 
 	g_progress.simpleMode = true;
 
@@ -354,10 +380,7 @@ void Renderer::renderLoop()
 			}
 		}
 
-		//if (SelectedMap && SelectedMap->mdl)
-		//{
-		//	SelectedMap->mdl->AdvanceFrame(curTime - oldTime);
-		//}
+		activeShader = (g_render_flags & RENDER_LIGHTMAPS) ? bspShader : fullBrightBspShader;
 
 		int modelIdx = -1;
 		int entIdx = pickInfo.GetSelectedEnt();
@@ -451,9 +474,9 @@ void Renderer::renderLoop()
 
 			if (SelectedMap->is_mdl_model && SelectedMap->mdl)
 			{
-				bspShader->bind();
-				bspShader->modelMat->loadIdentity();
-				bspShader->updateMatrixes();
+				modelShader->bind();
+				modelShader->modelMat->loadIdentity();
+				modelShader->updateMatrixes();
 				SelectedMap->mdl->DrawModel();
 				continue;
 			}
@@ -503,9 +526,6 @@ void Renderer::renderLoop()
 			}
 		}
 
-
-		matmodel.loadIdentity();
-		colorShader->bind();
 
 		if (SelectedMap)
 		{
@@ -2128,7 +2148,7 @@ void Renderer::reloadBspModels()
 							tmpBsp->parentMap = bsprend->map;
 							if (tmpBsp->bsp_valid)
 							{
-								BspRenderer* mapRenderer = new BspRenderer(tmpBsp, bspShader, fullBrightBspShader, colorShader, pointEntRenderer);
+								BspRenderer* mapRenderer = new BspRenderer(tmpBsp, pointEntRenderer);
 								mapRenderers.push_back(mapRenderer);
 							}
 						}
@@ -2166,7 +2186,7 @@ void Renderer::addMap(Bsp* map)
 		*/
 	}
 
-	BspRenderer* mapRenderer = new BspRenderer(map, bspShader, fullBrightBspShader, colorShader, pointEntRenderer);
+	BspRenderer* mapRenderer = new BspRenderer(map, pointEntRenderer);
 
 	mapRenderers.push_back(mapRenderer);
 

@@ -6230,7 +6230,7 @@ void Gui::drawImportMapWidget()
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
 				{
 					Bsp* bspModel = new Bsp(mapPath);
-					BspRenderer* mapRenderer = new BspRenderer(bspModel, NULL, NULL, NULL, NULL);
+					BspRenderer* mapRenderer = new BspRenderer(bspModel, app->pointEntRenderer);
 					Bsp* map = app->getSelectedMap();
 
 					std::vector<BSPPLANE> newPlanes;

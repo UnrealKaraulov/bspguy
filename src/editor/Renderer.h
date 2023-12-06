@@ -82,9 +82,13 @@ public:
 	vec3 debugVec2;
 	vec3 debugVec3;
 
+
+	unsigned int colorShaderMultId;
+	ShaderProgram* modelShader;
 	ShaderProgram* bspShader;
 	ShaderProgram* fullBrightBspShader;
 	ShaderProgram* colorShader;
+	ShaderProgram* activeShader;
 
 	double oldTime = 0.0;
 	double curTime = 0.0;

@@ -681,14 +681,9 @@ void StudioModel::RefreshMeshList(int body)
 
 		for (int j = 0; j < m_pmodel->nummesh; j++)
 		{
-			auto tmpBuff = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->fullBrightBspShader, 0, GL_TRIANGLES);
-			tmpBuff->addAttribute(TEX_2F, "vTex");
-			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
-			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
-			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
-			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
-			tmpBuff->addAttribute(4, GL_FLOAT, 0, "vColor");
-			tmpBuff->addAttribute(POS_3F, "vPosition");
+			auto tmpBuf = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->modelShader, 0, GL_TRIANGLES);
+			tmpBuf->addAttribute(TEX_2F, "vTex");
+			tmpBuf->addAttribute(POS_3F, "vPosition");
 		}
 	}
 
@@ -847,12 +842,6 @@ void StudioModel::RefreshMeshList(int body)
 		if (mdl_mesh_groups[body][j].verts.size() < totalElements)
 		{
 			mdl_mesh_groups[body][j].verts.resize(totalElements);
-			for (auto& vert : mdl_mesh_groups[body][j].verts)
-			{
-				vert.r = vert.g = vert.b = vert.a = 1.0;
-				vert.luv[0][2] = 1.0;
-				vert.luv[1][2] = vert.luv[2][2] = vert.luv[3][2] = 0.0f;
-			}
 			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], (int)mdl_mesh_groups[body][j].verts.size());
 		}
 		for (int z = 0; z < (int)mdl_mesh_groups[body][j].verts.size(); z++)

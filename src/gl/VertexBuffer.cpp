@@ -134,6 +134,7 @@ void VertexBuffer::addAttribute(int type, const char* varName) {
 void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
 	shaderProgram = program;
 	attributesBound = false;
+
 	for (int i = 0; i < attribs.size(); i++)
 	{
 		if (strlen(attribs[i].varName) > 0) {
@@ -141,7 +142,7 @@ void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
 		}
 	}
 
-	bindAttributes(hideErrors);
+	bindAttributes(hideErrors && !g_verbose);
 	if (vboId != (GLuint)-1) {
 		deleteBuffer();
 		upload();
@@ -159,7 +160,7 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 
 		attribs[i].handle = glGetAttribLocation(shaderProgram->ID, attribs[i].varName);
 
-		if (!hideErrors && attribs[i].handle == -1)
+		if ((!hideErrors || g_verbose) && attribs[i].handle == -1)
 			logf(get_localized_string(LANG_0975),attribs[i].varName);
 	}
 
@@ -178,7 +179,7 @@ void VertexBuffer::upload(bool hideErrors)
 	if (!shaderProgram)
 		return;
 	shaderProgram->bind();
-	bindAttributes(hideErrors);
+	bindAttributes(hideErrors && !g_verbose);
 
 	if (vboId == (GLuint)-1)
 		glGenBuffers(1, &vboId);
@@ -212,7 +213,7 @@ void VertexBuffer::deleteBuffer() {
 void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors)
 {
 	shaderProgram->bind();
-	bindAttributes(hideErrors);
+	bindAttributes(hideErrors && !g_verbose);
 
 	char* offsetPtr = (char*)data;
 	if (vboId != (GLuint)-1) {

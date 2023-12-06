@@ -20,6 +20,14 @@ struct tVert
 	{}
 };
 
+struct modelVert
+{
+	// texture coordinates
+	float u, v;
+	vec3 pos;
+};
+
+
 struct lightmapVert
 {
 	// texture coordinates

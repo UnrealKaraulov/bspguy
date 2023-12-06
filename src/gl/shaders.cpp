@@ -62,7 +62,32 @@ namespace Shaders
 		"	gl_FragColor = texture2D(sTex, fTex);\n"
 		"}\n";
 
+	const char* g_shader_model_vertex =
+		// object variables
+		"uniform mat4 modelViewProjection;\n"
 
+		// vertex variables
+		"attribute vec3 vPosition;\n"
+		"attribute vec2 vTex;\n"
+
+		// fragment variables
+		"varying vec2 fTex;\n"
+
+		"void main()\n"
+		"{\n"
+		"	gl_Position = modelViewProjection * vec4(vPosition, 1);\n"
+		"	fTex = vTex;\n"
+		"}\n";
+
+	const char* g_shader_model_fragment =
+		"varying vec2 fTex;\n"
+
+		"uniform sampler2D sTex;\n"
+
+		"void main()\n"
+		"{\n"
+		"	gl_FragColor = texture2D(sTex, fTex);\n"
+		"}\n";
 
 	const char* g_shader_multitexture_vertex =
 		// object variables
@@ -147,6 +172,10 @@ namespace Shaders
 		// vertex variables
 		"attribute vec3 vPosition;\n"
 		"attribute vec2 vTex;\n"
+		"attribute vec3 vLightmapTex0;\n"
+		"attribute vec3 vLightmapTex1;\n"
+		"attribute vec3 vLightmapTex2;\n"
+		"attribute vec3 vLightmapTex3;\n"
 		"attribute vec4 vColor;\n"
 
 		// fragment variables

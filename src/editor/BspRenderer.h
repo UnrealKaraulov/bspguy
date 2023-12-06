@@ -182,7 +182,7 @@ public:
 	bool texturesLoaded = false;
 	bool needReloadDebugTextures = false;
 
-	BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* fullBrightBspShader, ShaderProgram* colorShader, PointEntRenderer* pointEntRenderer);
+	BspRenderer(Bsp* map, PointEntRenderer* pointEntRenderer);
 	~BspRenderer();
 
 	void render(std::vector<int> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull);
@@ -228,11 +228,6 @@ public:
 
 	bool getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup);
 
-
-	ShaderProgram* bspShader;
-	ShaderProgram* fullBrightBspShader;
-	ShaderProgram* colorShader;
-	unsigned int colorShaderMultId;
 
 	LightmapInfo* lightmaps = NULL;
 	RenderEnt* renderEnts = NULL;

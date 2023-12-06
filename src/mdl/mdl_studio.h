@@ -355,12 +355,12 @@ struct StudioMesh
 {
 	VertexBuffer* buffer;
 	Texture* texture;
-	std::vector<lightmapVert> verts;
+	std::vector<modelVert> verts;
 	StudioMesh()
 	{
 		buffer = NULL;
 		texture = NULL;
-		verts = std::vector<lightmapVert>();
+		verts = std::vector<modelVert>();
 	}
 };
 
