@@ -40,7 +40,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 
 	g_app->oldPressed[key] = g_app->pressed[key];
-	g_app->pressed[key] = action != GLFW_RELEASE;
+	g_app->pressed[key] = action == GLFW_PRESS;
 }
 
 void drop_callback(GLFWwindow* window, int count, const char** paths)
@@ -315,6 +315,9 @@ void Renderer::renderLoop()
 	static bool isMovingOrigin = false;
 	static bool isTransformingValid = false;
 	static bool isTransformingWorld = false;
+
+	memset(pressed, 0, sizeof(pressed));
+	memset(oldPressed, 0, sizeof(oldPressed));
 
 	while (!glfwWindowShouldClose(window))
 	{
