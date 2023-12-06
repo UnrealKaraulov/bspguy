@@ -338,6 +338,7 @@ int noclip(CommandLine& cli)
 			if (!cli.hasOption("-hull"))
 			{
 				logf(get_localized_string(LANG_0010));
+				delete map;
 				return 1;
 			}
 			redirect = cli.getOptionInt("-redirect");
@@ -458,6 +459,7 @@ int simplify(CommandLine& cli)
 			if (hull < 1 || hull >= MAX_MAP_HULLS)
 			{
 				logf(get_localized_string(LANG_0024));
+				delete map;
 				return 1;
 			}
 		}
@@ -585,6 +587,7 @@ int transform(CommandLine& cli)
 		delete map;
 		return 0;
 	}
+	delete map;
 	return 1;
 }
 

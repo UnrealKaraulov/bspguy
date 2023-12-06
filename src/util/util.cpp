@@ -1493,14 +1493,14 @@ void FixupAllSystemPaths()
 	fixupPath(g_settings.gamedir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	if (!dirExists(g_settings.gamedir))
 	{
-		if (!dirExists(g_current_dir + g_settings.gamedir))
+		if (!dirExists(GetCurrentDir() + g_settings.gamedir))
 		{
 			logf("Error{}: Gamedir {} not exits!", "[1]", g_settings.gamedir);
-			logf("Error{}: Gamedir {} not exits!", "[2]", g_current_dir + g_settings.gamedir);
+			logf("Error{}: Gamedir {} not exits!", "[2]", GetCurrentDir() + g_settings.gamedir);
 		}
 		else
 		{
-			g_game_dir = g_current_dir + g_settings.gamedir;
+			g_game_dir = GetCurrentDir() + g_settings.gamedir;
 		}
 	}
 	else
@@ -1518,7 +1518,7 @@ void FixupAllSystemPaths()
 		*/
 		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 
-		if (!dirExists(g_current_dir + g_settings.workingdir))
+		if (!dirExists(GetCurrentDir() + g_settings.workingdir))
 		{
 			if (!dirExists(g_game_dir + g_settings.workingdir))
 			{
@@ -1532,7 +1532,7 @@ void FixupAllSystemPaths()
 		}
 		else
 		{
-			g_working_dir = g_current_dir + g_settings.workingdir;
+			g_working_dir = GetCurrentDir() + g_settings.workingdir;
 		}
 	}
 	else

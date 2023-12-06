@@ -806,9 +806,9 @@ void Renderer::loadFgds()
 		}
 		else
 		{
+			FindPathInAssets(NULL, g_settings.fgdPaths[i].path, newFgdPath, true);
 			logf(get_localized_string(LANG_0910), g_settings.fgdPaths[i].path);
-			if (!FindPathInAssets(NULL, g_settings.fgdPaths[i].path, newFgdPath, true))
-				g_settings.fgdPaths[i].enabled = false;
+			g_settings.fgdPaths[i].enabled = false;
 			continue;
 		}
 	}
