@@ -867,10 +867,24 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 
 	COLOR4* out = new COLOR4[texsize];
 
-	for (int i = 0; i < texsize; i++)
+	if (ptexture->flags & 0x64)
 	{
-		out[i] = pal[data[i]];
+		for (int i = 0; i < texsize; i++)
+		{
+			if (data[i] == 255)
+				out[i].a = out[i].b = out[i].g = out[i].r = 0.0;
+			else
+				out[i] = pal[data[i]];
+		}
 	}
+	else
+	{
+		for (int i = 0; i < texsize; i++)
+		{
+			out[i] = pal[data[i]];
+		}
+	}
+	//logf("Texture name {} texture flags {}\n", ptexture->name, ptexture->flags);
 	// ptexture->width = outwidth;
 	// ptexture->height = outheight;
 	auto texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name);
