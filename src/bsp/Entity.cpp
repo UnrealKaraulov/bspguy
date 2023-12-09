@@ -56,7 +56,8 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 	cachedModelIdx = -2;
 	targetsCached = false;
 
-	updateRenderModes();
+	if (key.starts_with("render"))
+		updateRenderModes();
 }
 
 void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
@@ -73,11 +74,15 @@ void Entity::removeKeyvalue(const std::string key)
 		return;
 	if (std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end())
 		keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
-	
+
 	keyvalues.erase(key);
 	cachedModelIdx = -2;
-	targetsCached = false; 
-	updateRenderModes();
+	targetsCached = false;
+	if (key == "origin")
+		originInited = false;
+
+	if (key.starts_with("render"))
+		updateRenderModes();
 }
 
 bool Entity::renameKey(int idx, const std::string& newName)
@@ -86,6 +91,8 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	{
 		return false;
 	}
+	if (keyOrder[idx].starts_with("render"))
+		updateRenderModes();
 	for (int i = 0; i < keyOrder.size(); i++)
 	{
 		if (keyOrder[i] == newName)
@@ -99,7 +106,6 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	keyOrder[idx] = newName;
 	cachedModelIdx = -2;
 	targetsCached = false;
-	updateRenderModes();
 	return true;
 }
 
@@ -136,7 +142,7 @@ int Entity::getBspModelIdx()
 	{
 		return cachedModelIdx;
 	}
-	
+
 	if (!hasKey("model"))
 	{
 		cachedModelIdx = -1;
@@ -423,7 +429,7 @@ std::vector<std::string> Entity::getTargets()
 
 	if (keyvalues["classname"] == "multi_manager")
 	{
-// multi_manager is a special case where the targets are in the key names
+		// multi_manager is a special case where the targets are in the key names
 		for (int i = 0; i < keyOrder.size(); i++)
 		{
 			std::string tname = keyOrder[i];
@@ -477,7 +483,7 @@ void Entity::renameTargetnameValues(const std::string& oldTargetname, const std:
 
 	if (keyvalues["classname"] == "multi_manager")
 	{
-// multi_manager is a special case where the targets are in the key names
+		// multi_manager is a special case where the targets are in the key names
 		for (int i = 0; i < keyOrder.size(); i++)
 		{
 			std::string tname = keyOrder[i];
@@ -544,5 +550,4 @@ void Entity::updateRenderModes()
 		vec3 color = parseVector(keyvalues["rendercolor"]);
 		rendercolor = vec3(color[0] / 255.f, color[1] / 255.f, color[2] / 255.f);
 	}
-
 }

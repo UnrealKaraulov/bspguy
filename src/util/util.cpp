@@ -103,35 +103,19 @@ std::streampos fileSize(const std::string& filePath)
 	return fsize;
 }
 
-std::vector<std::string> splitString(std::string s, const std::string& delimitter)
+std::vector<std::string> splitString(std::string s, const std::string& delimiter, int maxParts)
 {
-	std::vector<std::string> split;
-	if (s.empty() || delimitter.empty())
-		return split;
-
-	size_t delimitLen = delimitter.length();
-
-	while (s.size())
-	{
-		size_t searchOffset = 0;
-		while (searchOffset < s.size())
-		{
-			size_t delimitPos = s.find(delimitter, searchOffset);
-
-			if (delimitPos == std::string::npos)
-			{
-				split.push_back(s);
-				return split;
-			}
-
-			if (delimitPos != 0)
-				split.emplace_back(s.substr(0, delimitPos));
-
-			s = s.substr(delimitPos + delimitLen);
-		}
-	}
-
-	return split;
+    std::vector<std::string> split;
+    size_t pos;
+    while ((pos = s.find(delimiter)) != std::string::npos && (maxParts == 0 || split.size() < maxParts - 1)) {
+        if (pos != 0) {
+            split.push_back(s.substr(0, pos));
+        }
+        s.erase(0, pos + delimiter.length());
+    }
+    if (!s.empty())
+        split.push_back(s);
+    return split;
 }
 
 std::vector<std::string> splitStringIgnoringQuotes(std::string s, const std::string& delimitter)
@@ -307,7 +291,6 @@ vec3 parseVector(const std::string& s)
 	v.x = (float)atof(parts[0].c_str());
 	v.y = (float)atof(parts[1].c_str());
 	v.z = (float)atof(parts[2].c_str());
-
 	return v;
 }
 

@@ -564,7 +564,9 @@ inline T INIReader::Converter(const std::string& s) const {
 }
 
 inline const bool INIReader::BoolConverter(std::string s) const {
-    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+    std::transform(s.begin(), s.end(), s.begin(),
+        [](unsigned char c) { return (unsigned char)std::tolower(c); }
+    );
     static const std::unordered_map<std::string, bool> s2b{
         {"1", true},  {"true", true},   {"yes", true}, {"on", true},
         {"0", false}, {"false", false}, {"no", false}, {"off", false},

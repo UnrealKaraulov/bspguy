@@ -1620,13 +1620,10 @@ void BspRenderer::refreshEnt(int entIdx)
 	renderEnts[entIdx].hide = ent->hide;
 	bool setAngles = false;
 
-	if (ent->hasKey("origin"))
-	{
-		vec3 origin = parseVector(ent->keyvalues["origin"]);
-		renderEnts[entIdx].modelMatAngles.translate(origin.x, origin.z, -origin.y);
-		renderEnts[entIdx].modelMatOrigin = renderEnts[entIdx].modelMatAngles;
-		renderEnts[entIdx].offset = origin;
-	}
+	vec3 origin = ent->getOrigin();
+	renderEnts[entIdx].modelMatAngles.translate(origin.x, origin.z, -origin.y);
+	renderEnts[entIdx].modelMatOrigin = renderEnts[entIdx].modelMatAngles;
+	renderEnts[entIdx].offset = origin;
 
 	for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
 	{
@@ -2446,7 +2443,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 	vec3 renderOffset;
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
-	
+
 	// skip worldspawn
 	g_app->colorShader->pushMatrix(MAT_MODEL);
 
@@ -2778,6 +2775,8 @@ void BspRenderer::updateEntityState(int entIdx)
 
 void BspRenderer::saveLumpState()
 {
+	logf("SAVE LUMP STATES TO BACKUP");
+	map->update_ent_lump();
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		undoLumpState.lumps[i] = std::vector<unsigned char>(map->lumps[i], map->lumps[i] + map->bsp_header.lump[i].nLength);
@@ -2786,6 +2785,7 @@ void BspRenderer::saveLumpState()
 
 void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 {
+	logf("SAVE ENT STATES TO BACKUP");
 	if (entIdx < 0)
 	{
 		logf(get_localized_string(LANG_0287));
@@ -2800,29 +2800,30 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 		return;
 	}
 
-	bool anythingToUndo = true;
+	bool anythingToUndo = false;
 	if (undoEntityState[entIdx].keyOrder.size() == ent->keyOrder.size())
 	{
-		bool keyvaluesDifferent = false;
 		for (int i = 0; i < undoEntityState[entIdx].keyOrder.size(); i++)
 		{
 			std::string oldKey = undoEntityState[entIdx].keyOrder[i];
 			std::string newKey = ent->keyOrder[i];
 			if (oldKey != newKey)
 			{
-				keyvaluesDifferent = true;
+				anythingToUndo = true;
 				break;
 			}
 			std::string oldVal = undoEntityState[entIdx].keyvalues[oldKey];
 			std::string newVal = ent->keyvalues[oldKey];
 			if (oldVal != newVal)
 			{
-				keyvaluesDifferent = true;
+				anythingToUndo = true;
 				break;
 			}
 		}
-
-		anythingToUndo = keyvaluesDifferent;
+	}
+	else
+	{
+		anythingToUndo = true;
 	}
 
 	if (!anythingToUndo)
@@ -2837,6 +2838,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 
 void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int targets)
 {
+	logf("SAVE MODEL STATES TO BACKUP");
 	if (!map)
 	{
 		logf(get_localized_string(LANG_0290));
@@ -2861,17 +2863,20 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 	bool anyDifference = false;
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
-		if (newLumps.lumps[i].size() && newLumps.lumps[i].size() != undoLumpState.lumps[i].size() ||
-			!std::equal(newLumps.lumps[i].begin(), newLumps.lumps[i].end(),
-				undoLumpState.lumps[i].begin()))
+		if (targets & (1 << i))
 		{
-			anyDifference = true;
-			differences[i] = true;
-			if (g_verbose)
+			if (newLumps.lumps[i].size() != undoLumpState.lumps[i].size() ||
+				!std::equal(newLumps.lumps[i].begin(), newLumps.lumps[i].end(),
+					undoLumpState.lumps[i].begin()))
 			{
-				logf(get_localized_string(LANG_0291), g_lump_names[i], newLumps.lumps[i].size(), undoLumpState.lumps[i].size());
+				anyDifference = true;
+				differences[i] = true;
+				if (g_verbose)
+				{
+					logf(get_localized_string(LANG_0291), g_lump_names[i], newLumps.lumps[i].size(), undoLumpState.lumps[i].size());
+				}
+				targetLumps = targetLumps | (1 << i);
 			}
-			targetLumps = targetLumps | (1 << i);
 		}
 	}
 

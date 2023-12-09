@@ -4774,7 +4774,7 @@ void Gui::drawTransformWidget()
 					}
 					else
 					{
-						vec3 ori = ent->hasKey("origin") ? parseVector(ent->keyvalues["origin"]) : vec3();
+						vec3 ori = ent->getOrigin();
 						if (app->originSelected)
 						{
 							ori = app->transformedOrigin;

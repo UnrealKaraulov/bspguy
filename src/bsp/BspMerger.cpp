@@ -447,6 +447,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 		{
 			origin = parseVector(ent->keyvalues["origin"]);
 		}
+
 		if (ent->isBspModel())
 		{
 			origin = mergedMap->get_model_center(ent->getBspModelIdx());

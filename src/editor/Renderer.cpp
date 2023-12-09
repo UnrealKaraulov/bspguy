@@ -2185,6 +2185,8 @@ void Renderer::addMap(Bsp* map)
 
 	mapRenderers.push_back(mapRenderer);
 
+	mapRenderer->saveLumpState();
+
 	gui->checkValidHulls();
 
 	// Pick default map
@@ -2273,7 +2275,7 @@ void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane
 
 vec3 Renderer::getEntOrigin(Bsp* map, Entity* ent)
 {
-	vec3 origin = ent->hasKey("origin") ? parseVector(ent->keyvalues["origin"]) : vec3();
+	vec3 origin = ent->getOrigin();
 	return origin + getEntOffset(map, ent);
 }
 
@@ -2320,10 +2322,7 @@ void Renderer::updateDragAxes(vec3 delta)
 			entMin -= modelOrigin;
 
 			scaleAxes.origin = modelOrigin;
-			if (ent->hasKey("origin"))
-			{
-				scaleAxes.origin += parseVector(ent->keyvalues["origin"]);
-			}
+			scaleAxes.origin += ent->getOrigin();
 			scaleAxes.origin += delta;
 		}
 	}

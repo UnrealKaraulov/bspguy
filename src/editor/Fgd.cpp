@@ -1,6 +1,7 @@
 #include "lang.h"
 #include "Fgd.h"
 #include <set>
+#include <regex>
 
 std::map<std::string, int> fgdKeyTypes{
 	{"integer", FGD_KEY_INTEGER},
@@ -54,7 +55,7 @@ void Fgd::merge(Fgd* other)
 
 		if (classMap.find(className) != classMap.end())
 		{
-			logf(get_localized_string(LANG_0299),className,other->name);
+			logf(get_localized_string(LANG_0299), className, other->name);
 			continue;
 		}
 
@@ -73,7 +74,10 @@ bool Fgd::parse()
 		return false;
 	}
 
-	logf(get_localized_string(LANG_0300),path);
+	std::regex brackEnd(R"(\s*\[\s*\]$)");
+
+
+	logf(get_localized_string(LANG_0300), path);
 
 	std::ifstream in(path);
 
@@ -101,17 +105,18 @@ bool Fgd::parse()
 		{
 			if (bracketNestLevel)
 			{
-				logf(get_localized_string(LANG_0301),lineNum,name);
+				logf(get_localized_string(LANG_0301), lineNum, name);
 			}
 
 			parseClassHeader(*fgdClass);
 		}
 
-		if (line.find('[') != std::string::npos)
+		if ((line.size() && line[0] == '[') || (line.rfind('[') != std::string::npos && std::regex_search(line, brackEnd)))
 		{
 			bracketNestLevel++;
 		}
-		if (line.find(']') != std::string::npos)
+
+		if ((line.size() && line[0] == ']') || (line.rfind(']') != std::string::npos && std::regex_search(line, brackEnd)))
 		{
 			bracketNestLevel--;
 			if (bracketNestLevel == 0)
@@ -121,7 +126,7 @@ bool Fgd::parse()
 			}
 		}
 
-		if (line == "[" || line == "]")
+		if (line.size() && (line[0] == '[' || line[0] == ']'))
 		{
 			continue;
 		}
@@ -135,7 +140,7 @@ bool Fgd::parse()
 		{
 			if (fgdClass->keyvalues.empty())
 			{
-				logf(get_localized_string(LANG_0302),lineNum,name);
+				logf(get_localized_string(LANG_0302), lineNum, name);
 				continue;
 			}
 			KeyvalueDef& lastKey = fgdClass->keyvalues[fgdClass->keyvalues.size() - 1];
@@ -151,11 +156,11 @@ bool Fgd::parse()
 
 void Fgd::parseClassHeader(FgdClass& fgdClass)
 {
-	std::vector<std::string> headerParts = splitString(line, "=");
+	std::vector<std::string> headerParts = splitString(line, "=", 2);
 
 	if (headerParts.empty())
 	{
-		logf(get_localized_string(LANG_0303),lineNum,name);
+		logf(get_localized_string(LANG_0303), lineNum, name);
 		return;
 	}
 
@@ -179,7 +184,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 	}
 	else
 	{
-		logf(get_localized_string(LANG_0304),typeParts[0],name);
+		logf(get_localized_string(LANG_0304), typeParts[0], name);
 	}
 
 	// parse constructors/properties
@@ -213,7 +218,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0305),lineNum,name);
+				logf(get_localized_string(LANG_0305), lineNum, name);
 			}
 
 			fgdClass.sizeSet = true;
@@ -288,32 +293,36 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 				else if (flag == "Path" || flag == "Light")
 					;
 				else
-					logf(get_localized_string(LANG_0307),flag,lineNum,name);
+					logf(get_localized_string(LANG_0307), flag, lineNum, name);
 			}
 		}
 		else if (typeParts[i].find('(') != std::string::npos)
 		{
 			std::string typeName = typeParts[i].substr(0, typeParts[i].find('('));
-			logf(get_localized_string(LANG_0308),typeName,lineNum,name);
+			logf(get_localized_string(LANG_0308), typeName, lineNum, name);
 		}
 	}
 
 	if (headerParts.size() == 1)
 	{
-		logf(get_localized_string(LANG_1048),lineNum,name);
+		logf(get_localized_string(LANG_1048), lineNum, name);
 		return;
 	}
 	std::vector<std::string> nameParts = splitStringIgnoringQuotes(headerParts[1], ":");
 
-	if (nameParts.size() >= 2)
-	{
-		fgdClass.description = getValueInQuotes(nameParts[1]);
-	}
 	if (nameParts.size() >= 1)
 	{
 		fgdClass.name = trimSpaces(nameParts[0]);
 		// strips brackets if they're there
 		fgdClass.name = fgdClass.name.substr(0, fgdClass.name.find(' '));
+	}
+	if (nameParts.size() >= 2)
+	{
+		fgdClass.description = getValueInQuotes(nameParts[1]);
+		for (size_t i = 2; i < nameParts.size(); i++)
+		{
+			fgdClass.description += "\n" + getValueInQuotes(nameParts[i]);
+		}
 	}
 }
 
@@ -639,7 +648,7 @@ void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList)
 		{
 			if (fgd->classMap.find(baseClasses[i]) == fgd->classMap.end())
 			{
-				logf(get_localized_string(LANG_0310),baseClasses[i],name);
+				logf(get_localized_string(LANG_0310), baseClasses[i], name);
 				continue;
 			}
 			inheritanceList.push_back(fgd->classMap[baseClasses[i]]);
@@ -662,8 +671,8 @@ void Fgd::createEntGroups()
 
 		bool isPointEnt = classes[i]->classType == FGD_CLASS_POINT;
 
-		std::set<std::string> & targetSet = isPointEnt ? addedPointGroups : addedSolidGroups;
-		std::vector<FgdGroup> & targetGroup = isPointEnt ? pointEntGroups : solidEntGroups;
+		std::set<std::string>& targetSet = isPointEnt ? addedPointGroups : addedSolidGroups;
+		std::vector<FgdGroup>& targetGroup = isPointEnt ? pointEntGroups : solidEntGroups;
 
 		if (targetSet.find(groupName) == targetSet.end())
 		{
@@ -728,7 +737,7 @@ void Fgd::setSpawnflagNames()
 
 					if (!choice.isInteger)
 					{
-						logf(get_localized_string(LANG_0311),choice.svalue,name);
+						logf(get_localized_string(LANG_0311), choice.svalue, name);
 						continue;
 					}
 
@@ -741,7 +750,7 @@ void Fgd::setSpawnflagNames()
 
 					if (bit > 31)
 					{
-						logf(get_localized_string(LANG_0312),choice.svalue,name);
+						logf(get_localized_string(LANG_0312), choice.svalue, name);
 					}
 					else
 					{
