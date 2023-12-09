@@ -2775,7 +2775,8 @@ void BspRenderer::updateEntityState(int entIdx)
 
 void BspRenderer::saveLumpState()
 {
-	logf("SAVE LUMP STATES TO BACKUP");
+	if (g_verbose)
+		logf("SAVE LUMP STATES TO BACKUP\n");
 	map->update_ent_lump();
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -2785,7 +2786,8 @@ void BspRenderer::saveLumpState()
 
 void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 {
-	logf("SAVE ENT STATES TO BACKUP");
+	if (g_verbose)
+		logf("SAVE ENT STATES TO BACKUP\n");
 	if (entIdx < 0)
 	{
 		logf(get_localized_string(LANG_0287));
@@ -2838,7 +2840,8 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 
 void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int targets)
 {
-	logf("SAVE MODEL STATES TO BACKUP");
+	if (g_verbose)
+		logf("SAVE MODEL STATES TO BACKUP\n");
 	if (!map)
 	{
 		logf(get_localized_string(LANG_0290));
