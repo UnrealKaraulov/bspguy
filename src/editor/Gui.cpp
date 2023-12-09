@@ -3222,11 +3222,11 @@ void Gui::drawDebugWidget()
 	{
 		if (ImGui::CollapsingHeader(get_localized_string(LANG_0625).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0366)), (int)cameraOrigin.x, (int)cameraOrigin.y, (int)cameraOrigin.z).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0366)), std::ceil(cameraOrigin.x), std::ceil(cameraOrigin.y), std::ceil(cameraOrigin.z)).c_str());
 			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
 			ImGui::Text(fmt::format("Mouse left {} right {}", app->curLeftMouse, app->curRightMouse).c_str());
 			ImGui::Text(fmt::format("Time: {}", app->curTime).c_str());
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0367)), (int)cameraAngles.x, (int)cameraAngles.y, (int)cameraAngles.z).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0367)), std::ceil(cameraAngles.x), std::ceil(cameraAngles.y), std::ceil(cameraAngles.z)).c_str());
 
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0368)), (unsigned int)app->pickInfo.selectedFaces.size()).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0369)), app->pickMode).c_str());
@@ -4657,15 +4657,16 @@ void Gui::drawGOTOWidget()
 		ImGui::PopItemWidth();
 		ImGui::Text(get_localized_string(LANG_0681).c_str());
 		ImGui::PushItemWidth(inputWidth);
-		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles.z, 0.1f, 0, 0, "Z: %.0f");
-		ImGui::SameLine();
 		ImGui::DragFloat(get_localized_string(LANG_0683).c_str(), &angles.x, 0.1f, 0, 0, "X: %.0f");
 		ImGui::SameLine();
 		ImGui::BeginDisabled();
-		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles_y, 0.0f, 0, 0, "Y: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles_y, 0.0f, 0, 0, "Z: %.0f");
 		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles.z, 0.1f, 0, 0, "Y: %.0f");
 		ImGui::PopItemWidth();
 
+		Bsp* map = app->getSelectedMap();
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
@@ -4673,10 +4674,12 @@ void Gui::drawGOTOWidget()
 		{
 			cameraOrigin = coordinates;
 			cameraAngles = angles;
+			map->getBspRender()->renderCameraAngles = cameraAngles;
+			map->getBspRender()->renderCameraOrigin = cameraOrigin;
+			//cameraAngles.z += 90.0f;
 			makeVectors(angles, app->cameraForward, app->cameraRight, app->cameraUp);
 		}
 		ImGui::PopStyleColor(3);
-		Bsp* map = app->getSelectedMap();
 		if (map && !map->is_mdl_model)
 		{
 			ImGui::Separator();

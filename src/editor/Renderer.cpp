@@ -39,6 +39,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		g_app->hideGui = !g_app->hideGui;
 	}
 
+	if (action == GLFW_REPEAT)
+		return;
 	g_app->oldPressed[key] = g_app->pressed[key];
 	g_app->pressed[key] = action != GLFW_RELEASE;
 }
@@ -671,6 +673,8 @@ void Renderer::renderLoop()
 			tmpPickIdx = pickCount;
 			tmpVertPickIdx = vertPickCount;
 		}
+
+		memcpy(oldPressed, pressed, sizeof(pressed));
 	}
 
 	glfwTerminate();

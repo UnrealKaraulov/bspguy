@@ -473,6 +473,8 @@ void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
 	if (keyParts.size() > 1)
 		def.name = getValueInQuotes(keyParts[1]);
 
+	if (keyParts.size() > 2)
+		def.sdefvalue = keyParts[2];
 
 	if (keyParts.size() > 3)
 	{

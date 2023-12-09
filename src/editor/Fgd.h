@@ -29,6 +29,7 @@ struct KeyvalueChoice
 {
 	std::string name;
 	std::string svalue;
+	std::string sdefvalue;
 	int ivalue;
 	bool isInteger;
 	std::string fullDescription;
