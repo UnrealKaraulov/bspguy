@@ -82,24 +82,82 @@ bool Fgd::parse()
 	std::ifstream in(path);
 
 	lineNum = 0;
+	line.clear();
+
+	std::vector<std::string> inputLines;
+	while (std::getline(in, line))
+	{
+		line = trimSpaces(line);
+
+		if (line.empty() || line.starts_with("//"))
+			continue;
+
+		if (line[0] == '[' || line[0] == ']')
+		{
+			inputLines.push_back(line);
+		}
+		else if (line.find_first_of("[") != std::string::npos)
+		{
+			auto split = splitStringIgnoringQuotes(line, "[");
+			if (split.size())
+			{
+				bool added = false;
+				for (auto& s : split)
+				{
+					s = trimSpaces(s);
+
+					if (s.empty() || s.starts_with("//"))
+						continue;
+
+					inputLines.push_back(s);
+					inputLines.push_back("[");
+					added = true;
+				}
+				if (added)
+					inputLines.pop_back();
+			}
+		}
+		else if (line.find_first_of("]") != std::string::npos)
+		{
+			auto split = splitStringIgnoringQuotes(line, "]");
+			if (split.size())
+			{
+				bool added = false;
+				for (auto& s : split)
+				{
+					s = trimSpaces(s);
+
+					if (s.empty() || s.starts_with("//"))
+						continue;
+
+					inputLines.push_back(s);
+					inputLines.push_back("]");
+					added = true;
+				}
+				if (added)
+					inputLines.pop_back();
+			}
+		}
+		else
+			inputLines.push_back(line);
+	}
+
+	/*std::ostringstream outs;
+	for (auto& s : inputLines)
+	{
+		outs << s << "\n";
+	}
+	writeFile(path + "_test.fgd", outs.str());*/
 
 	FgdClass* fgdClass = new FgdClass();
 	int bracketNestLevel = 0;
 
+	lineNum = 0;
 	line.clear();
-	while (getline(in, line))
+	for (auto& s : inputLines)
 	{
+		line = s;
 		lineNum++;
-
-		// strip comments
-		size_t cpos = line.find("//");
-		if (cpos != std::string::npos)
-			line = line.substr(0, cpos);
-
-		line = trimSpaces(line);
-
-		if (line.empty())
-			continue;
 
 		if (line[0] == '@')
 		{
@@ -111,12 +169,12 @@ bool Fgd::parse()
 			parseClassHeader(*fgdClass);
 		}
 
-		if ((line.size() && line[0] == '[') || (line.rfind('[') != std::string::npos && std::regex_search(line, brackEnd)))
+		if ((line.size() && line[0] == '['))
 		{
 			bracketNestLevel++;
 		}
 
-		if ((line.size() && line[0] == ']') || (line.rfind(']') != std::string::npos && std::regex_search(line, brackEnd)))
+		if ((line.size() && (line[0] == ']' || line[line.size()-1] == ']')))
 		{
 			bracketNestLevel--;
 			if (bracketNestLevel == 0)
@@ -126,7 +184,14 @@ bool Fgd::parse()
 			}
 		}
 
-		if (line.size() && (line[0] == '[' || line[0] == ']'))
+		if (bracketNestLevel == 0 && (line.rfind('[') != std::string::npos && std::regex_search(line, brackEnd)))
+		{
+			classes.push_back(fgdClass);
+			fgdClass = new FgdClass(); //memory leak
+			continue;
+		}
+
+		if (line.size() && (line[0] == '[' || line[0] == ']' || line[line.size() - 1] == ']'))
 		{
 			continue;
 		}
@@ -309,19 +374,22 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		return;
 	}
 	std::vector<std::string> nameParts = splitStringIgnoringQuotes(headerParts[1], ":");
-
 	if (nameParts.size() >= 1)
 	{
 		fgdClass.name = trimSpaces(nameParts[0]);
 		// strips brackets if they're there
 		fgdClass.name = fgdClass.name.substr(0, fgdClass.name.find(' '));
+
+		nameParts.erase(nameParts.begin());
 	}
-	if (nameParts.size() >= 2)
+	if (nameParts.size() >= 1)
 	{
-		fgdClass.description = getValueInQuotes(nameParts[1]);
-		for (size_t i = 2; i < nameParts.size(); i++)
+		for (size_t i = 0; i < nameParts.size(); i++)
 		{
-			fgdClass.description += "\n" + getValueInQuotes(nameParts[i]);
+			if (i == 0)
+				fgdClass.description = getValueInQuotes(nameParts[i]);
+			else
+				fgdClass.description += "\n" + getValueInQuotes(nameParts[i]);
 		}
 	}
 }
@@ -342,14 +410,14 @@ void Fgd::parseKeyvalue(FgdClass& outClass)
 	}
 
 	if (keyParts.size() > 1)
-		def.description = getValueInQuotes(keyParts[1]);
+		def.shortDescription = getValueInQuotes(keyParts[1]);
 	else
 	{
-		def.description = def.name;
+		def.shortDescription = def.name;
 
 		// capitalize (infodecal)
-		if ((def.description[0] > 96) && (def.description[0] < 123))
-			def.description[0] = def.description[0] - 32;
+		if ((def.shortDescription[0] > 96) && (def.shortDescription[0] < 123))
+			def.shortDescription[0] = def.shortDescription[0] - 32;
 	}
 
 	if (keyParts.size() > 2)
@@ -365,6 +433,16 @@ void Fgd::parseKeyvalue(FgdClass& outClass)
 		else
 		{ // integer
 			def.defaultValue = trimSpaces(keyParts[2]);
+		}
+		if (keyParts.size() > 3)
+		{
+			for (size_t i = 3; i < keyParts.size(); i++)
+			{
+				if (i == 3)
+					def.fullDescription = getValueInQuotes(keyParts[i]);
+				else
+					def.fullDescription += "\n" + getValueInQuotes(keyParts[i]);
+			}
 		}
 	}
 
@@ -395,9 +473,19 @@ void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
 	if (keyParts.size() > 1)
 		def.name = getValueInQuotes(keyParts[1]);
 
-	outKey.choices.push_back(def);
 
-	//logf << "ADD CHOICE LINE " << lineNum << " = " << def.svalue << " : " << def.name << endl;
+	if (keyParts.size() > 3)
+	{
+		for (size_t i = 3; i < keyParts.size(); i++)
+		{
+			if (i == 3)
+				def.fullDescription = getValueInQuotes(keyParts[i]);
+			else
+				def.fullDescription += "\n" + getValueInQuotes(keyParts[i]);
+		}
+	}
+
+	outKey.choices.push_back(def);
 }
 
 std::vector<std::string> Fgd::groupParts(std::vector<std::string>& ungrouped)
@@ -755,6 +843,7 @@ void Fgd::setSpawnflagNames()
 					else
 					{
 						classes[i]->spawnFlagNames[bit] = choice.name;
+						classes[i]->spawnFlagDescriptions[bit] = choice.fullDescription;
 
 						bool flgnameexists = false;
 

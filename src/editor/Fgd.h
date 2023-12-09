@@ -31,6 +31,7 @@ struct KeyvalueChoice
 	std::string svalue;
 	int ivalue;
 	bool isInteger;
+	std::string fullDescription;
 };
 
 struct KeyvalueDef
@@ -38,7 +39,8 @@ struct KeyvalueDef
 	std::string name;
 	std::string valueType;
 	int iType;
-	std::string description;
+	std::string shortDescription;
+	std::string fullDescription;
 	std::string defaultValue;
 	std::vector<KeyvalueChoice> choices;
 };
@@ -53,6 +55,7 @@ struct FgdClass
 	std::vector<KeyvalueDef> keyvalues;
 	std::vector<std::string> baseClasses;
 	std::string spawnFlagNames[32];
+	std::string spawnFlagDescriptions[32];
 	std::string model;
 	std::string sprite;
 	std::string iconSprite;

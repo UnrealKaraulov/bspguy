@@ -1998,19 +1998,19 @@ void Gui::drawMenuBar()
 			if (ImGui::MenuItem(get_localized_string("LANG_DUMP_TEX").c_str(), NULL, false, map))
 			{
 				createDir(g_working_dir + map->bsp_name + "/dump_textures/");
-				
+
 				if (dumpTextures.size())
 				{
-						for (const auto & tex : dumpTextures)
+					for (const auto& tex : dumpTextures)
+					{
+						if (tex != rend->missingTex)
 						{
-							if (tex != rend->missingTex)
-							{
-								if (tex->format == GL_RGBA)
-									lodepng_encode32_file((g_working_dir + map->bsp_name +"/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width,tex->height);
-								else 
-									lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
-							}
+							if (tex->format == GL_RGBA)
+								lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
+							else
+								lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
 						}
+					}
 				}
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -3776,7 +3776,7 @@ void Gui::drawKeyvalueEditor()
 			if (fgdClass)
 			{
 				ImGui::SameLine();
-				ImGui::TextDisabled("(?)");
+				ImGui::Text("(?)");
 				if (ImGui::IsItemHovered())
 				{
 					ImGui::BeginTooltip();
@@ -3932,7 +3932,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 				KeyvalueDef keyvalue = KeyvalueDef();
 				keyvalue.name = "model";
 				keyvalue.defaultValue =
-					keyvalue.description = "Model";
+					keyvalue.shortDescription = "Model";
 				keyvalue.iType = FGD_KEY_STRING;
 				fgdClass->keyvalues.push_back(keyvalue);
 			}
@@ -3947,7 +3947,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 				continue;
 			}
 			std::string value = ent->keyvalues[key];
-			std::string niceName = keyvalue.description;
+			std::string niceName = keyvalue.shortDescription;
 
 			if (!strlen(value) && strlen(keyvalue.defaultValue))
 			{
@@ -3968,7 +3968,18 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 			ImGui::SetNextItemWidth(inputWidth);
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text(niceName.c_str()); ImGui::NextColumn();
-
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::PushStyleColor(ImGuiCol_Text, { 0.9f,0.4f,0.2f,1.0f });
+				ImGui::TextUnformatted(keyvalue.shortDescription.c_str());
+				ImGui::PopStyleColor();
+				if (keyvalue.fullDescription.size())
+					ImGui::TextUnformatted(keyvalue.fullDescription.c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
 			ImGui::SetNextItemWidth(inputWidth);
 
 			if (keyvalue.iType == FGD_KEY_CHOICES && !keyvalue.choices.empty())
@@ -4198,9 +4209,11 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 			ImGui::NextColumn();
 		}
 		std::string name;
+		std::string description;
 		if (fgdClass)
 		{
 			name = fgdClass->spawnFlagNames[i];
+			description = fgdClass->spawnFlagDescriptions[i];
 		}
 
 		checkboxEnabled[i] = spawnflags & (1 << i);
@@ -4222,6 +4235,19 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 
 			map->getBspRender()->pushEntityUndoState(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", entIdx);
 		}
+		if ((!name.empty() || !description.empty()) && ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::PushStyleColor(ImGuiCol_Text, { 0.9f,0.4f,0.2f,1.0f });
+			ImGui::TextUnformatted(name.c_str());
+			ImGui::PopStyleColor();
+			if (description.size())
+				ImGui::TextUnformatted(description.c_str());
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
+
 	}
 
 	ImGui::Columns(1);
@@ -4993,7 +5019,7 @@ void Gui::drawTransformWidget()
 			ImGui::PushItemWidth(inputWidth);
 			ImGui::Checkbox(get_localized_string(LANG_0701).c_str(), &app->textureLock);
 			ImGui::SameLine();
-			ImGui::TextDisabled(get_localized_string(LANG_1113).c_str());
+			ImGui::Text(get_localized_string(LANG_1113).c_str());
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();
@@ -5010,7 +5036,7 @@ void Gui::drawTransformWidget()
 			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT)
 				ImGui::EndDisabled();
 			ImGui::SameLine();
-			ImGui::TextDisabled(get_localized_string(LANG_0704).c_str());
+			ImGui::Text(get_localized_string(LANG_0704).c_str());
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();
@@ -8019,7 +8045,7 @@ void Gui::drawFaceEditorWidget()
 		ImGui::Text(get_localized_string(LANG_1169).c_str());
 
 		ImGui::SameLine();
-		ImGui::TextDisabled(get_localized_string(LANG_1170).c_str());
+		ImGui::Text(get_localized_string(LANG_1170).c_str());
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
@@ -8044,7 +8070,7 @@ void Gui::drawFaceEditorWidget()
 		ImGui::Text(get_localized_string(LANG_0875).c_str());
 
 		ImGui::SameLine();
-		ImGui::TextDisabled(get_localized_string(LANG_1179).c_str());
+		ImGui::Text(get_localized_string(LANG_1179).c_str());
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();

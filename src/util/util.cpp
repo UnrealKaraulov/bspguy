@@ -142,7 +142,7 @@ std::vector<std::string> splitStringIgnoringQuotes(std::string s, const std::str
 			size_t quoteCount = 0;
 			for (int i = 0; i < delimitPos; i++)
 			{
-				quoteCount += s[i] == '"';
+				quoteCount += s[i] == '"' && (i == 0 || s[i - 1] != '\\');
 			}
 
 			if (quoteCount % 2 == 1)
