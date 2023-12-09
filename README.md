@@ -20,6 +20,7 @@ See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
   - clipnode generation is similar to `-cliptype legacy` in the CSG compiler (the _worst_ method)
 - Basic face editing
 # also
+- Support J.A.C.K fgd files
 - Texture Rotation
 - Face Editor Update(better texture support, verts manual editor, etc, but without texture browser)
 - Export obj, wad, ent, bsp/bspmodel, hlrad files.
