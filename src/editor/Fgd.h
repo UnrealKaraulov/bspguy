@@ -66,6 +66,7 @@ struct FgdClass
 	vec3 mins;
 	vec3 maxs;
 	COLOR3 color;
+	vec3 offset;
 	hashmap otherTypes; // unrecognized types
 
 	// if false, then need to get props from the base class
@@ -87,6 +88,7 @@ struct FgdClass
 		mins = vec3(-8, -8, -8);
 		maxs = vec3(8, 8, 8);
 		color = {220, 0, 220};
+		offset = vec3(0, 0, 0);
 		modelSkin = modelBody = modelSequence = 0;
 	}
 

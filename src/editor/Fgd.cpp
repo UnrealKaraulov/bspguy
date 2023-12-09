@@ -224,13 +224,26 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 
 			if (nums.size() == 3)
 			{
-				fgdClass.color = {(unsigned char)atoi(nums[0].c_str()), (unsigned char)atoi(nums[1].c_str()), (unsigned char)atoi(nums[2].c_str())};
+				fgdClass.color = { (unsigned char)atoi(nums[0].c_str()), (unsigned char)atoi(nums[1].c_str()), (unsigned char)atoi(nums[2].c_str()) };
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0306),lineNum,name);
+				logf(get_localized_string(LANG_0306), lineNum, name);
 			}
 			fgdClass.colorSet = true;
+		}
+		else if (lpart.starts_with("offset("))
+		{
+			std::vector<std::string> nums = splitString(getValueInParens(typeParts[i]), " ");
+
+			if (nums.size() == 3)
+			{
+				fgdClass.offset = { (float)atof(nums[0].c_str()), (float)atof(nums[1].c_str()),(float)atof(nums[2].c_str()) };
+			}
+			else
+			{
+				logf(get_localized_string("LANG_FGD_BAD_OFFSET"), lineNum, name);
+			}
 		}
 		else if (lpart.starts_with("studio("))
 		{

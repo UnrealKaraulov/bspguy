@@ -244,21 +244,21 @@ std::string toLowerCase(const std::string& s)
 	return ret;
 }
 
-std::string trimSpaces(std::string s)
+std::string trimSpaces(const std::string & str)
 {
-	// Remove white space indents
-	size_t lineStart = s.find_first_not_of(" \t\n\r");
-	if (lineStart == std::string::npos)
-		return "";
+	if (str.empty())
+	{
+		return str;
+	}
 
-	// Remove spaces after the last character
-	size_t lineEnd = s.find_last_not_of(" \t\n\r");
-	if (lineEnd != std::string::npos && lineEnd < s.length() - 1)
-		s = s.substr(lineStart, (lineEnd + 1) - lineStart);
-	else
-		s = s.substr(lineStart);
-
-	return s;
+	std::string result = str;
+	while (!result.empty() && std::isspace(result.front())) {
+		result.erase(result.begin());
+	}
+	while (!result.empty() && std::isspace(result.back())) {
+		result.pop_back();
+	}
+	return result;
 }
 
 int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette)

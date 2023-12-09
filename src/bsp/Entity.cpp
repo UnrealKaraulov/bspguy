@@ -4,21 +4,14 @@
 #include "util.h"
 #include <algorithm>
 
-Entity::Entity(const std::string& classname)
-{
-	cachedModelIdx = -2;
-	targetsCached = false;
-	rendermode = kRenderNormal;
-	renderamt = 0;
-	renderfx = kRenderFxNone;
-	rendercolor = vec3(1.0f, 1.0f, 1.0f);
-	setOrAddKeyvalue("classname", classname);
-}
 
 void Entity::addKeyvalue(const std::string key, const std::string value, bool multisupport)
 {
 	if (!strlen(key))
 		return;
+
+	if (key == "origin")
+		originInited = false;
 
 	int dup = 1;
 	if (keyvalues.find(key) == keyvalues.end())
@@ -200,7 +193,11 @@ bool Entity::isWorldSpawn()
 
 vec3 Entity::getOrigin()
 {
-	return hasKey("origin") ? parseVector(keyvalues["origin"]) : vec3();
+	if (originInited)
+		return origin;
+	originInited = true;
+	origin = hasKey("origin") ? parseVector(keyvalues["origin"]) : vec3();
+	return origin;
 }
 
 // TODO: maybe store this in a text file or something

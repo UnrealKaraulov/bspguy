@@ -135,7 +135,6 @@ Renderer::Renderer()
 		logf(get_localized_string(LANG_0902));
 		return;
 	}
-	showDragAxes = true;
 
 	g_settings.loadDefault();
 	g_settings.load();
@@ -225,6 +224,8 @@ Renderer::Renderer()
 
 	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;
 
+	blockMoving = false;
+	showDragAxes = true;
 
 	gui->init();
 
@@ -349,21 +350,21 @@ void Renderer::renderLoop()
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
 
-		{//Update keyboard / mouse state 
-			oldLeftMouse = curLeftMouse;
-			curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-			oldRightMouse = curRightMouse;
-			curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+		//Update keyboard / mouse state 
+		oldLeftMouse = curLeftMouse;
+		curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+		oldRightMouse = curRightMouse;
+		curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
 
-			DebugKeyPressed = pressed[GLFW_KEY_F1];
+		DebugKeyPressed = pressed[GLFW_KEY_F1];
 
-			anyCtrlPressed = pressed[GLFW_KEY_LEFT_CONTROL] || pressed[GLFW_KEY_RIGHT_CONTROL];
-			anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
-			anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
+		anyCtrlPressed = pressed[GLFW_KEY_LEFT_CONTROL] || pressed[GLFW_KEY_RIGHT_CONTROL];
+		anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
+		anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
 
-			oldControl = canControl;
-			canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
-		}
+		oldControl = canControl;
+		canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
+
 
 		if (curTime - lastTitleTime > 0.5)
 		{
@@ -1005,7 +1006,6 @@ void Renderer::drawEntConnections()
 
 void Renderer::controls()
 {
-	static bool blockMoving = false;
 
 	if (blockMoving)
 	{
@@ -1797,6 +1797,7 @@ bool Renderer::transformAxisControls()
 						axisDragStart = rounded;
 
 						tmpEnt->setOrAddKeyvalue("origin", (rounded - getEntOffset(map, tmpEnt)).toKeyvalueString());
+
 						map->getBspRender()->refreshEnt(tmpEntIdx);
 
 						updateEntConnectionPositions();

@@ -165,6 +165,7 @@ public:
 	int transformMode = TRANSFORM_MODE_MOVE;
 	int transformTarget = TRANSFORM_OBJECT;
 	int pickMode = PICK_OBJECT;
+	bool blockMoving = false;
 	bool showDragAxes = true;
 	bool pickClickHeld = true; // true if the mouse button is still held after picking an object
 	vec3 axisDragStart;

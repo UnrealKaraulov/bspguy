@@ -104,7 +104,7 @@ void removeDir(const std::string& dirName);
 
 std::string toLowerCase(const std::string& s);
 
-std::string trimSpaces(std::string s);
+std::string trimSpaces(const std::string& str);
 
 int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette = false);
 
