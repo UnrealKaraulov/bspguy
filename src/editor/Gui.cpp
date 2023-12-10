@@ -2007,7 +2007,7 @@ void Gui::drawMenuBar()
 			{
 				createDir(g_working_dir + map->bsp_name + "/dump_textures/");
 
-				if (dumpTextures.size())
+				if (dumpTextures.size() && rend)
 				{
 					for (const auto& tex : dumpTextures)
 					{
@@ -3229,11 +3229,18 @@ void Gui::drawDebugWidget()
 	{
 		if (ImGui::CollapsingHeader(get_localized_string(LANG_0625).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0366)), std::ceil(cameraOrigin.x), std::ceil(cameraOrigin.y), std::ceil(cameraOrigin.z)).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0366)), floatRound(cameraOrigin.x), floatRound(cameraOrigin.y), floatRound(cameraOrigin.z)).c_str());
 			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
 			ImGui::Text(fmt::format("Mouse left {} right {}", app->curLeftMouse, app->curRightMouse).c_str());
 			ImGui::Text(fmt::format("Time: {}", app->curTime).c_str());
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0367)), std::ceil(cameraAngles.x), std::ceil(cameraAngles.y), std::ceil(cameraAngles.z)).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0367)), floatRound(cameraAngles.x), floatRound(cameraAngles.y), floatRound(cameraAngles.z)).c_str());
+
+			vec3 hlAngles = cameraAngles;
+			hlAngles = hlAngles.unflipUV();
+			hlAngles = hlAngles.normalize_angles();
+			hlAngles.y -= 90.0f;
+
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string("DEBUG_HL_ANGLES")), floatRound(hlAngles.x), floatRound(hlAngles.y), floatRound(hlAngles.z)).c_str());
 
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0368)), (unsigned int)app->pickInfo.selectedFaces.size()).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0369)), app->pickMode).c_str());
@@ -3758,10 +3765,14 @@ void Gui::drawKeyvalueEditor()
 	if (ImGui::Begin(get_localized_string(LANG_1103).c_str(), &showKeyvalueWidget, 0))
 	{
 		int entIdx = app->pickInfo.GetSelectedEnt();
+
+
 		Bsp* map = app->getSelectedMap();
 		if (entIdx >= 0 && app->fgd
 			&& !app->isLoading && !app->isModelsReloading && !app->reloading && map)
 		{
+
+			//ImGui::TextUnformatted(fmt::format("ENTS {}. FIRST ENT {}.", g_app->pickInfo.selectedEnts.size(), g_app->pickInfo.selectedEnts.size() ? g_app->pickInfo.selectedEnts[0] : -1).c_str());
 
 			Entity* ent = map->ents[entIdx];
 			std::string cname = ent->keyvalues["classname"];
@@ -3825,7 +3836,7 @@ void Gui::drawKeyvalueEditor()
 							{
 								ent->setOrAddKeyvalue("classname", group.classes[k]->name);
 								map->getBspRender()->refreshEnt(entIdx);
-								map->getBspRender()->pushEntityUndoState("Change Class", entIdx);
+								map->getBspRender()->pushEntityUndoStateDelay("Change Class", entIdx, ent);
 							}
 						}
 
@@ -3884,8 +3895,8 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 		ImGui::Text(get_localized_string(LANG_1105).c_str());
 		return;
 	}
-	Entity* ent = map->ents[entIdx];
-	std::string cname = ent->keyvalues["classname"];
+	Entity* sel_ent = map->ents[entIdx];
+	std::string cname = sel_ent->keyvalues["classname"];
 	FgdClass* fgdClass = app->fgd->getFgdClass(cname);
 	ImGuiStyle& style = ImGui::GetStyle();
 
@@ -3900,24 +3911,24 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 	if (ImGui::GetScrollMaxY() > 0)
 		inputWidth -= style.ScrollbarSize * 0.5f;
 
-	struct InputData
+	struct InputDataKey
 	{
 		std::string key;
 		std::string defaultValue;
 
-		InputData()
+		InputDataKey()
 		{
-			key = std::string();
-			defaultValue = std::string();
+			key.clear();
+			defaultValue.clear();
 		}
 	};
 
 	if (fgdClass)
 	{
-		static InputData inputData[128];
+		static InputDataKey inputData[128];
 		static int lastPickCount = 0;
 
-		if (ent->hasKey("model"))
+		if (sel_ent->hasKey("model"))
 		{
 			bool foundmodel = false;
 			for (int i = 0; i < fgdClass->keyvalues.size(); i++)
@@ -3948,7 +3959,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 			{
 				continue;
 			}
-			std::string value = ent->keyvalues[key];
+			std::string value = sel_ent->keyvalues[key];
 			std::string niceName = keyvalue.shortDescription;
 
 			if (!strlen(value) && strlen(keyvalue.defaultValue))
@@ -4008,28 +4019,28 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 						{
 							if (key == "renderamt")
 							{
-								if (ent->hasKey("renderamt") && ent->keyvalues["renderamt"] != choice.svalue)
+								if (sel_ent->hasKey("renderamt") && sel_ent->keyvalues["renderamt"] != choice.svalue)
 								{
 									needrefreshmodel = true;
 								}
 							}
 							if (key == "rendermode")
 							{
-								if (ent->hasKey("rendermode") && ent->keyvalues["rendermode"] != choice.svalue)
+								if (sel_ent->hasKey("rendermode") && sel_ent->keyvalues["rendermode"] != choice.svalue)
 								{
 									needrefreshmodel = true;
 								}
 							}
 							if (key == "renderfx")
 							{
-								if (ent->hasKey("renderfx") && ent->keyvalues["renderfx"] != choice.svalue)
+								if (sel_ent->hasKey("renderfx") && sel_ent->keyvalues["renderfx"] != choice.svalue)
 								{
 									needrefreshmodel = true;
 								}
 							}
 							if (key == "rendercolor")
 							{
-								if (ent->hasKey("rendercolor") && ent->keyvalues["rendercolor"] != choice.svalue)
+								if (sel_ent->hasKey("rendercolor") && sel_ent->keyvalues["rendercolor"] != choice.svalue)
 								{
 									needrefreshmodel = true;
 								}
@@ -4046,7 +4057,17 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 											Entity* selected_ent = map->ents[selected_entId];
 											selected_ent->setOrAddKeyvalue(key, choice.svalue);
 											map->getBspRender()->refreshEnt(selected_entId);
-											map->getBspRender()->pushEntityUndoState("Edit Keyvalue", entIdx);
+
+											if (needrefreshmodel)
+											{
+												if (map && selected_ent->getBspModelIdx() > 0)
+												{
+													map->getBspRender()->refreshModel(selected_ent->getBspModelIdx());
+													map->getBspRender()->preRenderEnts();
+												}
+											}
+
+											map->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", selected_entId, selected_ent);
 										}
 									}
 								}
@@ -4054,15 +4075,6 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 							pickCount++;
 							vertPickCount++;
 
-							if (needrefreshmodel)
-							{
-								if (map && ent->getBspModelIdx() > 0)
-								{
-									map->getBspRender()->refreshModel(ent->getBspModelIdx());
-									map->getBspRender()->preRenderEnts();
-									g_app->updateEntConnections();
-								}
-							}
 							g_app->updateEntConnections();
 						}
 					}
@@ -4085,24 +4097,26 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 							}
 							return 1;
 						}
-						InputData* linputData = (InputData*)data->UserData;
+						InputDataKey* linputData = (InputDataKey*)data->UserData;
+
 						if (!data->Buf || !strlen(linputData->key))
 							return 0;
 
 
 						bool needReloadModel = false;
-						bool needRefreshModel = false;
-						Bsp* map = g_app->getSelectedMap();
-						if (map)
+						bool needRefreshModel2 = false;
+						Bsp* map2 = g_app->getSelectedMap();
+						if (map2)
 						{
-							BspRenderer* render = map->getBspRender();
+							BspRenderer* render = map2->getBspRender();
 							if (render)
 							{
 								if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
 								{
 									for (auto selected_entId : g_app->pickInfo.selectedEnts)
 									{
-										Entity* ent = map->ents[selected_entId];
+										bool needRefreshModel = false;
+										Entity* ent = map2->ents[selected_entId];
 										std::string newVal = data->Buf;
 
 										if (!g_app->reloading && !g_app->isModelsReloading && linputData->key == "model")
@@ -4159,11 +4173,13 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 										if (needRefreshModel)
 										{
-											if (map && ent->getBspModelIdx() > 0)
+											needRefreshModel2 = true;
+											if (map2 && ent->getBspModelIdx() > 0)
 											{
-												map->getBspRender()->refreshModel(ent->getBspModelIdx());
+												map2->getBspRender()->refreshModel(ent->getBspModelIdx());
 											}
 										}
+										map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", selected_entId, ent);
 									}
 								}
 							}
@@ -4173,11 +4189,11 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 						if (needReloadModel)
 							g_app->reloadBspModels();
 
-						if (needRefreshModel)
+						if (needRefreshModel2)
 						{
-							if (map)
+							if (map2)
 							{
-								map->getBspRender()->preRenderEnts();
+								map2->getBspRender()->preRenderEnts();
 							}
 						}
 
@@ -4186,18 +4202,22 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 					}
 				};
 
-				if (keyvalue.iType == FGD_KEY_INTEGER)
+				if (sel_ent->keyvalues.count(key))
 				{
-					ImGui::InputText(("##inval" + std::to_string(i)).c_str(), &ent->keyvalues[key.c_str()],
-						ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackEdit,
-						InputChangeCallback::keyValueChanged, &inputData[i]);
-				}
-				else
-				{
-					ImGui::InputText(("##inval" + std::to_string(i)).c_str(), &ent->keyvalues[key.c_str()], ImGuiInputTextFlags_CallbackEdit, InputChangeCallback::keyValueChanged, &inputData[i]);
-				}
+					std::string* keyval = &sel_ent->keyvalues[key];
 
-
+					if (keyvalue.iType == FGD_KEY_INTEGER)
+					{
+						ImGui::InputText(("##inval" + std::to_string(i)).c_str(), keyval,
+							ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackEdit,
+							InputChangeCallback::keyValueChanged, &inputData[i]);
+					}
+					else
+					{
+						ImGui::InputText(("##inval" + std::to_string(i)).c_str(), keyval, 
+							ImGuiInputTextFlags_CallbackEdit, InputChangeCallback::keyValueChanged, &inputData[i]);
+					}
+				}
 			}
 
 			ImGui::NextColumn();
@@ -4258,12 +4278,16 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 				spawnflags |= (1U << i);
 			}
 
-			if (spawnflags != 0)
-				ent->setOrAddKeyvalue("spawnflags", std::to_string(spawnflags));
-			else
-				ent->removeKeyvalue("spawnflags");
+			for (auto selected_entId : g_app->pickInfo.selectedEnts)
+			{
+				Entity* selected_ent = map->ents[selected_entId];
+				if (spawnflags != 0)
+					selected_ent->setOrAddKeyvalue("spawnflags", std::to_string(spawnflags));
+				else
+					selected_ent->removeKeyvalue("spawnflags");
 
-			map->getBspRender()->pushEntityUndoState(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", entIdx);
+				map->getBspRender()->pushEntityUndoStateDelay(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", selected_entId, selected_ent);
+			}
 		}
 		if ((!name.empty() || !description.empty()) && ImGui::IsItemHovered())
 		{
@@ -4351,15 +4375,19 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 						{
 							for (auto entId : g_app->pickInfo.selectedEnts)
 							{
-								Entity* ent = map->ents[entId];
-								ent->renameKey(key, data->Buf);
-								render->refreshEnt(entId);
-								if (key == "model" || std::string(data->Buf) == "model")
+								Entity* selent = map->ents[entId];
+								if (selent->renameKey(key, data->Buf))
 								{
-									g_app->reloadBspModels();
-									render->preRenderEnts();
+									render->refreshEnt(entId);
+									if (key == "model" || std::string(data->Buf) == "model")
+									{
+										g_app->reloadBspModels();
+										render->preRenderEnts();
+									}
+
+									g_app->updateEntConnections();
+									map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue", entId,selent);
 								}
-								g_app->updateEntConnections();
 							}
 						}
 					}
@@ -4372,80 +4400,85 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 		{
 			InputData* inputData = (InputData*)data->UserData;
 
-			Bsp* map = g_app->getSelectedMap();
-			if (map)
+			Bsp* map2 = g_app->getSelectedMap();
+			if (map2)
 			{
-				BspRenderer* render = map->getBspRender();
+				BspRenderer* render = map2->getBspRender();
 				if (render)
 				{
 					if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
 					{
-						std::string key = map->ents[g_app->pickInfo.selectedEnts[0]]->keyOrder[inputData->idx];
+						bool needreloadmodels = false;
+						std::string key = map2->ents[g_app->pickInfo.selectedEnts[0]]->keyOrder[inputData->idx];
 						for (auto entId : g_app->pickInfo.selectedEnts)
 						{
-							Entity* ent = map->ents[entId];
-							if (ent->keyvalues[key] != data->Buf)
+							Entity* selent = map2->ents[entId];
+							if (selent->keyvalues[key] != data->Buf)
 							{
 								bool needrefreshmodel = false;
 								if (key == "model")
 								{
-									if (ent->hasKey("model") && ent->keyvalues["model"] != data->Buf)
+									if (selent->hasKey("model") && selent->keyvalues["model"] != data->Buf)
 									{
-										ent->setOrAddKeyvalue(key, data->Buf);
+										selent->setOrAddKeyvalue(key, data->Buf);
 										render->refreshEnt(entId);
-										pickCount++;
-										vertPickCount++;
-										g_app->updateEntConnections();
-										g_app->reloadBspModels();
-										render->preRenderEnts();
-										return 1;
+										needreloadmodels = true;
 									}
 								}
 								if (key == "renderamt")
 								{
-									if (ent->hasKey("renderamt") && ent->keyvalues["renderamt"] != data->Buf)
+									if (selent->hasKey("renderamt") && selent->keyvalues["renderamt"] != data->Buf)
 									{
 										needrefreshmodel = true;
 									}
 								}
 								if (key == "rendermode")
 								{
-									if (ent->hasKey("rendermode") && ent->keyvalues["rendermode"] != data->Buf)
+									if (selent->hasKey("rendermode") && selent->keyvalues["rendermode"] != data->Buf)
 									{
 										needrefreshmodel = true;
 									}
 								}
 								if (key == "renderfx")
 								{
-									if (ent->hasKey("renderfx") && ent->keyvalues["renderfx"] != data->Buf)
+									if (selent->hasKey("renderfx") && selent->keyvalues["renderfx"] != data->Buf)
 									{
 										needrefreshmodel = true;
 									}
 								}
 								if (key == "rendercolor")
 								{
-									if (ent->hasKey("rendercolor") && ent->keyvalues["rendercolor"] != data->Buf)
+									if (selent->hasKey("rendercolor") && selent->keyvalues["rendercolor"] != data->Buf)
 									{
 										needrefreshmodel = true;
 									}
 								}
 
-								ent->setOrAddKeyvalue(key, data->Buf);
+								selent->setOrAddKeyvalue(key, data->Buf);
 								render->refreshEnt(entId);
 								pickCount++;
 								vertPickCount++;
 								g_app->updateEntConnections();
-
 								if (needrefreshmodel)
 								{
-									if (map && ent->getBspModelIdx() > 0)
+									if (map2 && selent->getBspModelIdx() > 0)
 									{
-										map->getBspRender()->refreshModel(ent->getBspModelIdx());
-										map->getBspRender()->preRenderEnts();
+										map2->getBspRender()->refreshModel(selent->getBspModelIdx());
+										map2->getBspRender()->preRenderEnts();
 										g_app->updateEntConnections();
 									}
 								}
+								map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue RAW", entId, selent);
 							}
+						}
+
+						if (needreloadmodels)
+						{
+							pickCount++;
+							vertPickCount++;
+							g_app->updateEntConnections();
+							g_app->reloadBspModels();
+							render->preRenderEnts();
 						}
 					}
 				}
@@ -4612,7 +4645,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 				if (keyOrdname == "model")
 					map->getBspRender()->preRenderEnts();
 				app->updateEntConnections();
-				map->getBspRender()->pushEntityUndoState("Delete Keyvalue", entIdx);
+				map->getBspRender()->pushEntityUndoStateDelay("Delete Keyvalue RAW", entIdx, ent);
 			}
 			ImGui::PopStyleColor(3);
 			ImGui::NextColumn();
@@ -4622,7 +4655,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	if (!keyDragging && wasKeyDragging)
 	{
 		map->getBspRender()->refreshEnt(entIdx);
-		map->getBspRender()->pushEntityUndoState("Move Keyvalue", entIdx);
+		map->getBspRender()->pushEntityUndoStateDelay("Move Keyvalue", entIdx,ent);
 	}
 
 	wasKeyDragging = keyDragging;
@@ -4644,8 +4677,8 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			ent->addKeyvalue(keyName, "");
 			map->getBspRender()->refreshEnt(entIdx);
 			app->updateEntConnections();
-			map->getBspRender()->pushEntityUndoState("Add Keyvalue", entIdx);
-			keyName = "";
+			keyName.clear();
+			map->getBspRender()->pushEntityUndoStateDelay("Add Keyvalue", entIdx, ent);
 		}
 	}
 	ImGui::SameLine();
@@ -4707,11 +4740,11 @@ void Gui::drawGOTOWidget()
 		ImGui::PopItemWidth();
 		ImGui::Text(get_localized_string(LANG_0681).c_str());
 		ImGui::PushItemWidth(inputWidth);
-		ImGui::DragFloat(get_localized_string(LANG_0683).c_str(), &angles.x, 0.1f, 0, 0, "PITCH: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0683).c_str(), &angles.x, 0.1f, 0, 0, "Pitch: %.0f");
 		ImGui::SameLine();
-		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles.z, 0.1f, 0, 0, "YAW: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles.z, 0.1f, 0, 0, "Yaw: %.0f");
 		ImGui::SameLine();
-		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles_y, 0.1f, 0, 0, "ROLL: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles_y, 0.1f, 0, 0, "Roll: %.0f");
 		ImGui::PopItemWidth();
 		if (ImGui::IsItemHovered()) {
 			ImGui::BeginTooltip();
@@ -4727,10 +4760,8 @@ void Gui::drawGOTOWidget()
 		{
 			cameraOrigin = coordinates;
 			map->getBspRender()->renderCameraOrigin = cameraOrigin;
-			
 
-
-			cameraAngles = angles.flip();
+			cameraAngles = angles.flipUV();
 			cameraAngles.z = cameraAngles.y + 90.0f;
 			cameraAngles = cameraAngles.normalize_angles();
 			cameraAngles.y = 0.0f;
@@ -4969,11 +5000,6 @@ void Gui::drawTransformWidget()
 
 			if (inputsWereDragged && !inputsAreDragging)
 			{
-				if (map->getBspRender()->undoEntityState[entIdx].getOrigin() != ent->getOrigin())
-				{
-					map->getBspRender()->pushEntityUndoState("Move Entity", entIdx);
-				}
-
 				if (transformingEnt)
 				{
 					app->applyTransform(map, true);
@@ -4990,6 +5016,10 @@ void Gui::drawTransformWidget()
 						y = last_fy = fy;
 						z = last_fz = fz;
 					}
+				}
+				if (map->getBspRender()->undoEntityStateMap[entIdx].getOrigin() != ent->getOrigin())
+				{
+					map->getBspRender()->pushEntityUndoStateDelay("Move Entity", entIdx, ent);
 				}
 			}
 

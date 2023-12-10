@@ -285,18 +285,28 @@ public:
 	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
 	std::vector<Command*> undoHistory;
 	std::vector<Command*> redoHistory;
-	std::map<int, Entity> undoEntityState;
+	std::map<int, Entity> undoEntityStateMap;
 	LumpState undoLumpState{};
+
+	struct DelayEntUndo
+	{
+		std::string description;
+		int entIdx;
+		Entity* ent;
+	};
+
+	std::vector<DelayEntUndo> delayEntUndoList;
 
 	void pushModelUndoState(const std::string& actionDesc, unsigned int targets);
 	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
+	void pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity * ent);
 	void pushUndoCommand(Command* cmd);
 	void undo();
 	void redo();
 	void clearUndoCommands();
 	void clearRedoCommands();
 	void calcUndoMemoryUsage();
-	void updateEntityState(int entIdx);
+	void saveEntityState(int entIdx);
 	void saveLumpState();
 	void clearDrawCache();
 

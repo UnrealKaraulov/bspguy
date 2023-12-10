@@ -234,3 +234,7 @@ int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p);
 	)						\
 	:						\
 		BoxOnPlaneSide(( emins ), ( emaxs ), ( p )))
+
+
+
+float floatRound(float f);

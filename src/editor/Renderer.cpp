@@ -3672,7 +3672,7 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 	updateSelectionSize();
 	updateEntConnections();
 
-	map->getBspRender()->updateEntityState(entIdx);
+	map->getBspRender()->saveEntityState(entIdx);
 	pickCount++; // force transform window update
 }
 void Renderer::goToFace(Bsp* map, int faceIdx)

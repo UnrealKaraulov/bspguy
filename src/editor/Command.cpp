@@ -41,8 +41,6 @@ EditEntityCommand::EditEntityCommand(std::string desc, int entIdx, Entity oldEnt
 	: Command(desc, g_app->getSelectedMapId())
 {
 	this->entIdx = entIdx;
-	this->oldEntData = Entity();
-	this->newEntData = Entity();
 	this->oldEntData = oldEntData;
 	this->newEntData = newEntData;
 	this->allowedDuringLoad = true;
@@ -57,6 +55,8 @@ void EditEntityCommand::execute()
 	Entity* target = getEnt();
 	*target = newEntData;
 	refresh();
+	BspRenderer* renderer = getBspRenderer();
+	renderer->saveEntityState(entIdx);
 }
 
 void EditEntityCommand::undo()
@@ -64,6 +64,8 @@ void EditEntityCommand::undo()
 	Entity* target = getEnt();
 	*target = oldEntData;
 	refresh();
+	BspRenderer* renderer = getBspRenderer();
+	renderer->saveEntityState(entIdx);
 }
 
 Entity* EditEntityCommand::getEnt()
@@ -91,7 +93,6 @@ void EditEntityCommand::refresh()
 	{
 		renderer->refreshPointEnt(entIdx);
 	}
-	renderer->updateEntityState(entIdx);
 	pickCount++; // force GUI update
 	g_app->updateModelVerts();
 }
@@ -548,7 +549,7 @@ void EditBspModelCommand::execute()
 
 	map->replace_lumps(newLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
-	map->getBspRender()->undoEntityState[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
+	map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 
 	refresh();
 }
@@ -561,7 +562,7 @@ void EditBspModelCommand::undo()
 
 	map->replace_lumps(oldLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
-	map->getBspRender()->undoEntityState[entIdx].setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
+	map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
 	refresh();
 
 	BspRenderer* renderer = getBspRenderer();
@@ -596,7 +597,6 @@ void EditBspModelCommand::refresh()
 	renderer->refreshModel(modelIdx);
 	renderer->refreshEnt(entIdx);
 	g_app->gui->refresh();
-	renderer->updateEntityState(entIdx);
 
 	if (g_app->pickInfo.GetSelectedEnt() == entIdx)
 	{

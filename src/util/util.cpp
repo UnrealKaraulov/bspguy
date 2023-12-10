@@ -1564,3 +1564,7 @@ void FixupAllSystemPaths()
 		}
 	}
 }
+
+float floatRound(float f) {
+	return (float)((f >= 0 || (float)(int)f == f) ? (int)f : (int)f - 1);
+}
