@@ -78,7 +78,6 @@ void Gui::init()
 
 	imgui_io->ConfigWindowsMoveFromTitleBarOnly = true;
 
-	clearLog();
 	// load icons
 	unsigned char* icon_data = NULL;
 	unsigned int w, h;
@@ -89,6 +88,15 @@ void Gui::init()
 	lodepng_decode32(&icon_data, &w, &h, face_icon, sizeof(face_icon));
 	faceIconTexture = new Texture(w, h, icon_data, "faceIcon");
 	faceIconTexture->upload(GL_RGBA);
+}
+
+ImVec4 imguiColorFromConsole(unsigned short colors)
+{
+	bool intensity = (colors & PRINT_INTENSITY) != 0;
+	float red = (colors & PRINT_RED) ? (intensity ? 1.0f : 0.5f) : 0.0f;
+	float green = (colors & PRINT_GREEN) ? (intensity ? 1.0f : 0.5f) : 0.0f;
+	float blue = (colors & PRINT_BLUE) ? (intensity ? 1.0f : 0.5f) : 0.0f;
+	return ImVec4(red, green, blue, 1.0f);
 }
 
 void Gui::draw()
@@ -231,12 +239,12 @@ void Gui::copyTexture()
 	Bsp* map = app->getSelectedMap();
 	if (!map)
 	{
-		logf(get_localized_string(LANG_0313));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0313));
 		return;
 	}
 	else if (app->pickInfo.selectedFaces.size() == 0 || app->pickInfo.selectedFaces.size() > 1)
 	{
-		logf(get_localized_string(LANG_0314));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0314));
 		return;
 	}
 	BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[app->pickInfo.selectedFaces[0]].iTextureInfo];
@@ -254,12 +262,12 @@ void Gui::copyLightmap()
 
 	if (!map)
 	{
-		logf(get_localized_string(LANG_1049));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1049));
 		return;
 	}
 	else if (app->pickInfo.selectedFaces.size() == 0 || app->pickInfo.selectedFaces.size() > 1)
 	{
-		logf(get_localized_string(LANG_1050));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1050));
 		return;
 	}
 
@@ -279,12 +287,12 @@ void Gui::pasteLightmap()
 	Bsp* map = app->getSelectedMap();
 	if (!map)
 	{
-		logf(get_localized_string(LANG_1149));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1149));
 		return;
 	}
 	else if (app->pickInfo.selectedFaces.size() == 0 || app->pickInfo.selectedFaces.size() > 1)
 	{
-		logf(get_localized_string(LANG_1150));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1150));
 		return;
 	}
 	int faceIdx = app->pickInfo.selectedFaces[0];
@@ -299,7 +307,7 @@ void Gui::pasteLightmap()
 
 	if (dstLightmap.width != copiedLightmap.width || dstLightmap.height != copiedLightmap.height)
 	{
-		logf("WARNING: lightmap sizes don't match ({}x{} != {}{})",
+		print_log(PRINT_RED | PRINT_INTENSITY, "WARNING: lightmap sizes don't match ({}x{} != {}{})",
 			copiedLightmap.width,
 			copiedLightmap.height,
 			dstLightmap.width,
@@ -317,12 +325,12 @@ void Gui::pasteLightmap()
 
 void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 {
-	logf(get_localized_string(LANG_0315));
+	print_log(get_localized_string(LANG_0315));
 	src_map->update_ent_lump();
 	src_map->update_lump_pointers();
 	src_map->write(src_map->bsp_path + ".tmp.bsp");
 
-	logf(get_localized_string(LANG_0316));
+	print_log(get_localized_string(LANG_0316));
 
 	Bsp* tmpMap = new Bsp(src_map->bsp_path + ".tmp.bsp");
 
@@ -339,7 +347,7 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 		tmpMap->bsp_header.nVersion = 30;
 	}
 
-	logf(get_localized_string(LANG_0317));
+	print_log(get_localized_string(LANG_0317));
 	removeFile(src_map->bsp_path + ".tmp.bsp");
 
 	vec3 modelOrigin = tmpMap->get_model_center(id);
@@ -348,12 +356,12 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 
 	while (tmpMap->modelCount < 2)
 	{
-		logf(get_localized_string(LANG_0318));
+		print_log(get_localized_string(LANG_0318));
 		tmpMap->create_model();
 	}
 
 	tmpMap->models[1] = tmpModel;
-	logf(get_localized_string(LANG_0319));
+	print_log(get_localized_string(LANG_0319));
 	tmpMap->models[0] = tmpModel;
 	tmpMap->models[0].nVisLeafs = 0;
 	tmpMap->models[0].iHeadnodes[0] = tmpMap->models[0].iHeadnodes[1] =
@@ -363,7 +371,7 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 	{
 		delete tmpMap->ents[i];
 	}
-	logf(get_localized_string(LANG_0320));
+	print_log(get_localized_string(LANG_0320));
 
 	Entity* tmpEnt = new Entity("worldspawn");
 	Entity* tmpEnt2 = new Entity("func_wall");
@@ -373,7 +381,7 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 
 	tmpEnt2->setOrAddKeyvalue("model", "*1");
 
-	logf(get_localized_string(LANG_0321));
+	print_log(get_localized_string(LANG_0321));
 	tmpMap->modelCount = 2;
 	tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
 	tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL) * 2;
@@ -385,25 +393,25 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 	tmpMap->update_ent_lump();
 	tmpMap->update_lump_pointers();
 
-	logf(get_localized_string(LANG_0322));
+	print_log(get_localized_string(LANG_0322));
 	STRUCTCOUNT removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
 		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
 
-	logf(get_localized_string(LANG_0323));
+	print_log(get_localized_string(LANG_0323));
 	tmpMap->modelCount = 1;
 	tmpMap->models[0] = tmpMap->models[1];
 	tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
 	tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL);
 
-	logf(get_localized_string(LANG_0324));
+	print_log(get_localized_string(LANG_0324));
 	tmpMap->ents.clear();
 	tmpMap->ents.push_back(tmpEnt);
 	tmpMap->update_ent_lump();
 	tmpMap->update_lump_pointers();
 
-	logf(get_localized_string(LANG_0325));
+	print_log(get_localized_string(LANG_0325));
 
 	/*int markid = 0;
 	for (int i = 0; i < tmpMap->leafCount; i++)
@@ -424,10 +432,10 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 
 	tmpMap->update_lump_pointers();
 
-	logf(get_localized_string(LANG_0326));
+	print_log(get_localized_string(LANG_0326));
 	remove_unused_wad_files(src_map, tmpMap, ExportType);
 
-	logf(get_localized_string(LANG_0327));
+	print_log(get_localized_string(LANG_0327));
 	removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
 		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MARKSURFACES);
 
@@ -641,7 +649,7 @@ void Gui::draw3dContextMenus()
 								{
 									map->regenerate_clipnodes(modelIdx, -1);
 									checkValidHulls();
-									logf(get_localized_string(LANG_0328), modelIdx);
+									print_log(get_localized_string(LANG_0328), modelIdx);
 								}
 
 								ImGui::Separator();
@@ -652,7 +660,7 @@ void Gui::draw3dContextMenus()
 									{
 										map->regenerate_clipnodes(modelIdx, i);
 										checkValidHulls();
-										logf(get_localized_string(LANG_0329), i, modelIdx);
+										print_log(get_localized_string(LANG_0329), i, modelIdx);
 									}
 								}
 								ImGui::EndMenu();
@@ -668,7 +676,7 @@ void Gui::draw3dContextMenus()
 									map->delete_hull(3, modelIdx, -1);
 									map->getBspRender()->refreshModel(modelIdx);
 									checkValidHulls();
-									logf(get_localized_string(LANG_0330), modelIdx);
+									print_log(get_localized_string(LANG_0330), modelIdx);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1069).c_str()))
 								{
@@ -677,7 +685,7 @@ void Gui::draw3dContextMenus()
 									map->delete_hull(3, modelIdx, -1);
 									map->getBspRender()->refreshModelClipnodes(modelIdx);
 									checkValidHulls();
-									logf(get_localized_string(LANG_0331), modelIdx);
+									print_log(get_localized_string(LANG_0331), modelIdx);
 								}
 
 								ImGui::Separator();
@@ -694,7 +702,7 @@ void Gui::draw3dContextMenus()
 											map->getBspRender()->refreshModel(modelIdx);
 										else
 											map->getBspRender()->refreshModelClipnodes(modelIdx);
-										logf(get_localized_string(LANG_0332), i, modelIdx);
+										print_log(get_localized_string(LANG_0332), i, modelIdx);
 									}
 								}
 
@@ -709,7 +717,7 @@ void Gui::draw3dContextMenus()
 									map->simplify_model_collision(modelIdx, 2);
 									map->simplify_model_collision(modelIdx, 3);
 									map->getBspRender()->refreshModelClipnodes(modelIdx);
-									logf(get_localized_string(LANG_0333), modelIdx);
+									print_log(get_localized_string(LANG_0333), modelIdx);
 								}
 
 								ImGui::Separator();
@@ -722,7 +730,7 @@ void Gui::draw3dContextMenus()
 									{
 										map->simplify_model_collision(modelIdx, 1);
 										map->getBspRender()->refreshModelClipnodes(modelIdx);
-										logf(get_localized_string(LANG_0334), i, modelIdx);
+										print_log(get_localized_string(LANG_0334), i, modelIdx);
 									}
 								}
 
@@ -750,7 +758,7 @@ void Gui::draw3dContextMenus()
 												map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
 												map->getBspRender()->refreshModelClipnodes(modelIdx);
 												checkValidHulls();
-												logf(get_localized_string(LANG_0335), i, k, modelIdx);
+												print_log(get_localized_string(LANG_0335), i, k, modelIdx);
 											}
 										}
 
@@ -804,7 +812,7 @@ void Gui::draw3dContextMenus()
 					{
 						if (ImGui::MenuItem(get_localized_string(LANG_0464).c_str(), 0, false, !app->isLoading && allowDuplicate))
 						{
-							logf(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
+							print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
 							for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
 							{
 								DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", tmpEntIdx);
@@ -937,7 +945,7 @@ bool ExportWad(Bsp* map)
 		else
 		{
 			retval = false;
-			logf(get_localized_string(LANG_0337));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0337));
 		}
 		tmpWadTex.clear();
 		delete tmpWad;
@@ -945,7 +953,7 @@ bool ExportWad(Bsp* map)
 	else
 	{
 		retval = false;
-		logf(get_localized_string(LANG_0338));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0338));
 	}
 	return retval;
 }
@@ -956,7 +964,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 
 	if (!tmpWad->readInfo())
 	{
-		logf(get_localized_string(LANG_0339));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0339));
 		delete tmpWad;
 		return;
 	}
@@ -1050,7 +1058,7 @@ void Gui::drawMenuBar()
 						if (tmppath.find(basename(pathlowercase)) != std::string::npos)
 						{
 							foundInMap = true;
-							logf(get_localized_string(LANG_0340));
+							print_log(get_localized_string(LANG_0340));
 							break;
 						}
 					}
@@ -1140,7 +1148,7 @@ void Gui::drawMenuBar()
 					}
 					else
 					{
-						logf(get_localized_string(LANG_0341));
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
 					}
 				}
 			}
@@ -1188,7 +1196,7 @@ void Gui::drawMenuBar()
 					}
 					else
 					{
-						logf(get_localized_string(LANG_1051));
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
 			}
@@ -1778,7 +1786,7 @@ void Gui::drawMenuBar()
 					createDir(g_working_dir);
 				}
 
-				logf(get_localized_string(LANG_0342), entFilePath);
+				print_log(get_localized_string(LANG_0342), entFilePath);
 				std::ofstream entFile(entFilePath, std::ios::trunc);
 				map->update_ent_lump();
 				if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
@@ -1789,10 +1797,10 @@ void Gui::drawMenuBar()
 			}
 			if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL, false, map && !map->is_mdl_model))
 			{
-				logf(get_localized_string(LANG_0343), g_working_dir, map->bsp_name + ".wad");
+				print_log(get_localized_string(LANG_0343), g_working_dir, map->bsp_name + ".wad");
 				if (ExportWad(map))
 				{
-					logf(get_localized_string(LANG_0344));
+					print_log(get_localized_string(LANG_0344));
 					map->delete_embedded_textures();
 					if (map->ents.size())
 					{
@@ -1954,7 +1962,7 @@ void Gui::drawMenuBar()
 					hash += "1";
 					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 					{
-						logf(get_localized_string(LANG_0345), basename(wad->filename));
+						print_log(get_localized_string(LANG_0345), basename(wad->filename));
 
 						createDir(g_working_dir + "wads/" + basename(wad->filename));
 
@@ -1971,7 +1979,7 @@ void Gui::drawMenuBar()
 
 									if (texture->szName[0] != '\0')
 									{
-										logf(get_localized_string(LANG_0346), texture->szName, basename(wad->filename));
+										print_log(get_localized_string(LANG_0346), texture->szName, basename(wad->filename));
 										COLOR4* texturedata = ConvertWadTexToRGBA(texture);
 
 										lodepng_encode32_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
@@ -2046,7 +2054,7 @@ void Gui::drawMenuBar()
 				}
 				else
 				{
-					logf(get_localized_string(LANG_0347));
+					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0347));
 				}
 			}
 
@@ -2076,7 +2084,7 @@ void Gui::drawMenuBar()
 						entFilePath = g_working_dir + (map->bsp_name + ".ent");
 					}
 
-					logf(get_localized_string(LANG_1052), entFilePath);
+					print_log(get_localized_string(LANG_1052), entFilePath);
 					if (fileExists(entFilePath))
 					{
 						int len;
@@ -2091,7 +2099,7 @@ void Gui::drawMenuBar()
 					}
 					else
 					{
-						logf(get_localized_string(LANG_0348));
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0348));
 					}
 				}
 			}
@@ -2126,10 +2134,10 @@ void Gui::drawMenuBar()
 					hash += "1";
 					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 					{
-						logf(get_localized_string(LANG_0350), basename(wad->filename));
+						print_log(get_localized_string(LANG_0350), basename(wad->filename));
 						if (!dirExists(g_working_dir + "wads/" + basename(wad->filename)))
 						{
-							logf(get_localized_string(LANG_0351), g_working_dir + "wads/" + basename(wad->filename));
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0351), g_working_dir + "wads/" + basename(wad->filename));
 						}
 						else
 						{
@@ -2156,8 +2164,7 @@ void Gui::drawMenuBar()
 
 							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto file)
 								{
-
-									logf(get_localized_string(LANG_0352), basename(file), basename(wad->filename));
+									print_log(get_localized_string(LANG_0352), basename(file), basename(wad->filename));
 									COLOR4* image_bytes = NULL;
 									unsigned int w2, h2;
 									auto error = lodepng_decode_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str(),
@@ -2182,7 +2189,7 @@ void Gui::drawMenuBar()
 										int oldcolors = 0;
 										if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
 										{
-											logf(get_localized_string(LANG_0353), basename(file));
+											print_log(get_localized_string(LANG_0353), basename(file));
 											Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 
 											if (ditheringEnabled)
@@ -2190,7 +2197,7 @@ void Gui::drawMenuBar()
 											else
 												tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
 
-											logf(get_localized_string(LANG_0354), oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
+											print_log(get_localized_string(LANG_0354), oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
 
 											delete tmpCQuantizer;
 										}
@@ -2203,7 +2210,7 @@ void Gui::drawMenuBar()
 										free(image_bytes);
 									}
 								});
-							logf(get_localized_string(LANG_0355));
+							print_log(get_localized_string(LANG_0355));
 
 							tmpWad->write(textureList);
 							delete tmpWad;
@@ -2231,13 +2238,13 @@ void Gui::drawMenuBar()
 				std::ofstream entFile(entPath, std::ios::trunc);
 				if (entFile.is_open())
 				{
-					logf(get_localized_string(LANG_1053), entPath);
+					print_log(get_localized_string(LANG_1053), entPath);
 					entFile.write((const char*)map->lumps[LUMP_ENTITIES], map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
 				}
 				else
 				{
-					logf(get_localized_string(LANG_0356), entPath);
-					logf(get_localized_string(LANG_0357));
+					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0356), entPath);
+					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0357));
 				}
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -2256,7 +2263,7 @@ void Gui::drawMenuBar()
 		{
 			if (map)
 			{
-				logf(get_localized_string(LANG_0358), map->bsp_name);
+				print_log(get_localized_string(LANG_0358), map->bsp_name);
 				map->validate();
 			}
 		}
@@ -2281,7 +2288,7 @@ void Gui::drawMenuBar()
 			g_settings.save();
 			if (fileSize(g_settings_path) == 0)
 			{
-				logf(get_localized_string(LANG_0359));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0359));
 			}
 			else
 			{
@@ -2386,7 +2393,7 @@ void Gui::drawMenuBar()
 
 		if (ImGui::MenuItem(get_localized_string(LANG_1087).c_str(), 0, false, !app->isLoading && allowDuplicate))
 		{
-			logf(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
+			print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
 			for (auto& ent : app->pickInfo.selectedEnts)
 			{
 				DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", ent);
@@ -2484,7 +2491,7 @@ void Gui::drawMenuBar()
 					map->delete_hull(i, -1);
 					map->getBspRender()->reloadClipnodes();
 					//	app->mapRenderers[k]->reloadClipnodes();
-					logf(get_localized_string(LANG_0360), i, map->bsp_name);
+					print_log(get_localized_string(LANG_0360), i, map->bsp_name);
 					//}
 					checkValidHulls();
 				}
@@ -2509,7 +2516,7 @@ void Gui::drawMenuBar()
 							map->delete_hull(i, k);
 							map->getBspRender()->reloadClipnodes();
 							//	app->mapRenderers[j]->reloadClipnodes();
-							logf(get_localized_string(LANG_0361), i, k, map->bsp_name);
+							print_log(get_localized_string(LANG_0361), i, k, map->bsp_name);
 							//}
 							checkValidHulls();
 						}
@@ -2554,7 +2561,7 @@ void Gui::drawMenuBar()
 					{
 						if (map->leaves[i].nMins[n] > map->leaves[i].nMaxs[n])
 						{
-							logf(get_localized_string(LANG_0362), i);
+							print_log(get_localized_string(LANG_0362), i);
 							std::swap(map->leaves[i].nMins[n], map->leaves[i].nMaxs[n]);
 						}
 					}
@@ -2574,7 +2581,7 @@ void Gui::drawMenuBar()
 					{
 						if (map->models[i].nMins[n] > map->models[i].nMaxs[n])
 						{
-							logf(get_localized_string(LANG_0363), i);
+							print_log(get_localized_string(LANG_0363), i);
 							std::swap(map->models[i].nMins[n], map->models[i].nMaxs[n]);
 						}
 					}
@@ -2660,11 +2667,11 @@ void Gui::drawMenuBar()
 						BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
 						if (tex->szName[0] == '\0' || strlen(tex->szName) >= MAXTEXTURENAME)
 						{
-							logf(get_localized_string(LANG_1055), i);
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1055), i);
 						}
 						if (tex->nOffsets[0] > 0 && dataOffset + texOffset + texlen > map->bsp_header.lump[LUMP_TEXTURES].nLength)
 						{
-							logf(get_localized_string(LANG_0364), i, map->bsp_header.lump[LUMP_TEXTURES].nLength, dataOffset + texOffset + texlen);
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0364), i, map->bsp_header.lump[LUMP_TEXTURES].nLength, dataOffset + texOffset + texlen);
 
 							char* newlump = new char[dataOffset + texOffset + texlen];
 							memset(newlump, 0, dataOffset + texOffset + texlen);
@@ -2718,7 +2725,7 @@ void Gui::drawMenuBar()
 							}
 							else if (tex.nOffsets[0] <= 0)
 							{
-								logf(get_localized_string(LANG_0365), i);
+								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0365), i);
 								memset(tex.szName, 0, MAXTEXTURENAME);
 								memcpy(tex.szName, "aaatrigger", 10);
 							}
@@ -3615,7 +3622,7 @@ void Gui::drawDebugWidget()
 		}
 
 		if (mapTexsUsage.size())
-			logf(get_localized_string(LANG_0396), (int)mapTexsUsage.size());
+			print_log(get_localized_string(LANG_0396), (int)mapTexsUsage.size());
 	}
 	ImGui::End();
 
@@ -3696,7 +3703,7 @@ void Gui::drawTextureBrowser()
 			{
 				ImGui::Dummy(ImVec2(0, 10));
 				ImGuiListClipper clipper;
-				clipper.Begin(LineOffsets.Size, 30.0f);
+				clipper.Begin(1, 30.0f);
 				while (clipper.Step())
 				{
 
@@ -3708,7 +3715,7 @@ void Gui::drawTextureBrowser()
 			{
 				ImGui::Dummy(ImVec2(0, 10));
 				ImGuiListClipper clipper;
-				clipper.Begin(LineOffsets.Size, 30.0f);
+				clipper.Begin(1, 30.0f);
 				while (clipper.Step())
 				{
 
@@ -3725,7 +3732,7 @@ void Gui::drawTextureBrowser()
 					{
 						ImGui::Dummy(ImVec2(0, 10));
 						ImGuiListClipper clipper;
-						clipper.Begin(LineOffsets.Size, 30.0f);
+						clipper.Begin(1, 30.0f);
 						while (clipper.Step())
 						{
 
@@ -5126,7 +5133,7 @@ void Gui::drawTransformWidget()
 					}
 					else if (app->transformTarget == TRANSFORM_ORIGIN)
 					{
-						logf(get_localized_string(LANG_0397));
+						print_log(get_localized_string(LANG_0397));
 					}
 				}
 			}
@@ -5135,22 +5142,6 @@ void Gui::drawTransformWidget()
 		}
 	}
 	ImGui::End();
-}
-
-void Gui::clearLog()
-{
-	Buf.clear();
-	LineOffsets.clear();
-	LineOffsets.push_back(0);
-}
-
-void Gui::addLog(const char* s)
-{
-	int old_size = Buf.size();
-	Buf.append(s);
-	for (int new_size = Buf.size(); old_size < new_size; old_size++)
-		if (Buf[old_size] == '\n')
-			LineOffsets.push_back(old_size + 1);
 }
 
 void Gui::loadFonts()
@@ -5188,6 +5179,8 @@ void Gui::loadFonts()
 
 void Gui::drawLog()
 {
+	static bool AutoScroll = true;  // Keep scrolling if already at the bottom
+
 	ImGui::SetNextWindowSize(ImVec2(750.f, 300.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 	if (!ImGui::Begin(get_localized_string(LANG_1164).c_str(), &showLogWidget))
@@ -5196,15 +5189,26 @@ void Gui::drawLog()
 		return;
 	}
 
-	g_mutex_list[4].lock();
-	for (int i = 0; i < g_log_buffer.size(); i++)
-	{
-		addLog(g_log_buffer[i].c_str());
-	}
-	g_log_buffer.clear();
-	g_mutex_list[4].unlock();
+	static std::vector<std::string> log_buffer_copy;
+	static std::vector<unsigned short> color_buffer_copy;
+	static int real_string_count = 0;
 
-	static int i = 0;
+	g_mutex_list[0].lock();
+	if (log_buffer_copy.size() != g_log_buffer.size())
+	{
+		log_buffer_copy = g_log_buffer;
+		color_buffer_copy = g_color_buffer;
+		real_string_count = 0;
+		for (size_t line_no = 0; line_no < log_buffer_copy.size(); line_no++)
+		{
+			real_string_count++;
+			if (line_no + 1 < log_buffer_copy.size() && log_buffer_copy[line_no].size() && log_buffer_copy[line_no][log_buffer_copy[line_no].size() - 1] != '\n')
+			{
+				real_string_count--;
+			}
+		}
+	}
+	g_mutex_list[0].unlock();
 
 	ImGui::BeginChild(get_localized_string(LANG_0706).c_str(), ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
@@ -5218,7 +5222,10 @@ void Gui::drawLog()
 		}
 		if (ImGui::MenuItem(get_localized_string(LANG_0707).c_str()))
 		{
-			clearLog();
+			g_mutex_list[0].lock();
+			g_log_buffer.clear();
+			g_color_buffer.clear();
+			g_mutex_list[0].unlock();
 		}
 		if (ImGui::MenuItem(get_localized_string(LANG_0708).c_str(), NULL, &AutoScroll))
 		{
@@ -5229,25 +5236,36 @@ void Gui::drawLog()
 
 	ImGui::PushFont(consoleFont);
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-	const char* buf = Buf.begin();
-	const char* buf_end = Buf.end();
 
-	if (copy) ImGui::LogBegin(ImGuiLogType_Clipboard, 0);
+
+	if (copy)
+	{
+		std::string logStr;
+		for (const auto& str : log_buffer_copy) {
+			logStr += str;
+		}
+
+		ImGui::SetClipboardText(logStr.c_str());
+	}
 
 	ImGuiListClipper clipper;
-	clipper.Begin(LineOffsets.Size);
+	clipper.Begin(real_string_count, ImGui::GetTextLineHeight());
 	while (clipper.Step())
 	{
-		for (int line_no = clipper.DisplayStart; line_no < clipper.DisplayEnd; line_no++)
+		for (int line_no = clipper.DisplayStart; line_no < log_buffer_copy.size(); line_no++)
 		{
-			const char* line_start = buf + LineOffsets[line_no];
-			const char* line_end = (line_no + 1 < LineOffsets.Size) ? (buf + LineOffsets[line_no + 1] - 1) : buf_end;
-			ImGui::TextUnformatted(line_start, line_end);
+			ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[line_no]));
+			clipper.ItemsHeight = ImGui::GetTextLineHeight();
+			ImGui::TextUnformatted(log_buffer_copy[line_no].c_str());
+			if (line_no + 1 < log_buffer_copy.size() && log_buffer_copy[line_no].size() && log_buffer_copy[line_no][log_buffer_copy[line_no].size() - 1] != '\n')
+			{
+				clipper.ItemsHeight = 0.0f;
+				ImGui::SameLine();
+			}
+			ImGui::PopStyleColor();
 		}
 	}
 	clipper.End();
-
-	if (copy) ImGui::LogFinish();
 
 	ImGui::PopFont();
 	ImGui::PopStyleVar();
@@ -5257,7 +5275,6 @@ void Gui::drawLog()
 
 	ImGui::EndChild();
 	ImGui::End();
-
 }
 
 void Gui::drawSettings()
@@ -6139,16 +6156,16 @@ void Gui::drawMergeWindow()
 				for (auto& map : maps)
 					delete map;
 				maps.clear();
-				logf(get_localized_string(LANG_1056));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1056));
 			}
 			else
 			{
 				for (int i = 0; i < maps.size(); i++)
 				{
-					logf(get_localized_string(LANG_1057), maps[i]->bsp_name);
+					print_log(get_localized_string(LANG_1057), maps[i]->bsp_name);
 					if (DeleteUnusedInfo)
 					{
-						logf(get_localized_string(LANG_1058));
+						print_log(get_localized_string(LANG_1058));
 						STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
 						g_progress.clear();
 						removed.print_delete_stats(2);
@@ -6156,25 +6173,25 @@ void Gui::drawMergeWindow()
 
 					if (DeleteHull2 || (Optimize && !maps[i]->has_hull2_ents()))
 					{
-						logf(get_localized_string(LANG_1059));
+						print_log(get_localized_string(LANG_1059));
 						maps[i]->delete_hull(2, 1);
 						maps[i]->remove_unused_model_structures().print_delete_stats(2);
 					}
 
 					if (Optimize)
 					{
-						logf(get_localized_string(LANG_1060));
+						print_log(get_localized_string(LANG_1060));
 						maps[i]->delete_unused_hulls().print_delete_stats(2);
 					}
 
-					logf("\n");
+					print_log("\n");
 				}
 				BspMerger merger;
 				Bsp* result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript);
 
-				logf("\n");
+				print_log("\n");
 				if (result->isValid()) result->write(outPath);
-				logf("\n");
+				print_log("\n");
 				result->print_info(false, 0, 0);
 
 				app->clearMaps();
@@ -6188,7 +6205,7 @@ void Gui::drawMergeWindow()
 				}
 				else
 				{
-					logf(get_localized_string(LANG_0398));
+					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0398));
 					app->addMap(new Bsp());
 				}
 
@@ -6254,7 +6271,7 @@ void Gui::drawImportMapWidget()
 			fixupPath(mapPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
 			if (fileExists(mapPath))
 			{
-				logf(get_localized_string(LANG_0399), mapPath);
+				print_log(get_localized_string(LANG_0399), mapPath);
 				showImportMapWidget = false;
 				if (showImportMapWidget_Type == SHOW_IMPORT_ADD_NEW)
 				{
@@ -6405,11 +6422,11 @@ void Gui::drawImportMapWidget()
 						Bsp* model = new Bsp(mapPath);
 						if (!model->ents.size())
 						{
-							logf(get_localized_string(LANG_0400));
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0400));
 						}
 						else
 						{
-							logf(get_localized_string(LANG_0401));
+							print_log(get_localized_string(LANG_0401));
 							Entity* tmpEnt = new Entity("func_breakable");
 							tmpEnt->setOrAddKeyvalue("gibmodel", std::string("models/") + basename(mapPath));
 							tmpEnt->setOrAddKeyvalue("model", std::string("models/") + basename(mapPath));
@@ -6417,7 +6434,7 @@ void Gui::drawImportMapWidget()
 							tmpEnt->setOrAddKeyvalue("origin", cameraOrigin.toKeyvalueString());
 							map->ents.push_back(tmpEnt);
 							map->update_ent_lump();
-							logf(get_localized_string(LANG_0402), std::string("models/") + basename(mapPath));
+							print_log(get_localized_string(LANG_0402), std::string("models/") + basename(mapPath));
 							app->updateEnts();
 							app->reloadBspModels();
 						}
@@ -6427,7 +6444,7 @@ void Gui::drawImportMapWidget()
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0403));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0403));
 			}
 		}
 	}
@@ -7405,7 +7422,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 {
 	if (!faces_to_export.size())
 	{
-		logf(get_localized_string(LANG_0405), map->faceCount);
+		print_log(get_localized_string(LANG_0405), map->faceCount);
 		for (int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
 		{
 			faces_to_export.push_back(faceIdx);
@@ -7418,7 +7435,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 		int current_x = 0;
 		int current_y = 0;
 		int max_y_found = 0;
-		//logf(get_localized_string(LANG_0406),lightId);
+		//print_log(get_localized_string(LANG_0406),lightId);
 		std::string filename = fmt::format(fmt::runtime(get_localized_string(LANG_0407)), g_working_dir.c_str(), get_localized_string(LANG_0408), lightId);
 		unsigned char* image_bytes;
 		unsigned int w2, h2;
@@ -7428,7 +7445,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 		{
 			/*for (int i = 0; i < 100; i++)
 			{
-				logf("{}/", image_bytes[i]);
+				print_log("{}/", image_bytes[i]);
 			}*/
 			colordata.clear();
 			colordata.resize(w2 * h2);
@@ -7491,12 +7508,12 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 
 	if (app->pickInfo.selectedFaces.size() > 1)
 	{
-		logf(get_localized_string(LANG_0409), (unsigned int)app->pickInfo.selectedFaces.size());
+		print_log(get_localized_string(LANG_0409), (unsigned int)app->pickInfo.selectedFaces.size());
 		faces_to_export = app->pickInfo.selectedFaces;
 	}
 	else
 	{
-		logf(get_localized_string(LANG_0410), map->faceCount);
+		print_log(get_localized_string(LANG_0410), map->faceCount);
 		for (int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
 		{
 			faces_to_export.push_back(faceIdx);
@@ -7547,7 +7564,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 
 		bool found_any_lightmap = false;
 
-		//logf(get_localized_string(LANG_0411),lightId);
+		//print_log(get_localized_string(LANG_0411),lightId);
 		for (int faceIdx : faces_to_export)
 		{
 			int size[2];
@@ -7582,7 +7599,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 		if (found_any_lightmap)
 		{
 			filename = fmt::format(fmt::runtime(get_localized_string(LANG_1061)), g_working_dir.c_str(), get_localized_string(LANG_1062), lightId);
-			logf(get_localized_string(LANG_0412), filename);
+			print_log(get_localized_string(LANG_0412), filename);
 			lodepng_encode24_file(filename.c_str(), (const unsigned char*)colordata.data(), LMapMaxWidth, current_y + max_y_found);
 		}
 	}
@@ -7602,7 +7619,7 @@ void ExportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 		int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 		int offset = face.nLightmapOffset + i * lightmapSz;
 		filename = fmt::format(fmt::runtime(get_localized_string(LANG_0413)), g_working_dir.c_str(), get_localized_string(LANG_0408), faceIdx, i);
-		logf(get_localized_string(LANG_0414), filename);
+		print_log(get_localized_string(LANG_0414), filename);
 		lodepng_encode24_file(filename.c_str(), (unsigned char*)(map->lightdata + offset), size[0], size[1]);
 	}
 }
@@ -7621,7 +7638,7 @@ void ImportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 		filename = fmt::format(fmt::runtime(get_localized_string(LANG_1063)), g_working_dir.c_str(), get_localized_string(LANG_1062), faceIdx, i);
 		unsigned int w = size[0], h = size[1];
 		unsigned int w2 = 0, h2 = 0;
-		logf(get_localized_string(LANG_0415), filename);
+		print_log(get_localized_string(LANG_0415), filename);
 		unsigned char* image_bytes = NULL;
 		auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, filename.c_str());
 		if (error == 0 && image_bytes)
@@ -7632,13 +7649,13 @@ void ImportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0416), w, h);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0416), w, h);
 			}
 			free(image_bytes);
 		}
 		else
 		{
-			logf(get_localized_string(LANG_0417));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0417));
 		}
 	}
 }
@@ -7700,7 +7717,7 @@ void Gui::drawLightMapTool()
 						memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
 						currentlightMap[i]->upload(GL_RGB, true);
 						lightmaps++;
-						//logf(get_localized_string(LANG_0418),i,offset);
+						//print_log(get_localized_string(LANG_0418),i,offset);
 					}
 				}
 
@@ -7836,14 +7853,14 @@ void Gui::drawLightMapTool()
 			ImGui::Separator();
 			if (ImGui::Button(get_localized_string(LANG_1128).c_str(), ImVec2(120, 0)))
 			{
-				logf(get_localized_string(LANG_0420));
+				print_log(get_localized_string(LANG_0420));
 				createDir(g_working_dir);
 				ExportLightmap(face, faceIdx, map);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button(get_localized_string(LANG_1129).c_str(), ImVec2(120, 0)))
 			{
-				logf(get_localized_string(LANG_0421));
+				print_log(get_localized_string(LANG_0421));
 				ImportLightmap(face, faceIdx, map);
 				showLightmapEditorUpdate = true;
 				map->getBspRender()->reloadLightmaps();
@@ -7854,7 +7871,7 @@ void Gui::drawLightMapTool()
 			ImGui::Separator();
 			if (ImGui::Button(get_localized_string(LANG_0867).c_str(), ImVec2(125, 0)))
 			{
-				logf(get_localized_string(LANG_1064));
+				print_log(get_localized_string(LANG_1064));
 				createDir(g_working_dir);
 
 				//for (int z = 0; z < map->faceCount; z++)
@@ -7868,7 +7885,7 @@ void Gui::drawLightMapTool()
 			ImGui::SameLine();
 			if (ImGui::Button(get_localized_string(LANG_0868).c_str(), ImVec2(125, 0)))
 			{
-				logf(get_localized_string(LANG_1065));
+				print_log(get_localized_string(LANG_1065));
 
 				//for (int z = 0; z < map->faceCount; z++)
 				//{
@@ -8481,7 +8498,7 @@ StatInfo Gui::calcStat(std::string name, unsigned int val, unsigned int max, boo
 		tmp = fmt::format("{:8.2f}", val / meg);
 		stat.val = std::string(tmp);
 
-		tmp = fmt::format("{:5.2f} MB", max / meg);
+		tmp = fmt::format("{:>5.2f}", max / meg);
 		stat.max = std::string(tmp);
 	}
 	else
@@ -8489,7 +8506,7 @@ StatInfo Gui::calcStat(std::string name, unsigned int val, unsigned int max, boo
 		tmp = fmt::format("{:8}", val);
 		stat.val = std::string(tmp);
 
-		tmp = fmt::format("{:8}", max);
+		tmp = fmt::format("{:>8}", max);
 		stat.max = std::string(tmp);
 	}
 	tmp = fmt::format("{:3.1f}%", percent);
@@ -8530,7 +8547,7 @@ ModelInfo Gui::calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val,
 		tmp = fmt::format("{:8.1f}", val / meg);
 		stat.val = std::to_string(val);
 
-		tmp = fmt::format("{:>5.1f} MB", max / meg);
+		tmp = fmt::format("{:>5.1f}", max / meg);
 		stat.usage = tmp;
 	}
 	else
@@ -8592,7 +8609,7 @@ void Gui::checkFaceErrors()
 		GetFaceLightmapSize(map, app->pickInfo.selectedFaces[i], size);
 		if ((size[0] > MAX_SURFACE_EXTENT) || (size[1] > MAX_SURFACE_EXTENT) || size[0] < 0 || size[1] < 0)
 		{
-			//logf(get_localized_string(LANG_0426),size[0],size[1]);
+			//print_log(get_localized_string(LANG_0426),size[0],size[1]);
 			size[0] = std::min(size[0], MAX_SURFACE_EXTENT);
 			size[1] = std::min(size[1], MAX_SURFACE_EXTENT);
 			badSurfaceExtents = true;

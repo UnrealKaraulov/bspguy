@@ -27,10 +27,13 @@ extern std::string g_version_string;
 #define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
 #endif
 
-#define PRINT_BLUE		1
-#define PRINT_GREEN		2
-#define PRINT_RED		4
-#define PRINT_BRIGHT	8
+enum PRINT_CONTS : unsigned short
+{
+	PRINT_BLUE = 1,
+	PRINT_GREEN = 2,
+	PRINT_RED = 4,
+	PRINT_INTENSITY = 8
+};
 
 static const vec3  s_baseaxis[18] = {
 	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},                      // floor
@@ -45,10 +48,17 @@ extern bool DebugKeyPressed;
 extern bool g_verbose;
 extern ProgressMeter g_progress;
 extern std::vector<std::string> g_log_buffer;
+extern std::vector<unsigned short> g_color_buffer;
 extern std::mutex g_mutex_list[10];
 
+
+extern unsigned short g_console_colors;
+//ImVec4 imguiColorFromConsole(unsigned short colors);
+void set_console_colors(unsigned short colors = 0);
+
+
 template<class ...Args>
-inline void logf(const std::string & format, Args ...args) noexcept
+inline void print_log(const std::string& format, Args ...args) noexcept
 {
 	g_mutex_list[0].lock();
 
@@ -64,8 +74,36 @@ inline void logf(const std::string & format, Args ...args) noexcept
 	{
 		std::cout << log_line;
 		g_log_buffer.push_back(log_line);
+		g_color_buffer.push_back(g_console_colors);
 	}
 	g_mutex_list[0].unlock();
+}
+
+
+template<class ...Args>
+inline void print_log(unsigned short colors, const std::string& format, Args ...args) noexcept
+{
+	g_mutex_list[0].lock();
+
+	set_console_colors(colors);
+
+	std::string log_line = fmt::vformat(format, fmt::make_format_args(args...));
+
+#ifndef NDEBUG
+	static std::ofstream outfile("log.txt", std::ios_base::app);
+	outfile << log_line;
+	outfile.flush();
+#endif
+
+	if (g_log_buffer.size() == 0 || g_log_buffer[g_log_buffer.size() - 1] != log_line)
+	{
+		std::cout << log_line;
+		g_log_buffer.push_back(log_line);
+		g_color_buffer.push_back(colors);
+	}
+	g_mutex_list[0].unlock();
+
+	set_console_colors();
 }
 
 
@@ -93,8 +131,6 @@ std::string stripFileName(const std::string& path);
 std::wstring stripFileName(const std::wstring& path);
 
 bool isNumeric(const std::string& s);
-
-void print_color(int colors);
 
 bool dirExists(const std::string& dirName);
 

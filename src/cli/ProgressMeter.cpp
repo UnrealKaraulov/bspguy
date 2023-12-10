@@ -17,7 +17,7 @@ void ProgressMeter::update(const char* newTitle, int totalProgressTicks)
 	progress_total = totalProgressTicks;
 	if (simpleMode && !hide)
 	{
-		logf(std::string(newTitle) + "\n");
+		print_log(std::string(newTitle) + "\n");
 	}
 }
 
@@ -40,8 +40,8 @@ void ProgressMeter::tick()
 
 	float percent = (progress / (float)progress_total) * 100;
 
-	for (int i = 0; i < 12; i++) logf("\b\b\b\b");
-	logf(get_localized_string(LANG_0266),progress_title,percent);
+	for (int i = 0; i < 12; i++) print_log("\b\b\b\b");
+	print_log(get_localized_string(LANG_0266),progress_title,percent);
 }
 
 void ProgressMeter::clear()
@@ -51,7 +51,7 @@ void ProgressMeter::clear()
 		return;
 	}
 	// 50 chars
-	for (int i = 0; i < 6; i++) logf("\b\b\b\b\b\b\b\b\b\b");
-	for (int i = 0; i < 6; i++) logf("          ");
-	for (int i = 0; i < 6; i++) logf("\b\b\b\b\b\b\b\b\b\b");
+	for (int i = 0; i < 6; i++) print_log("\b\b\b\b\b\b\b\b\b\b");
+	for (int i = 0; i < 6; i++) print_log("          ");
+	for (int i = 0; i < 6; i++) print_log("\b\b\b\b\b\b\b\b\b\b");
 }

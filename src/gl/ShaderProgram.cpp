@@ -34,10 +34,10 @@ void ShaderProgram::link()
 		char* log = new char[1024];
 		int len;
 		glGetProgramInfoLog(ID, 1024, &len, log);
-		logf(get_localized_string(LANG_0961));
-		logf(log);
+		print_log(get_localized_string(LANG_0961));
+		print_log(log);
 		if (len > 1024)
-			logf(get_localized_string(LANG_0962));
+			print_log(get_localized_string(LANG_0962));
 		delete[] log;
 	}
 }
@@ -93,13 +93,13 @@ void ShaderProgram::setMatrixNames(const char* _modelViewMat, const char* _model
 	{
 		modelViewID = glGetUniformLocation(ID, _modelViewMat);
 		if (modelViewID == -1)
-			logf(get_localized_string(LANG_0963),_modelViewMat);
+			print_log(get_localized_string(LANG_0963),_modelViewMat);
 	}
 	if (_modelViewProjMat)
 	{
 		modelViewProjID = glGetUniformLocation(ID, _modelViewProjMat);
 		if (modelViewProjID == -1)
-			logf(get_localized_string(LANG_0964),_modelViewProjMat);
+			print_log(get_localized_string(LANG_0964),_modelViewProjMat);
 	}
 }
 
@@ -108,17 +108,17 @@ void ShaderProgram::setVertexAttributeNames(const char* posAtt, const char* colo
 	if (posAtt)
 	{
 		vposID = glGetAttribLocation(ID, posAtt);
-		if (vposID == -1) logf(get_localized_string(LANG_0965),posAtt);
+		if (vposID == -1) print_log(get_localized_string(LANG_0965),posAtt);
 	}
 	if (colorAtt)
 	{
 		vcolorID = glGetAttribLocation(ID, colorAtt);
-		if (vcolorID == -1) logf(get_localized_string(LANG_0966),colorAtt);
+		if (vcolorID == -1) print_log(get_localized_string(LANG_0966),colorAtt);
 	}
 	if (texAtt)
 	{
 		vtexID = glGetAttribLocation(ID, texAtt);
-		if (vtexID == -1) logf(get_localized_string(LANG_0967),texAtt);
+		if (vtexID == -1) print_log(get_localized_string(LANG_0967),texAtt);
 	}
 }
 
@@ -143,7 +143,7 @@ void ShaderProgram::popMatrix(int matType)
 				stack.pop_back();
 			}
 			else
-				logf(get_localized_string(LANG_0968));
+				print_log(get_localized_string(LANG_0968));
 		}
 	}
 

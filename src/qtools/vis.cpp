@@ -15,28 +15,30 @@ void printVisRow(unsigned char* vis, int len, int offsetLeaf, int mask)
 			int leafIdx = i * 8 + b;
 			if (leafIdx == offsetLeaf)
 			{
-				print_color(PRINT_GREEN | PRINT_BRIGHT);
+				set_console_colors(PRINT_GREEN | PRINT_INTENSITY);
 			}
 			else
 			{
 				if (i * 8 < offsetLeaf && i * 8 + 8 > offsetLeaf && (1 << b) & mask)
 				{
-					print_color(PRINT_RED | PRINT_GREEN);
+					set_console_colors(PRINT_RED | PRINT_GREEN);
 				}
 				else
-					print_color(PRINT_RED | PRINT_GREEN | PRINT_BLUE);
+					set_console_colors(PRINT_RED | PRINT_GREEN | PRINT_BLUE);
 			}
-			logf("{}", (unsigned int)((bits >> b) & 1));
+			print_log("{}", (unsigned int)((bits >> b) & 1));
 		}
-		logf(" ");
+		print_log(" ");
 	}
-	logf("\n");
+	print_log("\n");
 }
 
 bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 {
 	if (shift == 0)
 		return false;
+
+	g_debug_shift = g_verbose;
 
 	unsigned char bitsPerStep = 8;
 	unsigned char offsetBit = offsetLeaf % bitsPerStep;
@@ -66,7 +68,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 
 	if (g_debug_shift)
 	{
-		logf(get_localized_string(LANG_0992));
+		print_log(get_localized_string(LANG_0992));
 	}
 
 	int overflow = 0;
@@ -74,7 +76,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 	{
 		if (g_debug_shift)
 		{
-			logf("{:2d} = ", k);
+			print_log("{:2d} = ", k);
 			printVisRow(vis, len, offsetLeaf, mask);
 		}
 
@@ -135,12 +137,12 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 
 		if (g_debug_shift && k == bitShifts - 1)
 		{
-			logf("{:2d} = ", k + 1);
+			print_log("{:2d} = ", k + 1);
 			printVisRow(vis, len, offsetLeaf, mask);
 		}
 	}
 	if (overflow)
-		logf(get_localized_string(LANG_0993),overflow);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0993),overflow);
 
 
 	if (byteShifts > 0)
@@ -196,7 +198,7 @@ void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned c
 		{
 			if ((i + 1) * sizeof(BSPLEAF32) >= leafMemSize)
 			{
-				logf(get_localized_string(LANG_0994),i + 1,leafMemSize / sizeof(BSPLEAF32));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0994),i + 1,leafMemSize / sizeof(BSPLEAF32));
 				return;
 			}
 
@@ -209,11 +211,11 @@ void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned c
 
 			if (leafLump[i + 1].nVisOffset >= visLumpMemSize)
 			{
-				logf(get_localized_string(LANG_0995),leafLump[i + 1].nVisOffset,visLumpMemSize);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0995),leafLump[i + 1].nVisOffset,visLumpMemSize);
 				return;
 			}
 			// Tracing ... 
-			// logf(get_localized_string(LANG_0996),leafLump[i].nVisOffset,visLumpMemSize);
+			// print_log(get_localized_string(LANG_0996),leafLump[i].nVisOffset,visLumpMemSize);
 			DecompressVis((unsigned char*)(visLump + leafLump[i + 1].nVisOffset), dest, oldVisRowSize, visDataLeafCount, visLumpMemSize - leafLump[i + 1].nVisOffset);
 
 			// Leaf visibility row lengths are multiples of 64 leaves, so there are usually some unused bits at the end.
@@ -229,7 +231,7 @@ void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned c
 		}
 		else
 		{
-			logf(get_localized_string(LANG_0997));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0997));
 			return;
 		}
 	}
@@ -259,12 +261,12 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 		{
 			if (out > startdst + dest_length)
 			{
-				logf(get_localized_string(LANG_0998),(int)(out - startdst),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0998),(int)(out - startdst),dest_length);
 				return;
 			}
 			if (src > startsrc + src_length)
 			{
-				logf(get_localized_string(LANG_0999),(int)(src - startsrc),src_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0999),(int)(src - startsrc),src_length);
 				return;
 			}
 			*out = *src;
@@ -279,7 +281,7 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 		{
 			if (out > startdst + dest_length)
 			{
-				logf(get_localized_string(LANG_1142),(int)(out - startdst),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1142),(int)(out - startdst),dest_length);
 				return;
 			}
 			*out = 0;
@@ -306,7 +308,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 
 		if (current_length > dest_length)
 		{
-			logf(get_localized_string(LANG_1000),current_length,dest_length);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1000),current_length,dest_length);
 			return (int)(dest_p - dest);
 		}
 
@@ -335,7 +337,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 		current_length++;
 		if (current_length > dest_length)
 		{
-			logf(get_localized_string(LANG_1143),current_length,dest_length);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1143),current_length,dest_length);
 			return (int)(dest_p - dest);
 		}
 		*dest_p = rep;
@@ -384,7 +386,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	{
 		if (i + 1 >= maxLeafs)
 		{
-			logf(get_localized_string(LANG_1001),i + 1,maxLeafs);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1001),i + 1,maxLeafs);
 			delete[] sharedRows;
 			delete[] compressed;
 			return (int)(vismap_p - output);
@@ -394,7 +396,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 		{
 			if (sharedRows[i] + 1 >= maxLeafs)
 			{
-				logf(get_localized_string(LANG_1002),(int)(sharedRows[i] + 1),maxLeafs);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1002),(int)(sharedRows[i] + 1),maxLeafs);
 				delete[] sharedRows;
 				delete[] compressed;
 				return (int)(vismap_p - output);
@@ -415,7 +417,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 
 		if (vismap_p >= output + bufferSize)
 		{
-			logf(get_localized_string(LANG_1003),(void*)vismap_p,(void*)(output + bufferSize));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1003),(void*)vismap_p,(void*)(output + bufferSize));
 
 			delete[] sharedRows;
 			return (int)(vismap_p - output);
@@ -459,7 +461,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf(get_localized_string(LANG_1004),(int)(out - dest),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1004),(int)(out - dest),dest_length);
 				return;
 			}
 
@@ -476,13 +478,13 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf(get_localized_string(LANG_1005),(int)(out - dest),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1005),(int)(out - dest),dest_length);
 				return;
 			}
 
 			if (src > src_start + src_len)
 			{
-				logf(get_localized_string(LANG_1006),(int)(out - dest),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1006),(int)(out - dest),dest_length);
 				return;
 			}
 
@@ -496,7 +498,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 
 		if (src > src_start + src_len)
 		{
-			logf(get_localized_string(LANG_1144),(int)(out - dest),dest_length);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1144),(int)(out - dest),dest_length);
 			return;
 		}
 
@@ -504,7 +506,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf(get_localized_string(LANG_1007),(int)(out - dest),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1007),(int)(out - dest),dest_length);
 				return;
 			}
 

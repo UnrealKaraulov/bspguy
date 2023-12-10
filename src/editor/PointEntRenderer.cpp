@@ -74,7 +74,7 @@ void PointEntRenderer::genPointEntCubes()
 		}
 	}
 
-	logf(get_localized_string(LANG_0894),entCubes.size());
+	print_log(get_localized_string(LANG_0894),entCubes.size());
 }
 
 EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube)

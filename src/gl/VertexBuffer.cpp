@@ -41,7 +41,7 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 			size = numValues * 4;
 			break;
 		default:
-			logf(get_localized_string(LANG_0972),valueType);
+			print_log(get_localized_string(LANG_0972),valueType);
 			handle = -1;
 			size = 0;
 	}
@@ -95,7 +95,7 @@ void VertexBuffer::addAttributes(int attFlags)
 			else if (i >= VBUF_TEX_START)
 				commonAttr[i].handle = shaderProgram->vtexID;
 			else
-				logf(get_localized_string(LANG_0973),i);
+				print_log(get_localized_string(LANG_0973),i);
 
 			attribs.push_back(commonAttr[i]);
 			elementSize += commonAttr[i].size;
@@ -119,7 +119,7 @@ void VertexBuffer::addAttribute(int type, const char* varName) {
 	}
 
 	if (idx >= VBUF_FLAGBITS) {
-		logf(get_localized_string(LANG_0974));
+		print_log(get_localized_string(LANG_0974));
 		return;
 	}
 
@@ -161,7 +161,7 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 		attribs[i].handle = glGetAttribLocation(shaderProgram->ID, attribs[i].varName);
 
 		if ((!hideErrors || g_verbose) && attribs[i].handle == -1)
-			logf(get_localized_string(LANG_0975),attribs[i].varName);
+			print_log(get_localized_string(LANG_0975),attribs[i].varName);
 	}
 
 	attributesBound = true;
@@ -235,11 +235,11 @@ void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors
 	}
 
 	if (start < 0 || start > numVerts || numVerts == 0)
-		logf(get_localized_string(LANG_0976),start,numVerts);
+		print_log(get_localized_string(LANG_0976),start,numVerts);
 	else if (end > numVerts || end < 0)
-		logf(get_localized_string(LANG_0977),end);
+		print_log(get_localized_string(LANG_0977),end);
 	else if (end - start <= 0)
-		logf(get_localized_string(LANG_0978),start,end);
+		print_log(get_localized_string(LANG_0978),start,end);
 	else
 		glDrawArrays(_primitive, start, end - start);
 

@@ -10,13 +10,13 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 {
 	if (maps.size() < 1)
 	{
-		logf(get_localized_string(LANG_0219));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0219));
 		return NULL;
 	}
 	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap);
 
 
-	logf(get_localized_string(LANG_0220));
+	print_log(get_localized_string(LANG_0220));
 
 	for (int z = 0; z < blocks.size(); z++)
 	{
@@ -28,7 +28,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 				if (abs(block.offset.x) >= EPSILON || abs(block.offset.y) >= EPSILON || abs(block.offset.z) >= EPSILON)
 				{
-					logf("    Apply offset ({:6.0f}, {:6.0f}, {:6.0f}) to {}\n",
+					print_log("    Apply offset ({:6.0f}, {:6.0f}, {:6.0f}) to {}\n",
 						block.offset.x, block.offset.y, block.offset.z, block.map->bsp_name.c_str());
 					block.map->move(block.offset);
 				}
@@ -51,7 +51,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 	// TODO: Don't merge linearly. Merge gradually bigger chunks to minimize BSP tree depth.
 	//       Not worth it until more than 27 maps are merged together (merge cube bigger than 3x3x3)
 
-	logf(get_localized_string(LANG_0221),maps.size());
+	print_log(get_localized_string(LANG_0221),maps.size());
 
 
 	// merge maps along X axis to form rows of maps
@@ -68,7 +68,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 				if (x != 0)
 				{
-					//logf(get_localized_string(LANG_0222),x,y,z,0,y,z);
+					//print_log(get_localized_string(LANG_0222),x,y,z,0,y,z);
 					std::string merge_name = ++mergeCount < maps.size() ? "row_" + std::to_string(rowId) : "result";
 					merge(rowStart, block, merge_name);
 				}
@@ -88,7 +88,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 			if (y != 0)
 			{
-				//logf(get_localized_string(LANG_1042),0,y,z,0,0,z);
+				//print_log(get_localized_string(LANG_1042),0,y,z,0,0,z);
 				std::string merge_name = ++mergeCount < maps.size() ? "layer_" + std::to_string(colId) : "result";
 				merge(colStart, block, merge_name);
 			}
@@ -104,7 +104,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 		if (z != 0)
 		{
-			//logf(get_localized_string(LANG_1147),0,0,z,0,0,0);
+			//print_log(get_localized_string(LANG_1147),0,0,z,0,0,0);
 			merge(layerStart, block, "result");
 		}
 	}
@@ -119,7 +119,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 				for (int x = 0; x < blocks[z][y].size(); x++)
 					flattenedBlocks.push_back(blocks[z][y][x]);
 
-		logf(get_localized_string(LANG_0223));
+		print_log(get_localized_string(LANG_0223));
 		update_map_series_entity_logic(output, flattenedBlocks, maps, output_name, maps[0]->bsp_name, noscript);
 	}
 
@@ -131,7 +131,7 @@ void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType)
 	std::string thisName = dst.merge_name.size() ? dst.merge_name : dst.map->bsp_name;
 	std::string otherName = src.merge_name.size() ? src.merge_name : src.map->bsp_name;
 	dst.merge_name = std::move(resultType);
-	logf("    {:>8} = {} + {}\n", dst.merge_name, thisName, otherName);
+	print_log("    {:>8} = {} + {}\n", dst.merge_name, thisName, otherName);
 
 	merge(*dst.map, *src.map);
 }
@@ -184,7 +184,7 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 
 	if (noOverlap)
 	{
-		logf(get_localized_string(LANG_0224));
+		print_log(get_localized_string(LANG_0224));
 		return orderedBlocks;
 	}
 
@@ -203,7 +203,7 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 
 	if (maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer < (float)maps.size())
 	{
-		logf(get_localized_string(LANG_0225));
+		print_log(get_localized_string(LANG_0225));
 		return orderedBlocks;
 	}
 
@@ -211,15 +211,15 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	vec3 mergedMapMin = mergedMapSize * -0.5f;
 	vec3 mergedMapMax = mergedMapMin + mergedMapSize;
 
-	logf(get_localized_string(LANG_0226),maxDims.x,maxDims.y,maxDims.z);
-	logf(get_localized_string(LANG_0227),maxMapsPerRow,maxMapsPerCol,maxMapsPerLayer,maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer);
+	print_log(get_localized_string(LANG_0226),maxDims.x,maxDims.y,maxDims.z);
+	print_log(get_localized_string(LANG_0227),maxMapsPerRow,maxMapsPerCol,maxMapsPerLayer,maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer);
 
 	float actualWidth = std::min(idealMapsPerAxis, (float)maps.size());
 	float actualLength = std::min(idealMapsPerAxis, (float)ceil((float)maps.size() / idealMapsPerAxis));
 	float actualHeight = std::min(idealMapsPerAxis, (float)ceil((float)maps.size() / (idealMapsPerAxis * idealMapsPerAxis)));
-	logf(get_localized_string(LANG_0228),actualWidth,actualLength,actualHeight);
+	print_log(get_localized_string(LANG_0228),actualWidth,actualLength,actualHeight);
 
-	logf("Merged map bounds: min=({:.0f},{:.0f}, {:.0f})\n"
+	print_log("Merged map bounds: min=({:.0f},{:.0f}, {:.0f})\n"
 		"                   max=({:.0f}, {:.0f},{:.0f})\n",
 		mergedMapMin.x, mergedMapMin.y, mergedMapMin.z,
 		mergedMapMax.x, mergedMapMax.y, mergedMapMax.z);
@@ -239,8 +239,8 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 				MAPBLOCK& block = blocks[blockIdx];
 
 				block.offset = targetMins - block.mins;
-				//logf(get_localized_string(LANG_0229),blockIdx,targetMins.x,targetMins.y,targetMins.z);
-				//logf(get_localized_string(LANG_0230),block.map->name,block.offset.x,block.offset.y,block.offset.z);
+				//print_log(get_localized_string(LANG_0229),blockIdx,targetMins.x,targetMins.y,targetMins.z);
+				//print_log(get_localized_string(LANG_0230),block.map->name,block.offset.x,block.offset.y,block.offset.z);
 
 				row.push_back(block);
 
@@ -477,7 +477,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 				if (load_map_triggers[source_map].find(tname) == load_map_triggers[source_map].end())
 				{
 					load_map_triggers[source_map].insert(tname);
-					//logf << "-   Disabling spawn points in " << source_map << endl;
+					//print_log << "-   Disabling spawn points in " << source_map << endl;
 				}
 
 				updated_spawns++;
@@ -555,7 +555,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 				if (load_map_triggers[source_map].find(spawn_name) == load_map_triggers[source_map].end())
 				{
 					load_map_triggers[source_map].insert(spawn_name);
-					//logf << "-   Disabling monster_* in " << source_map << endl;
+					//print_log << "-   Disabling monster_* in " << source_map << endl;
 				}
 			}
 
@@ -585,7 +585,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 			// TODO: keep_inventory flag?
 
 			if (spawnflags & 2 && tname.empty())
-				logf(get_localized_string(LANG_0231));
+				print_log(get_localized_string(LANG_0231));
 
 			if (!(spawnflags & 2))
 			{
@@ -831,10 +831,10 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 	g_progress.clear();
 
-	logf(get_localized_string(LANG_0232),replaced_changelevels);
-	logf(get_localized_string(LANG_0233),updated_spawns);
-	logf(get_localized_string(LANG_0234),updated_monsters);
-	logf(get_localized_string(LANG_0235),renameCount);
+	print_log(get_localized_string(LANG_0232),replaced_changelevels);
+	print_log(get_localized_string(LANG_0233),updated_spawns);
+	print_log(get_localized_string(LANG_0234),updated_monsters);
+	print_log(get_localized_string(LANG_0235),renameCount);
 
 	mergedMap->update_ent_lump();
 
@@ -888,7 +888,7 @@ int BspMerger::force_unique_ent_names_per_map(Bsp* mergedMap)
 			std::string oldName = *it2;
 			std::string newName = oldName + "_" + std::to_string(renameSuffix++);
 
-			//logf << "\nRenaming " << *it2 << " to " << newName << endl;
+			//print_log << "\nRenaming " << *it2 << " to " << newName << endl;
 
 			for (int i = 0; i < mergedMap->ents.size(); i++)
 			{
@@ -912,7 +912,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 	BSPPLANE separationPlane = separate(mapA, mapB);
 	if (separationPlane.nType == -1 && !modelMerge)
 	{
-		logf(get_localized_string(LANG_0236));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0236));
 		return false;
 	}
 	thisWorldLeafCount = mapA.models[0].nVisLeafs; // excludes solid leaf 0
@@ -941,7 +941,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 		{
 			if (!modelMerge)
 			{
-				logf(get_localized_string(LANG_0237),g_lump_names[i]);
+				print_log(get_localized_string(LANG_0237),g_lump_names[i]);
 				mapA.bsp_header.lump[i].nLength = mapB.bsp_header.lump[i].nLength;
 				mapA.lumps[i] = new unsigned char[mapB.bsp_header.lump[i].nLength];
 				memcpy(mapA.lumps[i], mapB.lumps[i], mapB.bsp_header.lump[i].nLength);
@@ -956,7 +956,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 		}
 		else if (!mapB.lumps[i])
 		{
-			logf(get_localized_string(LANG_0238),g_lump_names[i]);
+			print_log(get_localized_string(LANG_0238),g_lump_names[i]);
 		}
 		else
 		{
@@ -1066,12 +1066,12 @@ BSPPLANE BspMerger::separate(Bsp& mapA, Bsp& mapB)
 	{
 		separationPlane.nType = -1; // no simple separating axis
 
-		logf(get_localized_string(LANG_0239));
-		logf("({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
-		logf(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, mapA.bsp_name);
+		print_log(get_localized_string(LANG_0239));
+		print_log("({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
+		print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, mapA.bsp_name);
 
-		logf("({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
-		logf(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, mapB.bsp_name);
+		print_log("({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
+		print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, mapB.bsp_name);
 	}
 
 	return separationPlane;
@@ -1216,7 +1216,7 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB)
 	size_t newLen = mergedPlanes.size() * sizeof(BSPPLANE);
 	size_t duplicates = (mapA.planeCount + mapB.planeCount) - mergedPlanes.size();
 
-	logf(get_localized_string(LANG_0240),duplicates);
+	print_log(get_localized_string(LANG_0240),duplicates);
 
 	unsigned char* newPlanes = new unsigned char[newLen];
 	memcpy(newPlanes, &mergedPlanes[0], newLen);
@@ -1327,7 +1327,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 	delete[] mipTexOffsets;
 
 
-	logf(get_localized_string(LANG_0241),duplicates);
+	print_log(get_localized_string(LANG_0241),duplicates);
 
 	mapA.replace_lump(LUMP_TEXTURES, newTextureData, newLen);
 }
@@ -1397,7 +1397,7 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB)
 	unsigned char* newTexinfoData = new unsigned char[newLen];
 	memcpy(newTexinfoData, &mergedInfo[0], newLen);
 
-	logf(get_localized_string(LANG_0242),duplicates);
+	print_log(get_localized_string(LANG_0242),duplicates);
 
 	mapA.replace_lump(LUMP_TEXINFO, newTexinfoData, newLen);
 }
@@ -1781,7 +1781,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 {
 	if (thisLeafCount == 0)
 	{
-		logf(get_localized_string(LANG_0243));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0243));
 		return;
 	}
 	if (thisWorldLeafCount == 0)
@@ -1836,7 +1836,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 
 	mapA.replace_lump(LUMP_VISIBILITY, compressedVisResize, newVisLen);
 
-	logf(get_localized_string(LANG_0244),oldLen,newVisLen);
+	print_log(get_localized_string(LANG_0244),oldLen,newVisLen);
 
 	delete[] decompressedVis;
 	delete[] compressedVis;
@@ -1933,7 +1933,7 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 	if (swapNodeChildren)
 		separationPlane.vNormal = separationPlane.vNormal.invert();
 
-	//logf(get_localized_string(LANG_0245),separationPlane.vNormal.x,separationPlane.vNormal.y,separationPlane.vNormal.z,separationPlane.fDist);
+	//print_log(get_localized_string(LANG_0245),separationPlane.vNormal.x,separationPlane.vNormal.y,separationPlane.vNormal.z,separationPlane.fDist);
 
 	// write separating plane
 
@@ -1978,7 +1978,7 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 		BSPCLIPNODE32 newHeadNodes[NEW_NODE_COUNT];
 		for (int i = 0; i < NEW_NODE_COUNT; i++)
 		{
-			//logf(get_localized_string(LANG_0246),i+1,thisWorld.iHeadnodes[i+1]);
+			//print_log(get_localized_string(LANG_0246),i+1,thisWorld.iHeadnodes[i+1]);
 			newHeadNodes[i] = {
 				separationPlaneIdx,	// plane idx
 				{	// child nodes

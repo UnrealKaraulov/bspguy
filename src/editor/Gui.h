@@ -117,10 +117,6 @@ private:
 	LIGHTMAP copiedLightmap = LIGHTMAP();
 	bool refreshSelectedFaces = false;
 
-	ImGuiTextBuffer Buf = ImGuiTextBuffer();
-	ImVector<int> LineOffsets; // Index to lines offset. We maintain this with AddLog() calls, allowing us to have a random access on lines
-	bool AutoScroll = true;  // Keep scrolling if already at the bottom
-
 	void draw3dContextMenus();
 	void drawMenuBar();
 	void drawToolbar();
@@ -152,9 +148,6 @@ private:
 	void checkValidHulls();
 	void reloadLimits();
 	void ExportOneBigLightmap(Bsp* map);
-
-	void clearLog();
-	void addLog(const char* s);
 	void loadFonts();
 	void checkFaceErrors();
 };

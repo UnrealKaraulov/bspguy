@@ -82,7 +82,7 @@ void set_localize_lang(std::string lang)
 		}
 		catch (std::runtime_error runtime)
 		{
-			logf("Language parse from {} fatal error: {}\n", g_config_dir + "language.ini", runtime.what());
+			print_log("Language parse from {} fatal error: {}\n", g_config_dir + "language.ini", runtime.what());
 		}
 		last_lang = lang;
 	}

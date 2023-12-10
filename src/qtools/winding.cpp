@@ -72,7 +72,7 @@ Winding::Winding(const BSPPLANE& plane, float epsilon)
 		}
 		if (x == -1)
 		{
-			logf(get_localized_string(LANG_1008));
+			print_log(get_localized_string(LANG_1008));
 		}
 
 		
@@ -305,7 +305,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 
 	if (newNumPoints > maxpts)
 	{
-		logf(get_localized_string(LANG_1009));
+		print_log(get_localized_string(LANG_1009));
 	}
 
 	delete[] m_Points;

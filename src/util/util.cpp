@@ -28,6 +28,8 @@ bool DebugKeyPressed = false;
 ProgressMeter g_progress;
 int g_render_flags;
 std::vector<std::string> g_log_buffer;
+std::vector<unsigned short> g_color_buffer;
+
 std::mutex g_mutex_list[10] = {};
 
 bool fileExists(const std::string& fileName)
@@ -105,17 +107,17 @@ std::streampos fileSize(const std::string& filePath)
 
 std::vector<std::string> splitString(std::string s, const std::string& delimiter, int maxParts)
 {
-    std::vector<std::string> split;
-    size_t pos;
-    while ((pos = s.find(delimiter)) != std::string::npos && (maxParts == 0 || split.size() < maxParts - 1)) {
-        if (pos != 0) {
-            split.push_back(s.substr(0, pos));
-        }
-        s.erase(0, pos + delimiter.length());
-    }
-    if (!s.empty())
-        split.push_back(s);
-    return split;
+	std::vector<std::string> split;
+	size_t pos;
+	while ((pos = s.find(delimiter)) != std::string::npos && (maxParts == 0 || split.size() < maxParts - 1)) {
+		if (pos != 0) {
+			split.push_back(s.substr(0, pos));
+		}
+		s.erase(0, pos + delimiter.length());
+	}
+	if (!s.empty())
+		split.push_back(s);
+	return split;
 }
 
 std::vector<std::string> splitStringIgnoringQuotes(std::string s, const std::string& delimitter)
@@ -228,7 +230,7 @@ std::string toLowerCase(const std::string& s)
 	return ret;
 }
 
-std::string trimSpaces(const std::string & str)
+std::string trimSpaces(const std::string& str)
 {
 	if (str.empty())
 	{
@@ -254,7 +256,7 @@ int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette)
 
 		if (palette)
 			sz += sizeof(COLOR3) * 256; // pallette + padding
-		
+
 		for (int i = 0; i < MIPLEVELS; i++)
 		{
 			sz += (bspTexture->nWidth >> i) * (bspTexture->nHeight >> i);
@@ -753,7 +755,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 	if (i1 == -1)
 	{
-		//logf(get_localized_string(LANG_1011));
+		//print_log(get_localized_string(LANG_1011));
 		return std::vector<vec3>();
 	}
 
@@ -778,7 +780,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 	if (i2 == -1)
 	{
-		//logf(get_localized_string(LANG_1012));
+		//print_log(get_localized_string(LANG_1012));
 		return std::vector<vec3>();
 	}
 
@@ -939,7 +941,7 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 	fopen_s(&outputFile, fileName.c_str(), "wb");
 	if (!outputFile)
 	{
-		logf(get_localized_string(LANG_1013));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1013));
 		return;
 	}
 	//*****HEADER************//
@@ -1155,20 +1157,29 @@ std::string GetCurrentDir()
 {
 	return g_current_dir + "/";
 }
+unsigned short g_console_colors = 0;
 
 #ifdef WIN32
-void print_color(int colors)
+void set_console_colors(unsigned short colors)
 {
 	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-	colors = colors ? colors : (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-	SetConsoleTextAttribute(console, (WORD)colors);
+	if (!console)
+		console = ::GetConsoleWindow();
+	if (console)
+	{
+		colors = colors ? colors : (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+		g_console_colors = colors;
+		SetConsoleTextAttribute(console, colors);
+	}
 }
 #else 
-void print_color(int colors)
+void set_console_colors(unsigned short colors)
 {
-	if (!colors)
+	colors = colors ? colors : (PRINT_GREEN | PRINT_BLUE | PRINT_RED | PRINT_INTENSITY);
+	g_console_colors = colors;
+	if (colors == 0)
 	{
-		logf(get_localized_string(LANG_1014));
+		std::cout << "\x1B[0m";
 		return;
 	}
 	const char* mode = colors & PRINT_BRIGHT ? "1" : "0";
@@ -1183,7 +1194,7 @@ void print_color(int colors)
 	case PRINT_GREEN | PRINT_BLUE:				color = "36"; break;
 	case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
 	}
-	logf(get_localized_string(LANG_1015),mode,color);
+	std::cout << "\x1B[" << mode << ";" << color << "m";
 }
 #endif
 
@@ -1464,7 +1475,7 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 	if (tracesearch)
 	{
 		outTrace << "-------------END PATH TRACING-------------\n";
-		logf("{}", outTrace.str());
+		print_log("{}", outTrace.str());
 	}
 	return false;
 }
@@ -1478,8 +1489,8 @@ void FixupAllSystemPaths()
 	{
 		if (!dirExists(GetCurrentDir() + g_settings.gamedir))
 		{
-			logf("Error{}: Gamedir {} not exits!", "[1]", g_settings.gamedir);
-			logf("Error{}: Gamedir {} not exits!", "[2]", GetCurrentDir() + g_settings.gamedir);
+			print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Gamedir {} not exits!", "[1]", g_settings.gamedir);
+			print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Gamedir {} not exits!", "[2]", GetCurrentDir() + g_settings.gamedir);
 		}
 		else
 		{
@@ -1495,8 +1506,8 @@ void FixupAllSystemPaths()
 	fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 
 	if (!dirExists(g_settings.workingdir))
-	{	
-		/* 
+	{
+		/*
 			fixup workingdir to relative
 		*/
 		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
@@ -1505,8 +1516,8 @@ void FixupAllSystemPaths()
 		{
 			if (!dirExists(g_game_dir + g_settings.workingdir))
 			{
-				logf("Error{}: Workdir {} not exits!", "[1]", g_settings.workingdir);
-				logf("Error{}: Workdir {} not exits!", "[2]", g_game_dir + g_settings.workingdir);
+				print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Workdir {} not exits!", "[1]", g_settings.workingdir);
+				print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Workdir {} not exits!", "[2]", g_game_dir + g_settings.workingdir);
 			}
 			else
 			{

@@ -50,7 +50,7 @@ void Bsp::init_empty_bsp()
 	bsp_valid = true;
 	renderer = NULL;
 
-	logf(get_localized_string(LANG_0035));
+	print_log(get_localized_string(LANG_0035));
 
 	renderer = NULL;
 	bsp_valid = true;
@@ -198,17 +198,17 @@ Bsp::Bsp(std::string fpath)
 
 	if (!fileExists(fpath))
 	{
-		logf(get_localized_string(LANG_0036),fpath);
+		print_log(get_localized_string(LANG_0036),fpath);
 		return;
 	}
 
 	if (!load_lumps(fpath))
 	{
-		logf(get_localized_string(LANG_0037),fpath);
+		print_log(get_localized_string(LANG_0037),fpath);
 		return;
 	}
 
-	logf(get_localized_string(LANG_0038),reverse_bits(originCrc32));
+	print_log(get_localized_string(LANG_0038),reverse_bits(originCrc32));
 
 	std::string entFilePath;
 	if (g_settings.sameDirForEnt) {
@@ -219,7 +219,7 @@ Bsp::Bsp(std::string fpath)
 	}
 
 	if (g_settings.autoImportEnt && fileExists(entFilePath)) {
-		logf(get_localized_string(LANG_0039),entFilePath);
+		print_log(get_localized_string(LANG_0039),entFilePath);
 
 		int len;
 		char* newlump = loadFile(entFilePath, len);
@@ -243,7 +243,7 @@ Bsp::Bsp(std::string fpath)
 				abs(lastModel.vOrigin.z - 9999.0) < 0.01 &&
 				lastModel.nFaces == 0)
 			{
-				logf(get_localized_string(LANG_0040),modelCount - 1);
+				print_log(get_localized_string(LANG_0040),modelCount - 1);
 				bsp_header.lump[LUMP_MODELS].nLength -= sizeof(BSPMODEL);
 				update_lump_pointers();
 			}
@@ -271,7 +271,7 @@ Bsp::Bsp(std::string fpath)
 	{
 		if (!used_models.count(i))
 		{
-			logf(get_localized_string(LANG_0041),bsp_name,i);
+			print_log(get_localized_string(LANG_0041),bsp_name,i);
 		}
 	}
 
@@ -282,7 +282,7 @@ Bsp::Bsp(std::string fpath)
 
 	if (!ents.empty() && !ents[0]->hasKey("CRC") && !force_skip_crc)
 	{
-		logf(get_localized_string(LANG_0042));
+		print_log(get_localized_string(LANG_0042));
 		ents[0]->addKeyvalue("CRC", std::to_string(reverse_bits(originCrc32)));
 		update_ent_lump();
 	}
@@ -617,7 +617,7 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE
 		}
 		if (node.iChildren[i] == iStartNode)
 		{
-			logf(get_localized_string(LANG_0043),node.iChildren[i]);
+			print_log(get_localized_string(LANG_0043),node.iChildren[i]);
 			return;
 		}
 		clipOrder.push_back(plane);
@@ -662,7 +662,7 @@ void Bsp::get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& c
 
 		if (node.iChildren[i] == iStartNode)
 		{
-			logf(get_localized_string(LANG_0044),node.iChildren[i]);
+			print_log(get_localized_string(LANG_0044),node.iChildren[i]);
 			return;
 		}
 
@@ -800,7 +800,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		if (tverts.size() < 3)
 		{
 			if (g_settings.verboseLogs)
-				logf(get_localized_string(LANG_0045));
+				print_log(get_localized_string(LANG_0045));
 			return false; // invalid solid
 		}
 
@@ -808,7 +808,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		if (!getPlaneFromVerts(tverts, newPlane.vNormal, newPlane.fDist))
 		{
 			if (g_settings.verboseLogs)
-				logf(get_localized_string(LANG_0046));
+				print_log(get_localized_string(LANG_0046));
 			return false; // verts not planar
 		}
 
@@ -870,7 +870,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		}
 	}
 
-	//logf(get_localized_string(LANG_0047),planeUpdates);
+	//print_log(get_localized_string(LANG_0047),planeUpdates);
 
 	BSPMODEL& model = models[modelIdx];
 	getBoundingBox(allVertPos, model.nMins, model.nMaxs);
@@ -881,7 +881,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 {
 	if (modelIdx < 0 || modelIdx >= modelCount)
 	{
-		logf(get_localized_string(LANG_0048));
+		print_log(get_localized_string(LANG_0048));
 		return false;
 	}
 
@@ -955,7 +955,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 		abs(target.nMaxs.y) > FLT_MAX_COORD ||
 		abs(target.nMaxs.z) > FLT_MAX_COORD)
 	{
-		logf(get_localized_string(LANG_0049));
+		print_log(get_localized_string(LANG_0049));
 	}
 
 	STRUCTUSAGE shouldBeMoved(this);
@@ -977,7 +977,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 			abs((float)node.nMins[2] + offset.z) > FLT_MAX_COORD ||
 			abs((float)node.nMaxs[2] + offset.z) > FLT_MAX_COORD)
 		{
-			logf(get_localized_string(LANG_0050));
+			print_log(get_localized_string(LANG_0050));
 		}
 		node.nMins[0] += offset.x;
 		node.nMaxs[0] += offset.x;
@@ -1003,7 +1003,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 			abs((float)leaf.nMins[2] + offset.z) > FLT_MAX_COORD ||
 			abs((float)leaf.nMaxs[2] + offset.z) > FLT_MAX_COORD)
 		{
-			logf(get_localized_string(LANG_0051));
+			print_log(get_localized_string(LANG_0051));
 		}
 		leaf.nMins[0] += offset.x;
 		leaf.nMaxs[0] += offset.x;
@@ -1028,7 +1028,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 			abs(vert.y) > FLT_MAX_COORD ||
 			abs(vert.z) > FLT_MAX_COORD)
 		{
-			logf(get_localized_string(LANG_0052));
+			print_log(get_localized_string(LANG_0052));
 		}
 	}
 
@@ -1045,7 +1045,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 		if (abs(newPlaneOri.x) > FLT_MAX_COORD || abs(newPlaneOri.y) > FLT_MAX_COORD ||
 			abs(newPlaneOri.z) > FLT_MAX_COORD)
 		{
-			logf(get_localized_string(LANG_0053));
+			print_log(get_localized_string(LANG_0053));
 		}
 
 		// get distance between new plane origin and the origin-aligned plane
@@ -1208,7 +1208,7 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, COLOR
 	}
 
 	if (lightmapsResizeCount > 0) {
-		//logf(get_localized_string(LANG_0054),lightmapsResizeCount);
+		//print_log(get_localized_string(LANG_0054),lightmapsResizeCount);
 
 		g_progress.update("Resize lightmaps", faceCount);
 
@@ -1315,7 +1315,7 @@ void Bsp::split_shared_model_structures(int modelIdx)
 	{ // skip solid leaf - it doesn't matter
 		if (shouldMove.leaves[i] && shouldNotMove.leaves[i])
 		{
-			logf(get_localized_string(LANG_0055));
+			print_log(get_localized_string(LANG_0055));
 			break;
 		}
 	}
@@ -1323,7 +1323,7 @@ void Bsp::split_shared_model_structures(int modelIdx)
 	{
 		if (shouldMove.nodes[i] && shouldNotMove.nodes[i])
 		{
-			logf(get_localized_string(LANG_0056));
+			print_log(get_localized_string(LANG_0056));
 			break;
 		}
 	}
@@ -1332,7 +1332,7 @@ void Bsp::split_shared_model_structures(int modelIdx)
 		if (shouldMove.verts[i] && shouldNotMove.verts[i])
 		{
 			// this happens on activist series but doesn't break anything
-			logf(get_localized_string(LANG_0057));
+			print_log(get_localized_string(LANG_0057));
 			break;
 		}
 	}
@@ -1413,13 +1413,13 @@ void Bsp::split_shared_model_structures(int modelIdx)
 
 	if (duplicatePlanes || duplicateClipnodes || duplicateTexinfos)
 	{
-		logf(get_localized_string(LANG_0058));
+		print_log(get_localized_string(LANG_0058));
 		if (duplicatePlanes)
-			logf(get_localized_string(LANG_0059),duplicatePlanes);
+			print_log(get_localized_string(LANG_0059),duplicatePlanes);
 		if (duplicateClipnodes)
-			logf(get_localized_string(LANG_0060),duplicateClipnodes);
+			print_log(get_localized_string(LANG_0060),duplicateClipnodes);
 		if (duplicateTexinfos)
-			logf(get_localized_string(LANG_0061),duplicateTexinfos);
+			print_log(get_localized_string(LANG_0061),duplicateTexinfos);
 	}
 }
 
@@ -1549,7 +1549,7 @@ unsigned int Bsp::remove_unused_structs(int lumpIdx, bool* usedStructs, int* rem
 	case LUMP_EDGES: structSize = sizeof(BSPEDGE32); break;
 	case LUMP_SURFEDGES: structSize = sizeof(int); break;
 	default:
-		logf(get_localized_string(LANG_0062),lumpIdx);
+		print_log(get_localized_string(LANG_0062),lumpIdx);
 		return 0;
 	}
 
@@ -1787,7 +1787,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, 
 		{
 			if ((int)(i * newVisRowSize + minRowSize) >= newDecompressedVisSize)
 			{
-				logf(get_localized_string(LANG_0063));
+				print_log(get_localized_string(LANG_0063));
 				break;
 			}
 			memcpy(newDecompressedVis + i * newVisRowSize, decompressedVis + i * oldVisRowSize, minRowSize);
@@ -1818,7 +1818,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, 
 
 	int newWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS])->nVisLeafs;
 
-	logf(get_localized_string(LANG_0064),oldVisLeafCount,newVisLeafCount);
+	print_log(get_localized_string(LANG_0064),oldVisLeafCount,newVisLeafCount);
 
 	int tmpLumpVisMemSize = bsp_header.lump[LUMP_VISIBILITY].nLength;
 
@@ -1827,7 +1827,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, 
 	int oldVisRowSize2 = ((oldVisLeafCount + 63 - 1) & ~63) >> 3;
 	int newVisRowSize2 = ((newVisLeafCount + 63 - 1) & ~63) >> 3;
 
-	logf(get_localized_string(LANG_0065),oldVisRowSize,newVisRowSize,oldVisRowSize2,newVisRowSize2,oldVisLeafCount,newVisLeafCount);
+	print_log(get_localized_string(LANG_0065),oldVisRowSize,newVisRowSize,oldVisRowSize2,newVisRowSize2,oldVisLeafCount,newVisLeafCount);
 
 	int oldDecompressedLen = oldVisRowSize * newVisLeafCount;
 
@@ -1849,7 +1849,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, 
 		{
 			if (i * newVisRowSize + minRowSize >= newDecompressedVisSize)
 			{
-				logf(get_localized_string(LANG_1019));
+				print_log(get_localized_string(LANG_1019));
 				break;
 			}
 			memcpy(newDecompressedVis + i * newVisRowSize, decompressedVis + i * oldVisRowSize, minRowSize);
@@ -1960,7 +1960,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	int merged_verts = 0;
 	if (g_settings.merge_verts && target & CLEAN_VERTICES)
 	{
-		logf(get_localized_string(LANG_0066));
+		print_log(get_localized_string(LANG_0066));
 		merged_verts = merge_all_verts() + merge_all_verts();
 	}
 
@@ -2240,7 +2240,7 @@ void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 
 	targetMap->update_ent_lump();
 	targetMap->update_lump_pointers();
-	logf(get_localized_string(LANG_0067),wads);
+	print_log(get_localized_string(LANG_0067),wads);
 }
 
 bool Bsp::has_hull2_ents()
@@ -2330,7 +2330,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 
 		if (usageEnts.empty())
 		{
-			logf(get_localized_string(LANG_0068),i);
+			print_log(get_localized_string(LANG_0068),i);
 
 			for (int k = 0; k < MAX_MAP_HULLS; k++)
 				deletedHulls += models[i].iHeadnodes[k] >= 0;
@@ -2450,7 +2450,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		if (!needsVisibleHull && !needsMonsterHulls)
 		{
 			if (models[i].iHeadnodes[0] >= 0)
-				logf(get_localized_string(LANG_0069),i,uses);
+				print_log(get_localized_string(LANG_0069),i,uses);
 
 			deletedHulls += models[i].iHeadnodes[0] >= 0;
 
@@ -2473,7 +2473,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 			}
 
 			if (deletedAnyHulls)
-				logf(get_localized_string(LANG_0070),i,uses);
+				print_log(get_localized_string(LANG_0070),i,uses);
 
 			model.iHeadnodes[1] = -1;
 			model.iHeadnodes[2] = -1;
@@ -2482,7 +2482,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		else if (!needsMonsterHulls)
 		{
 			if (models[i].iHeadnodes[2] >= 0)
-				logf(get_localized_string(LANG_0071),i,uses);
+				print_log(get_localized_string(LANG_0071),i,uses);
 
 			deletedHulls += models[i].iHeadnodes[2] >= 0;
 
@@ -2722,7 +2722,7 @@ vec3 Bsp::get_model_center(int modelIdx)
 {
 	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL))
 	{
-		logf(get_localized_string(LANG_0072),modelIdx);
+		print_log(get_localized_string(LANG_0072),modelIdx);
 		return vec3();
 	}
 
@@ -2757,10 +2757,10 @@ void Bsp::write(const std::string& path)
 		std::ofstream file(path + ".bak", std::ios::trunc | std::ios::binary);
 		if (!file.is_open())
 		{
-			logf(get_localized_string(LANG_0073),path);
+			print_log(get_localized_string(LANG_0073),path);
 			return;
 		}
-		logf(get_localized_string(LANG_0074),path + ".bak");
+		print_log(get_localized_string(LANG_0074),path + ".bak");
 
 		file.write(oldfile, len);
 		delete[] oldfile;
@@ -2769,7 +2769,7 @@ void Bsp::write(const std::string& path)
 	std::ofstream file(path, std::ios::trunc | std::ios::binary);
 	if (!file.is_open())
 	{
-		logf(get_localized_string(LANG_0075),path);
+		print_log(get_localized_string(LANG_0075),path);
 		return;
 	}
 
@@ -3002,11 +3002,11 @@ void Bsp::write(const std::string& path)
 		if (ents.size() && ents[0]->hasKey("CRC"))
 		{
 			originCrc32 = reverse_bits(std::stoul(ents[0]->keyvalues["CRC"]));
-			logf("SPOOFING CRC value.\nLoading original CRC key from WORLDSPAWN: {}. ",
+			print_log("SPOOFING CRC value.\nLoading original CRC key from WORLDSPAWN: {}. ",
 				reverse_bits(originCrc32));
 		}
 		else
-			logf(get_localized_string(LANG_0076),reverse_bits(originCrc32));
+			print_log(get_localized_string(LANG_0076),reverse_bits(originCrc32));
 
 		unsigned int crc32 = UINT32_C(0xFFFFFFFF);
 
@@ -3016,11 +3016,11 @@ void Bsp::write(const std::string& path)
 				crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
 		}
 
-		logf(get_localized_string(LANG_0077),reverse_bits(crc32));
+		print_log(get_localized_string(LANG_0077),reverse_bits(crc32));
 
 		if (originCrc32 == crc32)
 		{
-			logf(get_localized_string(LANG_0078));
+			print_log(get_localized_string(LANG_0078));
 		}
 		else
 		{
@@ -3059,11 +3059,11 @@ void Bsp::write(const std::string& path)
 					crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
 			}
 
-			logf(get_localized_string(LANG_0079),reverse_bits(crc32));
+			print_log(get_localized_string(LANG_0079),reverse_bits(crc32));
 		}
 	}
 
-	logf(get_localized_string(LANG_0080),bsp_path);
+	print_log(get_localized_string(LANG_0080),bsp_path);
 	// calculate lump offsets
 	int offset = sizeof(BSPHEADER);
 
@@ -3088,7 +3088,7 @@ void Bsp::write(const std::string& path)
 				delete[] zeropad;
 			}
 			if (g_settings.verboseLogs)
-				logf(get_localized_string(LANG_0081),i,bsp_header_ex.lump[i].nLength,bsp_header_ex.lump[i].nOffset,padding);
+				print_log(get_localized_string(LANG_0081),i,bsp_header_ex.lump[i].nLength,bsp_header_ex.lump[i].nOffset,padding);
 
 		}
 	}
@@ -3111,7 +3111,7 @@ void Bsp::write(const std::string& path)
 		}
 
 		if (g_settings.verboseLogs)
-			logf(get_localized_string(LANG_0082),i,bsp_header.lump[i].nLength,bsp_header.lump[i].nOffset,padding);
+			print_log(get_localized_string(LANG_0082),i,bsp_header.lump[i].nLength,bsp_header.lump[i].nOffset,padding);
 	}
 
 	file.seekp(0);
@@ -3213,47 +3213,47 @@ bool Bsp::load_lumps(std::string fpath)
 
 	fin.read((char*)&bsp_header.nVersion, sizeof(int));
 
-	logf("Bsp version: {}\n", bsp_header.nVersion >= 0 && bsp_header.nVersion <= 100 ? std::to_string(bsp_header.nVersion)
+	print_log("Bsp version: {}\n", bsp_header.nVersion >= 0 && bsp_header.nVersion <= 100 ? std::to_string(bsp_header.nVersion)
 		: std::string({ ((char*)&bsp_header.nVersion)[0],((char*)&bsp_header.nVersion)[1],((char*)&bsp_header.nVersion)[2],((char*)&bsp_header.nVersion)[3] }));
 
 	if (bsp_header.nVersion == '2PSB')
 	{
 		is_bsp2 = true;
-		logf(get_localized_string(LANG_0083));
+		print_log(get_localized_string(LANG_0083));
 	}
 
 	if (bsp_header.nVersion == 'BSP2')
 	{
 		is_bsp2 = true;
 		is_bsp2_old = true;
-		logf(get_localized_string(LANG_0084));
+		print_log(get_localized_string(LANG_0084));
 	}
 
 	if (bsp_header.nVersion == 29)
 	{
 		is_bsp29 = true;
-		logf(get_localized_string(LANG_0085));
+		print_log(get_localized_string(LANG_0085));
 	}
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		fin.read((char*)&bsp_header.lump[i], sizeof(BSPLUMP));
 		if (g_settings.verboseLogs)
-			logf(get_localized_string(LANG_0086),i,bsp_header.lump[i].nLength,bsp_header.lump[i].nOffset);
+			print_log(get_localized_string(LANG_0086),i,bsp_header.lump[i].nLength,bsp_header.lump[i].nOffset);
 	}
 
 	fin.read((char*)&bsp_header_ex.id, sizeof(int));
 
 	if (bsp_header_ex.id == 'HSAX' /* XASH */)
 	{
-		logf(get_localized_string(LANG_0087));
+		print_log(get_localized_string(LANG_0087));
 		is_bsp30ext = true;
 
 		fin.read((char*)&bsp_header_ex.nVersion, sizeof(int));
 
 
 		int extralumpscount = bsp_header_ex.nVersion <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
-		logf(get_localized_string(LANG_0088),bsp_header_ex.nVersion,extralumpscount);
+		print_log(get_localized_string(LANG_0088),bsp_header_ex.nVersion,extralumpscount);
 
 		extralumps = new unsigned char* [EXTRA_LUMPS];
 		memset(extralumps, 0, sizeof(unsigned char*) * EXTRA_LUMPS);
@@ -3262,7 +3262,7 @@ bool Bsp::load_lumps(std::string fpath)
 		{
 			fin.read((char*)&bsp_header_ex.lump[i], sizeof(BSPLUMP));
 			if (g_settings.verboseLogs)
-				logf(get_localized_string(LANG_0089),i,bsp_header_ex.lump[i].nLength,bsp_header_ex.lump[i].nOffset);
+				print_log(get_localized_string(LANG_0089),i,bsp_header_ex.lump[i].nLength,bsp_header_ex.lump[i].nOffset);
 		}
 
 		for (int i = 0; i < extralumpscount; i++)
@@ -3275,7 +3275,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 			if (bsp_header_ex.lump[i].nOffset >= size || bsp_header_ex.lump[i].nOffset < 0 || bsp_header_ex.lump[i].nLength < 0)
 			{
-				logf(get_localized_string(LANG_0090),i);
+				print_log(get_localized_string(LANG_0090),i);
 				is_bsp30ext = false;
 				break;
 			}
@@ -3283,7 +3283,7 @@ bool Bsp::load_lumps(std::string fpath)
 			fin.seekg(bsp_header_ex.lump[i].nOffset);
 			if (fin.eof() || bsp_header_ex.lump[i].nOffset + bsp_header_ex.lump[i].nLength >= size)
 			{
-				logf(get_localized_string(LANG_1020),i);
+				print_log(get_localized_string(LANG_1020),i);
 				is_bsp30ext = false;
 				break;
 			}
@@ -3311,7 +3311,7 @@ bool Bsp::load_lumps(std::string fpath)
 		fin.seekg(bsp_header.lump[i].nOffset);
 		if (fin.eof())
 		{
-			logf(get_localized_string(LANG_0091),i);
+			print_log(get_localized_string(LANG_0091),i);
 			valid = false;
 		}
 		else
@@ -3326,7 +3326,7 @@ bool Bsp::load_lumps(std::string fpath)
 	if (bsp_header.lump[LUMP_PLANES].nLength < sizeof(BSPPLANE) ||
 		&lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength - 1] != std::search(&lumps[LUMP_PLANES][0], &lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength - 1], &classnametmp[0], &classnametmp[strlen(classnametmp)]))
 	{
-		logf(get_localized_string(LANG_0092));
+		print_log(get_localized_string(LANG_0092));
 		is_blue_shift = true;
 		std::swap(bsp_header.lump[LUMP_PLANES], bsp_header.lump[LUMP_ENTITIES]);
 		std::swap(lumps[LUMP_PLANES], lumps[LUMP_ENTITIES]);
@@ -3365,7 +3365,7 @@ bool Bsp::load_lumps(std::string fpath)
 						tmpnodes[n].iPlane = nodes16[n].iPlane;
 						tmpnodes[n].nFaces = nodes16[n].nFaces;
 
-						/*logf("Face {} child0 {} child0 {} plane {} face {} ", tmpnodes[n].firstFace, tmpnodes[n].iChildren[0], tmpnodes[n].iChildren[1], tmpnodes[n].iPlane
+						/*print_log("Face {} child0 {} child0 {} plane {} face {} ", tmpnodes[n].firstFace, tmpnodes[n].iChildren[0], tmpnodes[n].iChildren[1], tmpnodes[n].iPlane
 							, tmpnodes[n].nFaces);*/
 
 						for (int m = 0; m < 3; m++)
@@ -3373,10 +3373,10 @@ bool Bsp::load_lumps(std::string fpath)
 							tmpnodes[n].nMaxs[m] = (float)nodes16[n].nMaxs[m];
 							tmpnodes[n].nMins[m] = (float)nodes16[n].nMins[m];
 
-							//	logf("{} {} ", nodes16[n].nMaxs[m], nodes16[n].nMins[m]);
+							//	print_log("{} {} ", nodes16[n].nMaxs[m], nodes16[n].nMins[m]);
 						}
 
-						//logf("\n");
+						//print_log("\n");
 					}
 
 					delete[] lumps[i];
@@ -3387,7 +3387,7 @@ bool Bsp::load_lumps(std::string fpath)
 				else
 				{
 					nodeCount = bsp_header.lump[i].nLength / sizeof(BSPNODE32);
-					logf(get_localized_string(LANG_0093));
+					print_log(get_localized_string(LANG_0093));
 				}
 			}
 			else
@@ -3406,7 +3406,7 @@ bool Bsp::load_lumps(std::string fpath)
 					tmpnodes[n].iPlane = nodes16[n].iPlane;
 					tmpnodes[n].nFaces = nodes16[n].nFaces;
 
-					/*logf("Face {} child0 {} child0 {} plane {} face {} ", tmpnodes[n].firstFace, tmpnodes[n].iChildren[0], tmpnodes[n].iChildren[1], tmpnodes[n].iPlane
+					/*print_log("Face {} child0 {} child0 {} plane {} face {} ", tmpnodes[n].firstFace, tmpnodes[n].iChildren[0], tmpnodes[n].iChildren[1], tmpnodes[n].iPlane
 						, tmpnodes[n].nFaces);*/
 
 					for (int m = 0; m < 3; m++)
@@ -3414,10 +3414,10 @@ bool Bsp::load_lumps(std::string fpath)
 						tmpnodes[n].nMaxs[m] = (float)nodes16[n].nMaxs[m];
 						tmpnodes[n].nMins[m] = (float)nodes16[n].nMins[m];
 
-						//	logf("{} {} ", nodes16[n].nMaxs[m], nodes16[n].nMins[m]);
+						//	print_log("{} {} ", nodes16[n].nMaxs[m], nodes16[n].nMins[m]);
 					}
 
-					//logf("\n");
+					//print_log("\n");
 				}
 
 				delete[] lumps[i];
@@ -3435,7 +3435,7 @@ bool Bsp::load_lumps(std::string fpath)
 			{
 				faceCount = bsp_header.lump[i].nLength / sizeof(BSPFACE32);
 				tmpMapFaces = (BSPFACE32*)lumps[i];
-				logf(get_localized_string(LANG_0094));
+				print_log(get_localized_string(LANG_0094));
 			}
 			else
 			{
@@ -3474,7 +3474,7 @@ bool Bsp::load_lumps(std::string fpath)
 				is_32bit_clipnodes = true;
 				clipnodeCount = bsp_header.lump[i].nLength / sizeof(BSPCLIPNODE32);
 
-				logf(get_localized_string(LANG_0095));
+				print_log(get_localized_string(LANG_0095));
 			}
 			else
 			{
@@ -3502,11 +3502,11 @@ bool Bsp::load_lumps(std::string fpath)
 
 				if (is_broken_clipnodes)
 				{
-					logf(get_localized_string(LANG_0096));
+					print_log(get_localized_string(LANG_0096));
 				}
 				else
 				{
-					logf(get_localized_string(LANG_0097));
+					print_log(get_localized_string(LANG_0097));
 				}
 
 				if (is_broken_clipnodes)
@@ -3546,7 +3546,7 @@ bool Bsp::load_lumps(std::string fpath)
 				if (!is_bsp2_old)
 				{
 					leafCount = bsp_header.lump[i].nLength / sizeof(BSPLEAF32);
-					logf(get_localized_string(LANG_0098));
+					print_log(get_localized_string(LANG_0098));
 				}
 				else
 				{
@@ -3571,7 +3571,7 @@ bool Bsp::load_lumps(std::string fpath)
 							tmpleaves[n].nMins[m] = (float)leaves16[n].nMins[m];
 						}
 
-						//logf("Leaf iFirstMarkSurface {} nMarkSurfaces {} nContents {} nVisOffset {} \n", 
+						//print_log("Leaf iFirstMarkSurface {} nMarkSurfaces {} nContents {} nVisOffset {} \n", 
 						//	tmpleaves[n].iFirstMarkSurface, tmpleaves[n].nMarkSurfaces, tmpleaves[n].nContents, tmpleaves[n].nVisOffset);
 					}
 
@@ -3616,7 +3616,7 @@ bool Bsp::load_lumps(std::string fpath)
 			if (is_bsp2)
 			{
 				marksurfCount = bsp_header.lump[i].nLength / sizeof(int);
-				logf(get_localized_string(LANG_0099));
+				print_log(get_localized_string(LANG_0099));
 			}
 			else
 			{
@@ -3642,7 +3642,7 @@ bool Bsp::load_lumps(std::string fpath)
 			if (is_bsp2)
 			{
 				edgeCount = bsp_header.lump[i].nLength / sizeof(BSPEDGE32);
-				logf(get_localized_string(LANG_0100));
+				print_log(get_localized_string(LANG_0100));
 			}
 			else
 			{
@@ -3698,7 +3698,7 @@ bool Bsp::load_lumps(std::string fpath)
 	}
 
 	float fLightSamples = is_bsp2 || is_bsp2_old || is_bsp29 ? 1.0f : 3.0f;
-	//logf("{} {} {} -> {}\n", is_bsp2, is_bsp2_old, is_bsp29, fLightSamples);
+	//print_log("{} {} {} -> {}\n", is_bsp2, is_bsp2_old, is_bsp29, fLightSamples);
 	if (fLightSamples < 3.0 && iNextFace >= 0 && iFirstFace >= 0 && iFirstFace != iNextFace)
 	{
 		float face1light = GetFaceLightmapSizeBytes(this, iFirstFace) / (float)sizeof(COLOR3);
@@ -3715,7 +3715,7 @@ bool Bsp::load_lumps(std::string fpath)
 			fLightSamples = memsize / face2light;
 		}
 
-		//logf(get_localized_string(LANG_0101),fLightSamples,memsize,face1light,face2light);
+		//print_log(get_localized_string(LANG_0101),fLightSamples,memsize,face1light,face2light);
 
 		if (abs(fLightSamples - (int)fLightSamples) > 0.01f)
 		{
@@ -3728,7 +3728,7 @@ bool Bsp::load_lumps(std::string fpath)
 			{
 				fLightSamples = memsize / face2light;
 			}
-			//logf(get_localized_string(LANG_1021),fLightSamples,memsize,face1light,face2light);
+			//print_log(get_localized_string(LANG_1021),fLightSamples,memsize,face1light,face2light);
 		}
 	}
 
@@ -3739,7 +3739,7 @@ bool Bsp::load_lumps(std::string fpath)
 	is_colored_lightmap = tmp_is_colored_lightmap > 1;
 
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0102),!is_colored_lightmap ? "monochrome" : "colored");
+		print_log(get_localized_string(LANG_0102),!is_colored_lightmap ? "monochrome" : "colored");
 
 	if (!is_colored_lightmap)
 	{
@@ -3802,7 +3802,7 @@ void Bsp::load_ents()
 		{
 			if (lastBracket == 0)
 			{
-				logf(get_localized_string(LANG_0103),bsp_path,lineNum);
+				print_log(get_localized_string(LANG_0103),bsp_path,lineNum);
 				continue;
 			}
 			lastBracket = 0;
@@ -3819,7 +3819,7 @@ void Bsp::load_ents()
 		if (line[0] == '}')
 		{
 			if (lastBracket == 1)
-				logf(get_localized_string(LANG_0104),bsp_path,lineNum);
+				print_log(get_localized_string(LANG_0104),bsp_path,lineNum);
 			lastBracket = 1;
 			if (!ent)
 				continue;
@@ -3827,7 +3827,7 @@ void Bsp::load_ents()
 			if (ent->keyvalues.count("classname"))
 				ents.push_back(ent);
 			else
-				logf(get_localized_string(LANG_0105));
+				print_log(get_localized_string(LANG_0105));
 
 			ent = NULL;
 
@@ -3859,7 +3859,7 @@ void Bsp::load_ents()
 				if (ent->keyvalues.count("classname"))
 					ents.push_back(ent);
 				else
-					logf(get_localized_string(LANG_1022));
+					print_log(get_localized_string(LANG_1022));
 				ent = NULL;
 			}
 			if (line.find('{') != std::string::npos)
@@ -3874,7 +3874,7 @@ void Bsp::load_ents()
 	{
 		if (ents[0]->keyvalues["classname"] != "worldspawn")
 		{
-			logf(get_localized_string(LANG_0106));
+			print_log(get_localized_string(LANG_0106));
 			for (int i = 1; i < ents.size(); i++)
 			{
 				if (ents[i]->keyvalues["classname"] == "worldspawn")
@@ -3895,42 +3895,50 @@ void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max
 	const float meg = 1024 * 1024;
 	float percent = (val / (float)max) * 100;
 
+	set_console_colors();
+
+
+	print_log(get_localized_string(LANG_0107),name);
+
+
+	if (isMem)
+	{
+		print_log("{:8.2f} /{:>7.2f}MB", val / meg, max / meg);
+	}
+	else
+	{
+		print_log("{:8} / {:>8}", val, max);
+	}
+
+
+
 	if (val > max)
 	{
-		print_color(PRINT_RED | PRINT_BRIGHT);
+		set_console_colors(PRINT_RED | PRINT_INTENSITY);
 	}
 	else if (percent >= 90)
 	{
-		print_color(PRINT_RED | PRINT_GREEN | PRINT_BRIGHT);
+		set_console_colors(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY);
 	}
 	else if (percent >= 75)
 	{
-		print_color(PRINT_RED | PRINT_GREEN | PRINT_BLUE | PRINT_BRIGHT);
+		set_console_colors(PRINT_RED | PRINT_GREEN | PRINT_BLUE | PRINT_INTENSITY);
 	}
 	else
 	{
-		print_color(PRINT_RED | PRINT_GREEN | PRINT_BLUE);
+		set_console_colors(PRINT_GREEN);
 	}
 
-	logf(get_localized_string(LANG_0107),name);
-	if (isMem)
-	{
-		logf("{:8.2f} /{:5.2f} MB", val / meg, max / meg);
-	}
-	else
-	{
-		logf("{:8} / {:>8}", val, max);
-	}
-	logf(" {:6.1f}%", percent);
+	print_log(" {:6.1f}%", percent);
 
+	set_console_colors();
 	if (val > max)
 	{
-		logf(get_localized_string(LANG_0108));
+		print_log(get_localized_string(LANG_0108));
 	}
 
-	logf("\n");
+	print_log("\n");
 
-	print_color(PRINT_RED | PRINT_GREEN | PRINT_BLUE);
 }
 
 void Bsp::print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bool isMem)
@@ -3951,16 +3959,16 @@ void Bsp::print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bo
 
 	if (isMem)
 	{
-		logf("{:8.1f} / {:-5.1f} MB", val / meg, max / meg);
+		print_log("{:8.1f} / {:>5.1f}", val / meg, max / meg);
 	}
 	else
 	{
-		logf(get_localized_string(LANG_0109),classname,targetname,modelInfo->modelIdx,val);
+		print_log(get_localized_string(LANG_0109),classname,targetname,modelInfo->modelIdx,val);
 	}
 	if (percent >= 0.1f)
-		logf("  {:6.1f}%", percent);
+		print_log("  {:6.1f}%", percent);
 
-	logf("\n");
+	print_log("\n");
 }
 
 bool sortModelInfos(const STRUCTUSAGE* a, const STRUCTUSAGE* b)
@@ -4006,7 +4014,7 @@ bool Bsp::validate()
 	{
 		if (marksurfs[i] >= faceCount)
 		{
-			logf(get_localized_string(LANG_0110),i,marksurfs[i],faceCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0110),i,marksurfs[i],faceCount);
 			isValid = false;
 		}
 	}
@@ -4014,7 +4022,7 @@ bool Bsp::validate()
 	{
 		if (abs(surfedges[i]) >= edgeCount)
 		{
-			logf(get_localized_string(LANG_0111),i,surfedges[i],edgeCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0111),i,surfedges[i],edgeCount);
 			isValid = false;
 		}
 	}
@@ -4022,7 +4030,7 @@ bool Bsp::validate()
 	{
 		if (texinfos[i].iMiptex >= textureCount)
 		{
-			logf(get_localized_string(LANG_0112),i,texinfos[i].iMiptex,textureCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0112),i,texinfos[i].iMiptex,textureCount);
 			isValid = false;
 		}
 	}
@@ -4030,23 +4038,23 @@ bool Bsp::validate()
 	{
 		if (faces[i].iPlane >= planeCount)
 		{
-			logf(get_localized_string(LANG_0113),i,faces[i].iPlane,planeCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0113),i,faces[i].iPlane,planeCount);
 			isValid = false;
 		}
 		if (faces[i].nEdges > 0 && faces[i].iFirstEdge >= surfedgeCount)
 		{
-			logf(get_localized_string(LANG_0114),i,faces[i].iFirstEdge,surfedgeCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0114),i,faces[i].iFirstEdge,surfedgeCount);
 			isValid = false;
 		}
 		if (faces[i].iTextureInfo >= texinfoCount)
 		{
-			logf(get_localized_string(LANG_0115),i,faces[i].iTextureInfo,texinfoCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0115),i,faces[i].iTextureInfo,texinfoCount);
 			isValid = false;
 		}
 		if (lightDataLength > 0 &&
 			faces[i].nLightmapOffset >= 0 && faces[i].nLightmapOffset > lightDataLength)
 		{
-			logf(get_localized_string(LANG_0116),i,faces[i].nLightmapOffset,lightDataLength);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0116),i,faces[i].nLightmapOffset,lightDataLength);
 			isValid = false;
 		}
 		int bmins[2];
@@ -4058,13 +4066,13 @@ bool Bsp::validate()
 	{
 		if (leaves[i].nMarkSurfaces > 0 && leaves[i].iFirstMarkSurface >= marksurfCount)
 		{
-			logf(get_localized_string(LANG_0117),i,leaves[i].iFirstMarkSurface,marksurfCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0117),i,leaves[i].iFirstMarkSurface,marksurfCount);
 			isValid = false;
 		}
 		if (visDataLength > 0 &&
 			leaves[i].nVisOffset != -1 && (leaves[i].nVisOffset < 0 || leaves[i].nVisOffset >= visDataLength))
 		{
-			logf(get_localized_string(LANG_0118),i,leaves[i].nVisOffset,visDataLength);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0118),i,leaves[i].nVisOffset,visDataLength);
 			isValid = false;
 		}
 
@@ -4072,7 +4080,7 @@ bool Bsp::validate()
 		{
 			if (leaves[i].nMins[n] > leaves[i].nMaxs[n])
 			{
-				logf("backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
+				print_log(PRINT_RED | PRINT_INTENSITY, "backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
 					leaves[i].nMaxs[0], leaves[i].nMaxs[1], leaves[i].nMaxs[2]);
 				isValid = false;
 			}
@@ -4084,7 +4092,7 @@ bool Bsp::validate()
 		{
 			if (edges[i].iVertex[k] >= vertCount)
 			{
-				logf(get_localized_string(LANG_0119),i,edges[i].iVertex[k],vertCount);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0119),i,edges[i].iVertex[k],vertCount);
 				isValid = false;
 			}
 		}
@@ -4093,24 +4101,24 @@ bool Bsp::validate()
 	{
 		if (nodes[i].nFaces > 0 && nodes[i].firstFace >= faceCount)
 		{
-			logf(get_localized_string(LANG_0120),i,nodes[i].firstFace,faceCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0120),i,nodes[i].firstFace,faceCount);
 			isValid = false;
 		}
 		if (nodes[i].iPlane >= planeCount)
 		{
-			logf(get_localized_string(LANG_0121),i,nodes[i].iPlane,planeCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0121),i,nodes[i].iPlane,planeCount);
 			isValid = false;
 		}
 		for (int k = 0; k < 2; k++)
 		{
 			if (nodes[i].iChildren[k] != -1 && nodes[i].iChildren[k] > 0 && nodes[i].iChildren[k] >= nodeCount)
 			{
-				logf(get_localized_string(LANG_0122),i,k,nodes[i].iChildren[k],nodeCount);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0122),i,k,nodes[i].iChildren[k],nodeCount);
 				isValid = false;
 			}
 			else if (~nodes[i].iChildren[k] != -1 && nodes[i].iChildren[k] < 0 && ~nodes[i].iChildren[k] >= leafCount)
 			{
-				logf(get_localized_string(LANG_0123),i,k,~nodes[i].iChildren[k],leafCount);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0123),i,k,~nodes[i].iChildren[k],leafCount);
 				isValid = false;
 			}
 		}
@@ -4119,14 +4127,14 @@ bool Bsp::validate()
 	{
 		if (clipnodes[i].iPlane < 0 || clipnodes[i].iPlane >= planeCount)
 		{
-			logf(get_localized_string(LANG_0124),i,clipnodes[i].iPlane,planeCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0124),i,clipnodes[i].iPlane,planeCount);
 			isValid = false;
 		}
 		for (int k = 0; k < 2; k++)
 		{
 			if (clipnodes[i].iChildren[k] > 0 && clipnodes[i].iChildren[k] >= clipnodeCount)
 			{
-				logf(get_localized_string(LANG_0125),i,k,clipnodes[i].iChildren[k],clipnodeCount);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0125),i,k,clipnodes[i].iChildren[k],clipnodeCount);
 				isValid = false;
 			}
 		}
@@ -4135,7 +4143,7 @@ bool Bsp::validate()
 	{
 		if (ents[i]->getBspModelIdxForce() > 0 && ents[i]->getBspModelIdxForce() >= modelCount)
 		{
-			logf(get_localized_string(LANG_0126),i,ents[i]->getBspModelIdxForce(),modelCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0126),i,ents[i]->getBspModelIdxForce(),modelCount);
 			isValid = false;
 		}
 	}
@@ -4149,19 +4157,19 @@ bool Bsp::validate()
 		totalFaces += models[i].nFaces;
 		if (models[i].nFaces > 0 && (models[i].iFirstFace < 0 || models[i].iFirstFace >= faceCount))
 		{
-			logf(get_localized_string(LANG_0127),i,models[i].iFirstFace,faceCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0127),i,models[i].iFirstFace,faceCount);
 			isValid = false;
 		}
 		if (models[i].iHeadnodes[0] >= nodeCount)
 		{
-			logf(get_localized_string(LANG_0128),i,models[i].iHeadnodes[0],nodeCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0128),i,models[i].iHeadnodes[0],nodeCount);
 			isValid = false;
 		}
 		for (int k = 1; k < MAX_MAP_HULLS; k++)
 		{
 			if (models[i].iHeadnodes[k] >= clipnodeCount)
 			{
-				logf(get_localized_string(LANG_0129),i,k,models[i].iHeadnodes[k],clipnodeCount);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0129),i,k,models[i].iHeadnodes[k],clipnodeCount);
 				isValid = false;
 			}
 		}
@@ -4169,7 +4177,7 @@ bool Bsp::validate()
 			models[i].nMins.y > models[i].nMaxs.y ||
 			models[i].nMins.z > models[i].nMaxs.z)
 		{
-			logf("Backwards mins/maxs in model {}. Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i,
+			print_log("Backwards mins/maxs in model {}. Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i,
 				models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
 				models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
 			isValid = false;
@@ -4177,13 +4185,13 @@ bool Bsp::validate()
 	}
 	if (totalVisLeaves != leafCount)
 	{
-		logf(get_localized_string(LANG_0130),totalVisLeaves,leafCount);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0130),totalVisLeaves,leafCount);
 		isValid = false;
 	}
 
 	if (totalFaces > faceCount)
 	{
-		logf(get_localized_string(LANG_0131),totalFaces,faceCount);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0131),totalFaces,faceCount);
 		isValid = false;
 	}
 
@@ -4197,7 +4205,7 @@ bool Bsp::validate()
 	}
 	if (worldspawn_count != 1)
 	{
-		logf(get_localized_string(LANG_0132),worldspawn_count,ents.size());
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0132),worldspawn_count,ents.size());
 		isValid = false;
 	}
 
@@ -4220,7 +4228,7 @@ bool Bsp::validate()
 	{
 		if (!used_models.count(i))
 		{
-			logf(get_localized_string(LANG_1023),bsp_name,i);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1023),bsp_name,i);
 		}
 	}
 
@@ -4234,16 +4242,16 @@ bool Bsp::validate()
 			BSPMIPTEX* tex = (BSPMIPTEX*)(textures + texOffset);
 			if (tex->szName[0] == '\0')
 			{
-				logf(get_localized_string(LANG_0133),i);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0133),i);
 			}
 			else if (strlen(tex->szName) >= MAXTEXTURENAME)
 			{
-				logf(get_localized_string(LANG_0134),i);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0134),i);
 			}
 			if (tex->nOffsets[0] > 0 && dataOffset + texOffset + texlen > bsp_header.lump[LUMP_TEXTURES].nLength)
 			{
-				logf(get_localized_string(LANG_0135),i,dataOffset + texOffset + texlen,bsp_header.lump[LUMP_TEXTURES].nLength);
-				logf(get_localized_string(LANG_0136),i,tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME",texOffset,dataOffset);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0135),i,dataOffset + texOffset + texlen,bsp_header.lump[LUMP_TEXTURES].nLength);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136),i,tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME",texOffset,dataOffset);
 			}
 		}
 	}
@@ -4284,7 +4292,7 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 			surfedgeCount >= (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES) || (is_bsp2 ? INT_MAX : edgeCount >= (int)MAX_MAP_EDGES) || textureCount >= (int)MAX_MAP_TEXTURES ||
 			lightDataLength >= (int)MAX_MAP_LIGHTDATA || visDataLength >= (int)MAX_MAP_VISDATA)
 		{
-			logf(get_localized_string(LANG_0137));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0137));
 			return;
 		}
 
@@ -4301,8 +4309,8 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 		case SORT_FACES:		maxCount = faceCount; countName = "  Faces";  break;
 		}
 
-		logf(get_localized_string(LANG_0138),countName);
-		logf("-------------------------  -------------------------  -----  ----------  --------\n");
+		print_log(get_localized_string(LANG_0138),countName);
+		print_log("-------------------------  -------------------------  -----  ----------  --------\n");
 
 		for (int i = 0; i < modelCount && i < perModelLimit; i++)
 		{
@@ -4324,8 +4332,8 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 	}
 	else
 	{
-		logf(get_localized_string(LANG_0139));
-		logf("------------  -------------------  --------\n");
+		print_log(get_localized_string(LANG_0139));
+		print_log("------------  -------------------  --------\n");
 		print_stat("models", modelCount, MAX_MAP_MODELS, false);
 		print_stat("planes", planeCount, (is_bsp2 ? INT_MAX : MAX_MAP_PLANES), false);
 		print_stat("vertexes", vertCount, MAX_MAP_VERTS, false);
@@ -4354,19 +4362,19 @@ void Bsp::print_clipnode_tree(int iNode, int depth)
 {
 	for (int i = 0; i < depth; i++)
 	{
-		logf("    ");
+		print_log("    ");
 	}
 
 	if (iNode < 0)
 	{
-		logf(getLeafContentsName(iNode));
-		logf("\n");
+		print_log(getLeafContentsName(iNode));
+		print_log("\n");
 		return;
 	}
 	else
 	{
 		BSPPLANE& plane = planes[clipnodes[iNode].iPlane];
-		logf(get_localized_string(LANG_0140),plane.vNormal.x,plane.vNormal.y,plane.vNormal.z,plane.fDist);
+		print_log(get_localized_string(LANG_0140),plane.vNormal.x,plane.vNormal.y,plane.vNormal.z,plane.fDist);
 	}
 
 
@@ -4380,20 +4388,20 @@ void Bsp::print_model_hull(int modelIdx, int hull_number)
 {
 	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL))
 	{
-		logf(get_localized_string(LANG_1024),modelIdx);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1024),modelIdx);
 		return;
 	}
 
 	// the first hull is used for point-sized clipping, but uses nodes and not clipnodes.
 	if (hull_number < 0 || hull_number >= MAX_MAP_HULLS)
 	{
-		logf(get_localized_string(LANG_0141),MAX_MAP_HULLS);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0141),MAX_MAP_HULLS);
 		return;
 	}
 
 	BSPMODEL& model = models[modelIdx];
 
-	logf(get_localized_string(LANG_0142),modelIdx,hull_number,get_model_usage(modelIdx));
+	print_log(get_localized_string(LANG_0142),modelIdx,hull_number,get_model_usage(modelIdx));
 
 	if (hull_number == 0)
 		print_model_bsp(modelIdx);
@@ -4443,20 +4451,19 @@ void Bsp::recurse_node(int nodeIdx, int depth)
 {
 	for (int i = 0; i < depth; i++)
 	{
-		logf("    ");
+		print_log("    ");
 	}
 
 	if (nodeIdx < 0)
 	{
 		BSPLEAF32& leaf = leaves[~nodeIdx];
 		print_leaf(leaf);
-		logf(get_localized_string(LANG_0143),~nodeIdx);
+		print_log(get_localized_string(LANG_0143),~nodeIdx);
 		return;
 	}
 	else
 	{
 		print_node(nodes[nodeIdx]);
-		logf("\n");
 	}
 
 	recurse_node(nodes[nodeIdx].iChildren[0], depth + 1);
@@ -4467,7 +4474,7 @@ void Bsp::print_node(const BSPNODE32& node)
 {
 	BSPPLANE& plane = planes[node.iPlane];
 
-	logf("Plane ({} {} {}) d: {}, Faces: {}, Min({}, {}, {}), Max({}, {}, {})",
+	print_log("Plane ({} {} {}) d: {}, Faces: {}, Min({}, {}, {}), Max({}, {}, {})\n",
 		plane.vNormal.x, plane.vNormal.y, plane.vNormal.z,
 		plane.fDist, node.nFaces,
 		node.nMins[0], node.nMins[1], node.nMins[2],
@@ -4581,7 +4588,7 @@ void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 {
 	if (iFace > faceCount)
 	{
-		logf(get_localized_string(LANG_0144));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0144));
 		return;
 	}
 	BSPFACE32& face = faces[iFace];
@@ -4607,7 +4614,7 @@ void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 {
 	if (iNode > nodeCount)
 	{
-		logf(get_localized_string(LANG_0145));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0145));
 		return;
 	}
 	BSPNODE32& node = nodes[iNode];
@@ -4644,7 +4651,7 @@ void Bsp::mark_clipnode_structures(int iNode, STRUCTUSAGE* usage)
 {
 	if (iNode > clipnodeCount)
 	{
-		logf(get_localized_string(LANG_0146));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0146));
 		return;
 	}
 	BSPCLIPNODE32& node = clipnodes[iNode];
@@ -4665,7 +4672,7 @@ void Bsp::mark_model_structures(int modelIdx, STRUCTUSAGE* usage, bool skipLeave
 {
 	if (modelIdx > modelCount)
 	{
-		logf(get_localized_string(LANG_0147));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0147));
 		return;
 	}
 	BSPMODEL& model = models[modelIdx];
@@ -4690,7 +4697,7 @@ void Bsp::remap_face_structures(int faceIdx, STRUCTREMAP* remap)
 {
 	if (faceIdx > faceCount)
 	{
-		logf(get_localized_string(LANG_0148));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0148));
 		return;
 	}
 	if (remap->visitedFaces[faceIdx])
@@ -4703,8 +4710,8 @@ void Bsp::remap_face_structures(int faceIdx, STRUCTREMAP* remap)
 
 	face.iPlane = remap->planes[face.iPlane];
 	face.iTextureInfo = remap->texInfo[face.iTextureInfo];
-	//logf(get_localized_string(LANG_0149),faceIdx,face.iFirstEdge,remap->surfEdges[face.iFirstEdge]);
-	//logf(get_localized_string(LANG_1025),faceIdx,face.iTextureInfo,remap->texInfo[face.iTextureInfo]);
+	//print_log(get_localized_string(LANG_0149),faceIdx,face.iFirstEdge,remap->surfEdges[face.iFirstEdge]);
+	//print_log(get_localized_string(LANG_1025),faceIdx,face.iTextureInfo,remap->texInfo[face.iTextureInfo]);
 	//face.iFirstEdge = remap->surfEdges[face.iFirstEdge];
 }
 
@@ -4712,7 +4719,7 @@ void Bsp::remap_node_structures(int iNode, STRUCTREMAP* remap)
 {
 	if (iNode > nodeCount)
 	{
-		logf(get_localized_string(LANG_1026));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1026));
 		return;
 	}
 	BSPNODE32& node = nodes[iNode];
@@ -4743,7 +4750,7 @@ void Bsp::remap_clipnode_structures(int iNode, STRUCTREMAP* remap)
 {
 	if (iNode > clipnodeCount)
 	{
-		logf(get_localized_string(LANG_1027));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1027));
 		return;
 	}
 	BSPCLIPNODE32& node = clipnodes[iNode];
@@ -4770,7 +4777,7 @@ void Bsp::remap_model_structures(int modelIdx, STRUCTREMAP* remap)
 {
 	if (modelIdx > modelCount)
 	{
-		logf(get_localized_string(LANG_1028));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1028));
 		return;
 	}
 	BSPMODEL& model = ((BSPMODEL*)lumps[LUMP_MODELS])[modelIdx];
@@ -4804,7 +4811,7 @@ void Bsp::delete_hull(int hull_number, int redirect)
 {
 	if (hull_number < 0 || hull_number >= MAX_MAP_HULLS)
 	{
-		logf(get_localized_string(LANG_0150),MAX_MAP_HULLS);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0150),MAX_MAP_HULLS);
 		return;
 	}
 
@@ -4818,26 +4825,26 @@ void Bsp::delete_hull(int hull_number, int modelIdx, int redirect)
 {
 	if (modelIdx < 0 || modelIdx >= modelCount)
 	{
-		logf(get_localized_string(LANG_0151),modelIdx);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0151),modelIdx);
 		return;
 	}
 
 	// the first hull is used for point-sized clipping, but uses nodes and not clipnodes.
 	if (hull_number < 0 || hull_number >= MAX_MAP_HULLS)
 	{
-		logf(get_localized_string(LANG_1029),MAX_MAP_HULLS);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1029),MAX_MAP_HULLS);
 		return;
 	}
 
 	if (redirect >= MAX_MAP_HULLS)
 	{
-		logf(get_localized_string(LANG_0152),MAX_MAP_HULLS);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0152),MAX_MAP_HULLS);
 		return;
 	}
 
 	if (hull_number == 0 && redirect > 0)
 	{
-		logf(get_localized_string(LANG_0153),MAX_MAP_HULLS);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0153),MAX_MAP_HULLS);
 		return;
 	}
 
@@ -4854,11 +4861,11 @@ void Bsp::delete_hull(int hull_number, int modelIdx, int redirect)
 	{
 		if (model.iHeadnodes[hull_number] > 0 && model.iHeadnodes[redirect] < 0)
 		{
-			//logf(get_localized_string(LANG_0154),redirect);
+			//print_log(get_localized_string(LANG_0154),redirect);
 		}
 		else if (model.iHeadnodes[hull_number] == model.iHeadnodes[redirect])
 		{
-			//logf(get_localized_string(LANG_0155),hull_number,redirect);
+			//print_log(get_localized_string(LANG_0155),hull_number,redirect);
 		}
 		model.iHeadnodes[hull_number] = model.iHeadnodes[redirect];
 	}
@@ -4932,7 +4939,7 @@ void Bsp::add_model(Bsp* sourceMap, int modelIdx)
 
 	usage.compute_sum();
 
-	logf("");
+	print_log("");
 }
 
 BSPMIPTEX* Bsp::find_embedded_texture(const char* name, int& texid)
@@ -4979,24 +4986,24 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 {
 	if (!oldname || oldname[0] == '\0' || strlen(oldname) >= MAXTEXTURENAME)
 	{
-		logf(get_localized_string(LANG_0156));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0156));
 		return -1;
 	}
 	char name[MAXTEXTURENAME];
 	memset(name, 0, MAXTEXTURENAME);
 	memcpy(name, oldname, std::min(MAXTEXTURENAME, (int)strlen(oldname)));
 
-	logf(get_localized_string(LANG_0157),!data ? "embedded" : "wad",name,width,height);
+	print_log(get_localized_string(LANG_0157),!data ? "embedded" : "wad",name,width,height);
 
 	if (width % 16 != 0 || height % 16 != 0)
 	{
-		logf(get_localized_string(LANG_0158));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0158));
 		return -1;
 	}
 
 	if (width > (int)MAX_TEXTURE_DIMENSION || height > (int)MAX_TEXTURE_DIMENSION)
 	{
-		logf(get_localized_string(LANG_0159));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0159));
 		return -1;
 	}
 
@@ -5008,12 +5015,12 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	// internal, with data
 	if (oldtex)
 	{
-		logf(get_localized_string(LANG_0160),name);
+		print_log(get_localized_string(LANG_0160),name);
 		if (oldtex->nWidth != width || oldtex->nHeight != height)
 		{
 			if (!data)
 			{
-				logf(get_localized_string(LANG_0161));
+				print_log(get_localized_string(LANG_0161));
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
 				oldtex->nWidth = width;
@@ -5025,7 +5032,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			else
 			{
 				oldtex->szName[0] = '\0';
-				logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
+				print_log(PRINT_RED | PRINT_GREEN, "Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 					oldtex->nWidth, oldtex->nHeight, width, height);
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
@@ -5034,11 +5041,11 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		else if (data)
 		{
 			only_copy_data = true;
-			logf(get_localized_string(LANG_0162));
+			print_log(get_localized_string(LANG_0162));
 		}
 		else
 		{
-			logf(get_localized_string(LANG_0163));
+			print_log(get_localized_string(LANG_0163));
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
 
@@ -5054,12 +5061,12 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		// external without data
 		if (oldtex)
 		{
-			logf(get_localized_string(LANG_0164),name);
+			print_log(get_localized_string(LANG_0164),name);
 			if (oldtex->nWidth != width || oldtex->nHeight != height)
 			{
 				if (!data)
 				{
-					logf("Same wad texture with size different {}x{} > {}x{} found in map.\nJust update size and return index.\n",
+					print_log("Same wad texture with size different {}x{} > {}x{} found in map.\nJust update size and return index.\n",
 						oldtex->nWidth, oldtex->nHeight, width, height);
 
 					oldtex->nWidth = width;
@@ -5069,7 +5076,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				else
 				{
 					oldtex->szName[0] = '\0';
-					logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
+					print_log(PRINT_RED | PRINT_GREEN, "Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 						oldtex->nWidth, oldtex->nHeight, width, height);
 					oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 						oldtex->nOffsets[3] = 0;
@@ -5077,7 +5084,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			}
 			else if (!data)
 			{
-				logf(get_localized_string(LANG_0165));
+				print_log(get_localized_string(LANG_0165));
 				return oldtexid;
 			}
 			else
@@ -5085,7 +5092,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
 				oldtex->szName[0] = '\0';
-				logf(get_localized_string(LANG_0166));
+				print_log(get_localized_string(LANG_0166));
 			}
 		}
 	}
@@ -5153,7 +5160,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				{
 					if (colorCount >= 256)
 					{
-						logf(get_localized_string(LANG_0167));
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0167));
 						delete[] mip[0];
 						return -1;
 					}
@@ -5320,18 +5327,18 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 int Bsp::add_texture(WADTEX* tex)
 {
-	//logf(get_localized_string(LANG_0168),tex->szName,tex->nWidth,tex->nHeight,tex->nOffsets[0],tex->nOffsets[1],tex->nOffsets[2],tex->nOffsets[3]);
-	logf(get_localized_string(LANG_0169),tex->szName,tex->nWidth,tex->nHeight);
+	//print_log(get_localized_string(LANG_0168),tex->szName,tex->nWidth,tex->nHeight,tex->nOffsets[0],tex->nOffsets[1],tex->nOffsets[2],tex->nOffsets[3]);
+	print_log(get_localized_string(LANG_0169),tex->szName,tex->nWidth,tex->nHeight);
 
 	if (tex->nWidth % 16 != 0 || tex->nHeight % 16 != 0)
 	{
-		logf(get_localized_string(LANG_1030));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1030));
 		return -1;
 	}
 
 	if (tex->nWidth > (int)MAX_TEXTURE_DIMENSION || tex->nHeight > (int)MAX_TEXTURE_DIMENSION)
 	{
-		logf(get_localized_string(LANG_1031));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1031));
 		return -1;
 	}
 
@@ -5342,11 +5349,11 @@ int Bsp::add_texture(WADTEX* tex)
 
 	if (oldtex)
 	{
-		logf(get_localized_string(LANG_1032),tex->szName);
+		print_log(get_localized_string(LANG_1032),tex->szName);
 		if (oldtex->nWidth != tex->nWidth || oldtex->nHeight != tex->nHeight)
 		{
 			oldtex->szName[0] = '\0';
-			logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
+			print_log(PRINT_RED | PRINT_GREEN, "Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 				oldtex->nWidth, oldtex->nHeight, tex->nWidth, tex->nHeight);
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
@@ -5354,7 +5361,7 @@ int Bsp::add_texture(WADTEX* tex)
 		else
 		{
 			only_copy_data = true;
-			logf(get_localized_string(LANG_1033));
+			print_log(get_localized_string(LANG_1033));
 		}
 	}
 	else
@@ -5365,10 +5372,10 @@ int Bsp::add_texture(WADTEX* tex)
 		// external without data
 		if (oldtex)
 		{
-			logf(get_localized_string(LANG_1034),tex->szName);
+			print_log(get_localized_string(LANG_1034),tex->szName);
 			if (oldtex->nWidth != tex->nWidth || oldtex->nHeight != tex->nHeight)
 			{
-				logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
+				print_log(PRINT_RED | PRINT_GREEN, "Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 					oldtex->nWidth, oldtex->nHeight, tex->nWidth, tex->nHeight);
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
@@ -5376,7 +5383,7 @@ int Bsp::add_texture(WADTEX* tex)
 			}
 			else
 			{
-				logf(get_localized_string(LANG_1035));
+				print_log(get_localized_string(LANG_1035));
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
 				oldtex->szName[0] = '\0';
@@ -5413,7 +5420,7 @@ int Bsp::add_texture(WADTEX* tex)
 		}
 		if (tex_usage > 0)
 		{
-			logf(get_localized_string(LANG_0170),tex_usage);
+			print_log(get_localized_string(LANG_0170),tex_usage);
 		}
 	}
 
@@ -5978,12 +5985,12 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 {
 	if (modelIdx < 0 || modelIdx >= modelCount)
 	{
-		logf(get_localized_string(LANG_1036),modelIdx);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1036),modelIdx);
 		return;
 	}
 	if (hullIdx >= MAX_MAP_HULLS)
 	{
-		logf(get_localized_string(LANG_1146),MAX_MAP_HULLS);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1146),MAX_MAP_HULLS);
 		return;
 	}
 
@@ -5991,19 +5998,19 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 
 	if (model.iHeadnodes[1] < 0 && model.iHeadnodes[2] < 0 && model.iHeadnodes[3] < 0)
 	{
-		logf(get_localized_string(LANG_0171));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0171));
 		return;
 	}
 
 	if (hullIdx > 0 && model.iHeadnodes[hullIdx] < 0)
 	{
-		logf(get_localized_string(LANG_0172),hullIdx);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0172),hullIdx);
 		return;
 	}
 
 	if (model.iHeadnodes[0] < 0)
 	{
-		logf(get_localized_string(LANG_0173));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0173));
 		// TODO: create verts from plane intersections
 		return;
 	}
@@ -6277,7 +6284,7 @@ BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx)
 			texinfos[newInfo] = texinfos[targetInfo];
 			targetInfo = newInfo;
 			targetFace.iTextureInfo = newInfo;
-			logf(get_localized_string(LANG_0174),newInfo);
+			print_log(get_localized_string(LANG_0174),newInfo);
 			break;
 		}
 	}
@@ -6373,7 +6380,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 		{
 			if (solidContents != CONTENTS_SOLID)
 			{
-				logf(get_localized_string(LANG_0175),solidContents);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0175),solidContents);
 			}
 			// solidContents or CONTENTS_SOLID?
 			return CONTENTS_SOLID;
@@ -6496,7 +6503,7 @@ void Bsp::write_csg_outputs(const std::string& path)
 		};
 		pln_file.write((char*)&csgplane, sizeof(CSGPLANE));
 	}
-	logf(get_localized_string(LANG_0176),numPlanes);
+	print_log(get_localized_string(LANG_0176),numPlanes);
 
 	BSPMODEL* tmodels = (BSPMODEL*)lumps[LUMP_MODELS];
 	BSPMODEL world = tmodels[0];
@@ -6541,7 +6548,7 @@ void Bsp::write_csg_outputs(const std::string& path)
 			if (i == LUMP_PLANES)
 			{
 				int count = bsp_header.lump[i].nLength / sizeof(BSPPLANE);
-				logf(get_localized_string(LANG_0177),count);
+				print_log(get_localized_string(LANG_0177),count);
 			}
 		}
 		else
@@ -6589,12 +6596,12 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 			if (debug)
 			{
 				BSPPLANE plane = planes[iPlane];
-				logf("Writing face ({:2.0f} {:2.0f} {:2.0f}) {:4.0f}  {}\n",
+				print_log("Writing face ({:2.0f} {:2.0f} {:2.0f}) {:4.0f}  {}\n",
 					plane.vNormal.x, plane.vNormal.y, plane.vNormal.z, plane.fDist,
 					(faceContents == CONTENTS_SOLID ? "SOLID" : "EMPTY"));
 				if (flipped && false)
 				{
-					logf(get_localized_string(LANG_0178));
+					print_log(get_localized_string(LANG_0178));
 				}
 			}
 
@@ -6624,14 +6631,14 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 			fprintf(polyfile, "\n");
 		}
 		if (debug)
-			logf("\n");
+			print_log("\n");
 	}
 }
 
 void Bsp::print_leaf(const BSPLEAF32& leaf)
 {
-	logf(getLeafContentsName(leaf.nContents));
-	logf(" {} surfs, Min({}, {}, {}), Max({} {} {})", leaf.nMarkSurfaces,
+	print_log(getLeafContentsName(leaf.nContents));
+	print_log(" {} surfs, Min({}, {}, {}), Max({} {} {})", leaf.nMarkSurfaces,
 		leaf.nMins[0], leaf.nMins[1], leaf.nMins[2],
 		leaf.nMaxs[0], leaf.nMaxs[1], leaf.nMaxs[2]);
 }
@@ -6670,35 +6677,35 @@ void Bsp::update_lump_pointers()
 	visDataLength = bsp_header.lump[LUMP_VISIBILITY].nLength;
 
 	if (planeCount > (is_bsp2 ? INT_MAX : MAX_MAP_PLANES))
-		logf(get_localized_string(LANG_0179));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0179));
 	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
-		logf(get_localized_string(LANG_0180));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0180));
 	if (leafCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES))
-		logf(get_localized_string(LANG_0181));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0181));
 	if (modelCount > (int)MAX_MAP_MODELS)
-		logf(get_localized_string(LANG_0182));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0182));
 	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
-		logf(get_localized_string(LANG_1037));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1037));
 	if (nodeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES))
-		logf(get_localized_string(LANG_0183));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0183));
 	if (vertCount > (is_bsp2 ? INT_MAX : MAX_MAP_VERTS))
-		logf(get_localized_string(LANG_0184));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0184));
 	if (faceCount > (is_bsp2 ? INT_MAX : MAX_MAP_FACES))
-		logf(get_localized_string(LANG_0185));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0185));
 	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES))
-		logf(get_localized_string(LANG_0186));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0186));
 	if (marksurfCount > (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS))
-		logf(get_localized_string(LANG_0187));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0187));
 	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES))
-		logf(get_localized_string(LANG_0188));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0188));
 	if (edgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_EDGES))
-		logf(get_localized_string(LANG_0189));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0189));
 	if (textureCount > (int)MAX_MAP_TEXTURES)
-		logf(get_localized_string(LANG_0190));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0190));
 	if (lightDataLength > (int)MAX_MAP_LIGHTDATA)
-		logf(get_localized_string(LANG_0191));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0191));
 	if (visDataLength > (int)MAX_MAP_VISDATA)
-		logf(get_localized_string(LANG_0192));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0192));
 }
 
 void Bsp::replace_lump(int lumpIdx, void* newData, size_t newLength)
@@ -6737,7 +6744,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 {
 	if (!createDir(path))
 	{
-		logf(get_localized_string(LANG_0193),path);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0193),path);
 		return;
 	}
 
@@ -6749,8 +6756,8 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 	scale = abs(scale);
 
 	FILE* f = NULL;
-	logf(get_localized_string(LANG_0194),bsp_name + ".obj",path);
-	logf(get_localized_string(LANG_0195),iscale == 1 ? "scale" : iscale < 0 ? "downscale" : "upscale",abs(iscale));
+	print_log(get_localized_string(LANG_0194),bsp_name + ".obj",path);
+	print_log(get_localized_string(LANG_0195),iscale == 1 ? "scale" : iscale < 0 ? "downscale" : "upscale",abs(iscale));
 	fopen_s(&f, (path + bsp_name + ".obj").c_str(), "wb");
 	if (f)
 	{
@@ -6791,7 +6798,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 
 			if (!bsprend->getRenderPointers(i, &rface, &rgroup))
 			{
-				logf(get_localized_string(LANG_0196));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196));
 				break;
 			}
 
@@ -6982,7 +6989,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 	}
 	else
 	{
-		logf(get_localized_string(LANG_0197));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0197));
 	}
 }
 
@@ -6992,7 +6999,7 @@ void recurse_node(Bsp* map, int nodeIdx)
 	if (nodeIdx < 0)
 	{
 		//BSPLEAF32& leaf = map->leaves[~nodeIdx];
-		logf(get_localized_string(LANG_1038),~nodeIdx);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1038),~nodeIdx);
 		return;
 	}
 
@@ -7004,7 +7011,7 @@ void Bsp::ExportPortalFile()
 {
 	if (bsp_path.size() < 4)
 	{
-		logf(get_localized_string(LANG_0198));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0198));
 		return;
 	}
 	std::string targetFileName = bsp_path.substr(0, bsp_path.size() - 4) + "X.prt";
@@ -7012,17 +7019,17 @@ void Bsp::ExportPortalFile()
 	std::ofstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
 	if (!targetFile.is_open())
 	{
-		logf(get_localized_string(LANG_0199),targetFileName);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0199),targetFileName);
 		return;
 	}
 	/*std::ofstream targetViewFile(targetFileName, std::ios::trunc | std::ios::binary);
 	if (!targetFile.is_open())
 	{
-		logf(get_localized_string(LANG_0200),targetViewFileName);
+		print_log(get_localized_string(LANG_0200),targetViewFileName);
 		return;
 	}
-	logf(get_localized_string(LANG_0201),targetViewFileName);*/
-	logf(get_localized_string(LANG_0202),targetFileName);
+	print_log(get_localized_string(LANG_0201),targetViewFileName);*/
+	print_log(get_localized_string(LANG_0202),targetFileName);
 
 	targetFile << fmt::format("{}\n", leafCount - 1);
 
@@ -7047,7 +7054,7 @@ void Bsp::ExportLightFile()
 {
 	if (bsp_path.size() < 4)
 	{
-		logf(get_localized_string(LANG_0203));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0203));
 		return;
 	}
 
@@ -7056,7 +7063,7 @@ void Bsp::ExportLightFile()
 	std::ofstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
 	if (!targetFile.is_open())
 	{
-		logf(get_localized_string(LANG_0204),targetFileName);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0204),targetFileName);
 		return;
 	}
 	int version = 1;
@@ -7069,7 +7076,7 @@ void Bsp::ImportLightFile()
 {
 	if (bsp_path.size() < 4)
 	{
-		logf(get_localized_string(LANG_0205));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0205));
 		return;
 	}
 
@@ -7078,7 +7085,7 @@ void Bsp::ImportLightFile()
 	std::ifstream targetFile(targetFileName, std::ios::binary);
 	if (!targetFile.is_open())
 	{
-		logf(get_localized_string(LANG_0206),targetFileName);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0206),targetFileName);
 		return;
 	}
 	char header[16]{};
@@ -7092,7 +7099,7 @@ void Bsp::ImportLightFile()
 	}
 	else
 	{
-		logf(get_localized_string(LANG_0207));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0207));
 	}
 }
 
@@ -7100,7 +7107,7 @@ void Bsp::ExportExtFile()
 {
 	if (bsp_path.size() < 4)
 	{
-		logf(get_localized_string(LANG_0208));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0208));
 		return;
 	}
 
@@ -7109,21 +7116,21 @@ void Bsp::ExportExtFile()
 	std::ofstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
 	if (!targetFile.is_open())
 	{
-		logf(get_localized_string(LANG_0209),targetFileName);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0209),targetFileName);
 		return;
 	}
 
-	logf(get_localized_string(LANG_0210),targetFileName);
+	print_log(get_localized_string(LANG_0210),targetFileName);
 	write(targetMapFileName + "_nolight.bsp");
 
 	Bsp* tmpBsp = new Bsp(targetMapFileName + "_nolight.bsp");
 
 
-	logf(get_localized_string(LANG_0211));
+	print_log(get_localized_string(LANG_0211));
 
 	removeFile(targetMapFileName + "_nolight.bsp");
 
-	logf(get_localized_string(LANG_0212),targetMapFileName + "_nolight.bsp");
+	print_log(get_localized_string(LANG_0212),targetMapFileName + "_nolight.bsp");
 
 	tmpBsp->lumps[LUMP_LIGHTING] = NULL;
 	tmpBsp->bsp_header.lump[LUMP_LIGHTING].nOffset = 0;
@@ -7136,11 +7143,11 @@ void Bsp::ExportExtFile()
 
 	tmpBsp->update_lump_pointers();
 
-	logf(get_localized_string(LANG_0213),targetMapFileName);
+	print_log(get_localized_string(LANG_0213),targetMapFileName);
 
 	tmpBsp->write(targetMapFileName + "_nolight.bsp");
 
-	logf(get_localized_string(LANG_0214),targetFileName);
+	print_log(get_localized_string(LANG_0214),targetFileName);
 
 	targetFile << fmt::format("{}\n", faceCount);
 	for (int i = 0; i < faceCount; i++)
@@ -7150,7 +7157,7 @@ void Bsp::ExportExtFile()
 		targetFile << fmt::format("{} {} {} {}\n", mins[0], mins[1], maxs[0], maxs[1]);
 	}
 
-	logf(get_localized_string(LANG_0215),targetMapFileName + "_nolight.wa_");
+	print_log(get_localized_string(LANG_0215),targetMapFileName + "_nolight.wa_");
 	Wad* tmpWad = new Wad();
 
 	std::vector<std::string> addedTextures;
@@ -7201,7 +7208,7 @@ void Bsp::ExportExtFile()
 		}
 	}
 
-	logf(get_localized_string(LANG_0216),addedTextures.size() - missingTex,missingTex);
+	print_log(get_localized_string(LANG_0216),addedTextures.size() - missingTex,missingTex);
 
 	tmpWad->write(targetMapFileName + "_nolight.wa_", outTextures);
 
@@ -7224,11 +7231,11 @@ void Bsp::ExportToMapWIP(const std::string& path)
 {
 	if (!createDir(path))
 	{
-		logf(get_localized_string(LANG_1039),path);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1039),path);
 		return;
 	}
 	FILE* f = NULL;
-	logf(get_localized_string(LANG_1040),(bsp_name + ".map"),path);
+	print_log(get_localized_string(LANG_1040),(bsp_name + ".map"),path);
 	fopen_s(&f, (path + bsp_name + ".map").c_str(), "wb");
 	if (f)
 	{
@@ -7246,7 +7253,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 			for (int i = 0; i < bsprend->renderModels[modelIdx].groupCount; i++)
 			{
-				logf(get_localized_string(LANG_0217),entIdx,modelIdx,i);
+				print_log(get_localized_string(LANG_0217),entIdx,modelIdx,i);
 				//RenderGroup& rgroup = bsprend->renderModels[modelIdx].renderGroups[i];
 
 			}
@@ -7255,7 +7262,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 	}
 	else
 	{
-		logf(get_localized_string(LANG_1041));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1041));
 	}
 }
 
@@ -7313,7 +7320,7 @@ void Bsp::decalShoot(vec3 pos, const char* texname)
 	if (bestMath > 0)
 	{
 		int modelidx = get_model_from_face(bestMath);
-		logf(get_localized_string(LANG_0218),modelidx,bestMath,bestDir);
+		print_log(get_localized_string(LANG_0218),modelidx,bestMath,bestDir);
 		std::vector<vec3> worldVerts;
 	}
 
@@ -7483,7 +7490,7 @@ bool Bsp::is_texture_with_pal(int textureid)
 		int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 		unsigned char* palOffset = pStartOffset + tex->nOffsets[3] + lastMipSize;
 
-		//logf("{}-{}={}\n", (void*)(pStartOffset + palOffset), (void*)(pEndOffset), (int)((pStartOffset + palOffset) - pEndOffset));
+		//print_log("{}-{}={}\n", (void*)(pStartOffset + palOffset), (void*)(pEndOffset), (int)((pStartOffset + palOffset) - pEndOffset));
 		if (abs(palOffset - pEndOffset) >= sizeof(COLOR3) * 256) // No align check
 		{
 			return true;

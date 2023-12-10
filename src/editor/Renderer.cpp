@@ -29,7 +29,7 @@ std::future<void> Renderer::fgdFuture;
 
 void error_callback(int error, const char* description)
 {
-	logf(get_localized_string(LANG_0895), error, description);
+	print_log(get_localized_string(LANG_0895), error, description);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -57,27 +57,27 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 		{
 			if (lowerPath.ends_with(".bsp"))
 			{
-				logf(get_localized_string(LANG_0896), tmpPath.string());
+				print_log(get_localized_string(LANG_0896), tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
 			else if (lowerPath.ends_with(".mdl"))
 			{
-				logf(get_localized_string(LANG_0897), tmpPath.string());
+				print_log(get_localized_string(LANG_0897), tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0898), tmpPath.string());
+				print_log(get_localized_string(LANG_0898), tmpPath.string());
 			}
 		}
 		else
 		{
-			logf(get_localized_string(LANG_0899), tmpPath.string());
+			print_log(get_localized_string(LANG_0899), tmpPath.string());
 		}
 	}
 	else if (g_app->isLoading)
 	{
-		logf(get_localized_string(LANG_0900));
+		print_log(get_localized_string(LANG_0900));
 	}
 }
 
@@ -115,7 +115,7 @@ void window_focus_callback(GLFWwindow* window, int focused)
 void window_close_callback(GLFWwindow* window)
 {
 	g_settings.save();
-	logf(get_localized_string(LANG_0901));
+	print_log(get_localized_string(LANG_0901));
 	std::quick_exit(0);
 }
 
@@ -134,7 +134,7 @@ Renderer::Renderer()
 
 	if (!glfwInit())
 	{
-		logf(get_localized_string(LANG_0902));
+		print_log(get_localized_string(LANG_0902));
 		return;
 	}
 
@@ -158,7 +158,7 @@ Renderer::Renderer()
 
 	if (!window)
 	{
-		logf(get_localized_string(LANG_0903));
+		print_log(get_localized_string(LANG_0903));
 		return;
 	}
 
@@ -248,7 +248,7 @@ void Renderer::renderLoop()
 
 	if (LIGHTMAP_ATLAS_SIZE > value)
 	{
-		logf(get_localized_string(LANG_0904), value);
+		print_log(get_localized_string(LANG_0904), value);
 	}
 
 	{
@@ -655,7 +655,7 @@ void Renderer::renderLoop()
 		int glerror = glGetError();
 		while (glerror != GL_NO_ERROR)
 		{
-			logf(get_localized_string(LANG_0905), glerror);
+			print_log(get_localized_string(LANG_0905), glerror);
 			glerror = glGetError();
 		}
 
@@ -696,7 +696,7 @@ void Renderer::postLoadFgdsAndTextures()
 {
 	if (reloading)
 	{
-		logf(get_localized_string(LANG_0906));
+		print_log(get_localized_string(LANG_0906));
 		return;
 	}
 	reloading = reloadingGameDir = true;
@@ -711,7 +711,7 @@ void Renderer::clearMaps()
 	}
 	mapRenderers.clear();
 	clearSelection();
-	logf(get_localized_string(LANG_0907));
+	print_log(get_localized_string(LANG_0907));
 }
 
 void Renderer::reloadMaps()
@@ -730,7 +730,7 @@ void Renderer::reloadMaps()
 	}
 
 	reloadBspModels();
-	logf(get_localized_string(LANG_0908));
+	print_log(get_localized_string(LANG_0908));
 }
 
 void Renderer::saveSettings()
@@ -792,7 +792,7 @@ void Renderer::loadFgds()
 			Fgd* tmp = new Fgd(newFgdPath);
 			if (!tmp->parse())
 			{
-				logf(get_localized_string(LANG_0909), g_settings.fgdPaths[i].path);
+				print_log(get_localized_string(LANG_0909), g_settings.fgdPaths[i].path);
 				continue;
 			}
 			if (mergedFgd == NULL)
@@ -808,7 +808,7 @@ void Renderer::loadFgds()
 		else
 		{
 			FindPathInAssets(NULL, g_settings.fgdPaths[i].path, newFgdPath, true);
-			logf(get_localized_string(LANG_0910), g_settings.fgdPaths[i].path);
+			print_log(get_localized_string(LANG_0910), g_settings.fgdPaths[i].path);
 			g_settings.fgdPaths[i].enabled = false;
 			continue;
 		}
@@ -2148,7 +2148,7 @@ void Renderer::reloadBspModels()
 						}
 						else
 						{
-							logf(get_localized_string(LANG_0911), modelPath);
+							print_log(get_localized_string(LANG_0911), modelPath);
 							FindPathInAssets(bsprend->map, modelPath, newBspPath, true);
 						}
 					}
@@ -2164,7 +2164,7 @@ void Renderer::addMap(Bsp* map)
 {
 	if (!map->bsp_valid)
 	{
-		logf(get_localized_string(LANG_0912));
+		print_log(get_localized_string(LANG_0912));
 		return;
 	}
 
@@ -2596,7 +2596,7 @@ void Renderer::updateModelVerts()
 	size_t numCubes = modelVerts.size() + modelEdges.size();
 	modelVertCubes = new cCube[numCubes];
 	modelVertBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, modelVertCubes, (int)(6 * 6 * numCubes), GL_TRIANGLES);
-	//logf(get_localized_string(LANG_0913),modelVerts.size());
+	//print_log(get_localized_string(LANG_0913),modelVerts.size());
 }
 
 void Renderer::updateSelectionSize()
@@ -2807,7 +2807,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 		if (verts.size() < 2)
 		{
 			if (g_settings.verboseLogs)
-				logf(get_localized_string(LANG_0914)); // hl_c00 pipe in green water place
+				print_log(get_localized_string(LANG_0914)); // hl_c00 pipe in green water place
 			return false;
 		}
 
@@ -2878,7 +2878,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 			if (planeCount != 2)
 			{
 				if (g_settings.verboseLogs)
-					logf(get_localized_string(LANG_0915), planeCount);
+					print_log(get_localized_string(LANG_0915), planeCount);
 				return false;
 			}
 
@@ -3111,7 +3111,7 @@ bool Renderer::splitModelFace()
 	int entIdx = pickInfo.GetSelectedEnt();
 	if (!map)
 	{
-		logf(get_localized_string(LANG_0916));
+		print_log(get_localized_string(LANG_0916));
 		return false;
 	}
 	BspRenderer* mapRenderer = map->getBspRender();
@@ -3127,12 +3127,12 @@ bool Renderer::splitModelFace()
 
 	if (selectedEdges.size() != 2)
 	{
-		logf(get_localized_string(LANG_0917));
+		print_log(get_localized_string(LANG_0917));
 		return false;
 	}
 	if (entIdx < 0)
 	{
-		logf(get_localized_string(LANG_0918));
+		print_log(get_localized_string(LANG_0918));
 		return false;
 	}
 	Entity* ent = map->ents[entIdx];
@@ -3156,7 +3156,7 @@ bool Renderer::splitModelFace()
 
 	if (commonPlane == -1)
 	{
-		logf(get_localized_string(LANG_0919));
+		print_log(get_localized_string(LANG_0919));
 		return false;
 	}
 
@@ -3183,7 +3183,7 @@ bool Renderer::splitModelFace()
 	}
 	if (commonPlaneIdx == -1)
 	{
-		logf(get_localized_string(LANG_0920));
+		print_log(get_localized_string(LANG_0920));
 		return false;
 	}
 
@@ -3247,14 +3247,14 @@ bool Renderer::splitModelFace()
 	std::vector<TransformVert> newHullVerts;
 	if (!map->getModelPlaneIntersectVerts(ent->getBspModelIdx(), modelPlanes, newHullVerts))
 	{
-		logf(get_localized_string(LANG_0921));
+		print_log(get_localized_string(LANG_0921));
 		return false;
 	}
 
 	Solid newSolid;
 	if (!getModelSolid(newHullVerts, map, newSolid))
 	{
-		logf(get_localized_string(LANG_0922));
+		print_log(get_localized_string(LANG_0922));
 		return false;
 	}
 
@@ -3275,7 +3275,7 @@ bool Renderer::splitModelFace()
 
 			if (verts.size() < 3)
 			{
-				logf(get_localized_string(LANG_0923));
+				print_log(get_localized_string(LANG_0923));
 				return false;
 			}
 		}
@@ -3388,7 +3388,7 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 	}
 	else
 	{
-		logf(get_localized_string(LANG_0924));
+		print_log(get_localized_string(LANG_0924));
 	}
 }
 
@@ -3507,7 +3507,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 	Bsp* map = SelectedMap;
 	if (!map)
 	{
-		logf(get_localized_string(LANG_0925));
+		print_log(get_localized_string(LANG_0925));
 		return;
 	}
 

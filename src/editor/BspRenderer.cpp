@@ -39,7 +39,7 @@ BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
 
 	if (g_settings.start_at_entity)
 	{
-		logf(get_localized_string(LANG_0267));
+		print_log(get_localized_string(LANG_0267));
 		Entity* foundEnt = NULL;
 		for (auto ent : map->ents)
 		{
@@ -319,17 +319,17 @@ void BspRenderer::loadTextures()
 
 		if (path.empty())
 		{
-			logf(get_localized_string(LANG_0268), wadNames[i]);
+			print_log(get_localized_string(LANG_0268), wadNames[i]);
 			continue;
 		}
 
-		logf(get_localized_string(LANG_0269), path);
+		print_log(get_localized_string(LANG_0269), path);
 		Wad* wad = new Wad(path);
 		if (wad->readInfo())
 			wads.push_back(wad);
 		else
 		{
-			logf(get_localized_string(LANG_0270), path);
+			print_log(get_localized_string(LANG_0270), path);
 			delete wad;
 		}
 	}
@@ -394,11 +394,11 @@ void BspRenderer::loadTextures()
 	}
 
 	if (wadTexCount)
-		logf(get_localized_string(LANG_0271), wadTexCount);
+		print_log(get_localized_string(LANG_0271), wadTexCount);
 	if (embedCount)
-		logf(get_localized_string(LANG_0272), embedCount);
+		print_log(get_localized_string(LANG_0272), embedCount);
 	if (missingCount)
-		logf(get_localized_string(LANG_0273), missingCount);
+		print_log(get_localized_string(LANG_0273), missingCount);
 }
 
 void BspRenderer::reload()
@@ -497,7 +497,7 @@ void BspRenderer::loadLightmaps()
 	numRenderLightmapInfos = map->faceCount;
 	lightmaps = new LightmapInfo[map->faceCount]{};
 
-	logf(get_localized_string(LANG_0274));
+	print_log(get_localized_string(LANG_0274));
 
 	int lightmapCount = 0;
 
@@ -517,7 +517,7 @@ void BspRenderer::loadLightmaps()
 	{
 		BSPFACE32& face = map->faces[i];
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-		if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
+		if (!atlases.size() || face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
 		{
 
 		}
@@ -543,7 +543,7 @@ void BspRenderer::loadLightmaps()
 			{
 				if (face.nStyles[s] == 255)
 					continue;
-				int atlasId = atlases.size() - 1;
+				size_t atlasId = atlases.size() - 1;
 
 				// TODO: Try fitting in earlier atlases before using the latest one
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
@@ -556,13 +556,13 @@ void BspRenderer::loadLightmaps()
 
 					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 					{
-						logf(get_localized_string(LANG_0275), info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
+						print_log(get_localized_string(LANG_0275), info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
 						continue;
 					}
 				}
 				lightmapCount++;
 
-				info.atlasId[s] = atlasId;
+				info.atlasId[s] = (int)atlasId;
 
 				// copy lightmap data into atlas
 				int lightmapSz = info.w * info.h * sizeof(COLOR3);
@@ -588,6 +588,7 @@ void BspRenderer::loadLightmaps()
 					}
 				}
 			}
+
 		}
 	}
 
@@ -602,7 +603,7 @@ void BspRenderer::loadLightmaps()
 	numLightmapAtlases = atlasTextures.size();
 
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
-	logf(get_localized_string(LANG_0276), lightmapCount, atlases.size());
+	print_log(get_localized_string(LANG_0276), lightmapCount, atlases.size());
 
 	lightmapsGenerated = true;
 }
@@ -617,7 +618,7 @@ void BspRenderer::updateLightmapInfos()
 	if (map->faceCount < numRenderLightmapInfos)
 	{
 		// Already done in remove_unused_structs!!!
-		logf(get_localized_string(LANG_0277));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0277));
 		return;
 	}
 
@@ -635,7 +636,7 @@ void BspRenderer::updateLightmapInfos()
 	lightmaps = newLightmaps;
 	numRenderLightmapInfos = map->faceCount;
 
-	logf(get_localized_string(LANG_0278), addedFaces);
+	print_log(get_localized_string(LANG_0278), addedFaces);
 }
 
 void BspRenderer::preRenderFaces()
@@ -675,7 +676,7 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 			modelRenderGroups += groupCount;
 	}
 
-	logf("Created {} solid render groups ({} world, {} entity)\n",
+	print_log("Created {} solid render groups ({} world, {} entity)\n",
 		worldRenderGroups + modelRenderGroups,
 		worldRenderGroups,
 		modelRenderGroups);
@@ -689,7 +690,7 @@ void BspRenderer::addNewRenderFace()
 	delete[] renderModels;
 	renderModels = tmpRenderModel;
 	numRenderModels = map->modelCount + 1;
-	logf(get_localized_string(LANG_0279));
+	print_log(get_localized_string(LANG_0279));
 }
 
 void BspRenderer::deleteRenderModel(RenderModel* renderModel)
@@ -1126,7 +1127,7 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 	}
 	if (modelIdx < 0 || modelIdx >= numRenderClipnodes)
 	{
-		logf(get_localized_string(LANG_0280));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0280));
 		return false;
 	}
 	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
@@ -1255,7 +1256,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 
 	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, hullIdx);
-	//logf(get_localized_string(LANG_0281),solidNodes.size(),modelIdx,hullIdx);
+	//print_log(get_localized_string(LANG_0281),solidNodes.size(),modelIdx,hullIdx);
 	std::vector<CMesh> meshes;
 	for (int k = 0; k < solidNodes.size(); k++)
 	{
@@ -1309,7 +1310,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 			if (faceVerts.size() < 1)
 			{
-				// logf(get_localized_string(LANG_0282));
+				// print_log(get_localized_string(LANG_0282));
 				continue;
 			}
 
@@ -1317,7 +1318,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 			if (faceVerts.size() < 3)
 			{
-				// logf(get_localized_string(LANG_1046));
+				// print_log(get_localized_string(LANG_1046));
 				continue;
 			}
 
@@ -1349,7 +1350,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			}
 			if (!found)
 			{
-				logf(get_localized_string(LANG_0283));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0283));
 			}
 
 			vec3 plane_z = mesh.faces[n].normal;
@@ -1522,7 +1523,7 @@ void BspRenderer::refreshPointEnt(int entIdx)
 
 	if (skipIdx >= numPointEnts)
 	{
-		logf(get_localized_string(LANG_0284));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0284));
 		return;
 	}
 }
@@ -1865,7 +1866,7 @@ BspRenderer::~BspRenderer()
 		texturesFuture.valid() && texturesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
 		clipnodesFuture.valid() && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
 	{
-		logf(get_localized_string(LANG_0285));
+		print_log(get_localized_string(LANG_0285));
 	}
 
 	for (int i = 0; i < wads.size(); i++)
@@ -1970,7 +1971,7 @@ void BspRenderer::delayLoadData()
 		}
 
 		clipnodesLoaded = true;
-		logf(get_localized_string(LANG_0286), clipnodeLeafCount);
+		print_log(get_localized_string(LANG_0286), clipnodeLeafCount);
 		updateClipnodeOpacity((g_render_flags & RENDER_TRANSPARENT) ? 128 : 255);
 	}
 }
@@ -1986,7 +1987,7 @@ void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool 
 	RenderGroup* rgroup;
 	if (!getRenderPointers(faceIdx, &rface, &rgroup))
 	{
-		logf(get_localized_string(LANG_1047));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1047));
 		return;
 	}
 
@@ -2023,7 +2024,7 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 	RenderGroup* rgroup;
 	if (!getRenderPointers(faceIdx, &rface, &rgroup))
 	{
-		logf(get_localized_string(LANG_1148));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1148));
 		return;
 	}
 
@@ -2772,7 +2773,7 @@ void BspRenderer::updateEntityState(int entIdx)
 void BspRenderer::saveLumpState()
 {
 	if (g_verbose)
-		logf("SAVE LUMP STATES TO BACKUP\n");
+		print_log("SAVE LUMP STATES TO BACKUP\n");
 	map->update_ent_lump();
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -2783,10 +2784,10 @@ void BspRenderer::saveLumpState()
 void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 {
 	if (g_verbose)
-		logf("SAVE ENT STATES TO BACKUP\n");
+		print_log("SAVE ENT STATES TO BACKUP\n");
 	if (entIdx < 0)
 	{
-		logf(get_localized_string(LANG_0287));
+		print_log(get_localized_string(LANG_0287));
 		return;
 	}
 
@@ -2794,7 +2795,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 
 	if (!ent)
 	{
-		logf(get_localized_string(LANG_0288));
+		print_log(get_localized_string(LANG_0288));
 		return;
 	}
 
@@ -2826,7 +2827,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 
 	if (!anythingToUndo)
 	{
-		logf(get_localized_string(LANG_0289));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0289));
 		return; // nothing to undo
 	}
 
@@ -2837,10 +2838,10 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int targets)
 {
 	if (g_verbose)
-		logf("SAVE MODEL STATES TO BACKUP\n");
+		print_log("SAVE MODEL STATES TO BACKUP\n");
 	if (!map)
 	{
-		logf(get_localized_string(LANG_0290));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0290));
 		return;
 	}
 
@@ -2872,7 +2873,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 				differences[i] = true;
 				if (g_verbose)
 				{
-					logf(get_localized_string(LANG_0291), g_lump_names[i], newLumps.lumps[i].size(), undoLumpState.lumps[i].size());
+					print_log(get_localized_string(LANG_0291), g_lump_names[i], newLumps.lumps[i].size(), undoLumpState.lumps[i].size());
 				}
 				targetLumps = targetLumps | (1 << i);
 			}
@@ -2881,7 +2882,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 
 	if (!anyDifference)
 	{
-		logf(get_localized_string(LANG_0292));
+		print_log(get_localized_string(LANG_0292));
 		return;
 	}
 
@@ -2929,7 +2930,7 @@ void BspRenderer::undo()
 	Command* undoCommand = undoHistory[undoHistory.size() - 1];
 	if (!undoCommand->allowedDuringLoad && g_app->isLoading)
 	{
-		logf(get_localized_string(LANG_0293), undoCommand->desc);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0293), undoCommand->desc);
 		return;
 	}
 
@@ -2949,7 +2950,7 @@ void BspRenderer::redo()
 	Command* redoCommand = redoHistory[redoHistory.size() - 1];
 	if (!redoCommand->allowedDuringLoad && g_app->isLoading)
 	{
-		logf(get_localized_string(LANG_0294), redoCommand->desc);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0294), redoCommand->desc);
 		return;
 	}
 

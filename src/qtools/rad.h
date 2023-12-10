@@ -12,8 +12,8 @@
 // sky or slime or null, no lightmap or 256 subdivision
 #define TEX_SPECIAL     1
 
-#define assume(exp, message) {if (!(exp)) {logf(get_localized_string(LANG_0001),#exp,__FILE__,__LINE__,message); }}
-#define hlassume(exp, message) {if (!(exp)) {logf(get_localized_string(LANG_1016),#exp,__FILE__,__LINE__,#message); }}
+#define assume(exp, message) {if (!(exp)) {print_log(get_localized_string(LANG_0001),#exp,__FILE__,__LINE__,message); }}
+#define hlassume(exp, message) {if (!(exp)) {print_log(get_localized_string(LANG_1016),#exp,__FILE__,__LINE__,#message); }}
 
 #define qmax(a,b)            (((a) > (b)) ? (a) : (b)) // changed 'max' to 'qmax'. --vluzacn
 #define qmin(a,b)            (((a) < (b)) ? (a) : (b)) // changed 'min' to 'qmin'. --vluzacn

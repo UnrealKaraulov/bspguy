@@ -18,10 +18,10 @@ Shader::Shader(const char* sourceCode, int shaderType)
 		char* log = new char[512];
 		int len;
 		glGetShaderInfoLog(ID, 512, &len, log);
-		logf(get_localized_string(LANG_0959),shaderType);
-		logf(log);
+		print_log(get_localized_string(LANG_0959),shaderType);
+		print_log(log);
 		if (len > 512)
-			logf(get_localized_string(LANG_0960));
+			print_log(get_localized_string(LANG_0960));
 		delete[] log;
 	}
 }

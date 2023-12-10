@@ -166,22 +166,22 @@ int test()
 		}
 		if (!maps[i]->validate())
 		{
-			logf("");
+			print_log("");
 		}
-		logf(get_localized_string(LANG_0002), maps[i]->bsp_name);
+		print_log(get_localized_string(LANG_0002), maps[i]->bsp_name);
 		maps[i]->delete_hull(2, 1);
 		//removed.add(maps[i]->delete_unused_hulls());
 		removed.add(maps[i]->remove_unused_model_structures());
 
 		if (!maps[i]->validate())
-			logf("");
+			print_log("");
 	}
 
 	removed.print_delete_stats(1);
 
 	BspMerger merger;
 	Bsp* result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false);
-	logf("\n");
+	print_log("\n");
 	if (result)
 	{
 		result->write("yabma_move.bsp");
@@ -200,7 +200,7 @@ int merge_maps(CommandLine& cli)
 
 	if (input_maps.size() < 2)
 	{
-		logf(get_localized_string(LANG_0003));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0003));
 		return 1;
 	}
 
@@ -219,27 +219,27 @@ int merge_maps(CommandLine& cli)
 
 	for (int i = 0; i < maps.size(); i++)
 	{
-		logf(get_localized_string(LANG_0004), maps[i]->bsp_name);
+		print_log(get_localized_string(LANG_0004), maps[i]->bsp_name);
 
-		logf(get_localized_string(LANG_0005));
+		print_log(get_localized_string(LANG_0005));
 		STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
 		g_progress.clear();
 		removed.print_delete_stats(2);
 
 		if (cli.hasOption("-nohull2") || (cli.hasOption("-optimize") && !maps[i]->has_hull2_ents()))
 		{
-			logf(get_localized_string(LANG_0006));
+			print_log(get_localized_string(LANG_0006));
 			maps[i]->delete_hull(2, 1);
 			maps[i]->remove_unused_model_structures().print_delete_stats(2);
 		}
 
 		if (cli.hasOption("-optimize"))
 		{
-			logf(get_localized_string(LANG_0007));
+			print_log(get_localized_string(LANG_0007));
 			maps[i]->delete_unused_hulls().print_delete_stats(2);
 		}
 
-		logf("\n");
+		print_log("\n");
 	}
 
 	vec3 gap = cli.hasOption("-gap") ? cli.getOptionVector("-gap") : vec3();
@@ -249,9 +249,9 @@ int merge_maps(CommandLine& cli)
 	BspMerger merger;
 	Bsp* result = merger.merge(maps, gap, output_name, cli.hasOption("-noripent"), cli.hasOption("-noscript"));
 
-	logf("\n");
+	print_log("\n");
 	if (result->isValid()) result->write(output_name);
-	logf("\n");
+	print_log("\n");
 	result->print_info(false, 0, 0);
 
 	for (int i = 0; i < maps.size(); i++)
@@ -294,7 +294,7 @@ int print_info(CommandLine& cli)
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0008), limitName);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0008), limitName);
 				delete map;
 				return 0;
 			}
@@ -327,7 +327,7 @@ int noclip(CommandLine& cli)
 
 			if (hull < 0 || hull >= MAX_MAP_HULLS)
 			{
-				logf(get_localized_string(LANG_0009));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0009));
 				delete map;
 				return 1;
 			}
@@ -337,7 +337,7 @@ int noclip(CommandLine& cli)
 		{
 			if (!cli.hasOption("-hull"))
 			{
-				logf(get_localized_string(LANG_0010));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0010));
 				delete map;
 				return 1;
 			}
@@ -345,12 +345,12 @@ int noclip(CommandLine& cli)
 
 			if (redirect < 1 || redirect >= MAX_MAP_HULLS)
 			{
-				logf(get_localized_string(LANG_0011));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0011));
 				return 1;
 			}
 			if (redirect == hull)
 			{
-				logf(get_localized_string(LANG_0012));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0012));
 				return 1;
 			}
 		}
@@ -359,10 +359,10 @@ int noclip(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf(get_localized_string(LANG_0013));
+			print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, get_localized_string(LANG_0013));
 			removed.print_delete_stats(1);
 			g_progress.clear();
-			logf("\n");
+			print_log("\n");
 		}
 
 		if (cli.hasOption("-model"))
@@ -371,22 +371,22 @@ int noclip(CommandLine& cli)
 
 			if (model < 0 || model >= map->modelCount)
 			{
-				logf(get_localized_string(LANG_0014), map->modelCount);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0014), map->modelCount);
 				return 1;
 			}
 
 			if (hull != -1)
 			{
 				if (redirect)
-					logf(get_localized_string(LANG_0015), hull, redirect, model);
+					print_log(get_localized_string(LANG_0015), hull, redirect, model);
 				else
-					logf(get_localized_string(LANG_0016), hull, model);
+					print_log(get_localized_string(LANG_0016), hull, model);
 
 				map->delete_hull(hull, model, redirect);
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0017), model);
+				print_log(get_localized_string(LANG_0017), model);
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, model, redirect);
@@ -397,22 +397,22 @@ int noclip(CommandLine& cli)
 		{
 			if (hull == 0)
 			{
-				logf(get_localized_string(LANG_0018));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0018));
 				delete map;
-				return 0;
+				return 1;
 			}
 
 			if (hull != -1)
 			{
 				if (redirect)
-					logf(get_localized_string(LANG_0019), hull, redirect);
+					print_log(get_localized_string(LANG_0019), hull, redirect);
 				else
-					logf(get_localized_string(LANG_0020), hull);
+					print_log(get_localized_string(LANG_0020), hull);
 				map->delete_hull(hull, redirect);
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0021), hull);
+				print_log(get_localized_string(LANG_0021), hull);
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, redirect);
@@ -425,11 +425,11 @@ int noclip(CommandLine& cli)
 		if (!removed.allZero())
 			removed.print_delete_stats(1);
 		else if (redirect == 0)
-			logf(get_localized_string(LANG_0022));
-		logf("\n");
+			print_log(get_localized_string(LANG_0022));
+		print_log("\n");
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		print_log("\n");
 
 		map->print_info(false, 0, 0);
 		delete map;
@@ -447,7 +447,7 @@ int simplify(CommandLine& cli)
 
 		if (!cli.hasOption("-model"))
 		{
-			logf(get_localized_string(LANG_0023));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0023));
 			delete map;
 			return 1;
 		}
@@ -458,7 +458,7 @@ int simplify(CommandLine& cli)
 
 			if (hull < 1 || hull >= MAX_MAP_HULLS)
 			{
-				logf(get_localized_string(LANG_0024));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0024));
 				delete map;
 				return 1;
 			}
@@ -470,27 +470,27 @@ int simplify(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf(get_localized_string(LANG_1017));
+			print_log(get_localized_string(LANG_1017));
 			removed.print_delete_stats(1);
 			g_progress.clear();
-			logf("\n");
+			print_log("\n");
 		}
 
 		STRUCTCOUNT oldCounts(map);
 
 		if (modelIdx < 0 || modelIdx >= map->modelCount)
 		{
-			logf(get_localized_string(LANG_1018), map->modelCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1018), map->modelCount);
 			return 1;
 		}
 
 		if (hull != 0)
 		{
-			logf(get_localized_string(LANG_0025), hull, modelIdx);
+			print_log(get_localized_string(LANG_0025), hull, modelIdx);
 		}
 		else
 		{
-			logf(get_localized_string(LANG_0026), modelIdx);
+			print_log(get_localized_string(LANG_0026), modelIdx);
 		}
 
 		map->simplify_model_collision(modelIdx, hull);
@@ -505,10 +505,10 @@ int simplify(CommandLine& cli)
 		if (!change.allZero())
 			change.print_delete_stats(1);
 
-		logf("\n");
+		print_log("\n");
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		print_log("\n");
 
 		map->print_info(false, 0, 0);
 		delete map;
@@ -526,28 +526,28 @@ int deleteCmd(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf(get_localized_string(LANG_1145));
+			print_log(get_localized_string(LANG_1145));
 			removed.print_delete_stats(1);
 			g_progress.clear();
-			logf("\n");
+			print_log("\n");
 		}
 
 		if (cli.hasOption("-model"))
 		{
 			int modelIdx = cli.getOptionInt("-model");
 
-			logf(get_localized_string(LANG_0027), modelIdx);
+			print_log(get_localized_string(LANG_0027), modelIdx);
 			map->delete_model(modelIdx);
 			map->update_ent_lump();
 			removed = map->remove_unused_model_structures();
 
 			if (!removed.allZero())
 				removed.print_delete_stats(1);
-			logf("\n");
+			print_log("\n");
 		}
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		print_log("\n");
 
 		map->print_info(false, 0, 0);
 		delete map;
@@ -568,20 +568,20 @@ int transform(CommandLine& cli)
 		{
 			move = cli.getOptionVector("-move");
 
-			logf("Applying offset ({:.2f}, {:.2f}, {:.2f})\n",
+			print_log("Applying offset ({:.2f}, {:.2f}, {:.2f})\n",
 				move.x, move.y, move.z);
 
 			map->move(move);
 		}
 		else
 		{
-			logf(get_localized_string(LANG_0028));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0028));
 			delete map;
 			return 1;
 		}
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		print_log("\n");
 
 		map->print_info(false, 0, 0);
 		delete map;
@@ -597,10 +597,11 @@ int unembed(CommandLine& cli)
 	if (map->bsp_valid)
 	{
 		int deleted = map->delete_embedded_textures();
-		logf(get_localized_string(LANG_0029), deleted);
+		print_log(get_localized_string(LANG_0029), deleted);
 
-		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		if (map->isValid()) 
+			map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		print_log("\n");
 		delete map;
 		return 0;
 	}
@@ -612,7 +613,7 @@ void print_help(const std::string& command)
 {
 	if (command == "merge")
 	{
-		logf("{}",
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"merge - Merges two or more maps together\n\n"
 
 			"Usage:   bspguy merge <mapname> -maps \"map1, map2, ... mapN\" [options]\n"
@@ -642,7 +643,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "info")
 	{
-		logf("{}",
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"info - Show BSP data summary\n\n"
 
 			"Usage:   bspguy info <mapname> [options]\n"
@@ -656,7 +657,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "noclip")
 	{
-		logf("{}",
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"noclip - Delete some clipnodes from the BSP\n\n"
 
 			"Usage:   bspguy noclip <mapname> [options]\n"
@@ -678,7 +679,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "simplify")
 	{
-		logf("{}",
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"simplify - Replaces model hulls with a simple bounding box\n\n"
 
 			"Usage:   bspguy simplify <mapname> [options]\n"
@@ -695,7 +696,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "delete")
 	{
-		logf("{}",
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"delete - Delete BSP models.\n\n"
 
 			"Usage:   bspguy delete <mapname> [options]\n"
@@ -709,7 +710,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "transform")
 	{
-		logf("{}",
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"transform - Apply 3D transformations\n\n"
 
 			"Usage:   bspguy transform <mapname> [options]\n"
@@ -722,7 +723,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "unembed")
 	{
-		logf("{}",
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"unembed - Deletes embedded texture data, so that they reference WADs instead.\n\n"
 
 			"Usage:   bspguy unembed <mapname>\n"
@@ -731,7 +732,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "exportobj")
 	{
-		logf("{}",
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"exportobj - Export bsp geometry to obj [WIP].\n\n"
 
 			"Usage:   bspguy exportobj <mapname>\n"
@@ -740,8 +741,8 @@ void print_help(const std::string& command)
 	}
 	else
 	{
-		logf("{}\n\n", g_version_string);
-		logf("{}",
+		print_log(PRINT_RED | PRINT_INTENSITY, "{}\n\n", g_version_string);
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
 			"Usage: bspguy <command> <mapname> [options]\n"
 
@@ -800,7 +801,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 		"_%4d%02d%02d_%02d%02d%02d(%d).dmp",
 		t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
 
-	logf(get_localized_string(LANG_0030), name);
+	print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0030), name);
 
 	auto hFile = CreateFileA(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -854,7 +855,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 
-			logf(get_localized_string(LANG_0031), GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void*)GetModuleHandleA(0));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0031), GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void*)GetModuleHandleA(0));
 
 			if (crashdumps > 0)
 			{
@@ -873,13 +874,19 @@ int main(int argc, char* argv[])
 	setlocale(LC_ALL, ".utf8");
 	setlocale(LC_NUMERIC, "C");
 
-	std::cout << "BSPGUY:" << g_version_string << std::endl;
+	//set_console_colors;
 
+	set_console_colors(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY);
+	std::cout << "BSPGUY:" << g_version_string << std::endl;
+	set_console_colors();
 	//std::fesetround(FE_TONEAREST);
 	try
 	{
 #ifdef WIN32
-		::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+		if (::GetConsoleWindow())
+		{
+			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+		}
 #ifndef NDEBUG
 		SetUnhandledExceptionFilter(unhandled_handler);
 		AddVectoredExceptionHandler(1, unhandled_handler);
@@ -938,7 +945,7 @@ int main(int argc, char* argv[])
 		{
 			if (!fileExists(cli.bspfile))
 			{
-				logf(get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
 				retval = 1;
 			}
 			else 
@@ -948,7 +955,7 @@ int main(int argc, char* argv[])
 		{
 			if (!fileExists(cli.bspfile))
 			{
-				logf(get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
 				retval = 1;
 			}
 			else
@@ -958,7 +965,7 @@ int main(int argc, char* argv[])
 		{
 			if (!fileExists(cli.bspfile))
 			{
-				logf(get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
 				retval = 1;
 			}
 			else
@@ -968,7 +975,7 @@ int main(int argc, char* argv[])
 		{
 			if (!fileExists(cli.bspfile))
 			{
-				logf(get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
 				retval = 1;
 			}
 			else
@@ -978,7 +985,7 @@ int main(int argc, char* argv[])
 		{
 			if (!fileExists(cli.bspfile))
 			{
-				logf(get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
 				retval = 1;
 			}
 			else
@@ -992,7 +999,7 @@ int main(int argc, char* argv[])
 		{
 			if (!fileExists(cli.bspfile))
 			{
-				logf(get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
 				retval = 1;
 			}
 			else
@@ -1006,14 +1013,14 @@ int main(int argc, char* argv[])
 				return 0;
 			}
 			else if (cli.bspfile.size() == 0)
-				logf("{}\n", get_localized_string(LANG_0032));
+				print_log("{}\n", get_localized_string(LANG_0032));
 			else
-				logf("{}\n", ("Start bspguy editor with: " + cli.bspfile));
+				print_log("{}\n", ("Start bspguy editor with: " + cli.bspfile));
 
-			logf(get_localized_string(LANG_0033), g_settings_path);
+			print_log(get_localized_string(LANG_0033), g_settings_path);
 			if (!start_viewer(cli.bspfile.c_str()))
 			{
-				logf(get_localized_string(LANG_0034), cli.bspfile);
+				print_log(get_localized_string(LANG_0034), cli.bspfile);
 			}
 		}
 

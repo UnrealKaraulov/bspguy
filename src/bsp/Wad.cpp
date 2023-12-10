@@ -58,7 +58,7 @@ bool Wad::readInfo()
 
 	if (!fileExists(file))
 	{
-		logf(get_localized_string(LANG_0247),filename);
+		print_log(get_localized_string(LANG_0247),filename);
 		return false;
 	}
 
@@ -66,7 +66,7 @@ bool Wad::readInfo()
 
 	if (!filedata)
 	{
-		logf(get_localized_string(LANG_1043),filename);
+		print_log(get_localized_string(LANG_1043),filename);
 		return false;
 	}
 
@@ -74,7 +74,7 @@ bool Wad::readInfo()
 	{
 		delete[] filedata;
 		filedata = NULL;
-		logf(get_localized_string(LANG_0248),filename);
+		print_log(get_localized_string(LANG_0248),filename);
 		return false;
 	}
 
@@ -86,7 +86,7 @@ bool Wad::readInfo()
 	{
 		delete[] filedata;
 		filedata = NULL;
-		logf(get_localized_string(LANG_0249),filename);
+		print_log(get_localized_string(LANG_0249),filename);
 		return false;
 	}
 
@@ -94,7 +94,7 @@ bool Wad::readInfo()
 	{
 		delete[] filedata;
 		filedata = NULL;
-		logf(get_localized_string(LANG_0250),filename);
+		print_log(get_localized_string(LANG_0250),filename);
 		return false;
 	}
 
@@ -107,7 +107,7 @@ bool Wad::readInfo()
 
 	usableTextures = false;
 
-	//logf("D {} {}\n", header.nDirOffset, header.nDir);
+	//print_log("D {} {}\n", header.nDirOffset, header.nDir);
 
 	for (int i = 0; i < header.nDir; i++)
 	{
@@ -115,7 +115,7 @@ bool Wad::readInfo()
 
 		if (offset + sizeof(WADDIRENTRY) > fileLen)
 		{
-			logf(get_localized_string(LANG_0251));
+			print_log(get_localized_string(LANG_0251));
 			return false;
 		}
 
@@ -132,7 +132,7 @@ bool Wad::readInfo()
 
 	if (!usableTextures)
 	{
-		logf(get_localized_string(LANG_0252),basename(filename));
+		print_log(get_localized_string(LANG_0252),basename(filename));
 		if (!dirEntries.size())
 			return false;
 	}
@@ -161,7 +161,7 @@ WADTEX* Wad::readTexture(int dirIndex, int* texturetype)
 {
 	if (dirIndex < 0 || dirIndex >= dirEntries.size())
 	{
-		logf(get_localized_string(LANG_0253));
+		print_log(get_localized_string(LANG_0253));
 		return NULL;
 	}
 	//if (cache != NULL)
@@ -189,7 +189,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 
 	if (dirEntries[idx].bCompression)
 	{
-		logf(get_localized_string(LANG_0254));
+		print_log(get_localized_string(LANG_0254));
 		return NULL;
 	}
 
@@ -204,7 +204,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	memcpy((char*)&mtex, &filedata[offset], sizeof(BSPMIPTEX));
 	offset += sizeof(BSPMIPTEX);
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0255),mtex.szName,mtex.nWidth,mtex.nHeight);
+		print_log(get_localized_string(LANG_0255),mtex.szName,mtex.nWidth,mtex.nHeight);
 	int w = mtex.nWidth;
 	int h = mtex.nHeight;
 	int sz = w * h;	   // miptex 0
@@ -228,7 +228,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	tex->data = data;
 	tex->needclean = true;
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0256),tex->szName,tex->nWidth,tex->nHeight);
+		print_log(get_localized_string(LANG_0256),tex->szName,tex->nWidth,tex->nHeight);
 	return tex;
 }
 
@@ -405,7 +405,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 			{
 				if (colorCount >= 256)
 				{
-					logf(get_localized_string(LANG_1044));
+					print_log(get_localized_string(LANG_1044));
 					delete[] mip[0];
 					return NULL;
 				}
@@ -511,7 +511,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0257),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
+		print_log(get_localized_string(LANG_0257),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
 	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 	if (palette == NULL)
 		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
@@ -527,14 +527,14 @@ COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette)
 	}
 
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0258),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
+		print_log(get_localized_string(LANG_0258),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
 	return imageData;
 }
 
 COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0259),tex->szName,tex->nWidth,tex->nHeight);
+		print_log(get_localized_string(LANG_0259),tex->szName,tex->nWidth,tex->nHeight);
 	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 
 	if (palette == NULL)
@@ -550,7 +550,7 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 	}
 
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0260),tex->szName,tex->nWidth,tex->nHeight);
+		print_log(get_localized_string(LANG_0260),tex->szName,tex->nWidth,tex->nHeight);
 	return imageData;
 }
 
@@ -558,7 +558,7 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0261),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
+		print_log(get_localized_string(LANG_0261),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
 	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 
 	if (palette == NULL)
@@ -581,14 +581,14 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette)
 	}
 
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0262),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
+		print_log(get_localized_string(LANG_0262),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
 	return imageData;
 }
 
 COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0263),tex->szName,tex->nWidth,tex->nHeight);
+		print_log(get_localized_string(LANG_0263),tex->szName,tex->nWidth,tex->nHeight);
 	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 
 	if (palette == NULL)
@@ -611,6 +611,6 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette)
 	}
 
 	if (g_settings.verboseLogs)
-		logf(get_localized_string(LANG_0264),tex->szName,tex->nWidth,tex->nHeight);
+		print_log(get_localized_string(LANG_0264),tex->szName,tex->nWidth,tex->nHeight);
 	return imageData;
 }

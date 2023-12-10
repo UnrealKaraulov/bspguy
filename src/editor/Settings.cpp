@@ -165,7 +165,7 @@ void AppSettings::load()
 	std::ifstream file(g_settings_path);
 	if (!file.is_open())
 	{
-		logf(get_localized_string(LANG_0926),g_settings_path);
+		print_log(get_localized_string(LANG_0926),g_settings_path);
 		reset();
 		return;
 	}
@@ -284,7 +284,7 @@ void AppSettings::load()
 			g_settings.moveSpeed = (float)atof(val.c_str());
 			if (g_settings.moveSpeed < 100)
 			{
-				logf(get_localized_string(LANG_0927));
+				print_log(get_localized_string(LANG_0927));
 				g_settings.moveSpeed = 500;
 			}
 		}
@@ -492,7 +492,7 @@ void AppSettings::load()
 	if (lines_readed > 0)
 		g_settings.settingLoaded = true;
 	else
-		logf(get_localized_string(LANG_0928),g_settings_path);
+		print_log(get_localized_string(LANG_0928),g_settings_path);
 
 	if (defaultIsEmpty && fgdPaths.empty())
 	{

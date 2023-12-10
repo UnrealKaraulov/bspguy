@@ -82,7 +82,7 @@ bool CommandLine::hasOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		logf(get_localized_string(LANG_0265),optionName);
+		print_log(get_localized_string(LANG_0265),optionName);
 		return false;
 	}
 
@@ -106,7 +106,7 @@ vec3 CommandLine::getOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		logf(get_localized_string(LANG_1045),optionName);
+		print_log(get_localized_string(LANG_1045),optionName);
 		return ret;
 	}
 

@@ -84,14 +84,14 @@ void StudioModel::CalcBoneAdj()
 				if (value > 1.0f) value = 1.0f;
 				value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
-			// logf("{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt );
+			// print_log("{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt );
 		}
 		else
 		{
 			value = m_mouth / 64.0f;
 			if (value > 1.0f) value = 1.0f;
 			value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
-			// logf("{} {}\n", mouthopen, value );
+			// print_log("{} {}\n", mouthopen, value );
 		}
 		switch (pbonecontroller[j].type & STUDIO_TYPES)
 		{
@@ -520,13 +520,13 @@ void StudioModel::SetupModel(int bodypart)
 
 	if (bodypart >= m_pstudiohdr->numbodyparts || bodypart < 0)
 	{
-		logf(get_localized_string(LANG_0979), bodypart);
+		print_log(get_localized_string(LANG_0979), bodypart);
 		bodypart = 0;
 	}
 
 	if (m_pstudiohdr->bodypartindex < 0)
 	{
-		logf(get_localized_string(LANG_0980), m_pstudiohdr->bodypartindex);
+		print_log(get_localized_string(LANG_0980), m_pstudiohdr->bodypartindex);
 	}
 
 	mstudiobodyparts_t* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex) + bodypart;
@@ -544,27 +544,27 @@ void StudioModel::SetupModel(int bodypart)
 
 	if (m_ptexturehdr && m_ptexturehdr->skinindex < 0)
 	{
-		logf(get_localized_string(LANG_0981), m_ptexturehdr->skinindex);
+		print_log(get_localized_string(LANG_0981), m_ptexturehdr->skinindex);
 	}
 
 	if (m_pmodel->normindex < 0)
 	{
-		logf(get_localized_string(LANG_0982), m_pmodel->normindex);
+		print_log(get_localized_string(LANG_0982), m_pmodel->normindex);
 	}
 
 	if (m_pmodel->vertindex < 0)
 	{
-		logf(get_localized_string(LANG_0983), m_pmodel->vertindex);
+		print_log(get_localized_string(LANG_0983), m_pmodel->vertindex);
 	}
 
 	if (m_pmodel->vertinfoindex < 0)
 	{
-		logf(get_localized_string(LANG_0984), m_pmodel->vertinfoindex);
+		print_log(get_localized_string(LANG_0984), m_pmodel->vertinfoindex);
 	}
 
 	if (m_ptexturehdr && m_ptexturehdr->textureindex < 0)
 	{
-		logf(get_localized_string(LANG_0985), m_ptexturehdr->textureindex);
+		print_log(get_localized_string(LANG_0985), m_ptexturehdr->textureindex);
 	}
 }
 
@@ -619,27 +619,27 @@ void StudioModel::RefreshMeshList(int body)
 
 	if (m_ptexturehdr && m_ptexturehdr->skinindex < 0)
 	{
-		logf(get_localized_string(LANG_1137), m_ptexturehdr->skinindex);
+		print_log(get_localized_string(LANG_1137), m_ptexturehdr->skinindex);
 	}
 
 	if (m_pmodel->normindex < 0)
 	{
-		logf(get_localized_string(LANG_1138), m_pmodel->normindex);
+		print_log(get_localized_string(LANG_1138), m_pmodel->normindex);
 	}
 
 	if (m_pmodel->vertindex < 0)
 	{
-		logf(get_localized_string(LANG_1139), m_pmodel->vertindex);
+		print_log(get_localized_string(LANG_1139), m_pmodel->vertindex);
 	}
 
 	if (m_pmodel->vertinfoindex < 0)
 	{
-		logf(get_localized_string(LANG_1140), m_pmodel->vertinfoindex);
+		print_log(get_localized_string(LANG_1140), m_pmodel->vertinfoindex);
 	}
 
 	if (m_ptexturehdr && m_ptexturehdr->textureindex < 0)
 	{
-		logf(get_localized_string(LANG_1141), m_ptexturehdr->textureindex);
+		print_log(get_localized_string(LANG_1141), m_ptexturehdr->textureindex);
 	}
 
 	if (pskinref && m_ptexturehdr && m_skinnum >= 0 && m_skinnum < m_ptexturehdr->numskinfamilies)
@@ -884,7 +884,7 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 			out[i] = pal[data[i]];
 		}
 	}
-	//logf("Texture name {} texture flags {}\n", ptexture->name, ptexture->flags);
+	//print_log("Texture name {} texture flags {}\n", ptexture->name, ptexture->flags);
 	// ptexture->width = outwidth;
 	// ptexture->height = outheight;
 	auto texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name);
@@ -902,7 +902,7 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname, bool IsTexture)
 	void* buffer = loadFile(modelname, size);
 	if (!buffer)
 	{
-		logf(get_localized_string(LANG_0986), modelname);
+		print_log(get_localized_string(LANG_0986), modelname);
 		return NULL;
 	}
 
@@ -938,7 +938,7 @@ studioseqhdr_t* StudioModel::LoadDemandSequences(std::string modelname, int seqi
 	void* buffer = loadFile(str.str(), size);
 	if (!buffer)
 	{
-		logf(get_localized_string(LANG_0987), str.str());
+		print_log(get_localized_string(LANG_0987), str.str());
 		return NULL;
 	}
 	return (studioseqhdr_t*)buffer;
@@ -1037,12 +1037,12 @@ void StudioModel::Init(std::string modelname)
 	m_pstudiohdr = LoadModel(modelname);
 	if (!m_pstudiohdr)
 	{
-		logf(get_localized_string(LANG_0988), modelname);
+		print_log(get_localized_string(LANG_0988), modelname);
 		return;
 	}
 	if (g_settings.verboseLogs)
 	{
-		logf(get_localized_string(LANG_0989), modelname, m_pstudiohdr->version);
+		print_log(get_localized_string(LANG_0989), modelname, m_pstudiohdr->version);
 	}
 	// preload textures
 	if (m_pstudiohdr->numtextures == 0)
