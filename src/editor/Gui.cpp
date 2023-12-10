@@ -4673,8 +4673,13 @@ void Gui::drawGOTOWidget()
 		ImGui::SameLine();
 		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles.z, 0.1f, 0, 0, "YAW: %.0f");
 		ImGui::SameLine();
-		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles.y, 0.1f, 0, 0, "ROLL: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles_y, 0.1f, 0, 0, "ROLL: %.0f");
 		ImGui::PopItemWidth();
+		if (ImGui::IsItemHovered()) {
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Not supported camera rolling");
+			ImGui::EndTooltip();
+		}
 
 		Bsp* map = app->getSelectedMap();
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
@@ -4689,8 +4694,8 @@ void Gui::drawGOTOWidget()
 
 			cameraAngles = angles.flip();
 			cameraAngles.z = cameraAngles.y + 90.0f;
-			cameraAngles.y = 0.0f;
 			cameraAngles = cameraAngles.normalize_angles();
+			cameraAngles.y = 0.0f;
 			map->getBspRender()->renderCameraAngles = cameraAngles;
 			
 			makeVectors(cameraAngles, app->cameraForward, app->cameraRight, app->cameraUp);

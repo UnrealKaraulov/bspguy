@@ -1293,6 +1293,7 @@ void Renderer::cameraRotationControls()
 			{
 				cameraAngles.z += 360.0f;
 			}
+			cameraAngles.y = 0.0f;
 			lastMousePos = mousePos;
 		}
 

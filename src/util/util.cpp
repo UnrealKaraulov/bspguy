@@ -1182,9 +1182,9 @@ void set_console_colors(unsigned short colors)
 		std::cout << "\x1B[0m";
 		return;
 	}
-	const char* mode = colors & PRINT_BRIGHT ? "1" : "0";
+	const char* mode = colors & PRINT_INTENSITY ? "1" : "0";
 	const char* color = "37";
-	switch (colors & ~PRINT_BRIGHT)
+	switch (colors & ~PRINT_INTENSITY)
 	{
 	case PRINT_RED:								color = "31"; break;
 	case PRINT_GREEN:							color = "32"; break;
