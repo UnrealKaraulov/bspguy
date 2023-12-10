@@ -528,13 +528,12 @@ void Renderer::renderLoop()
 		}
 
 
+		colorShader->bind();
 		if (SelectedMap)
 		{
 			if (debugClipnodes && modelIdx > 0)
 			{
-				colorShader->bind();
 				matmodel.loadIdentity();
-				colorShader->pushMatrix(MAT_MODEL);
 				vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx > 0 ? SelectedMap->ents[entIdx]->getOrigin() : vec3())).flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
@@ -544,14 +543,11 @@ void Renderer::renderLoop()
 				drawClipnodes(SelectedMap, pickModel.iHeadnodes[1], currentPlane, debugInt, pickModel.vOrigin);
 				glEnable(GL_CULL_FACE);
 				debugIntMax = currentPlane - 1;
-				colorShader->popMatrix(MAT_MODEL);
 			}
 
 			if (debugNodes && modelIdx > 0)
 			{
-				colorShader->bind();
 				matmodel.loadIdentity();
-				colorShader->pushMatrix(MAT_MODEL);
 				vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx > 0 ? SelectedMap->ents[entIdx]->getOrigin() : vec3())).flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
@@ -561,14 +557,11 @@ void Renderer::renderLoop()
 				drawNodes(SelectedMap, pickModel.iHeadnodes[0], currentPlane, debugNode, pickModel.vOrigin);
 				glEnable(GL_CULL_FACE);
 				debugNodeMax = currentPlane - 1;
-				colorShader->popMatrix(MAT_MODEL);
 			}
 
 			if (g_render_flags & RENDER_ORIGIN)
 			{
-				colorShader->bind();
 				matmodel.loadIdentity();
-				colorShader->pushMatrix(MAT_MODEL);
 				vec3 offset = SelectedMap->getBspRender()->mapOffset.flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
@@ -581,7 +574,6 @@ void Renderer::renderLoop()
 				p1 = debugPoint - vec3(0.0f, 0.0f, 32.0f);
 				p2 = debugPoint + vec3(0.0f, 0.0f, 32.0f);
 				drawLine(p1, p2, { 0, 0, 255, 255 });
-				colorShader->popMatrix(MAT_MODEL);
 			}
 		}
 
@@ -969,6 +961,7 @@ void Renderer::drawTransformAxes()
 	{
 		if (SelectedMap->ents[pickInfo.selectedEnts[0]]->getBspModelIdx() > 0)
 		{
+			matmodel.loadIdentity();
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_ALWAYS);
 			updateDragAxes();
@@ -986,6 +979,7 @@ void Renderer::drawTransformAxes()
 	{
 		if (transformTarget != TRANSFORM_VERTEX || (anyVertSelected || anyEdgeSelected))
 		{
+			matmodel.loadIdentity();
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_ALWAYS);
 			updateDragAxes();
@@ -2322,7 +2316,6 @@ void Renderer::updateDragAxes(vec3 delta)
 	{
 		if (ent && ent->isBspModel())
 		{
-
 			map->get_model_vertex_bounds(ent->getBspModelIdx(), entMin, entMax);
 			vec3 modelOrigin = entMin + (entMax - entMin) * 0.5f;
 

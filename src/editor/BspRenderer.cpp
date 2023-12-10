@@ -33,7 +33,8 @@ BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
 	this->renderClipnodes = NULL;
 
 	renderCameraOrigin = renderCameraAngles = vec3();
-
+	renderCameraAngles.flip();
+	renderCameraAngles.z += 90.0f;
 	// Setup Deafult Camera
 
 	if (g_settings.start_at_entity)
@@ -105,14 +106,9 @@ BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
 				}
 			}
 
-
-
 			renderCameraAngles = renderCameraAngles.flip();
-
 			renderCameraAngles.z = renderCameraAngles.z + 90.0f;
-
 			renderCameraAngles = renderCameraAngles.normalize_angles();
-
 		}
 
 

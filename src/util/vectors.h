@@ -57,6 +57,8 @@ struct vec3
 	std::string toString();
 	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
 	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
+	vec3 unflip(); 
+	vec3 unflipUV();
 
 	void operator-=(const vec3& v);
 	void operator+=(const vec3& v);

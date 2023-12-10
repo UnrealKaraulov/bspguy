@@ -341,6 +341,8 @@ void Bsp::get_bounding_box(vec3& mins, vec3& maxs)
 
 void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 {
+	if (modelIdx < 0)
+		return;
 	mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 

@@ -4645,6 +4645,11 @@ void Gui::drawGOTOWidget()
 			entid = g_app->pickInfo.GetSelectedEnt();
 			coordinates = cameraOrigin;
 			angles = cameraAngles;
+			angles.normalize_angles();
+			angles.z -= 90.0f;
+			angles.y = angles.z;
+			angles.y = 0.0f;
+			angles.unflip();
 			showGOTOWidget_update = false;
 		}
 		ImGui::Text(get_localized_string(LANG_0677).c_str());
@@ -4657,13 +4662,11 @@ void Gui::drawGOTOWidget()
 		ImGui::PopItemWidth();
 		ImGui::Text(get_localized_string(LANG_0681).c_str());
 		ImGui::PushItemWidth(inputWidth);
-		ImGui::DragFloat(get_localized_string(LANG_0683).c_str(), &angles.x, 0.1f, 0, 0, "X: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0683).c_str(), &angles.x, 0.1f, 0, 0, "PITCH: %.0f");
 		ImGui::SameLine();
-		ImGui::BeginDisabled();
-		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles_y, 0.0f, 0, 0, "Z: %.0f");
-		ImGui::EndDisabled();
+		ImGui::DragFloat(get_localized_string(LANG_0682).c_str(), &angles.z, 0.1f, 0, 0, "YAW: %.0f");
 		ImGui::SameLine();
-		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles.z, 0.1f, 0, 0, "Y: %.0f");
+		ImGui::DragFloat(get_localized_string(LANG_0684).c_str(), &angles.y, 0.1f, 0, 0, "ROLL: %.0f");
 		ImGui::PopItemWidth();
 
 		Bsp* map = app->getSelectedMap();
@@ -4673,11 +4676,17 @@ void Gui::drawGOTOWidget()
 		if (ImGui::Button("Go to"))
 		{
 			cameraOrigin = coordinates;
-			cameraAngles = angles;
-			map->getBspRender()->renderCameraAngles = cameraAngles;
 			map->getBspRender()->renderCameraOrigin = cameraOrigin;
-			//cameraAngles.z += 90.0f;
-			makeVectors(angles, app->cameraForward, app->cameraRight, app->cameraUp);
+			
+
+
+			cameraAngles = angles.flip();
+			cameraAngles.z = cameraAngles.y + 90.0f;
+			cameraAngles.y = 0.0f;
+			cameraAngles = cameraAngles.normalize_angles();
+			map->getBspRender()->renderCameraAngles = cameraAngles;
+			
+			makeVectors(cameraAngles, app->cameraForward, app->cameraRight, app->cameraUp);
 		}
 		ImGui::PopStyleColor(3);
 		if (map && !map->is_mdl_model)

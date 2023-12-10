@@ -264,6 +264,15 @@ vec3 vec3::flipUV()
 	return vec3(x, -z, y);
 }
 
+vec3 vec3::unflip()
+{
+	return vec3(x, -z, y);
+}
+
+vec3 vec3::unflipUV()
+{
+	return vec3(x, z, -y);
+}
 
 bool operator==(const vec2& v1, const vec2& v2)
 {
