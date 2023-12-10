@@ -131,7 +131,7 @@ void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType)
 	std::string thisName = dst.merge_name.size() ? dst.merge_name : dst.map->bsp_name;
 	std::string otherName = src.merge_name.size() ? src.merge_name : src.map->bsp_name;
 	dst.merge_name = std::move(resultType);
-	logf("    {:-8s} = {} + {}\n", dst.merge_name, thisName, otherName);
+	logf("    {:>8} = {} + {}\n", dst.merge_name, thisName, otherName);
 
 	merge(*dst.map, *src.map);
 }

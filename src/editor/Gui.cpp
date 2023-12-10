@@ -8530,7 +8530,7 @@ ModelInfo Gui::calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val,
 		tmp = fmt::format("{:8.1f}", val / meg);
 		stat.val = std::to_string(val);
 
-		tmp = fmt::format("{:-5.1f} MB", max / meg);
+		tmp = fmt::format("{:>5.1f} MB", max / meg);
 		stat.usage = tmp;
 	}
 	else

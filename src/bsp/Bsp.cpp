@@ -3919,7 +3919,7 @@ void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max
 	}
 	else
 	{
-		logf("{:8u} / {:-8u}", val, max);
+		logf("{:8} / {:>8}", val, max);
 	}
 	logf(" {:6.1f}%", percent);
 

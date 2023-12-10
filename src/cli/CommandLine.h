@@ -9,6 +9,7 @@ public:
 	std::vector<std::string> options;
 	bool askingForHelp;
 
+	CommandLine() = default;
 	CommandLine(int argc, char* argv[]);
 
 	bool hasOption(const std::string& optionName);

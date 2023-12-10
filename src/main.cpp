@@ -96,7 +96,7 @@
 // Removing HULL 0 from solid model crashes game when standing on it
 
 
-std::string g_version_string = "bspguy v4.10";
+std::string g_version_string = "newbspguy v4.10";
 
 bool g_verbose = false;
 
@@ -138,8 +138,8 @@ bool start_viewer(const char* map)
 
 int test()
 {
-//start_viewer("hl_c09.bsp");
-//return 0;
+	//start_viewer("hl_c09.bsp");
+	//return 0;
 
 	std::vector<Bsp*> maps;
 
@@ -168,7 +168,7 @@ int test()
 		{
 			logf("");
 		}
-		logf(get_localized_string(LANG_0002),maps[i]->bsp_name);
+		logf(get_localized_string(LANG_0002), maps[i]->bsp_name);
 		maps[i]->delete_hull(2, 1);
 		//removed.add(maps[i]->delete_unused_hulls());
 		removed.add(maps[i]->remove_unused_model_structures());
@@ -219,7 +219,7 @@ int merge_maps(CommandLine& cli)
 
 	for (int i = 0; i < maps.size(); i++)
 	{
-		logf(get_localized_string(LANG_0004),maps[i]->bsp_name);
+		logf(get_localized_string(LANG_0004), maps[i]->bsp_name);
 
 		logf(get_localized_string(LANG_0005));
 		STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
@@ -294,7 +294,7 @@ int print_info(CommandLine& cli)
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0008),limitName);
+				logf(get_localized_string(LANG_0008), limitName);
 				delete map;
 				return 0;
 			}
@@ -371,22 +371,22 @@ int noclip(CommandLine& cli)
 
 			if (model < 0 || model >= map->modelCount)
 			{
-				logf(get_localized_string(LANG_0014),map->modelCount);
+				logf(get_localized_string(LANG_0014), map->modelCount);
 				return 1;
 			}
 
 			if (hull != -1)
 			{
 				if (redirect)
-					logf(get_localized_string(LANG_0015),hull,redirect,model);
+					logf(get_localized_string(LANG_0015), hull, redirect, model);
 				else
-					logf(get_localized_string(LANG_0016),hull,model);
+					logf(get_localized_string(LANG_0016), hull, model);
 
 				map->delete_hull(hull, model, redirect);
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0017),model);
+				logf(get_localized_string(LANG_0017), model);
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, model, redirect);
@@ -405,14 +405,14 @@ int noclip(CommandLine& cli)
 			if (hull != -1)
 			{
 				if (redirect)
-					logf(get_localized_string(LANG_0019),hull,redirect);
+					logf(get_localized_string(LANG_0019), hull, redirect);
 				else
-					logf(get_localized_string(LANG_0020),hull);
+					logf(get_localized_string(LANG_0020), hull);
 				map->delete_hull(hull, redirect);
 			}
 			else
 			{
-				logf(get_localized_string(LANG_0021),hull);
+				logf(get_localized_string(LANG_0021), hull);
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, redirect);
@@ -480,17 +480,17 @@ int simplify(CommandLine& cli)
 
 		if (modelIdx < 0 || modelIdx >= map->modelCount)
 		{
-			logf(get_localized_string(LANG_1018),map->modelCount);
+			logf(get_localized_string(LANG_1018), map->modelCount);
 			return 1;
 		}
 
 		if (hull != 0)
 		{
-			logf(get_localized_string(LANG_0025),hull,modelIdx);
+			logf(get_localized_string(LANG_0025), hull, modelIdx);
 		}
 		else
 		{
-			logf(get_localized_string(LANG_0026),modelIdx);
+			logf(get_localized_string(LANG_0026), modelIdx);
 		}
 
 		map->simplify_model_collision(modelIdx, hull);
@@ -536,7 +536,7 @@ int deleteCmd(CommandLine& cli)
 		{
 			int modelIdx = cli.getOptionInt("-model");
 
-			logf(get_localized_string(LANG_0027),modelIdx);
+			logf(get_localized_string(LANG_0027), modelIdx);
 			map->delete_model(modelIdx);
 			map->update_ent_lump();
 			removed = map->remove_unused_model_structures();
@@ -569,7 +569,7 @@ int transform(CommandLine& cli)
 			move = cli.getOptionVector("-move");
 
 			logf("Applying offset ({:.2f}, {:.2f}, {:.2f})\n",
-				 move.x, move.y, move.z);
+				move.x, move.y, move.z);
 
 			map->move(move);
 		}
@@ -597,7 +597,7 @@ int unembed(CommandLine& cli)
 	if (map->bsp_valid)
 	{
 		int deleted = map->delete_embedded_textures();
-		logf(get_localized_string(LANG_0029),deleted);
+		logf(get_localized_string(LANG_0029), deleted);
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
 		logf("\n");
@@ -797,10 +797,10 @@ void make_minidump(EXCEPTION_POINTERS* e)
 	SYSTEMTIME t;
 	GetSystemTime(&t);
 	wsprintfA(nameEnd - strlen(".exe"),
-				"_%4d%02d%02d_%02d%02d%02d(%d).dmp",
-				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
+		"_%4d%02d%02d_%02d%02d%02d(%d).dmp",
+		t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
 
-	logf(get_localized_string(LANG_0030),name);
+	logf(get_localized_string(LANG_0030), name);
 
 	auto hFile = CreateFileA(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -831,15 +831,15 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 		{
 			DWORD exceptionCode = e->ExceptionRecord->ExceptionCode;
 
-		// Not interested in non-error exceptions. In this category falls exceptions
-		// like:
-		// 0x40010006 - OutputDebugStringA. Seen when no debugger is attached
-		//              (otherwise debugger swallows the exception and prints
-		//              the string).
-		// 0x406D1388 - DebuggerProbe. Used by debug CRT - for example see source
-		//              code of isatty(). Used to name a thread as well.
-		// RPC_E_DISCONNECTED and Co. - COM IPC non-fatal warnings
-		// STATUS_BREAKPOINT and Co. - Debugger related breakpoints
+			// Not interested in non-error exceptions. In this category falls exceptions
+			// like:
+			// 0x40010006 - OutputDebugStringA. Seen when no debugger is attached
+			//              (otherwise debugger swallows the exception and prints
+			//              the string).
+			// 0x406D1388 - DebuggerProbe. Used by debug CRT - for example see source
+			//              code of isatty(). Used to name a thread as well.
+			// RPC_E_DISCONNECTED and Co. - COM IPC non-fatal warnings
+			// STATUS_BREAKPOINT and Co. - Debugger related breakpoints
 			if ((exceptionCode & ERROR_SEVERITY_ERROR) != ERROR_SEVERITY_ERROR)
 			{
 				return ExceptionContinueExecution;
@@ -854,8 +854,8 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 
-			logf(get_localized_string(LANG_0031),GetLastError(),e->ExceptionRecord->ExceptionCode,e->ExceptionRecord->ExceptionAddress,(void *)GetModuleHandleA(0));
-			
+			logf(get_localized_string(LANG_0031), GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void*)GetModuleHandleA(0));
+
 			if (crashdumps > 0)
 			{
 				crashdumps--;
@@ -873,92 +873,131 @@ int main(int argc, char* argv[])
 	setlocale(LC_ALL, ".utf8");
 	setlocale(LC_NUMERIC, "C");
 
-	std::cout << std::endl << "BSPGUY" << std::endl;
+	std::cout << "BSPGUY:" << g_version_string << std::endl;
 
 	//std::fesetround(FE_TONEAREST);
+	try
+	{
 #ifdef WIN32
-	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+		::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 #ifndef NDEBUG
-	SetUnhandledExceptionFilter(unhandled_handler);
-	AddVectoredExceptionHandler(1, unhandled_handler);
+		SetUnhandledExceptionFilter(unhandled_handler);
+		AddVectoredExceptionHandler(1, unhandled_handler);
 #endif
-	DisableProcessWindowsGhosting(); 
+		DisableProcessWindowsGhosting();
 #endif
-	
-	if (argv && argv[0] && argv[0][0] != '\0')
-	{
+		
+		if (argv && argv[0] && argv[0][0] != '\0')
+		{
 #ifdef WIN32
-		int nArgs;
-		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-		g_current_dir = fs::path(szArglist[0]).parent_path().string();
+			int nArgs;
+			LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+			g_current_dir = fs::path(szArglist[0]).parent_path().string();
 #else
-		g_current_dir = fs::path(argv[0]).parent_path().string();
+			g_current_dir = fs::path(argv[0]).parent_path().string();
 #endif
-		fs::current_path(g_current_dir);
-	}
+			if (g_current_dir.empty())
+				g_current_dir = "./";
+			fs::current_path(g_current_dir);
+		}
+
 #ifdef WIN32
-	g_settings_path = GetCurrentDir() + "bspguy.cfg";
-	g_config_dir = GetCurrentDir();
+		g_settings_path = GetCurrentDir() + "bspguy.cfg";
+		g_config_dir = GetCurrentDir();
 #else
-	g_settings_path = GetCurrentDir() + "bspguy.cfg";
-	g_config_dir = GetCurrentDir();
+		g_settings_path = GetCurrentDir() + "bspguy.cfg";
+		g_config_dir = GetCurrentDir();
 #endif
-	// test svencoop merge
-	//return test();
 
-	CommandLine cli(argc, argv);
+		g_settings.loadDefault();
+		g_settings.load();
 
-	if (cli.command == "version" || cli.command == "--version" || cli.command == "-version")
-	{
-		logf("{}", g_version_string);
-		return 0;
-	}
+		CommandLine cli(argc, argv);
 
-	if (cli.command == "exportobj")
-	{
-		Bsp* tmpBsp = new Bsp(cli.bspfile);
-		tmpBsp->ExportToObjWIP(cli.bspfile);
-		delete tmpBsp;
-		return 0;
-	}
+		if (cli.command == "version" || cli.command == "--version" || cli.command == "-version")
+		{
+			return 0;
+		}
 
-	if (cli.hasOption("-v") || cli.hasOption("-verbose"))
-	{
-		g_verbose = true;
-	}
+		if (cli.command == "exportobj")
+		{
+			Bsp* tmpBsp = new Bsp(cli.bspfile);
+			tmpBsp->ExportToObjWIP(cli.bspfile);
+			delete tmpBsp;
+			return 0;
+		}
 
-	if (cli.command == "info")
-	{
-		return print_info(cli);
-	}
-	else if (cli.command == "noclip")
-	{
-		return noclip(cli);
-	}
-	else if (cli.command == "simplify")
-	{
-		return simplify(cli);
-	}
-	else if (cli.command == "delete")
-	{
-		return deleteCmd(cli);
-	}
-	else if (cli.command == "transform")
-	{
-		return transform(cli);
-	}
-	else if (cli.command == "merge")
-	{
-		return merge_maps(cli);
-	}
-	else if (cli.command == "unembed")
-	{
-		return unembed(cli);
-	}
-	else 
-	{
-		if (cli.bspfile.size() == 0)
-			logf("{}\n",get_localized_string(LANG_0032));
+		if (cli.hasOption("-v") || cli.hasOption("-verbose"))
+		{
+			g_verbose = true;
+		}
+
+		int retval = 0;
+
+		if (cli.command == "info")
+		{
+			if (!fileExists(cli.bspfile))
+			{
+				logf(get_localized_string(LANG_0034), cli.bspfile);
+				retval = 1;
+			}
+			else 
+			retval = print_info(cli);
+		}
+		else if (cli.command == "noclip")
+		{
+			if (!fileExists(cli.bspfile))
+			{
+				logf(get_localized_string(LANG_0034), cli.bspfile);
+				retval = 1;
+			}
+			else
+				retval = noclip(cli);
+		}
+		else if (cli.command == "simplify")
+		{
+			if (!fileExists(cli.bspfile))
+			{
+				logf(get_localized_string(LANG_0034), cli.bspfile);
+				retval = 1;
+			}
+			else
+				retval = simplify(cli);
+		}
+		else if (cli.command == "delete")
+		{
+			if (!fileExists(cli.bspfile))
+			{
+				logf(get_localized_string(LANG_0034), cli.bspfile);
+				retval = 1;
+			}
+			else
+				retval = deleteCmd(cli);
+		}
+		else if (cli.command == "transform")
+		{
+			if (!fileExists(cli.bspfile))
+			{
+				logf(get_localized_string(LANG_0034), cli.bspfile);
+				retval = 1;
+			}
+			else
+				retval = transform(cli);
+		}
+		else if (cli.command == "merge")
+		{
+			retval = merge_maps(cli);
+		}
+		else if (cli.command == "unembed")
+		{
+			if (!fileExists(cli.bspfile))
+			{
+				logf(get_localized_string(LANG_0034), cli.bspfile);
+				retval = 1;
+			}
+			else
+				retval = unembed(cli);
+		}
 		else
 		{
 			if (cli.askingForHelp)
@@ -966,13 +1005,43 @@ int main(int argc, char* argv[])
 				print_help(cli.command);
 				return 0;
 			}
+			else if (cli.bspfile.size() == 0)
+				logf("{}\n", get_localized_string(LANG_0032));
+			else
+				logf("{}\n", ("Start bspguy editor with: " + cli.bspfile));
+
+			logf(get_localized_string(LANG_0033), g_settings_path);
+			if (!start_viewer(cli.bspfile.c_str()))
+			{
+				logf(get_localized_string(LANG_0034), cli.bspfile);
+			}
 		}
-		logf("{}\n", ("Start bspguy editor with: " + cli.bspfile));
-		logf(get_localized_string(LANG_0033),g_settings_path);
-		if (!start_viewer(cli.bspfile.c_str()))
+
+		if (retval != 0)
 		{
-			logf(get_localized_string(LANG_0034),cli.bspfile);
+			print_help(cli.command);
+			return 1;
 		}
+	}
+	catch (fs::filesystem_error& ex)
+	{
+		std::cout << "std::filesystem fatal error." << std::endl << "what():  " << ex.what() << '\n'
+			<< "path1(): " << ex.path1() << '\n'
+			<< "path2(): " << ex.path2() << '\n'
+			<< "code().value():    " << ex.code().value() << '\n'
+			<< "code().message():  " << ex.code().message() << '\n'
+			<< "code().category(): " << ex.code().category().name() << '\n';
+		return 1;
+	}
+	catch (std::exception& ex)
+	{
+		std::cout << g_version_string << "FATAL ERROR \"" << ex.what() << "\"" << std::endl;
+		return 1;
+	}
+	catch (...)
+	{
+		std::cout << g_version_string << "UNKNOWN FATAL ERROR" <<  std::endl;
+		return 1;
 	}
 	return 0;
 }

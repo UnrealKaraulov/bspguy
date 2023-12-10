@@ -12,7 +12,7 @@ std::string g_current_dir = ".";
 std::string g_game_dir = "";
 std::string g_working_dir = "";
 
-AppSettings g_settings;
+AppSettings g_settings{};
 
 void AppSettings::loadDefault()
 {
@@ -160,6 +160,8 @@ void AppSettings::reset()
 
 void AppSettings::load()
 {
+	set_localize_lang("EN");
+
 	std::ifstream file(g_settings_path);
 	if (!file.is_open())
 	{

@@ -138,9 +138,6 @@ Renderer::Renderer()
 		return;
 	}
 
-	g_settings.loadDefault();
-	g_settings.load();
-
 	gui = new Gui(this);
 
 	loadSettings();

@@ -5,8 +5,7 @@
 #endif
 CommandLine::CommandLine(int argc, char* argv[])
 {
-	askingForHelp = argc <= 1;
-
+	askingForHelp = false;
 	for (int i = 0; i < argc; i++)
 	{
 		std::string arg = argv[i];
