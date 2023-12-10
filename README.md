@@ -20,20 +20,20 @@ See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
   - clipnode generation is similar to `-cliptype legacy` in the CSG compiler (the _worst_ method)
 - Basic face editing
 # also
-- Support J.A.C.K fgd files
 - Texture Rotation
 - Face Editor Update(better texture support, verts manual editor, etc, but without texture browser)
 - Export obj, wad, ent, bsp/bspmodel, hlrad files.
 - Import wad, ent, bsp(in two modes)
 - Render .BSP and .MDL models.
 - Full support for "angle" and "angles" keyvalue.
-- Render ents and models using these keyvalues.
-- Full featured **LightMap Editor**.
+- Full featured **LightMap Editor** for edit single or multiple faces.
 - Updated Entity Report, added search by any parameters and sorting by fgd flags.
 - Added "undo/redo" support for many manipulations. (Move ents/origin, etc)
 - Added move model(as option for transforming, like move origin)
 - Added CRC-Spoofing(now possible to replace original map and play it on any servers)
 - Updated controls logic(now can't using hotkeys and manipulation, if any input/window is active)
+- Support J.A.C.K fgd files
+- Keyvalue editor can be used for edit all selected entities
 ...
 
 ![image](https://user-images.githubusercontent.com/12087544/88471604-1768ac80-cec0-11ea-9ce5-13095e843ce7.png)
