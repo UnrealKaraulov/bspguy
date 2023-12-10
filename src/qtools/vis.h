@@ -24,6 +24,8 @@ extern bool g_debug_shift;
 
 bool CHECKBITFROMBYTES(unsigned char* bytes, int bitid);
 
-#define CHECKVISBIT( vis, b )		((b) >= 0 ? ((vis)[(b) >> 3] & (1 << ((b) & 7))) != 0 : false )/*
+#define CHECKVISBIT( vis, b )		((b) >= 0 ? ((vis)[(b) >> 3] & (1 << ((b) & 7))) != 0 : false )
+/*
 #define SETVISBIT( vis, b )( void )	((b) >= 0 ? (unsigned char)((vis)[(b) >> 3] |= (1 << ((b) & 7))) : (unsigned char)false )
-#define CLEARVISBIT( vis, b )( void )	((b) >= 0 ? (unsigned char)((vis)[(b) >> 3] &= ~(1 << ((b) & 7))) : (unsigned char)false )*/
+#define CLEARVISBIT( vis, b )( void )	((b) >= 0 ? (unsigned char)((vis)[(b) >> 3] &= ~(1 << ((b) & 7))) : (unsigned char)false )
+*/

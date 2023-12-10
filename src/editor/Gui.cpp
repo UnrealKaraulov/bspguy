@@ -5288,6 +5288,7 @@ void Gui::drawSettings()
 
 	bool oldShowSettings = showSettingsWidget;
 	bool apply_settings_pressed = false;
+	static std::string langForSelect = g_settings.selected_lang;
 
 	if (ImGui::Begin(get_localized_string(LANG_1114).c_str(), &showSettingsWidget))
 	{
@@ -5296,6 +5297,7 @@ void Gui::drawSettings()
 
 		static int resSelected = 0;
 		static int fgdSelected = 0;
+
 
 		static const char* tab_titles[settings_tabs] = {
 			"General",
@@ -5496,7 +5498,18 @@ void Gui::drawSettings()
 				ImGui::EndTooltip();
 			}
 			ImGui::Separator();
-
+			if (ImGui::BeginCombo("##lang", langForSelect.c_str()))
+			{
+				for (const auto& s : g_settings.languages)
+				{
+					if (ImGui::Selectable(s.c_str(), s == langForSelect))
+					{
+						langForSelect = s;
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::Separator();
 			if (ImGui::Button(get_localized_string(LANG_0739).c_str()))
 			{
 				g_settings.reset();
@@ -5992,6 +6005,8 @@ void Gui::drawSettings()
 
 	if (oldShowSettings && !showSettingsWidget || apply_settings_pressed)
 	{
+		g_settings.selected_lang = langForSelect;
+		set_localize_lang(g_settings.selected_lang);
 		g_settings.save();
 		if (!app->reloading)
 		{

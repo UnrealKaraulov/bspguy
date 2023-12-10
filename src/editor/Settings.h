@@ -66,7 +66,9 @@ struct AppSettings
 	std::string workingdir;
 	std::string lastdir;
 
-	std::string language;
+	std::string selected_lang;
+
+	std::vector<std::string> languages;
 
 	bool settingLoaded; // Settings loaded
 	bool verboseLogs;
@@ -109,6 +111,7 @@ struct AppSettings
 	void reset();
 	void save();
 	void save(std::string path);
+	void fillLanguages(const std::string& folderPath);
 };
 
 extern AppSettings g_settings;

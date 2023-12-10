@@ -4251,10 +4251,23 @@ bool Bsp::validate()
 			if (tex->nOffsets[0] > 0 && dataOffset + texOffset + texlen > bsp_header.lump[LUMP_TEXTURES].nLength)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0135),i,dataOffset + texOffset + texlen,bsp_header.lump[LUMP_TEXTURES].nLength);
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136),i,tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME",texOffset,dataOffset);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME",texOffset,dataOffset);
+			}
+			if (texlen == 0)
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string("LANG_ERROR_TEXLEN"), i);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
 			}
 		}
 	}
+
+	unsigned int newVisRowSize = ((leafCount + 63) & ~63) >> 3;
+	int decompressedVisSize = leafCount * newVisRowSize;
+	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
+	memset(decompressedVis, 0xFF, decompressedVisSize);
+	decompress_vis_lump(leaves, visdata, decompressedVis,
+		models[0].nVisLeafs, leafCount, leafCount, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
+	delete decompressedVis;
 
 	return isValid;
 }
@@ -7427,22 +7440,22 @@ int Bsp::getBspTextureSize(int textureid)
 
 	int iStartOffset = ((int*)textures)[textureid + 1];
 
-	if (iStartOffset < 0)
+	if (iStartOffset < 0 || iStartOffset + sizeof(BSPMIPTEX) > textureDataLength)
 		return 0;
 
 	BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));
 
+	if (tex->nOffsets[0] > textureDataLength)
+		return 0;
 
 	int sz = sizeof(BSPMIPTEX);
 	if (tex->nOffsets[0] > 0)
 	{
 		sz += sizeof(short); /* pal size */
-
 		if (is_texture_with_pal(textureid))
 		{
 			sz += sizeof(COLOR3) * 256; // pallette
 		}
-
 		for (int i = 0; i < MIPLEVELS; i++)
 		{
 			sz += (tex->nWidth >> i) * (tex->nHeight >> i);
@@ -7458,7 +7471,6 @@ bool Bsp::is_texture_with_pal(int textureid)
 
 	if (bsp_header.nVersion == 30)
 		return true;
-
 
 	int iStartOffset = ((int*)textures)[textureid + 1];
 	unsigned char* pStartOffset = (unsigned char*)textures + iStartOffset;
@@ -7490,8 +7502,7 @@ bool Bsp::is_texture_with_pal(int textureid)
 		int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 		unsigned char* palOffset = pStartOffset + tex->nOffsets[3] + lastMipSize;
 
-		//print_log("{}-{}={}\n", (void*)(pStartOffset + palOffset), (void*)(pEndOffset), (int)((pStartOffset + palOffset) - pEndOffset));
-		if (abs(palOffset - pEndOffset) >= sizeof(COLOR3) * 256) // No align check
+		if (abs(palOffset - pEndOffset) >= sizeof(COLOR3) * 256) 
 		{
 			return true;
 		}

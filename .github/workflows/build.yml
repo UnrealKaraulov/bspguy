@@ -55,6 +55,7 @@ jobs:
                     build/bspguy
                     cfg/bspguy.cfg
                     cfg/language.ini
+                    cfg/language_ru.ini
 
     window_build:
 

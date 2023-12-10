@@ -328,5 +328,8 @@
     <None Include="..\cfg\language.ini">
       <Filter>Langs</Filter>
     </None>
+    <None Include="..\cfg\language_ru.ini">
+      <Filter>Langs</Filter>
+    </None>
   </ItemGroup>
 </Project>

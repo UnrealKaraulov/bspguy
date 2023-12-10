@@ -143,6 +143,10 @@
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)\..\cfg\language_ru.ini" "$(TargetDir)\language_ru.ini"
+copy "$(SolutionDir)\..\cfg\language.ini" "$(TargetDir)\language.ini"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">
     <ClCompile>
@@ -285,6 +289,10 @@
       <LinkLibraryDependencies>
       </LinkLibraryDependencies>
     </ProjectReference>
+    <PostBuildEvent>
+      <Command>copy "$(SolutionDir)\..\cfg\language_ru.ini" "$(TargetDir)\language_ru.ini"
+copy "$(SolutionDir)\..\cfg\language.ini" "$(TargetDir)\language.ini"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include=".\..\src\main.cpp" />
@@ -383,6 +391,7 @@
     <None Include="..\cfg\language.ini">
       <FileType>Text</FileType>
     </None>
+    <None Include="..\cfg\language_ru.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

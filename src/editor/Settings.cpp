@@ -32,7 +32,10 @@ void AppSettings::loadDefault()
 	workingdir = "./bspguy_work/";
 
 	lastdir = "";
-	language = "EN";
+	selected_lang = "EN";
+	languages.clear();
+	languages.push_back("EN");
+
 	undoLevels = 64;
 
 	verboseLogs = false;
@@ -158,6 +161,26 @@ void AppSettings::reset()
 	transparentEntities.push_back("func_buyzone");
 }
 
+void AppSettings::fillLanguages(const std::string& folderPath)
+{
+	languages.clear();
+	languages.push_back("EN");
+	for (const auto& entry : fs::directory_iterator(folderPath))
+	{
+		if (!entry.is_directory()) {
+			std::string filename = entry.path().filename().string();
+			if (filename.starts_with("language_") && filename.ends_with(".ini"))
+			{
+				std::string language = filename.substr(9);
+				language.erase(language.size() - 4);
+				language = toUpperCase(language);
+				if (std::find(languages.begin(), languages.end(), language) == languages.end())
+					languages.push_back(language);
+			}
+		}
+	}
+}
+
 void AppSettings::load()
 {
 	set_localize_lang("EN");
@@ -165,9 +188,15 @@ void AppSettings::load()
 	std::ifstream file(g_settings_path);
 	if (!file.is_open())
 	{
-		print_log(get_localized_string(LANG_0926),g_settings_path);
+		print_log(get_localized_string(LANG_0926), g_settings_path);
 		reset();
 		return;
+	}
+
+	fillLanguages(g_config_dir);
+	if (GetCurrentDir() != g_config_dir)
+	{
+		fillLanguages(GetCurrentDir());
 	}
 
 	int lines_readed = 0;
@@ -318,8 +347,8 @@ void AppSettings::load()
 		}
 		else if (key == "language")
 		{
-			g_settings.language = val;
-			set_localize_lang(g_settings.language);
+			g_settings.selected_lang = val;
+			set_localize_lang(g_settings.selected_lang);
 		}
 		else if (key == "fgd")
 		{
@@ -492,7 +521,7 @@ void AppSettings::load()
 	if (lines_readed > 0)
 		g_settings.settingLoaded = true;
 	else
-		print_log(get_localized_string(LANG_0928),g_settings_path);
+		print_log(get_localized_string(LANG_0928), g_settings_path);
 
 	if (defaultIsEmpty && fgdPaths.empty())
 	{
@@ -613,7 +642,7 @@ void AppSettings::save(std::string path)
 	file << "gamedir=" << g_settings.gamedir << std::endl;
 	file << "workingdir=" << g_settings.workingdir << std::endl;
 	file << "lastdir=" << g_settings.lastdir << std::endl;
-	file << "language=" << g_settings.language << std::endl;
+	file << "language=" << g_settings.selected_lang << std::endl;
 
 	for (int i = 0; i < fgdPaths.size(); i++)
 	{

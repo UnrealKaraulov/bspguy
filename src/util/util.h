@@ -139,6 +139,7 @@ bool createDir(const std::string& dirName);
 void removeDir(const std::string& dirName);
 
 std::string toLowerCase(const std::string& s);
+std::string toUpperCase(const std::string& s);
 
 std::string trimSpaces(const std::string& str);
 

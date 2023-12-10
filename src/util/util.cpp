@@ -229,6 +229,14 @@ std::string toLowerCase(const std::string& s)
 	);
 	return ret;
 }
+std::string toUpperCase(const std::string& s)
+{
+	std::string ret = s;
+	std::transform(ret.begin(), ret.end(), ret.begin(),
+		[](unsigned char c) { return (unsigned char)std::toupper(c); }
+	);
+	return ret;
+}
 
 std::string trimSpaces(const std::string& str)
 {

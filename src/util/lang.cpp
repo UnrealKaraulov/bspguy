@@ -12,7 +12,7 @@
 ;
 */
 
-inih::INIReader * ft = NULL;
+inih::INIReader* ft = NULL;
 
 std::map<int, std::string> lang_db;
 std::map<std::string, std::string> lang_db_str;
@@ -30,7 +30,7 @@ std::string get_localized_string(int id)
 
 		if (itr == lang_db.end())
 		{
-			std::string value = ft->Get<std::string>(g_settings.language, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
+			std::string value = ft->Get<std::string>(g_settings.selected_lang, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
 			replaceAll(value, "\\n", "\n");
 			lang_db[id] = value;
 			return value;
@@ -41,7 +41,7 @@ std::string get_localized_string(int id)
 	return "LANG_ERROR_INDEX\n";
 }
 
-std::string get_localized_string(const std::string & str_id)
+std::string get_localized_string(const std::string& str_id)
 {
 	if (ft == NULL)
 	{
@@ -54,7 +54,7 @@ std::string get_localized_string(const std::string & str_id)
 
 		if (itr == lang_db_str.end())
 		{
-			std::string value = ft->Get<std::string>(g_settings.language, str_id, fmt::format("NO {}", str_id));
+			std::string value = ft->Get<std::string>(g_settings.selected_lang, str_id, fmt::format("NO {}", str_id));
 			replaceAll(value, "\\n", "\n");
 			lang_db_str[str_id] = value;
 			return value;
@@ -74,19 +74,40 @@ void set_localize_lang(std::string lang)
 		if (ft != NULL)
 		{
 			delete ft;
+			ft = NULL;
 		}
-
-		try
+		// Search lang file in config/current directories
+		std::string langfile = g_config_dir + "language_" + toLowerCase(lang) + ".ini";
+		if (!fileExists(langfile))
 		{
-			ft = new inih::INIReader(g_config_dir + "language.ini");
+			langfile = g_current_dir + "language_" + toLowerCase(lang) + ".ini";
 		}
-		catch (std::runtime_error runtime)
+		if (!fileExists(langfile))
 		{
-			print_log("Language parse from {} fatal error: {}\n", g_config_dir + "language.ini", runtime.what());
+			langfile = g_config_dir + "language.ini";
+		}
+		if (!fileExists(langfile))
+		{
+			langfile = g_current_dir + "language.ini";
+		}
+		if (!fileExists(langfile))
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Fatal error");
+		}
+		else
+		{
+			try
+			{
+				ft = new inih::INIReader(langfile);
+			}
+			catch (std::runtime_error runtime)
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, "Language parse from {} fatal error: {}\n", g_config_dir + "language.ini", runtime.what());
+			}
 		}
 		last_lang = lang;
 	}
-	g_settings.language = lang;
+	g_settings.selected_lang = lang;
 	lang_db.clear();
 	lang_db_str.clear();
 }
