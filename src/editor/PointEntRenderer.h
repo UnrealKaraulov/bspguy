@@ -24,7 +24,6 @@ public:
 
 	EntCube* getEntCube(Entity* ent);
 
-private:
 	ShaderProgram* colorShader;
 	std::map<std::string, EntCube*> cubeMap;
 	std::vector<EntCube*> entCubes;

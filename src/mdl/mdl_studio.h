@@ -8,7 +8,7 @@
 #include "VertexBuffer.h"
 #include "shaders.h"
 #include "Texture.h"
-
+#include "PointEntRenderer.h"
 
 #include <map>
 /***
@@ -380,6 +380,8 @@ public:
 	unsigned char m_controller[4];	// bone controllers
 	unsigned char m_blending[2];		// animation blending
 	unsigned char m_mouth = 0;			// mouth position
+	EntCube* mdl_cube = NULL;
+	vec3 mins, maxs;
 
 	vec3			g_xformverts[MAXSTUDIOVERTS];	// transformed vertices
 	vec3			g_lightvalues[MAXSTUDIOVERTS];	// light surface normals
@@ -418,6 +420,8 @@ public:
 
 	StudioModel(const std::string modelname)
 	{
+		mdl_cube = NULL;
+		mins = maxs = vec3();
 		fps = 30.0;
 		m_bodynum = 0;
 		needForceUpdate = true;
@@ -428,6 +432,7 @@ public:
 		mdl_textures = std::vector<Texture*>();
 		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
 		whiteTex = new Texture(1, 1, "white");
+		whiteTex->setWadName("default");
 		*((COLOR3*)(whiteTex->data)) = {255, 255, 255};
 		whiteTex->upload(GL_RGB);
 		m_sequence = m_bodynum = m_skinnum = 0;
@@ -488,6 +493,12 @@ public:
 	}
 	~StudioModel()
 	{
+		if (mdl_cube)
+		{
+			delete mdl_cube;
+			mdl_cube = NULL;
+		}
+
 		if (whiteTex)
 			delete whiteTex;
 		if (m_pstudiohdr)
@@ -528,7 +539,7 @@ public:
 	void GetModelMeshes(int& bodies, int& subbodies, int& skins, int& meshes);
 
 	void AdvanceFrame(float dt);
-	void ExtractBbox(float* mins, float* maxs);
+	void ExtractBBox(vec3& mins, vec3& maxs);
 	void GetSequenceInfo(float* pflFrameRate, float* pflGroundSpeed);
 	float SetController(int iController, float flValue);
 	float SetMouth(float flValue);

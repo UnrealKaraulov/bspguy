@@ -606,6 +606,8 @@ void StudioModel::RefreshMeshList(int body)
 	float				lv_tmp;
 	short* pskinref;
 
+	mins = maxs = vec3();
+
 	pvertbone = ((unsigned char*)m_pstudiohdr + m_pmodel->vertinfoindex);
 	pnormbone = ((unsigned char*)m_pstudiohdr + m_pmodel->norminfoindex);
 	ptexture = m_ptexturehdr ? (mstudiotexture_t*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->textureindex) : NULL;
@@ -855,9 +857,32 @@ void StudioModel::RefreshMeshList(int body)
 			mdl_mesh_groups[body][j].verts[z].pos.x = vertexData[z * 3 + 0];
 			mdl_mesh_groups[body][j].verts[z].pos.y = vertexData[z * 3 + 2];
 			mdl_mesh_groups[body][j].verts[z].pos.z = -vertexData[z * 3 + 1];
+
+			if (mins.x > vertexData[z * 3 + 0])
+				mins.x = vertexData[z * 3 + 0];
+			if (mins.y > vertexData[z * 3 + 1])
+				mins.y = vertexData[z * 3 + 1];
+			if (mins.z > vertexData[z * 3 + 2])
+				mins.z = vertexData[z * 3 + 2];
+
+			if (maxs.x < vertexData[z * 3 + 0])
+				maxs.x = vertexData[z * 3 + 0];
+			if (maxs.y < vertexData[z * 3 + 1])
+				maxs.y = vertexData[z * 3 + 1];
+			if (maxs.z < vertexData[z * 3 + 2])
+				maxs.z = vertexData[z * 3 + 2];
 		}
 	}
 
+	if (mdl_cube)
+	{
+		delete mdl_cube;
+	}
+	mdl_cube = new EntCube();
+	mdl_cube->color = { 10, 100, 255, 255 };
+	mdl_cube->mins = mins;
+	mdl_cube->maxs = maxs;
+	g_app->pointEntRenderer->genCubeBuffers(mdl_cube);
 }
 
 
@@ -888,6 +913,7 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 	// ptexture->width = outwidth;
 	// ptexture->height = outheight;
 	auto texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name);
+	texture->setWadName("model_textures");
 	texture->upload(GL_RGBA);
 	ptexture->index = (int)mdl_textures.size();
 	mdl_textures.push_back(texture);
@@ -1092,19 +1118,19 @@ int StudioModel::SetSequence(int iSequence)
 }
 
 
-void StudioModel::ExtractBbox(float* mins, float* maxs)
+void StudioModel::ExtractBBox(vec3& _mins, vec3& _maxs)
 {
 	mstudioseqdesc_t* pseqdesc;
 
 	pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex);
 
-	mins[0] = pseqdesc[m_sequence].bbmin[0];
-	mins[1] = pseqdesc[m_sequence].bbmin[1];
-	mins[2] = pseqdesc[m_sequence].bbmin[2];
+	_mins[0] = pseqdesc[m_sequence].bbmin[0];
+	_mins[1] = pseqdesc[m_sequence].bbmin[1];
+	_mins[2] = pseqdesc[m_sequence].bbmin[2];
 
-	maxs[0] = pseqdesc[m_sequence].bbmax[0];
-	maxs[1] = pseqdesc[m_sequence].bbmax[1];
-	maxs[2] = pseqdesc[m_sequence].bbmax[2];
+	_maxs[0] = pseqdesc[m_sequence].bbmax[0];
+	_maxs[1] = pseqdesc[m_sequence].bbmax[1];
+	_maxs[2] = pseqdesc[m_sequence].bbmax[2];
 }
 
 

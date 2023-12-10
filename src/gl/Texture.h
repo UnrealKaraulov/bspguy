@@ -11,6 +11,7 @@ public:
 	int farFilter;
 	unsigned int format; // format of the data
 	char texName[64];
+	std::string wad_name;
 	int transparentMode;
 
 	Texture(GLsizei width, GLsizei height, const char* name);
@@ -19,6 +20,10 @@ public:
 
 	// upload the texture with the specified settings
 	void upload(int format, bool lightmap = false);
+
+	void setWadName(const std::string& s) {
+		wad_name = s;
+	}
 
 	// use this texture for rendering
 	void bind(GLuint texnum);

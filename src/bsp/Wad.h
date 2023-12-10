@@ -100,6 +100,7 @@ class Wad
 {
 public:
 	std::string filename = std::string();
+	std::string wadname = std::string();
 
 	unsigned char* filedata = NULL;
 	int fileLen = 0;

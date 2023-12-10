@@ -3342,13 +3342,13 @@ void Gui::drawDebugWidget()
 				modelIdx = 0;
 			if (modelIdx >= 0)
 			{
-				if (!map)
+				if (!map || !renderer)
 				{
 					ImGui::Text(get_localized_string(LANG_0632).c_str());
 				}
 				else
 				{
-					vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
+					vec3 localCamera = cameraOrigin - renderer->mapOffset;
 
 					static ImVec4 hullColors[] = {
 						ImVec4(1, 1, 1, 1),
@@ -3441,14 +3441,14 @@ void Gui::drawDebugWidget()
 			}
 		}
 
-		if (map && ImGui::CollapsingHeader(get_localized_string(LANG_1101).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+		if (map && renderer && ImGui::CollapsingHeader(get_localized_string(LANG_1101).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Text(get_localized_string(LANG_0635).c_str(), app->debugVec0.x, app->debugVec0.y, app->debugVec0.z);
 			ImGui::Text(get_localized_string(LANG_0636).c_str(), app->debugVec1.x, app->debugVec1.y, app->debugVec1.z);
 			ImGui::Text(get_localized_string(LANG_0637).c_str(), app->debugVec2.x, app->debugVec2.y, app->debugVec2.z);
 			ImGui::Text(get_localized_string(LANG_0638).c_str(), app->debugVec3.x, app->debugVec3.y, app->debugVec3.z);
 
-			float mb = map->getBspRender()->undoMemoryUsage / (1024.0f * 1024.0f);
+			float mb = renderer->undoMemoryUsage / (1024.0f * 1024.0f);
 			ImGui::Text(get_localized_string(LANG_0639).c_str(), mb);
 
 			bool isScalingObject = app->transformMode == TRANSFORM_MODE_SCALE && app->transformTarget == TRANSFORM_OBJECT;
@@ -3627,9 +3627,9 @@ void Gui::drawDebugWidget()
 	ImGui::End();
 
 
-	if (debugVisMode > 0 && !g_app->reloading)
+	if (debugVisMode > 0 && !g_app->reloading && renderer)
 	{
-		vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
+		vec3 localCamera = cameraOrigin - renderer->mapOffset;
 
 		vec3 renderOffset;
 		vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
@@ -3659,10 +3659,11 @@ void Gui::drawDebugWidget()
 			}
 			else
 			{
+				// TODO: need precompile it at map start, for fast access?
 				auto faceList = map->getLeafFaces(l + 1);
 				for (const auto& idx : faceList)
 				{
-					map->getBspRender()->highlightFace(idx, true, COLOR4(230 + rand() % 25, 0, 0, 255), true);
+					renderer->highlightFace(idx, true, COLOR4(230 + rand() % 25, 0, 0, 255), true);
 				}
 			}
 		}
@@ -3674,7 +3675,7 @@ void Gui::drawDebugWidget()
 				auto faceList = map->getLeafFaces(l + 1);
 				for (const auto& idx : faceList)
 				{
-					map->getBspRender()->highlightFace(idx, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
+					renderer->highlightFace(idx, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
 				}
 			}
 		}

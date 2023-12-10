@@ -357,6 +357,7 @@ void BspRenderer::loadTextures()
 
 		COLOR3* imageData = NULL;
 		WADTEX* wadTex = NULL;
+		std::string wadName = "unknown.wad";
 		if (tex->nOffsets[0] <= 0)
 		{
 			bool foundInWad = false;
@@ -365,6 +366,7 @@ void BspRenderer::loadTextures()
 				if (wads[k]->hasTexture(tex->szName))
 				{
 					foundInWad = true;
+					wadName = wads[k]->wadname;
 					wadTex = wads[k]->readTexture(tex->szName);
 					imageData = ConvertWadTexToRGB(wadTex);
 					wadTexCount++;
@@ -384,10 +386,17 @@ void BspRenderer::loadTextures()
 			imageData = ConvertMipTexToRGB(tex, map->is_texture_with_pal(i) ? NULL : (COLOR3*)quakeDefaultPalette);
 			embedCount++;
 		}
+
 		if (wadTex)
+		{
 			glTexturesSwap[i] = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, wadTex->szName);
+			glTexturesSwap[i]->setWadName(wadName);
+		}
 		else
+		{
 			glTexturesSwap[i] = new Texture(tex->nWidth, tex->nHeight, (unsigned char*)imageData, tex->szName);
+			glTexturesSwap[i]->setWadName("internal");
+		}
 
 		if (wadTex)
 			delete wadTex;
@@ -2470,6 +2479,10 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 				g_app->colorShader->updateMatrixes();
 
+				if (renderEnts[i].mdl->mdl_cube)
+				{
+					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+				}
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 			}
 			else
@@ -2481,6 +2494,11 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 				g_app->colorShader->updateMatrixes();
 
+				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+				{
+					renderEnts[i].mdl->mdl_cube->selectBuffer->drawFull();
+					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+				}
 				renderEnts[i].pointEntCube->selectBuffer->drawFull();
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 			}
@@ -2494,6 +2512,22 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 				g_app->modelShader->updateMatrixes();
 				renderEnts[i].mdl->DrawModel();
+
+				g_app->colorShader->bind();
+
+				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
+				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+
+				g_app->colorShader->updateMatrixes();
+
+				if (renderEnts[i].mdl->mdl_cube)
+				{
+					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+				}
+				else
+				{
+					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+				}
 			}
 			else
 			{
@@ -2503,7 +2537,11 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 
 				g_app->colorShader->updateMatrixes();
-
+				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+				{
+					renderEnts[i].mdl->mdl_cube->selectBuffer->drawFull();
+					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+				}
 				renderEnts[i].pointEntCube->buffer->drawFull();
 			}
 			//renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
@@ -2522,8 +2560,6 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		return foundBetterPick;
 	}
 
-	int sz = (int)map->ents.size();
-
 	start -= mapOffset;
 
 	if (pickModelPoly(start, dir, vec3(), 0, hullIdx, tempPickInfo))
@@ -2536,7 +2572,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		}
 	}
 
-	for (int i = 0; i < sz; i++)
+	for (size_t i = 0; i < map->ents.size(); i++)
 	{
 		if (renderEnts[i].hide)
 			continue;
@@ -2573,8 +2609,26 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		}
 		else if (i > 0 && g_render_flags & RENDER_POINT_ENTS)
 		{
-			vec3 mins = renderEnts[i].offset + renderEnts[i].pointEntCube->mins;
-			vec3 maxs = renderEnts[i].offset + renderEnts[i].pointEntCube->maxs;
+			vec3 mins;
+			vec3 maxs;
+			if (g_render_flags & RENDER_MODELS && renderEnts[i].mdl)
+			{
+				//renderEnts[i].mdl->ExtractBBox(mins, maxs);
+				mins += renderEnts[i].offset + renderEnts[i].mdl->mins;
+				maxs += renderEnts[i].offset + renderEnts[i].mdl->maxs;
+
+				if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
+				{
+					if (!*tmpMap || *tmpMap == map)
+					{
+						tempPickInfo.SetSelectedEnt(i);
+						*tmpMap = map;
+						foundBetterPick = true;
+					}
+				}
+			}
+			mins = renderEnts[i].offset + renderEnts[i].pointEntCube->mins;
+			maxs = renderEnts[i].offset + renderEnts[i].pointEntCube->maxs;
 			if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
 			{
 				if (!*tmpMap || *tmpMap == map)

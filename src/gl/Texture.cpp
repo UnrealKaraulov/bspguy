@@ -11,6 +11,7 @@ std::vector<Texture*> dumpTextures;
 
 Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 {
+	this->wad_name = "";
 	this->width = _width;
 	this->height = _height;
 	this->nearFilter = GL_LINEAR;
@@ -31,6 +32,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 
 Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char* name)
 {
+	this->wad_name = "";
 	this->width = _width;
 	this->height = _height;
 	this->nearFilter = GL_LINEAR;
@@ -51,6 +53,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 
 Texture::~Texture()
 {
+	this->wad_name = "";
 	if (uploaded)
 		glDeleteTextures(1, &id);
 	delete[] data;

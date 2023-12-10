@@ -18,6 +18,7 @@ Wad::Wad(void)
 Wad::Wad(const std::string& file)
 {
 	this->filename = file;
+	this->wadname = basename(file);
 	dirEntries.clear();
 	if (filedata)
 		delete[] filedata;
