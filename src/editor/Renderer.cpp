@@ -2032,16 +2032,19 @@ void Renderer::selectMapId(int id)
 		}
 	}
 	SelectedMap = NULL;
+	SelectedMapChanged = true;
 }
 
 void Renderer::selectMap(Bsp* map)
 {
 	SelectedMap = map;
+	SelectedMapChanged = true;
 }
 
 void Renderer::deselectMap()
 {
 	SelectedMap = NULL;
+	SelectedMapChanged = true;
 }
 
 void Renderer::clearSelection()

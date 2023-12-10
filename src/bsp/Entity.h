@@ -48,6 +48,7 @@ public:
 	void addKeyvalue(const std::string key, const std::string value, bool multisupport = false);
 	void removeKeyvalue(const std::string key);
 	bool renameKey(int idx, const std::string& newName);
+	bool renameKey(const std::string& oldName, const std::string& newName);
 	void clearAllKeyvalues();
 	void clearEmptyKeyvalues();
 

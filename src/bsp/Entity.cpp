@@ -62,6 +62,10 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 
 void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
 {
+	if (!key.size())
+		return;
+	if (key == "origin")
+		originInited = false;
 	cachedModelIdx = -2;
 	targetsCached = false;
 
@@ -70,8 +74,12 @@ void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
 
 void Entity::removeKeyvalue(const std::string key)
 {
-	if (!strlen(key))
+	if (!key.size())
 		return;
+
+	if (key == "origin")
+		originInited = false;
+
 	if (std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end())
 		keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
 
@@ -93,6 +101,9 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	}
 	if (keyOrder[idx].starts_with("render"))
 		updateRenderModes();
+	if (keyOrder[idx] == "origin" || newName == "origin")
+		originInited = false;
+
 	for (int i = 0; i < keyOrder.size(); i++)
 	{
 		if (keyOrder[i] == newName)
@@ -101,6 +112,40 @@ bool Entity::renameKey(int idx, const std::string& newName)
 		}
 	}
 
+
+	keyvalues[newName] = keyvalues[keyOrder[idx]];
+	keyvalues.erase(keyOrder[idx]);
+	keyOrder[idx] = newName;
+	cachedModelIdx = -2;
+	targetsCached = false;
+	return true;
+}
+
+bool Entity::renameKey(const std::string& oldName, const std::string& newName)
+{
+	if (oldName.empty() || newName.empty())
+	{
+		return false;
+	}
+	if (oldName == "origin" || newName == "origin")
+		originInited = false;
+
+	if (oldName.starts_with("render") || newName.starts_with("render"))
+		updateRenderModes();
+	int idx = -1;
+	for (int i = 0; i < keyOrder.size(); i++)
+	{
+		if (keyOrder[i] == newName)
+		{
+			return false;
+		}
+		else if (keyOrder[i] == oldName)
+		{
+			idx = i;
+		}
+	}
+	if (idx == -1)
+		return false;
 	keyvalues[newName] = keyvalues[keyOrder[idx]];
 	keyvalues.erase(keyOrder[idx]);
 	keyOrder[idx] = newName;
