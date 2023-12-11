@@ -87,6 +87,14 @@ void Bsp::init_empty_bsp()
 
 		while (models[0].nVisLeafs >= leafCount)
 			create_leaf(CONTENTS_EMPTY);*/
+
+
+
+	BSPNODE32& node = nodes[0];
+	node.iChildren[0] = node.iChildren[1] = -1;
+
+	BSPCLIPNODE32& cnode = clipnodes[0];
+	cnode.iChildren[0] = cnode.iChildren[1] = -1;
 }
 
 void Bsp::selectModelEnt()
