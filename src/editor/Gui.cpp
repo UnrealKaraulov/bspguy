@@ -998,321 +998,229 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 void Gui::drawMenuBar()
 {
 	ImGuiContext& g = *GImGui;
-	ImGui::BeginMainMenuBar();
-	Bsp* map = app->getSelectedMap();
-	BspRenderer* rend = NULL;
-
-
-	if (map)
+	if (ImGui::BeginMainMenuBar())
 	{
-		rend = map->getBspRender();
-		if (ifd::FileDialog::Instance().IsDone("WadOpenDialog"))
+		Bsp* map = app->getSelectedMap();
+		BspRenderer* rend = NULL;
+
+
+		if (map)
+		{
+			rend = map->getBspRender();
+			if (ifd::FileDialog::Instance().IsDone("WadOpenDialog"))
+			{
+				if (ifd::FileDialog::Instance().HasResult())
+				{
+					std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+					for (int i = 0; i < map->ents.size(); i++)
+					{
+						if (map->ents[i]->keyvalues["classname"] == "worldspawn")
+						{
+							std::vector<std::string> wadNames = splitString(map->ents[i]->keyvalues["wad"], ";");
+							std::string newWadNames;
+							for (int k = 0; k < wadNames.size(); k++)
+							{
+								if (wadNames[k].find(res.filename().string()) == std::string::npos)
+									newWadNames += wadNames[k] + ";";
+							}
+							map->ents[i]->setOrAddKeyvalue("wad", newWadNames);
+							break;
+						}
+					}
+					app->updateEnts();
+					ImportWad(map, app, res.string());
+					app->reloadBspModels();
+					g_settings.lastdir = res.parent_path().string();
+				}
+				ifd::FileDialog::Instance().Close();
+			}
+		}
+
+		if (ifd::FileDialog::Instance().IsDone("MapOpenDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				for (int i = 0; i < map->ents.size(); i++)
+				std::string pathlowercase = toLowerCase(res.string());
+				if (pathlowercase.ends_with(".wad"))
 				{
-					if (map->ents[i]->keyvalues["classname"] == "worldspawn")
+					if (!app->SelectedMap)
 					{
-						std::vector<std::string> wadNames = splitString(map->ents[i]->keyvalues["wad"], ";");
-						std::string newWadNames;
-						for (int k = 0; k < wadNames.size(); k++)
+						app->addMap(new Bsp(""));
+						app->selectMapId(0);
+					}
+
+					if (app->SelectedMap)
+					{
+						bool foundInMap = false;
+						for (auto& wad : app->SelectedMap->getBspRender()->wads)
 						{
-							if (wadNames[k].find(res.filename().string()) == std::string::npos)
-								newWadNames += wadNames[k] + ";";
+							std::string tmppath = toLowerCase(wad->filename);
+							if (tmppath.find(basename(pathlowercase)) != std::string::npos)
+							{
+								foundInMap = true;
+								print_log(get_localized_string(LANG_0340));
+								break;
+							}
 						}
-						map->ents[i]->setOrAddKeyvalue("wad", newWadNames);
-						break;
+
+						if (!foundInMap)
+						{
+							Wad* wad = new Wad(res.string());
+							if (wad->readInfo())
+							{
+								app->SelectedMap->getBspRender()->wads.push_back(wad);
+								if (!app->SelectedMap->ents[0]->keyvalues["wad"].ends_with(";"))
+									app->SelectedMap->ents[0]->keyvalues["wad"] += ";";
+								app->SelectedMap->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
+								app->SelectedMap->update_ent_lump();
+								app->updateEnts();
+								map->getBspRender()->reload();
+							}
+							else
+								delete wad;
+						}
 					}
 				}
-				app->updateEnts();
-				ImportWad(map, app, res.string());
-				app->reloadBspModels();
+				else if (pathlowercase.ends_with(".mdl"))
+				{
+					Bsp* tmpMap = new Bsp(res.string());
+					tmpMap->is_mdl_model = true;
+					app->addMap(tmpMap);
+				}
+				else
+				{
+					app->addMap(new Bsp(res.string()));
+				}
 				g_settings.lastdir = res.parent_path().string();
 			}
 			ifd::FileDialog::Instance().Close();
 		}
-	}
 
-	if (ifd::FileDialog::Instance().IsDone("MapOpenDialog"))
-	{
-		if (ifd::FileDialog::Instance().HasResult())
+		if (ImGui::BeginMenu(get_localized_string(LANG_0478).c_str()))
 		{
-			std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-			std::string pathlowercase = toLowerCase(res.string());
-			if (pathlowercase.ends_with(".wad"))
+			if (ImGui::MenuItem(get_localized_string(LANG_0479).c_str(), NULL, false, map && !map->is_mdl_model && !app->isLoading))
 			{
-				if (!app->SelectedMap)
-				{
-					app->addMap(new Bsp(""));
-					app->selectMapId(0);
-				}
+				map->update_ent_lump();
+				map->update_lump_pointers();
+				map->write(map->bsp_path);
+			}
+			if (ImGui::BeginMenu(get_localized_string(LANG_0480).c_str(), map && !map->is_mdl_model && !app->isLoading))
+			{
+				bool old_is_bsp30ext = map->is_bsp30ext;
+				bool old_is_bsp2 = map->is_bsp2;
+				bool old_is_bsp2_old = map->is_bsp2_old;
+				bool old_is_bsp29 = map->is_bsp29;
+				bool old_is_32bit_clipnodes = map->is_32bit_clipnodes;
+				bool old_is_broken_clipnodes = map->is_broken_clipnodes;
+				bool old_is_blue_shift = map->is_blue_shift;
+				bool old_is_colored_lightmap = map->is_colored_lightmap;
 
-				if (app->SelectedMap)
-				{
-					bool foundInMap = false;
-					for (auto& wad : app->SelectedMap->getBspRender()->wads)
-					{
-						std::string tmppath = toLowerCase(wad->filename);
-						if (tmppath.find(basename(pathlowercase)) != std::string::npos)
-						{
-							foundInMap = true;
-							print_log(get_localized_string(LANG_0340));
-							break;
-						}
-					}
+				int old_bsp_version = map->bsp_header.nVersion;
 
-					if (!foundInMap)
+				bool is_default_format = !old_is_bsp30ext && !old_is_bsp2 &&
+					!old_is_bsp2_old && !old_is_bsp29 && !old_is_32bit_clipnodes && !old_is_broken_clipnodes
+					&& !old_is_blue_shift && old_is_colored_lightmap && old_bsp_version == 30;
+
+				bool is_need_reload = false;
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0481).c_str(), NULL, is_default_format))
+				{
+					if (map->isValid())
 					{
-						Wad* wad = new Wad(res.string());
-						if (wad->readInfo())
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = false;
+						map->is_bsp2 = false;
+						map->is_bsp2_old = false;
+						map->is_bsp29 = false;
+						map->is_32bit_clipnodes = false;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = false;
+						map->is_colored_lightmap = true;
+
+						map->bsp_header.nVersion = 30;
+
+						if (map->validate() && map->isValid())
 						{
-							app->SelectedMap->getBspRender()->wads.push_back(wad);
-							if (!app->SelectedMap->ents[0]->keyvalues["wad"].ends_with(";"))
-								app->SelectedMap->ents[0]->keyvalues["wad"] += ";";
-							app->SelectedMap->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
-							app->SelectedMap->update_ent_lump();
-							app->updateEnts();
-							map->getBspRender()->reload();
+							is_need_reload = true;
+							map->write(map->bsp_path);
 						}
 						else
-							delete wad;
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
+						}
 					}
 				}
-			}
-			else if (pathlowercase.ends_with(".mdl"))
-			{
-				Bsp* tmpMap = new Bsp(res.string());
-				tmpMap->is_mdl_model = true;
-				app->addMap(tmpMap);
-			}
-			else
-			{
-				app->addMap(new Bsp(res.string()));
-			}
-			g_settings.lastdir = res.parent_path().string();
-		}
-		ifd::FileDialog::Instance().Close();
-	}
 
-	if (ImGui::BeginMenu(get_localized_string(LANG_0478).c_str()))
-	{
-		if (ImGui::MenuItem(get_localized_string(LANG_0479).c_str(), NULL, false, map && !map->is_mdl_model && !app->isLoading))
-		{
-			map->update_ent_lump();
-			map->update_lump_pointers();
-			map->write(map->bsp_path);
-		}
-		if (ImGui::BeginMenu(get_localized_string(LANG_0480).c_str(), map && !map->is_mdl_model && !app->isLoading))
-		{
-			bool old_is_bsp30ext = map->is_bsp30ext;
-			bool old_is_bsp2 = map->is_bsp2;
-			bool old_is_bsp2_old = map->is_bsp2_old;
-			bool old_is_bsp29 = map->is_bsp29;
-			bool old_is_32bit_clipnodes = map->is_32bit_clipnodes;
-			bool old_is_broken_clipnodes = map->is_broken_clipnodes;
-			bool old_is_blue_shift = map->is_blue_shift;
-			bool old_is_colored_lightmap = map->is_colored_lightmap;
-
-			int old_bsp_version = map->bsp_header.nVersion;
-
-			bool is_default_format = !old_is_bsp30ext && !old_is_bsp2 &&
-				!old_is_bsp2_old && !old_is_bsp29 && !old_is_32bit_clipnodes && !old_is_broken_clipnodes
-				&& !old_is_blue_shift && old_is_colored_lightmap && old_bsp_version == 30;
-
-			bool is_need_reload = false;
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0481).c_str(), NULL, is_default_format))
-			{
-				if (map->isValid())
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = false;
-					map->is_bsp2 = false;
-					map->is_bsp2_old = false;
-					map->is_bsp29 = false;
-					map->is_32bit_clipnodes = false;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = true;
-
-					map->bsp_header.nVersion = 30;
-
-					if (map->validate() && map->isValid())
+					ImGui::BeginTooltip();
+					if (is_default_format)
 					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
+						ImGui::TextUnformatted(get_localized_string(LANG_0482).c_str());
+					}
+					else if (map->isValid())
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0483).c_str());
 					}
 					else
 					{
-						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
+						ImGui::TextUnformatted(get_localized_string(LANG_0484).c_str());
+					}
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0485).c_str(), NULL, old_is_blue_shift))
+				{
+					if (map->isValid())
+					{
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = false;
+						map->is_bsp2 = false;
+						map->is_bsp2_old = false;
+						map->is_bsp29 = false;
+						map->is_32bit_clipnodes = false;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = true;
+						map->is_colored_lightmap = true;
+
+						map->bsp_header.nVersion = 30;
+
+						if (map->validate() && map->isValid())
+						{
+							is_need_reload = true;
+							map->write(map->bsp_path);
+						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
 					}
 				}
-			}
 
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (is_default_format)
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0482).c_str());
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0483).c_str());
-				}
-				else
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0484).c_str());
-				}
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0485).c_str(), NULL, old_is_blue_shift))
-			{
-				if (map->isValid())
-				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = false;
-					map->is_bsp2 = false;
-					map->is_bsp2_old = false;
-					map->is_bsp29 = false;
-					map->is_32bit_clipnodes = false;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = true;
-					map->is_colored_lightmap = true;
-
-					map->bsp_header.nVersion = 30;
-
-					if (map->validate() && map->isValid())
+					ImGui::BeginTooltip();
+					if (old_is_blue_shift)
 					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
+						ImGui::TextUnformatted(get_localized_string(LANG_0486).c_str());
+					}
+					else if (map->isValid())
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0487).c_str());
 					}
 					else
 					{
-						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						ImGui::TextUnformatted(get_localized_string(LANG_0488).c_str());
 					}
+					ImGui::EndTooltip();
 				}
-			}
 
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (old_is_blue_shift)
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0486).c_str());
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0487).c_str());
-				}
-				else
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0488).c_str());
-				}
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0489).c_str(), NULL, old_is_bsp29 && !old_is_broken_clipnodes && old_is_colored_lightmap))
-			{
-				if (map->isValid())
-				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = false;
-					map->is_bsp2 = false;
-					map->is_bsp2_old = false;
-					map->is_bsp29 = true;
-					map->is_32bit_clipnodes = false;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = true;
-
-					map->bsp_header.nVersion = 29;
-
-					if (map->validate() && map->isValid())
-					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
-					}
-				}
-			}
-
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (old_is_bsp29 && !old_is_broken_clipnodes && old_is_colored_lightmap)
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0490).c_str());
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0491).c_str());
-				}
-				else
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0492).c_str());
-				}
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0493).c_str(), NULL, old_is_bsp29 && !old_is_broken_clipnodes && !old_is_colored_lightmap))
-			{
-				if (map->isValid())
-				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = false;
-					map->is_bsp2 = false;
-					map->is_bsp2_old = false;
-					map->is_bsp29 = true;
-					map->is_32bit_clipnodes = false;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = false;
-
-					map->bsp_header.nVersion = 29;
-
-					if (map->validate() && map->isValid())
-					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
-					}
-				}
-			}
-
-
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (old_is_bsp29 && !old_is_broken_clipnodes && !old_is_colored_lightmap)
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0494).c_str());
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0495).c_str());
-				}
-				else
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0496).c_str());
-				}
-				ImGui::EndTooltip();
-			}
-
-			if (old_is_broken_clipnodes)
-			{
-				if (ImGui::MenuItem(get_localized_string(LANG_0497).c_str(), NULL, old_is_bsp29 && old_is_colored_lightmap))
+				if (ImGui::MenuItem(get_localized_string(LANG_0489).c_str(), NULL, old_is_bsp29 && !old_is_broken_clipnodes && old_is_colored_lightmap))
 				{
 					if (map->isValid())
 					{
@@ -1324,7 +1232,190 @@ void Gui::drawMenuBar()
 						map->is_bsp2_old = false;
 						map->is_bsp29 = true;
 						map->is_32bit_clipnodes = false;
-						map->is_broken_clipnodes = true;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = false;
+						map->is_colored_lightmap = true;
+
+						map->bsp_header.nVersion = 29;
+
+						if (map->validate() && map->isValid())
+						{
+							is_need_reload = true;
+							map->write(map->bsp_path);
+						}
+					}
+				}
+
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					if (old_is_bsp29 && !old_is_broken_clipnodes && old_is_colored_lightmap)
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0490).c_str());
+					}
+					else if (map->isValid())
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0491).c_str());
+					}
+					else
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0492).c_str());
+					}
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0493).c_str(), NULL, old_is_bsp29 && !old_is_broken_clipnodes && !old_is_colored_lightmap))
+				{
+					if (map->isValid())
+					{
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = false;
+						map->is_bsp2 = false;
+						map->is_bsp2_old = false;
+						map->is_bsp29 = true;
+						map->is_32bit_clipnodes = false;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = false;
+						map->is_colored_lightmap = false;
+
+						map->bsp_header.nVersion = 29;
+
+						if (map->validate() && map->isValid())
+						{
+							is_need_reload = true;
+							map->write(map->bsp_path);
+						}
+					}
+				}
+
+
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					if (old_is_bsp29 && !old_is_broken_clipnodes && !old_is_colored_lightmap)
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0494).c_str());
+					}
+					else if (map->isValid())
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0495).c_str());
+					}
+					else
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0496).c_str());
+					}
+					ImGui::EndTooltip();
+				}
+
+				if (old_is_broken_clipnodes)
+				{
+					if (ImGui::MenuItem(get_localized_string(LANG_0497).c_str(), NULL, old_is_bsp29 && old_is_colored_lightmap))
+					{
+						if (map->isValid())
+						{
+							map->update_ent_lump();
+							map->update_lump_pointers();
+
+							map->is_bsp30ext = false;
+							map->is_bsp2 = false;
+							map->is_bsp2_old = false;
+							map->is_bsp29 = true;
+							map->is_32bit_clipnodes = false;
+							map->is_broken_clipnodes = true;
+							map->is_blue_shift = false;
+							map->is_colored_lightmap = true;
+
+							map->bsp_header.nVersion = 29;
+
+							if (map->validate() && map->isValid())
+							{
+								is_need_reload = true;
+								map->write(map->bsp_path);
+							}
+						}
+					}
+
+					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+					{
+						ImGui::BeginTooltip();
+						if (old_is_bsp29 && old_is_colored_lightmap)
+						{
+							ImGui::TextUnformatted(get_localized_string(LANG_0498).c_str());
+						}
+						else if (map->isValid())
+						{
+							ImGui::TextUnformatted(get_localized_string(LANG_0499).c_str());
+						}
+						else
+						{
+							ImGui::TextUnformatted(get_localized_string(LANG_0500).c_str());
+						}
+						ImGui::EndTooltip();
+					}
+
+					if (ImGui::MenuItem(get_localized_string(LANG_0501).c_str(), NULL, old_is_bsp29 && !old_is_colored_lightmap))
+					{
+						if (map->isValid())
+						{
+							map->update_ent_lump();
+							map->update_lump_pointers();
+
+							map->is_bsp30ext = false;
+							map->is_bsp2 = false;
+							map->is_bsp2_old = false;
+							map->is_bsp29 = true;
+							map->is_32bit_clipnodes = false;
+							map->is_broken_clipnodes = true;
+							map->is_blue_shift = false;
+							map->is_colored_lightmap = false;
+
+							map->bsp_header.nVersion = 29;
+
+							if (map->validate() && map->isValid())
+							{
+								is_need_reload = true;
+								map->write(map->bsp_path);
+							}
+						}
+					}
+
+					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+					{
+						ImGui::BeginTooltip();
+						if (old_is_bsp29 && !map->is_colored_lightmap && !old_is_colored_lightmap)
+						{
+							ImGui::TextUnformatted(get_localized_string(LANG_0502).c_str());
+						}
+						else if (map->isValid())
+						{
+							ImGui::TextUnformatted(get_localized_string(LANG_0503).c_str());
+						}
+						else
+						{
+							ImGui::TextUnformatted(get_localized_string(LANG_0504).c_str());
+						}
+						ImGui::EndTooltip();
+					}
+
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0505).c_str(), NULL, old_is_bsp2 && !old_is_bsp2_old && old_is_colored_lightmap))
+				{
+					if (map->isValid())
+					{
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = false;
+						map->is_bsp2 = true;
+						map->is_bsp2_old = false;
+						map->is_bsp29 = true;
+						map->is_32bit_clipnodes = true;
+						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = true;
 
@@ -1341,22 +1432,24 @@ void Gui::drawMenuBar()
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
 					ImGui::BeginTooltip();
-					if (old_is_bsp29 && old_is_colored_lightmap)
+					if (old_is_bsp2 && !old_is_bsp2_old && old_is_colored_lightmap)
 					{
-						ImGui::TextUnformatted(get_localized_string(LANG_0498).c_str());
+						ImGui::TextUnformatted("Map already saved in BSP2(29) + COLOR LIGHT format.");
 					}
 					else if (map->isValid())
 					{
-						ImGui::TextUnformatted(get_localized_string(LANG_0499).c_str());
+						ImGui::TextUnformatted("Saving map to BSP2(29) + COLOR LIGHT compatibility format.");
 					}
 					else
 					{
-						ImGui::TextUnformatted(get_localized_string(LANG_0500).c_str());
+						ImGui::TextUnformatted("Map limits is reached, and can't be converted to BSP2(29) + COLOR LIGH.");
 					}
 					ImGui::EndTooltip();
 				}
 
-				if (ImGui::MenuItem(get_localized_string(LANG_0501).c_str(), NULL, old_is_bsp29 && !old_is_colored_lightmap))
+
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0506).c_str(), NULL, old_is_bsp2 && !old_is_bsp2_old && !old_is_colored_lightmap))
 				{
 					if (map->isValid())
 					{
@@ -1364,11 +1457,11 @@ void Gui::drawMenuBar()
 						map->update_lump_pointers();
 
 						map->is_bsp30ext = false;
-						map->is_bsp2 = false;
+						map->is_bsp2 = true;
 						map->is_bsp2_old = false;
 						map->is_bsp29 = true;
-						map->is_32bit_clipnodes = false;
-						map->is_broken_clipnodes = true;
+						map->is_32bit_clipnodes = true;
+						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = false;
 
@@ -1385,690 +1478,299 @@ void Gui::drawMenuBar()
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
 					ImGui::BeginTooltip();
-					if (old_is_bsp29 && !map->is_colored_lightmap && !old_is_colored_lightmap)
+					if (old_is_bsp2 && !old_is_bsp2_old && !old_is_colored_lightmap)
 					{
-						ImGui::TextUnformatted(get_localized_string(LANG_0502).c_str());
+						ImGui::TextUnformatted("Map already saved in BSP2(29) + MONO LIGHT format.");
 					}
 					else if (map->isValid())
 					{
-						ImGui::TextUnformatted(get_localized_string(LANG_0503).c_str());
+						ImGui::TextUnformatted("Saving map to BSP2(29) + MONO LIGHT compatibility format.");
 					}
 					else
 					{
-						ImGui::TextUnformatted(get_localized_string(LANG_0504).c_str());
+						ImGui::TextUnformatted("Map limits is reached, and can't be converted to BSP2(29) + MONO LIGH.");
 					}
 					ImGui::EndTooltip();
 				}
 
-			}
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0505).c_str(), NULL, old_is_bsp2 && !old_is_bsp2_old && old_is_colored_lightmap))
-			{
-				if (map->isValid())
+				if (ImGui::MenuItem(get_localized_string(LANG_0507).c_str(), NULL, old_is_bsp2_old && old_is_colored_lightmap))
 				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = false;
-					map->is_bsp2 = true;
-					map->is_bsp2_old = false;
-					map->is_bsp29 = true;
-					map->is_32bit_clipnodes = true;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = true;
-
-					map->bsp_header.nVersion = 29;
-
-					if (map->validate() && map->isValid())
+					if (map->isValid())
 					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = false;
+						map->is_bsp2 = true;
+						map->is_bsp2_old = true;
+						map->is_bsp29 = true;
+						map->is_32bit_clipnodes = true;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = false;
+						map->is_colored_lightmap = true;
+
+						map->bsp_header.nVersion = 29;
+
+						if (map->validate() && map->isValid())
+						{
+							is_need_reload = true;
+							map->write(map->bsp_path);
+						}
 					}
 				}
-			}
 
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (old_is_bsp2 && !old_is_bsp2_old && old_is_colored_lightmap)
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
-					ImGui::TextUnformatted("Map already saved in BSP2(29) + COLOR LIGHT format.");
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted("Saving map to BSP2(29) + COLOR LIGHT compatibility format.");
-				}
-				else
-				{
-					ImGui::TextUnformatted("Map limits is reached, and can't be converted to BSP2(29) + COLOR LIGH.");
-				}
-				ImGui::EndTooltip();
-			}
-
-
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0506).c_str(), NULL, old_is_bsp2 && !old_is_bsp2_old && !old_is_colored_lightmap))
-			{
-				if (map->isValid())
-				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = false;
-					map->is_bsp2 = true;
-					map->is_bsp2_old = false;
-					map->is_bsp29 = true;
-					map->is_32bit_clipnodes = true;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = false;
-
-					map->bsp_header.nVersion = 29;
-
-					if (map->validate() && map->isValid())
+					ImGui::BeginTooltip();
+					if (old_is_bsp2_old && !old_is_colored_lightmap)
 					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
+						ImGui::TextUnformatted(get_localized_string(LANG_0508).c_str());
+					}
+					else if (map->isValid())
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0509).c_str());
+					}
+					else
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0510).c_str());
+					}
+					ImGui::EndTooltip();
+				}
+
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0511).c_str(), NULL, old_is_bsp2_old && !old_is_colored_lightmap))
+				{
+					if (map->isValid())
+					{
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = false;
+						map->is_bsp2 = true;
+						map->is_bsp2_old = true;
+						map->is_bsp29 = true;
+						map->is_32bit_clipnodes = true;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = false;
+						map->is_colored_lightmap = false;
+
+						map->bsp_header.nVersion = 29;
+
+						if (map->validate() && map->isValid())
+						{
+							is_need_reload = true;
+							map->write(map->bsp_path);
+						}
 					}
 				}
-			}
 
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (old_is_bsp2 && !old_is_bsp2_old && !old_is_colored_lightmap)
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
-					ImGui::TextUnformatted("Map already saved in BSP2(29) + MONO LIGHT format.");
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted("Saving map to BSP2(29) + MONO LIGHT compatibility format.");
-				}
-				else
-				{
-					ImGui::TextUnformatted("Map limits is reached, and can't be converted to BSP2(29) + MONO LIGH.");
-				}
-				ImGui::EndTooltip();
-			}
-
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0507).c_str(), NULL, old_is_bsp2_old && old_is_colored_lightmap))
-			{
-				if (map->isValid())
-				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = false;
-					map->is_bsp2 = true;
-					map->is_bsp2_old = true;
-					map->is_bsp29 = true;
-					map->is_32bit_clipnodes = true;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = true;
-
-					map->bsp_header.nVersion = 29;
-
-					if (map->validate() && map->isValid())
+					ImGui::BeginTooltip();
+					if (old_is_bsp2_old && !old_is_colored_lightmap)
 					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
+						ImGui::TextUnformatted(get_localized_string(LANG_0512).c_str());
+					}
+					else if (map->isValid())
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0513).c_str());
+					}
+					else
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0514).c_str());
+					}
+					ImGui::EndTooltip();
+				}
+
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0515).c_str(), NULL, old_is_bsp30ext && old_is_colored_lightmap))
+				{
+					if (map->isValid())
+					{
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = true;
+						map->is_bsp2 = false;
+						map->is_bsp2_old = false;
+						map->is_bsp29 = false;
+						map->is_32bit_clipnodes = true;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = false;
+						map->is_colored_lightmap = true;
+
+						map->bsp_header.nVersion = 30;
+
+						if (map->validate() && map->isValid())
+						{
+							is_need_reload = true;
+							map->write(map->bsp_path);
+						}
 					}
 				}
-			}
 
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (old_is_bsp2_old && !old_is_colored_lightmap)
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0508).c_str());
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0509).c_str());
-				}
-				else
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0510).c_str());
-				}
-				ImGui::EndTooltip();
-			}
-
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0511).c_str(), NULL, old_is_bsp2_old && !old_is_colored_lightmap))
-			{
-				if (map->isValid())
-				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = false;
-					map->is_bsp2 = true;
-					map->is_bsp2_old = true;
-					map->is_bsp29 = true;
-					map->is_32bit_clipnodes = true;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = false;
-
-					map->bsp_header.nVersion = 29;
-
-					if (map->validate() && map->isValid())
+					ImGui::BeginTooltip();
+					if (old_is_bsp30ext && old_is_colored_lightmap)
 					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
+						ImGui::TextUnformatted(get_localized_string(LANG_0516).c_str());
+					}
+					else if (map->isValid())
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0517).c_str());
+					}
+					else
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0518).c_str());
+					}
+					ImGui::EndTooltip();
+				}
+
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0519).c_str(), NULL, old_is_bsp2_old && !old_is_colored_lightmap))
+				{
+					if (map->isValid())
+					{
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = true;
+						map->is_bsp2 = false;
+						map->is_bsp2_old = false;
+						map->is_bsp29 = false;
+						map->is_32bit_clipnodes = true;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = false;
+						map->is_colored_lightmap = false;
+
+						map->bsp_header.nVersion = 30;
+
+						if (map->validate() && map->isValid())
+						{
+							is_need_reload = true;
+							map->write(map->bsp_path);
+						}
 					}
 				}
-			}
 
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (old_is_bsp2_old && !old_is_colored_lightmap)
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0512).c_str());
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0513).c_str());
-				}
-				else
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0514).c_str());
-				}
-				ImGui::EndTooltip();
-			}
-
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0515).c_str(), NULL, old_is_bsp30ext && old_is_colored_lightmap))
-			{
-				if (map->isValid())
-				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = true;
-					map->is_bsp2 = false;
-					map->is_bsp2_old = false;
-					map->is_bsp29 = false;
-					map->is_32bit_clipnodes = true;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = true;
-
-					map->bsp_header.nVersion = 30;
-
-					if (map->validate() && map->isValid())
+					ImGui::BeginTooltip();
+					if (old_is_bsp30ext && !old_is_colored_lightmap)
 					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
+						ImGui::TextUnformatted(get_localized_string(LANG_0520).c_str());
 					}
-				}
-			}
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				if (old_is_bsp30ext && old_is_colored_lightmap)
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0516).c_str());
-				}
-				else if (map->isValid())
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0517).c_str());
-				}
-				else
-				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0518).c_str());
-				}
-				ImGui::EndTooltip();
-			}
-
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0519).c_str(), NULL, old_is_bsp2_old && !old_is_colored_lightmap))
-			{
-				if (map->isValid())
-				{
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->is_bsp30ext = true;
-					map->is_bsp2 = false;
-					map->is_bsp2_old = false;
-					map->is_bsp29 = false;
-					map->is_32bit_clipnodes = true;
-					map->is_broken_clipnodes = false;
-					map->is_blue_shift = false;
-					map->is_colored_lightmap = false;
-
-					map->bsp_header.nVersion = 30;
-
-					if (map->validate() && map->isValid())
+					else if (map->isValid())
 					{
-						is_need_reload = true;
-						map->write(map->bsp_path);
+						ImGui::TextUnformatted(get_localized_string(LANG_0521).c_str());
 					}
+					else
+					{
+						ImGui::TextUnformatted(get_localized_string(LANG_0522).c_str());
+					}
+					ImGui::EndTooltip();
 				}
-			}
 
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+
+				map->is_bsp30ext = old_is_bsp30ext;
+				map->is_bsp2 = old_is_bsp2;
+				map->is_bsp2_old = old_is_bsp2_old;
+				map->is_bsp29 = old_is_bsp29;
+				map->is_32bit_clipnodes = old_is_32bit_clipnodes;
+				map->is_broken_clipnodes = old_is_broken_clipnodes;
+				map->is_blue_shift = old_is_blue_shift;
+				map->is_colored_lightmap = old_is_colored_lightmap;
+				map->bsp_header.nVersion = old_bsp_version;
+				if (is_need_reload)
+				{
+					app->reloadMaps();
+				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu(get_localized_string(LANG_0523).c_str()))
 			{
-				ImGui::BeginTooltip();
-				if (old_is_bsp30ext && !old_is_colored_lightmap)
+				if (ImGui::MenuItem(get_localized_string(LANG_0524).c_str()))
 				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0520).c_str());
+					filterNeeded = true;
+					ifd::FileDialog::Instance().Open("MapOpenDialog", "Select map path", "Map file (*.bsp){.bsp}", false, g_settings.lastdir);
 				}
-				else if (map->isValid())
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0521).c_str());
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0525).c_str());
+					ImGui::EndTooltip();
 				}
-				else
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0526).c_str()))
 				{
-					ImGui::TextUnformatted(get_localized_string(LANG_0522).c_str());
+					filterNeeded = true;
+					ifd::FileDialog::Instance().Open("MapOpenDialog", "Select model path", "Model file (*.mdl){.mdl}", false, g_settings.lastdir);
 				}
-				ImGui::EndTooltip();
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0527).c_str());
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0528).c_str()))
+				{
+					filterNeeded = true;
+					ifd::FileDialog::Instance().Open("MapOpenDialog", "Select wad path", "Wad file (*.wad){.wad}", false, g_settings.lastdir);
+				}
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0529).c_str());
+					ImGui::EndTooltip();
+				}
+				ImGui::EndMenu();
 			}
 
-
-			map->is_bsp30ext = old_is_bsp30ext;
-			map->is_bsp2 = old_is_bsp2;
-			map->is_bsp2_old = old_is_bsp2_old;
-			map->is_bsp29 = old_is_bsp29;
-			map->is_32bit_clipnodes = old_is_32bit_clipnodes;
-			map->is_broken_clipnodes = old_is_broken_clipnodes;
-			map->is_blue_shift = old_is_blue_shift;
-			map->is_colored_lightmap = old_is_colored_lightmap;
-			map->bsp_header.nVersion = old_bsp_version;
-			if (is_need_reload)
-			{
-				app->reloadMaps();
-			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu(get_localized_string(LANG_0523).c_str()))
-		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0524).c_str()))
+			if (ImGui::MenuItem(get_localized_string(LANG_0530).c_str(), NULL, false, !app->isLoading && map))
 			{
 				filterNeeded = true;
-				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select map path", "Map file (*.bsp){.bsp}", false, g_settings.lastdir);
-			}
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0525).c_str());
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0526).c_str()))
-			{
-				filterNeeded = true;
-				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select model path", "Model file (*.mdl){.mdl}", false, g_settings.lastdir);
-			}
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0527).c_str());
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0528).c_str()))
-			{
-				filterNeeded = true;
-				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select wad path", "Wad file (*.wad){.wad}", false, g_settings.lastdir);
-			}
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0529).c_str());
-				ImGui::EndTooltip();
-			}
-			ImGui::EndMenu();
-		}
-
-		if (ImGui::MenuItem(get_localized_string(LANG_0530).c_str(), NULL, false, !app->isLoading && map))
-		{
-			filterNeeded = true;
-			int mapRenderId = map->getBspRenderId();
-			BspRenderer* mapRender = map->getBspRender();
-			if (mapRenderId >= 0)
-			{
-				app->deselectObject();
-				app->clearSelection();
-				app->deselectMap();
-				delete mapRender;
-				app->mapRenderers.erase(app->mapRenderers.begin() + mapRenderId);
-				app->selectMapId(0);
-			}
-		}
-
-
-		if (app->mapRenderers.size() > 1)
-		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0531).c_str(), NULL, false, !app->isLoading))
-			{
-				filterNeeded = true;
-				if (map)
+				int mapRenderId = map->getBspRenderId();
+				BspRenderer* mapRender = map->getBspRender();
+				if (mapRenderId >= 0)
 				{
 					app->deselectObject();
 					app->clearSelection();
 					app->deselectMap();
-					app->clearMaps();
-					app->addMap(new Bsp(""));
+					delete mapRender;
+					app->mapRenderers.erase(app->mapRenderers.begin() + mapRenderId);
 					app->selectMapId(0);
 				}
 			}
-		}
 
-		if (ImGui::BeginMenu(get_localized_string(LANG_0532).c_str(), !app->isLoading && map))
-		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0533).c_str(), NULL, false, map && !map->is_mdl_model))
-			{
-				std::string entFilePath;
-				if (g_settings.sameDirForEnt) {
-					std::string bspFilePath = map->bsp_path;
-					if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
-						entFilePath = bspFilePath + ".ent";
-					}
-					else {
-						entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
-					}
-				}
-				else {
-					entFilePath = g_working_dir + (map->bsp_name + ".ent");
-					createDir(g_working_dir);
-				}
 
-				print_log(get_localized_string(LANG_0342), entFilePath);
-				std::ofstream entFile(entFilePath, std::ios::trunc);
-				map->update_ent_lump();
-				if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
-				{
-					std::string entities = std::string(map->lumps[LUMP_ENTITIES], map->lumps[LUMP_ENTITIES] + map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
-					entFile.write(entities.c_str(), entities.size());
-				}
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL, false, map && !map->is_mdl_model))
+			if (app->mapRenderers.size() > 1)
 			{
-				print_log(get_localized_string(LANG_0343), g_working_dir, map->bsp_name + ".wad");
-				if (ExportWad(map))
+				if (ImGui::MenuItem(get_localized_string(LANG_0531).c_str(), NULL, false, !app->isLoading))
 				{
-					print_log(get_localized_string(LANG_0344));
-					map->delete_embedded_textures();
-					if (map->ents.size())
+					filterNeeded = true;
+					if (map)
 					{
-						std::string wadstr = map->ents[0]->keyvalues["wad"];
-						if (wadstr.find(map->bsp_name + ".wad" + ";") == std::string::npos)
-						{
-							map->ents[0]->keyvalues["wad"] += map->bsp_name + ".wad" + ";";
-						}
+						app->deselectObject();
+						app->clearSelection();
+						app->deselectMap();
+						app->clearMaps();
+						app->addMap(new Bsp(""));
+						app->selectMapId(0);
 					}
 				}
 			}
-			if (ImGui::BeginMenu("Wavefront (.obj) [WIP]", map && !map->is_mdl_model))
+
+			if (ImGui::BeginMenu(get_localized_string(LANG_0532).c_str(), !app->isLoading && map))
 			{
-				if (ImGui::MenuItem(get_localized_string(LANG_0535).c_str(), NULL))
-				{
-					map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, 1);
-				}
-
-				for (int scale = 2; scale < 10; scale++, scale++)
-				{
-					std::string scaleitem = "UpScale x" + std::to_string(scale);
-					if (ImGui::MenuItem(scaleitem.c_str(), NULL))
-					{
-						map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, scale);
-					}
-				}
-
-				for (int scale = 16; scale > 0; scale--, scale--)
-				{
-					std::string scaleitem = "DownScale x" + std::to_string(scale);
-					if (ImGui::MenuItem(scaleitem.c_str(), NULL))
-					{
-						map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, -scale);
-					}
-				}
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0536).c_str());
-				ImGui::EndTooltip();
-			}
-
-
-			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL, false, map && !map->is_mdl_model))
-			{
-				map->ExportToMapWIP(g_working_dir);
-			}
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Export .map ( NOT WORKING at this time:) )");
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0537).c_str(), NULL, false, map && !map->is_mdl_model))
-			{
-				map->ExportPortalFile();
-			}
-
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0538).c_str());
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0539).c_str(), NULL, false, map && !map->is_mdl_model))
-			{
-				map->ExportExtFile();
-			}
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Export face extens (.ext) file for rad.exe");
-				ImGui::EndTooltip();
-			}
-
-
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0540).c_str(), NULL, false, map && !map->is_mdl_model))
-			{
-				map->ExportLightFile();
-			}
-
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0541).c_str());
-				ImGui::EndTooltip();
-			}
-
-
-
-			if (ImGui::BeginMenu(get_localized_string(LANG_1076).c_str(), map && !map->is_mdl_model))
-			{
-				int modelIdx = -1;
-
-				if (app->pickInfo.GetSelectedEnt() >= 0)
-				{
-					modelIdx = map->ents[app->pickInfo.GetSelectedEnt()]->getBspModelIdx();
-				}
-
-				for (int i = 0; i < map->modelCount; i++)
-				{
-					if (ImGui::BeginMenu(((modelIdx != i ? "Export Model" : "+ Export Model") + std::to_string(i) + ".bsp").c_str()))
-					{
-						if (ImGui::BeginMenu(get_localized_string(LANG_1077).c_str(), i >= 0))
-						{
-							if (ImGui::MenuItem(get_localized_string(LANG_1154).c_str(), 0, false, i >= 0))
-							{
-								ExportModel(map, i, 0, false);
-							}
-							if (ImGui::MenuItem(get_localized_string(LANG_1155).c_str(), 0, false, i >= 0))
-							{
-								ExportModel(map, i, 2, false);
-							}
-							if (ImGui::MenuItem(get_localized_string(LANG_1156).c_str(), 0, false, i >= 0))
-							{
-								ExportModel(map, i, 1, false);
-							}
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(get_localized_string(LANG_1078).c_str(), i >= 0))
-						{
-							if (ImGui::MenuItem(get_localized_string(LANG_1173).c_str(), 0, false, i >= 0))
-							{
-								ExportModel(map, i, 0, true);
-							}
-							if (ImGui::MenuItem(get_localized_string(LANG_1174).c_str(), 0, false, i >= 0))
-							{
-								ExportModel(map, i, 2, true);
-							}
-							if (ImGui::MenuItem(get_localized_string(LANG_1175).c_str(), 0, false, i >= 0))
-							{
-								ExportModel(map, i, 1, true);
-							}
-							ImGui::EndMenu();
-						}
-
-						ImGui::EndMenu();
-					}
-				}
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::BeginMenu(get_localized_string(LANG_0542).c_str(), map && !map->is_mdl_model))
-			{
-				std::string hash = "##1";
-				for (auto& wad : map->getBspRender()->wads)
-				{
-					if (wad->dirEntries.size() == 0)
-						continue;
-					hash += "1";
-					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
-					{
-						print_log(get_localized_string(LANG_0345), basename(wad->filename));
-
-						createDir(g_working_dir + "wads/" + basename(wad->filename));
-
-						std::vector<int> texturesIds;
-						for (int i = 0; i < wad->dirEntries.size(); i++)
-						{
-							texturesIds.push_back(i);
-						}
-
-						std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](int file)
-							{
-								{
-									WADTEX* texture = wad->readTexture(file);
-
-									if (texture->szName[0] != '\0')
-									{
-										print_log(get_localized_string(LANG_0346), texture->szName, basename(wad->filename));
-										COLOR4* texturedata = ConvertWadTexToRGBA(texture);
-
-										lodepng_encode32_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
-											, (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
-
-
-										/*	int lastMipSize = (texture->nWidth / 8) * (texture->nHeight / 8);
-
-											COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + sizeof(short) - 40);
-
-											lodepng_encode24_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".pal.png").c_str()
-																  , (unsigned char*)palette, 8, 32);*/
-										delete texturedata;
-									}
-									delete texture;
-								}
-							});
-					}
-				}
-
-				ImGui::EndMenu();
-			}
-
-			if (ImGui::MenuItem(get_localized_string("LANG_DUMP_TEX").c_str(), NULL, false, map))
-			{
-				createDir(g_working_dir + map->bsp_name + "/dump_textures/");
-
-				if (dumpTextures.size() && rend)
-				{
-					for (const auto& tex : dumpTextures)
-					{
-						if (tex != rend->missingTex)
-						{
-							if (tex->format == GL_RGBA)
-								lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
-							else
-								lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
-						}
-					}
-				}
-			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string("LANG_DUMP_TEX_DESC").c_str());
-				ImGui::EndTooltip();
-			}
-
-			ImGui::EndMenu();
-		}
-
-
-		if (ImGui::BeginMenu(get_localized_string(LANG_0543).c_str(), !app->isLoading && map && !map->is_mdl_model))
-		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0544).c_str(), NULL))
-			{
-				showImportMapWidget_Type = SHOW_IMPORT_MODEL_BSP;
-				showImportMapWidget = true;
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0545).c_str(), NULL))
-			{
-				showImportMapWidget_Type = SHOW_IMPORT_MODEL_ENTITY;
-				showImportMapWidget = true;
-			}
-
-			if (map && ImGui::MenuItem(get_localized_string(LANG_1079).c_str(), NULL))
-			{
-				if (map)
-				{
-					map->ImportLightFile();
-				}
-				else
-				{
-					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0347));
-				}
-			}
-
-			if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0546).c_str());
-				ImGui::EndTooltip();
-			}
-
-
-			if (ImGui::MenuItem(get_localized_string(LANG_1080).c_str(), NULL))
-			{
-				if (map)
+				if (ImGui::MenuItem(get_localized_string(LANG_0533).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					std::string entFilePath;
 					if (g_settings.sameDirForEnt) {
@@ -2082,886 +1784,1208 @@ void Gui::drawMenuBar()
 					}
 					else {
 						entFilePath = g_working_dir + (map->bsp_name + ".ent");
+						createDir(g_working_dir);
 					}
 
-					print_log(get_localized_string(LANG_1052), entFilePath);
-					if (fileExists(entFilePath))
+					print_log(get_localized_string(LANG_0342), entFilePath);
+					std::ofstream entFile(entFilePath, std::ios::trunc);
+					map->update_ent_lump();
+					if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
 					{
-						int len;
-						char* newlump = loadFile(entFilePath, len);
-						map->replace_lump(LUMP_ENTITIES, newlump, len);
-						map->load_ents();
-						for (int i = 0; i < app->mapRenderers.size(); i++)
+						std::string entities = std::string(map->lumps[LUMP_ENTITIES], map->lumps[LUMP_ENTITIES] + map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
+						entFile.write(entities.c_str(), entities.size());
+					}
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL, false, map && !map->is_mdl_model))
+				{
+					print_log(get_localized_string(LANG_0343), g_working_dir, map->bsp_name + ".wad");
+					if (ExportWad(map))
+					{
+						print_log(get_localized_string(LANG_0344));
+						map->delete_embedded_textures();
+						if (map->ents.size())
 						{
-							BspRenderer* mapRender = app->mapRenderers[i];
-							mapRender->reload();
+							std::string wadstr = map->ents[0]->keyvalues["wad"];
+							if (wadstr.find(map->bsp_name + ".wad" + ";") == std::string::npos)
+							{
+								map->ents[0]->keyvalues["wad"] += map->bsp_name + ".wad" + ";";
+							}
 						}
+					}
+				}
+				if (ImGui::BeginMenu("Wavefront (.obj) [WIP]", map && !map->is_mdl_model))
+				{
+					if (ImGui::MenuItem(get_localized_string(LANG_0535).c_str(), NULL))
+					{
+						map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, 1);
+					}
+
+					for (int scale = 2; scale < 10; scale++, scale++)
+					{
+						std::string scaleitem = "UpScale x" + std::to_string(scale);
+						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
+						{
+							map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, scale);
+						}
+					}
+
+					for (int scale = 16; scale > 0; scale--, scale--)
+					{
+						std::string scaleitem = "DownScale x" + std::to_string(scale);
+						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
+						{
+							map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, -scale);
+						}
+					}
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0536).c_str());
+					ImGui::EndTooltip();
+				}
+
+
+				if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL, false, map && !map->is_mdl_model))
+				{
+					map->ExportToMapWIP(g_working_dir);
+				}
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("Export .map ( NOT WORKING at this time:) )");
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0537).c_str(), NULL, false, map && !map->is_mdl_model))
+				{
+					map->ExportPortalFile();
+				}
+
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0538).c_str());
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0539).c_str(), NULL, false, map && !map->is_mdl_model))
+				{
+					map->ExportExtFile();
+				}
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("Export face extens (.ext) file for rad.exe");
+					ImGui::EndTooltip();
+				}
+
+
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0540).c_str(), NULL, false, map && !map->is_mdl_model))
+				{
+					map->ExportLightFile();
+				}
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0541).c_str());
+					ImGui::EndTooltip();
+				}
+
+
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_1076).c_str(), map && !map->is_mdl_model))
+				{
+					int modelIdx = -1;
+
+					if (app->pickInfo.GetSelectedEnt() >= 0)
+					{
+						modelIdx = map->ents[app->pickInfo.GetSelectedEnt()]->getBspModelIdx();
+					}
+
+					for (int i = 0; i < map->modelCount; i++)
+					{
+						if (ImGui::BeginMenu(((modelIdx != i ? "Export Model" : "+ Export Model") + std::to_string(i) + ".bsp").c_str()))
+						{
+							if (ImGui::BeginMenu(get_localized_string(LANG_1077).c_str(), i >= 0))
+							{
+								if (ImGui::MenuItem(get_localized_string(LANG_1154).c_str(), 0, false, i >= 0))
+								{
+									ExportModel(map, i, 0, false);
+								}
+								if (ImGui::MenuItem(get_localized_string(LANG_1155).c_str(), 0, false, i >= 0))
+								{
+									ExportModel(map, i, 2, false);
+								}
+								if (ImGui::MenuItem(get_localized_string(LANG_1156).c_str(), 0, false, i >= 0))
+								{
+									ExportModel(map, i, 1, false);
+								}
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(get_localized_string(LANG_1078).c_str(), i >= 0))
+							{
+								if (ImGui::MenuItem(get_localized_string(LANG_1173).c_str(), 0, false, i >= 0))
+								{
+									ExportModel(map, i, 0, true);
+								}
+								if (ImGui::MenuItem(get_localized_string(LANG_1174).c_str(), 0, false, i >= 0))
+								{
+									ExportModel(map, i, 2, true);
+								}
+								if (ImGui::MenuItem(get_localized_string(LANG_1175).c_str(), 0, false, i >= 0))
+								{
+									ExportModel(map, i, 1, true);
+								}
+								ImGui::EndMenu();
+							}
+
+							ImGui::EndMenu();
+						}
+					}
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_0542).c_str(), map && !map->is_mdl_model))
+				{
+					std::string hash = "##1";
+					for (auto& wad : map->getBspRender()->wads)
+					{
+						if (wad->dirEntries.size() == 0)
+							continue;
+						hash += "1";
+						if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
+						{
+							print_log(get_localized_string(LANG_0345), basename(wad->filename));
+
+							createDir(g_working_dir + "wads/" + basename(wad->filename));
+
+							std::vector<int> texturesIds;
+							for (int i = 0; i < wad->dirEntries.size(); i++)
+							{
+								texturesIds.push_back(i);
+							}
+
+							std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](int file)
+								{
+									{
+										WADTEX* texture = wad->readTexture(file);
+
+										if (texture->szName[0] != '\0')
+										{
+											print_log(get_localized_string(LANG_0346), texture->szName, basename(wad->filename));
+											COLOR4* texturedata = ConvertWadTexToRGBA(texture);
+
+											lodepng_encode32_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
+												, (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
+
+
+											/*	int lastMipSize = (texture->nWidth / 8) * (texture->nHeight / 8);
+
+												COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + sizeof(short) - 40);
+
+												lodepng_encode24_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".pal.png").c_str()
+																	  , (unsigned char*)palette, 8, 32);*/
+											delete texturedata;
+										}
+										delete texture;
+									}
+								});
+						}
+					}
+
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::MenuItem(get_localized_string("LANG_DUMP_TEX").c_str(), NULL, false, map))
+				{
+					createDir(g_working_dir + map->bsp_name + "/dump_textures/");
+
+					if (dumpTextures.size() && rend)
+					{
+						for (const auto& tex : dumpTextures)
+						{
+							if (tex != rend->missingTex)
+							{
+								if (tex->format == GL_RGBA)
+									lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
+								else
+									lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
+							}
+						}
+					}
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string("LANG_DUMP_TEX_DESC").c_str());
+					ImGui::EndTooltip();
+				}
+
+				ImGui::EndMenu();
+			}
+
+
+			if (ImGui::BeginMenu(get_localized_string(LANG_0543).c_str(), !app->isLoading && map && !map->is_mdl_model))
+			{
+				if (ImGui::MenuItem(get_localized_string(LANG_0544).c_str(), NULL))
+				{
+					showImportMapWidget_Type = SHOW_IMPORT_MODEL_BSP;
+					showImportMapWidget = true;
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0545).c_str(), NULL))
+				{
+					showImportMapWidget_Type = SHOW_IMPORT_MODEL_ENTITY;
+					showImportMapWidget = true;
+				}
+
+				if (map && ImGui::MenuItem(get_localized_string(LANG_1079).c_str(), NULL))
+				{
+					if (map)
+					{
+						map->ImportLightFile();
 					}
 					else
 					{
-						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0348));
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0347));
 					}
-				}
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0547).c_str(), NULL))
-			{
-				if (map)
-				{
-					ifd::FileDialog::Instance().Open("WadOpenDialog", "Open .wad", "Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
 				}
 
 				if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
 					ImGui::BeginTooltip();
-					std::string embtextooltip;
-					ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_working_dir, map->bsp_name + ".wad").c_str());
+					ImGui::TextUnformatted(get_localized_string(LANG_0546).c_str());
+					ImGui::EndTooltip();
+				}
+
+
+				if (ImGui::MenuItem(get_localized_string(LANG_1080).c_str(), NULL))
+				{
+					if (map)
+					{
+						std::string entFilePath;
+						if (g_settings.sameDirForEnt) {
+							std::string bspFilePath = map->bsp_path;
+							if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
+								entFilePath = bspFilePath + ".ent";
+							}
+							else {
+								entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
+							}
+						}
+						else {
+							entFilePath = g_working_dir + (map->bsp_name + ".ent");
+						}
+
+						print_log(get_localized_string(LANG_1052), entFilePath);
+						if (fileExists(entFilePath))
+						{
+							int len;
+							char* newlump = loadFile(entFilePath, len);
+							map->replace_lump(LUMP_ENTITIES, newlump, len);
+							map->load_ents();
+							for (int i = 0; i < app->mapRenderers.size(); i++)
+							{
+								BspRenderer* mapRender = app->mapRenderers[i];
+								mapRender->reload();
+							}
+						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0348));
+						}
+					}
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0547).c_str(), NULL))
+				{
+					if (map)
+					{
+						ifd::FileDialog::Instance().Open("WadOpenDialog", "Open .wad", "Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
+					}
+
+					if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+					{
+						ImGui::BeginTooltip();
+						std::string embtextooltip;
+						ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_working_dir, map->bsp_name + ".wad").c_str());
+						ImGui::EndTooltip();
+					}
+				}
+
+				static bool ditheringEnabled = false;
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_0548).c_str()))
+				{
+					ImGui::MenuItem(get_localized_string(LANG_0549).c_str(), 0, ditheringEnabled);
+
+					std::string hash = "##1";
+					for (auto& wad : map->getBspRender()->wads)
+					{
+						if (wad->dirEntries.size() == 0)
+							continue;
+						hash += "1";
+						if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
+						{
+							print_log(get_localized_string(LANG_0350), basename(wad->filename));
+							if (!dirExists(g_working_dir + "wads/" + basename(wad->filename)))
+							{
+								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0351), g_working_dir + "wads/" + basename(wad->filename));
+							}
+							else
+							{
+								copyFile(wad->filename, wad->filename + ".bak");
+
+								Wad* resetWad = new Wad(wad->filename);
+								resetWad->write(NULL, 0);
+								delete resetWad;
+
+								Wad* tmpWad = new Wad(wad->filename);
+
+								std::vector<WADTEX*> textureList{};
+								fs::path tmpPath = g_working_dir + "wads/" + basename(wad->filename);
+
+								std::vector<std::string> files{};
+
+								for (auto& dir_entry : std::filesystem::directory_iterator(tmpPath))
+								{
+									if (!dir_entry.is_directory() && toLowerCase(dir_entry.path().string()).ends_with(".png"))
+									{
+										files.emplace_back(dir_entry.path().string());
+									}
+								}
+
+								std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto file)
+									{
+										print_log(get_localized_string(LANG_0352), basename(file), basename(wad->filename));
+										COLOR4* image_bytes = NULL;
+										unsigned int w2, h2;
+										auto error = lodepng_decode_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str(),
+											LodePNGColorType::LCT_RGBA, 8);
+										COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
+										if (error == 0 && image_bytes)
+										{
+											for (unsigned int i = 0; i < w2 * h2; i++)
+											{
+												COLOR4& curPixel = image_bytes[i];
+
+												if (curPixel.a == 0)
+												{
+													image_bytes_rgb[i] = COLOR3(0, 0, 255);
+												}
+												else
+												{
+													image_bytes_rgb[i] = COLOR3(curPixel.r, curPixel.g, curPixel.b);
+												}
+											}
+
+											int oldcolors = 0;
+											if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
+											{
+												print_log(get_localized_string(LANG_0353), basename(file));
+												Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+
+												if (ditheringEnabled)
+													tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
+												else
+													tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
+
+												print_log(get_localized_string(LANG_0354), oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
+
+												delete tmpCQuantizer;
+											}
+											std::string tmpTexName = stripExt(basename(file));
+
+											WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
+											g_mutex_list[1].lock();
+											textureList.push_back(tmpWadTex);
+											g_mutex_list[1].unlock();
+											free(image_bytes);
+										}
+									});
+								print_log(get_localized_string(LANG_0355));
+
+								tmpWad->write(textureList);
+								delete tmpWad;
+								map->getBspRender()->reloadTextures();
+							}
+						}
+					}
+					ImGui::EndMenu();
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (map && dirExists(g_game_dir + "/svencoop_addon/maps/"))
+			{
+				if (ImGui::MenuItem(get_localized_string(LANG_0550).c_str()))
+				{
+					std::string mapPath = g_game_dir + "/svencoop_addon/maps/" + map->bsp_name + ".bsp";
+					std::string entPath = g_game_dir + "/svencoop_addon/scripts/maps/bspguy/maps/" + map->bsp_name + ".ent";
+
+					map->update_ent_lump(true); // strip nodes before writing (to skip slow node graph generation)
+					map->write(mapPath);
+					map->update_ent_lump(false); // add the nodes back in for conditional loading in the ent file
+
+					std::ofstream entFile(entPath, std::ios::trunc);
+					if (entFile.is_open())
+					{
+						print_log(get_localized_string(LANG_1053), entPath);
+						entFile.write((const char*)map->lumps[LUMP_ENTITIES], map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0356), entPath);
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0357));
+					}
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0551).c_str());
 					ImGui::EndTooltip();
 				}
 			}
 
-			static bool ditheringEnabled = false;
-
-			if (ImGui::BeginMenu(get_localized_string(LANG_0548).c_str()))
+			if (ImGui::MenuItem(get_localized_string(LANG_0552).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
 			{
-				ImGui::MenuItem(get_localized_string(LANG_0549).c_str(), 0, ditheringEnabled);
-
-				std::string hash = "##1";
-				for (auto& wad : map->getBspRender()->wads)
+				app->reloadMaps();
+			}
+			if (ImGui::MenuItem(get_localized_string(LANG_0553).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
+			{
+				if (map)
 				{
-					if (wad->dirEntries.size() == 0)
-						continue;
-					hash += "1";
-					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
+					print_log(get_localized_string(LANG_0358), map->bsp_name);
+					map->validate();
+				}
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem(get_localized_string(LANG_0554).c_str(), 0, false, !app->isLoading))
+			{
+				if (!showSettingsWidget)
+				{
+					reloadSettings = true;
+				}
+				showSettingsWidget = true;
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem(get_localized_string(LANG_0555).c_str(), NULL))
+			{
+				if (fileSize(g_settings_path) == 0)
+				{
+					g_settings.save();
+					glfwTerminate();
+					std::quick_exit(0);
+				}
+				g_settings.save();
+				if (fileSize(g_settings_path) == 0)
+				{
+					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0359));
+				}
+				else
+				{
+					glfwTerminate();
+					std::quick_exit(0);
+				}
+			}
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
+		{
+			Command* undoCmd = !rend->undoHistory.empty() ? rend->undoHistory[rend->undoHistory.size() - 1] : NULL;
+			Command* redoCmd = !rend->redoHistory.empty() ? rend->redoHistory[rend->redoHistory.size() - 1] : NULL;
+			std::string undoTitle = undoCmd ? "Undo " + undoCmd->desc : "Can't undo";
+			std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
+			bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
+			bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
+			bool entSelected = app->pickInfo.selectedEnts.size();
+			bool mapSelected = map;
+			bool nonWorldspawnEntSelected = !entSelected;
+
+			if (!nonWorldspawnEntSelected)
+			{
+				for (auto& ent : app->pickInfo.selectedEnts)
+				{
+					if (ent < 0)
 					{
-						print_log(get_localized_string(LANG_0350), basename(wad->filename));
-						if (!dirExists(g_working_dir + "wads/" + basename(wad->filename)))
+						nonWorldspawnEntSelected = true;
+						break;
+					}
+					if (map->ents[ent]->hasKey("classname") && map->ents[ent]->keyvalues["classname"] == "worldspawn")
+					{
+						nonWorldspawnEntSelected = true;
+						break;
+					}
+				}
+			}
+
+			if (ImGui::MenuItem(undoTitle.c_str(), get_localized_string(LANG_0557).c_str(), false, canUndo))
+			{
+				rend->undo();
+			}
+			else if (ImGui::MenuItem(redoTitle.c_str(), get_localized_string(LANG_0558).c_str(), false, canRedo))
+			{
+				rend->redo();
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::MenuItem(get_localized_string(LANG_1081).c_str(), get_localized_string(LANG_1082).c_str(), false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size()))
+			{
+				app->cutEnt();
+			}
+			if (ImGui::MenuItem(get_localized_string(LANG_1083).c_str(), get_localized_string(LANG_1084).c_str(), false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size()))
+			{
+				app->copyEnt();
+			}
+			if (ImGui::MenuItem(get_localized_string(LANG_1157).c_str(), get_localized_string(LANG_1158).c_str(), false, mapSelected && app->copiedEnts.size()))
+			{
+				app->pasteEnt(false);
+			}
+			if (ImGui::MenuItem(get_localized_string(LANG_1159).c_str(), 0, false, entSelected && app->copiedEnts.size()))
+			{
+				app->pasteEnt(true);
+			}
+			if (ImGui::MenuItem(get_localized_string(LANG_1085).c_str(), get_localized_string(LANG_1086).c_str(), false, nonWorldspawnEntSelected))
+			{
+				app->deleteEnts();
+			}
+			if (ImGui::MenuItem(get_localized_string(LANG_0559).c_str(), get_localized_string(LANG_0560).c_str()))
+			{
+				map->hideEnts(false);
+				map->getBspRender()->preRenderEnts();
+				app->updateEntConnections();
+				pickCount++;
+			}
+
+			ImGui::Separator();
+
+
+			bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
+			if (allowDuplicate)
+			{
+				for (auto& ent : app->pickInfo.selectedEnts)
+				{
+					if (ent < 0)
+					{
+						allowDuplicate = false;
+						break;
+					}
+					else
+					{
+						if (map->ents[ent]->getBspModelIdx() <= 0)
 						{
-							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0351), g_working_dir + "wads/" + basename(wad->filename));
-						}
-						else
-						{
-							copyFile(wad->filename, wad->filename + ".bak");
-
-							Wad* resetWad = new Wad(wad->filename);
-							resetWad->write(NULL, 0);
-							delete resetWad;
-
-							Wad* tmpWad = new Wad(wad->filename);
-
-							std::vector<WADTEX*> textureList{};
-							fs::path tmpPath = g_working_dir + "wads/" + basename(wad->filename);
-
-							std::vector<std::string> files{};
-
-							for (auto& dir_entry : std::filesystem::directory_iterator(tmpPath))
-							{
-								if (!dir_entry.is_directory() && toLowerCase(dir_entry.path().string()).ends_with(".png"))
-								{
-									files.emplace_back(dir_entry.path().string());
-								}
-							}
-
-							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto file)
-								{
-									print_log(get_localized_string(LANG_0352), basename(file), basename(wad->filename));
-									COLOR4* image_bytes = NULL;
-									unsigned int w2, h2;
-									auto error = lodepng_decode_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str(),
-										LodePNGColorType::LCT_RGBA, 8);
-									COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
-									if (error == 0 && image_bytes)
-									{
-										for (unsigned int i = 0; i < w2 * h2; i++)
-										{
-											COLOR4& curPixel = image_bytes[i];
-
-											if (curPixel.a == 0)
-											{
-												image_bytes_rgb[i] = COLOR3(0, 0, 255);
-											}
-											else
-											{
-												image_bytes_rgb[i] = COLOR3(curPixel.r, curPixel.g, curPixel.b);
-											}
-										}
-
-										int oldcolors = 0;
-										if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
-										{
-											print_log(get_localized_string(LANG_0353), basename(file));
-											Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-
-											if (ditheringEnabled)
-												tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
-											else
-												tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
-
-											print_log(get_localized_string(LANG_0354), oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
-
-											delete tmpCQuantizer;
-										}
-										std::string tmpTexName = stripExt(basename(file));
-
-										WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
-										g_mutex_list[1].lock();
-										textureList.push_back(tmpWadTex);
-										g_mutex_list[1].unlock();
-										free(image_bytes);
-									}
-								});
-							print_log(get_localized_string(LANG_0355));
-
-							tmpWad->write(textureList);
-							delete tmpWad;
-							map->getBspRender()->reloadTextures();
+							allowDuplicate = false;
+							break;
 						}
 					}
 				}
+			}
+
+			if (ImGui::MenuItem(get_localized_string(LANG_1087).c_str(), 0, false, !app->isLoading && allowDuplicate))
+			{
+				print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
+				for (auto& ent : app->pickInfo.selectedEnts)
+				{
+					DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", ent);
+					map->getBspRender()->pushUndoCommand(command);
+				}
+			}
+
+			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", get_localized_string(LANG_1088).c_str(), false, nonWorldspawnEntSelected))
+			{
+				if (!app->movingEnt)
+					app->grabEnt();
+				else
+				{
+					app->ungrabEnt();
+				}
+			}
+			if (ImGui::MenuItem(get_localized_string(LANG_1089).c_str(), get_localized_string(LANG_1090).c_str(), false, entSelected))
+			{
+				showTransformWidget = !showTransformWidget;
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::MenuItem(get_localized_string(LANG_1091).c_str(), get_localized_string(LANG_1092).c_str(), false, entSelected))
+			{
+				showKeyvalueWidget = !showKeyvalueWidget;
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu(get_localized_string(LANG_0561).c_str(), (map && !map->is_mdl_model)))
+		{
+			if (ImGui::MenuItem(get_localized_string(LANG_0562).c_str(), NULL))
+			{
+				showEntityReport = true;
+			}
+
+			if (ImGui::MenuItem(get_localized_string(LANG_0563).c_str(), NULL))
+			{
+				showLimitsWidget = true;
+			}
+
+			ImGui::Separator();
+
+
+			if (ImGui::MenuItem(get_localized_string(LANG_0564).c_str(), 0, false, !app->isLoading && map))
+			{
+				CleanMapCommand* command = new CleanMapCommand("Clean " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
+				rend->pushUndoCommand(command);
+			}
+
+			if (ImGui::MenuItem(get_localized_string(LANG_0565).c_str(), 0, false, !app->isLoading && map))
+			{
+				OptimizeMapCommand* command = new OptimizeMapCommand("Optimize " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
+				rend->pushUndoCommand(command);
+			}
+
+			if (ImGui::BeginMenu(get_localized_string(LANG_0566).c_str(), map))
+			{
+				if (ImGui::MenuItem(get_localized_string(LANG_0567).c_str(), NULL, app->clipnodeRenderHull == -1))
+				{
+					app->clipnodeRenderHull = -1;
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0568).c_str(), NULL, app->clipnodeRenderHull == 0))
+				{
+					app->clipnodeRenderHull = 0;
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0569).c_str(), NULL, app->clipnodeRenderHull == 1))
+				{
+					app->clipnodeRenderHull = 1;
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0570).c_str(), NULL, app->clipnodeRenderHull == 2))
+				{
+					app->clipnodeRenderHull = 2;
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0571).c_str(), NULL, app->clipnodeRenderHull == 3))
+				{
+					app->clipnodeRenderHull = 3;
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::Separator();
+
+			bool hasAnyCollision = anyHullValid[1] || anyHullValid[2] || anyHullValid[3];
+
+			if (ImGui::BeginMenu(get_localized_string(LANG_1093).c_str(), hasAnyCollision && !app->isLoading && map))
+			{
+				for (int i = 1; i < MAX_MAP_HULLS; i++)
+				{
+					if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), NULL, false, anyHullValid[i]))
+					{
+						//for (int k = 0; k < app->mapRenderers.size(); k++) {
+						//	Bsp* map = app->mapRenderers[k]->map;
+						map->delete_hull(i, -1);
+						map->getBspRender()->reloadClipnodes();
+						//	app->mapRenderers[k]->reloadClipnodes();
+						print_log(get_localized_string(LANG_0360), i, map->bsp_name);
+						//}
+						checkValidHulls();
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu(get_localized_string(LANG_1094).c_str(), hasAnyCollision && !app->isLoading && map))
+			{
+				for (int i = 1; i < MAX_MAP_HULLS; i++)
+				{
+					if (ImGui::BeginMenu(("Hull " + std::to_string(i)).c_str()))
+					{
+						for (int k = 1; k < MAX_MAP_HULLS; k++)
+						{
+							if (i == k)
+								continue;
+							if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), "", false, anyHullValid[k]))
+							{
+								//for (int j = 0; j < app->mapRenderers.size(); j++) {
+								//	Bsp* map = app->mapRenderers[j]->map;
+								map->delete_hull(i, k);
+								map->getBspRender()->reloadClipnodes();
+								//	app->mapRenderers[j]->reloadClipnodes();
+								print_log(get_localized_string(LANG_0361), i, k, map->bsp_name);
+								//}
+								checkValidHulls();
+							}
+						}
+						ImGui::EndMenu();
+					}
+				}
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu(get_localized_string(LANG_0572).c_str(), !app->isLoading && map))
+			{
+				if (ImGui::MenuItem(get_localized_string(LANG_0573).c_str()))
+				{
+					for (int i = 0; i < map->faceCount; i++)
+					{
+						BSPFACE32& face = map->faces[i];
+						BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
+						if (info.nFlags & TEX_SPECIAL)
+						{
+							continue;
+						}
+						int bmins[2];
+						int bmaxs[2];
+						if (!GetFaceExtents(map, i, bmins, bmaxs))
+						{
+							info.nFlags += TEX_SPECIAL;
+						}
+					}
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0574).c_str());
+					ImGui::EndTooltip();
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0575).c_str()))
+				{
+					for (int i = 0; i < map->leafCount; i++)
+					{
+						for (int n = 0; n < 3; n++)
+						{
+							if (map->leaves[i].nMins[n] > map->leaves[i].nMaxs[n])
+							{
+								print_log(get_localized_string(LANG_0362), i);
+								std::swap(map->leaves[i].nMins[n], map->leaves[i].nMaxs[n]);
+							}
+						}
+					}
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0576).c_str());
+					ImGui::EndTooltip();
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0577).c_str()))
+				{
+					for (int i = 0; i < map->modelCount; i++)
+					{
+						for (int n = 0; n < 3; n++)
+						{
+							if (map->models[i].nMins[n] > map->models[i].nMaxs[n])
+							{
+								print_log(get_localized_string(LANG_0363), i);
+								std::swap(map->models[i].nMins[n], map->models[i].nMaxs[n]);
+							}
+						}
+					}
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0578).c_str());
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0579).c_str()))
+				{
+					for (int i = 0; i < map->marksurfCount; i++)
+					{
+						if (map->marksurfs[i] >= map->faceCount)
+						{
+							map->marksurfs[i] = 0;
+						}
+					}
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0580).c_str());
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0581).c_str()))
+				{
+					std::set<int> used_models; // Protected map
+					used_models.insert(0);
+
+					for (auto const& s : map->ents)
+					{
+						int ent_mdl_id = s->getBspModelIdx();
+						if (ent_mdl_id >= 0)
+						{
+							if (!used_models.count(ent_mdl_id))
+							{
+								used_models.insert(ent_mdl_id);
+							}
+						}
+					}
+
+					for (int i = 0; i < map->modelCount; i++)
+					{
+						if (!used_models.count(i))
+						{
+							Entity* ent = new Entity("func_wall");
+							ent->setOrAddKeyvalue("model", "*" + std::to_string(i));
+							ent->setOrAddKeyvalue("origin", map->models[i].vOrigin.toKeyvalueString());
+							map->ents.push_back(ent);
+						}
+					}
+
+					map->update_ent_lump();
+					if (map->getBspRender())
+					{
+						app->reloading = true;
+						map->getBspRender()->reload();
+						app->reloading = false;
+					}
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0582).c_str());
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0583).c_str()))
+				{
+					bool foundfixes = false;
+					for (int i = 0; i < map->textureCount; i++)
+					{
+						int texOffset = ((int*)map->textures)[i + 1];
+						if (texOffset >= 0)
+						{
+							int texlen = map->getBspTextureSize(i);
+							int dataOffset = (map->textureCount + 1) * sizeof(int);
+							BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
+							if (tex->szName[0] == '\0' || strlen(tex->szName) >= MAXTEXTURENAME)
+							{
+								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1055), i);
+							}
+							if (tex->nOffsets[0] > 0 && dataOffset + texOffset + texlen > map->bsp_header.lump[LUMP_TEXTURES].nLength)
+							{
+								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0364), i, map->bsp_header.lump[LUMP_TEXTURES].nLength, dataOffset + texOffset + texlen);
+
+								char* newlump = new char[dataOffset + texOffset + texlen];
+								memset(newlump, 0, dataOffset + texOffset + texlen);
+								memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
+								map->replace_lump(LUMP_TEXTURES, newlump, dataOffset + texOffset + texlen);
+								foundfixes = true;
+							}
+						}
+					}
+					if (foundfixes)
+					{
+						map->update_lump_pointers();
+					}
+				}
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0584).c_str()))
+				{
+					std::set<std::string> textureset = std::set<std::string>();
+
+					for (int i = 0; i < map->faceCount; i++)
+					{
+						BSPFACE32& face = map->faces[i];
+						BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
+						if (info.iMiptex >= 0 && info.iMiptex < map->textureCount)
+						{
+							int texOffset = ((int*)map->textures)[info.iMiptex + 1];
+							if (texOffset >= 0)
+							{
+								BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+								if (tex.nOffsets[0] <= 0 && tex.szName[0] != '\0')
+								{
+									if (textureset.count(tex.szName))
+										continue;
+									textureset.insert(tex.szName);
+									bool textureFoundInWad = false;
+									for (auto& s : map->getBspRender()->wads)
+									{
+										if (s->hasTexture(tex.szName))
+										{
+											textureFoundInWad = true;
+											break;
+										}
+									}
+									if (!textureFoundInWad)
+									{
+										COLOR3* imageData = new COLOR3[tex.nWidth * tex.nHeight];
+										memset(imageData, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
+										map->add_texture(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
+										delete[] imageData;
+									}
+								}
+								else if (tex.nOffsets[0] <= 0)
+								{
+									print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0365), i);
+									memset(tex.szName, 0, MAXTEXTURENAME);
+									memcpy(tex.szName, "aaatrigger", 10);
+								}
+							}
+						}
+					}
+					map->getBspRender()->reuploadTextures();
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0585).c_str());
+					ImGui::TextUnformatted(get_localized_string(LANG_0586).c_str());
+					ImGui::EndTooltip();
+				}
+
+
 				ImGui::EndMenu();
 			}
 
 			ImGui::EndMenu();
 		}
 
-		if (map && dirExists(g_game_dir + "/svencoop_addon/maps/"))
+		if (ImGui::BeginMenu(get_localized_string(LANG_0587).c_str(), (map && !map->is_mdl_model)))
 		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0550).c_str()))
+			if (ImGui::MenuItem(get_localized_string(LANG_0588).c_str(), 0, false, map))
 			{
-				std::string mapPath = g_game_dir + "/svencoop_addon/maps/" + map->bsp_name + ".bsp";
-				std::string entPath = g_game_dir + "/svencoop_addon/scripts/maps/bspguy/maps/" + map->bsp_name + ".ent";
+				Entity* newEnt = new Entity();
+				vec3 origin = (cameraOrigin + app->cameraForward * 100);
+				if (app->gridSnappingEnabled)
+					origin = app->snapToGrid(origin);
+				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
+				newEnt->addKeyvalue("classname", "info_player_deathmatch");
 
-				map->update_ent_lump(true); // strip nodes before writing (to skip slow node graph generation)
-				map->write(mapPath);
-				map->update_ent_lump(false); // add the nodes back in for conditional loading in the ent file
+				CreateEntityCommand* createCommand = new CreateEntityCommand("Create Entity", app->getSelectedMapId(), newEnt);
+				rend->pushUndoCommand(createCommand);
 
-				std::ofstream entFile(entPath, std::ios::trunc);
-				if (entFile.is_open())
+				delete newEnt;
+			}
+
+			if (ImGui::MenuItem(get_localized_string(LANG_0589).c_str(), 0, false, !app->isLoading && map))
+			{
+				vec3 origin = cameraOrigin + app->cameraForward * 100;
+				if (app->gridSnappingEnabled)
+					origin = app->snapToGrid(origin);
+
+				Entity* newEnt = new Entity();
+				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
+				newEnt->addKeyvalue("classname", "func_illusionary");
+
+				float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
+				if (snapSize < 16)
 				{
-					print_log(get_localized_string(LANG_1053), entPath);
-					entFile.write((const char*)map->lumps[LUMP_ENTITIES], map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
+					snapSize = 16;
 				}
-				else
+
+				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
+				rend->pushUndoCommand(command);
+
+				delete newEnt;
+
+				newEnt = map->ents[map->ents.size() - 1];
+				if (newEnt && newEnt->getBspModelIdx() >= 0)
 				{
-					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0356), entPath);
-					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0357));
+					BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
+					for (int i = 0; i < model.nFaces; i++)
+					{
+						map->faces[model.iFirstFace + i].nStyles[0] = 0;
+					}
 				}
 			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+
+			if (ImGui::MenuItem(get_localized_string(LANG_0590).c_str(), 0, false, !app->isLoading && map))
 			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0551).c_str());
-				ImGui::EndTooltip();
+				vec3 origin = cameraOrigin + app->cameraForward * 100;
+				if (app->gridSnappingEnabled)
+					origin = app->snapToGrid(origin);
+
+				Entity* newEnt = new Entity();
+				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
+				newEnt->addKeyvalue("classname", "trigger_once");
+
+				float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
+
+				if (snapSize < 16)
+				{
+					snapSize = 16;
+				}
+
+				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
+				rend->pushUndoCommand(command);
+
+				delete newEnt;
+
+				newEnt = map->ents[map->ents.size() - 1];
+				if (newEnt && newEnt->getBspModelIdx() >= 0)
+				{
+					BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
+					model.iFirstFace = 0;
+					model.nFaces = 0;
+				}
 			}
+
+			if (ImGui::MenuItem(get_localized_string(LANG_0591).c_str(), 0, false, !app->isLoading && map))
+			{
+				vec3 origin = cameraOrigin + app->cameraForward * 100;
+				if (app->gridSnappingEnabled)
+					origin = app->snapToGrid(origin);
+
+				Entity* newEnt = new Entity();
+				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
+				newEnt->addKeyvalue("classname", "func_wall");
+
+				float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
+				if (snapSize < 16)
+				{
+					snapSize = 16;
+				}
+
+				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
+				rend->pushUndoCommand(command);
+
+				delete newEnt;
+
+				newEnt = map->ents[map->ents.size() - 1];
+				if (newEnt && newEnt->getBspModelIdx() >= 0)
+				{
+					BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
+					for (int i = 0; i < model.nFaces; i++)
+					{
+						map->faces[model.iFirstFace + i].nStyles[0] = 0;
+					}
+				}
+			}
+			ImGui::EndMenu();
 		}
 
-		if (ImGui::MenuItem(get_localized_string(LANG_0552).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
+		if (ImGui::BeginMenu(get_localized_string(LANG_0592).c_str()))
 		{
-			app->reloadMaps();
-		}
-		if (ImGui::MenuItem(get_localized_string(LANG_0553).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
-		{
-			if (map)
+			if (map && map->is_mdl_model)
 			{
-				print_log(get_localized_string(LANG_0358), map->bsp_name);
-				map->validate();
-			}
-		}
-		ImGui::Separator();
-		if (ImGui::MenuItem(get_localized_string(LANG_0554).c_str(), 0, false, !app->isLoading))
-		{
-			if (!showSettingsWidget)
-			{
-				reloadSettings = true;
-			}
-			showSettingsWidget = true;
-		}
-		ImGui::Separator();
-		if (ImGui::MenuItem(get_localized_string(LANG_0555).c_str(), NULL))
-		{
-			if (fileSize(g_settings_path) == 0)
-			{
-				g_settings.save();
-				glfwTerminate();
-				std::quick_exit(0);
-			}
-			g_settings.save();
-			if (fileSize(g_settings_path) == 0)
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0359));
+				if (ImGui::MenuItem(get_localized_string(LANG_0594).c_str(), "", showLogWidget))
+				{
+					showLogWidget = !showLogWidget;
+				}
 			}
 			else
 			{
-				glfwTerminate();
-				std::quick_exit(0);
-			}
-		}
-		ImGui::EndMenu();
-	}
-
-	if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
-	{
-		Command* undoCmd = !rend->undoHistory.empty() ? rend->undoHistory[rend->undoHistory.size() - 1] : NULL;
-		Command* redoCmd = !rend->redoHistory.empty() ? rend->redoHistory[rend->redoHistory.size() - 1] : NULL;
-		std::string undoTitle = undoCmd ? "Undo " + undoCmd->desc : "Can't undo";
-		std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
-		bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
-		bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
-		bool entSelected = app->pickInfo.selectedEnts.size();
-		bool mapSelected = map;
-		bool nonWorldspawnEntSelected = !entSelected;
-
-		if (!nonWorldspawnEntSelected)
-		{
-			for (auto& ent : app->pickInfo.selectedEnts)
-			{
-				if (ent < 0)
+				if (ImGui::MenuItem(get_localized_string(LANG_0595).c_str(), NULL, showDebugWidget))
 				{
-					nonWorldspawnEntSelected = true;
-					break;
+					showDebugWidget = !showDebugWidget;
 				}
-				if (map->ents[ent]->hasKey("classname") && map->ents[ent]->keyvalues["classname"] == "worldspawn")
+				if (ImGui::MenuItem(get_localized_string(LANG_0596).c_str(), get_localized_string(LANG_0477).c_str(), showKeyvalueWidget))
 				{
-					nonWorldspawnEntSelected = true;
-					break;
+					showKeyvalueWidget = !showKeyvalueWidget;
 				}
-			}
-		}
-
-		if (ImGui::MenuItem(undoTitle.c_str(), get_localized_string(LANG_0557).c_str(), false, canUndo))
-		{
-			rend->undo();
-		}
-		else if (ImGui::MenuItem(redoTitle.c_str(), get_localized_string(LANG_0558).c_str(), false, canRedo))
-		{
-			rend->redo();
-		}
-
-		ImGui::Separator();
-
-		if (ImGui::MenuItem(get_localized_string(LANG_1081).c_str(), get_localized_string(LANG_1082).c_str(), false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size()))
-		{
-			app->cutEnt();
-		}
-		if (ImGui::MenuItem(get_localized_string(LANG_1083).c_str(), get_localized_string(LANG_1084).c_str(), false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size()))
-		{
-			app->copyEnt();
-		}
-		if (ImGui::MenuItem(get_localized_string(LANG_1157).c_str(), get_localized_string(LANG_1158).c_str(), false, mapSelected && app->copiedEnts.size()))
-		{
-			app->pasteEnt(false);
-		}
-		if (ImGui::MenuItem(get_localized_string(LANG_1159).c_str(), 0, false, entSelected && app->copiedEnts.size()))
-		{
-			app->pasteEnt(true);
-		}
-		if (ImGui::MenuItem(get_localized_string(LANG_1085).c_str(), get_localized_string(LANG_1086).c_str(), false, nonWorldspawnEntSelected))
-		{
-			app->deleteEnts();
-		}
-		if (ImGui::MenuItem(get_localized_string(LANG_0559).c_str(), get_localized_string(LANG_0560).c_str()))
-		{
-			map->hideEnts(false);
-			map->getBspRender()->preRenderEnts();
-			app->updateEntConnections();
-			pickCount++;
-		}
-
-		ImGui::Separator();
-
-
-		bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
-		if (allowDuplicate)
-		{
-			for (auto& ent : app->pickInfo.selectedEnts)
-			{
-				if (ent < 0)
+				if (ImGui::MenuItem(get_localized_string(LANG_1160).c_str(), get_localized_string(LANG_1161).c_str(), showTransformWidget))
 				{
-					allowDuplicate = false;
-					break;
+					showTransformWidget = !showTransformWidget;
 				}
-				else
+				if (ImGui::MenuItem("Go to", get_localized_string(LANG_1095).c_str(), showGOTOWidget))
 				{
-					if (map->ents[ent]->getBspModelIdx() <= 0)
-					{
-						allowDuplicate = false;
-						break;
-					}
+					showGOTOWidget = !showGOTOWidget;
+					showGOTOWidget_update = true;
 				}
-			}
-		}
-
-		if (ImGui::MenuItem(get_localized_string(LANG_1087).c_str(), 0, false, !app->isLoading && allowDuplicate))
-		{
-			print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
-			for (auto& ent : app->pickInfo.selectedEnts)
-			{
-				DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", ent);
-				map->getBspRender()->pushUndoCommand(command);
-			}
-		}
-
-		if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", get_localized_string(LANG_1088).c_str(), false, nonWorldspawnEntSelected))
-		{
-			if (!app->movingEnt)
-				app->grabEnt();
-			else
-			{
-				app->ungrabEnt();
-			}
-		}
-		if (ImGui::MenuItem(get_localized_string(LANG_1089).c_str(), get_localized_string(LANG_1090).c_str(), false, entSelected))
-		{
-			showTransformWidget = !showTransformWidget;
-		}
-
-		ImGui::Separator();
-
-		if (ImGui::MenuItem(get_localized_string(LANG_1091).c_str(), get_localized_string(LANG_1092).c_str(), false, entSelected))
-		{
-			showKeyvalueWidget = !showKeyvalueWidget;
-		}
-
-		ImGui::EndMenu();
-	}
-
-	if (ImGui::BeginMenu(get_localized_string(LANG_0561).c_str(), (map && !map->is_mdl_model)))
-	{
-		if (ImGui::MenuItem(get_localized_string(LANG_0562).c_str(), NULL))
-		{
-			showEntityReport = true;
-		}
-
-		if (ImGui::MenuItem(get_localized_string(LANG_0563).c_str(), NULL))
-		{
-			showLimitsWidget = true;
-		}
-
-		ImGui::Separator();
-
-
-		if (ImGui::MenuItem(get_localized_string(LANG_0564).c_str(), 0, false, !app->isLoading && map))
-		{
-			CleanMapCommand* command = new CleanMapCommand("Clean " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
-			rend->pushUndoCommand(command);
-		}
-
-		if (ImGui::MenuItem(get_localized_string(LANG_0565).c_str(), 0, false, !app->isLoading && map))
-		{
-			OptimizeMapCommand* command = new OptimizeMapCommand("Optimize " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
-			rend->pushUndoCommand(command);
-		}
-
-		if (ImGui::BeginMenu(get_localized_string(LANG_0566).c_str(), map))
-		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0567).c_str(), NULL, app->clipnodeRenderHull == -1))
-			{
-				app->clipnodeRenderHull = -1;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0568).c_str(), NULL, app->clipnodeRenderHull == 0))
-			{
-				app->clipnodeRenderHull = 0;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0569).c_str(), NULL, app->clipnodeRenderHull == 1))
-			{
-				app->clipnodeRenderHull = 1;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0570).c_str(), NULL, app->clipnodeRenderHull == 2))
-			{
-				app->clipnodeRenderHull = 2;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0571).c_str(), NULL, app->clipnodeRenderHull == 3))
-			{
-				app->clipnodeRenderHull = 3;
-			}
-			ImGui::EndMenu();
-		}
-		ImGui::Separator();
-
-		bool hasAnyCollision = anyHullValid[1] || anyHullValid[2] || anyHullValid[3];
-
-		if (ImGui::BeginMenu(get_localized_string(LANG_1093).c_str(), hasAnyCollision && !app->isLoading && map))
-		{
-			for (int i = 1; i < MAX_MAP_HULLS; i++)
-			{
-				if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), NULL, false, anyHullValid[i]))
+				if (ImGui::MenuItem(get_localized_string(LANG_0597).c_str(), "", showFaceEditWidget))
 				{
-					//for (int k = 0; k < app->mapRenderers.size(); k++) {
-					//	Bsp* map = app->mapRenderers[k]->map;
-					map->delete_hull(i, -1);
-					map->getBspRender()->reloadClipnodes();
-					//	app->mapRenderers[k]->reloadClipnodes();
-					print_log(get_localized_string(LANG_0360), i, map->bsp_name);
-					//}
-					checkValidHulls();
+					showFaceEditWidget = !showFaceEditWidget;
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0598).c_str(), "", showTextureBrowser))
+				{
+					showTextureBrowser = !showTextureBrowser;
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0599).c_str(), "", showLightmapEditorWidget))
+				{
+					showLightmapEditorWidget = !showLightmapEditorWidget;
+					FaceSelectePressed();
+					showLightmapEditorUpdate = true;
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_0600).c_str(), "", showMergeMapWidget))
+				{
+					showMergeMapWidget = !showMergeMapWidget;
+				}
+				if (ImGui::MenuItem(get_localized_string(LANG_1096).c_str(), "", showLogWidget))
+				{
+					showLogWidget = !showLogWidget;
 				}
 			}
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu(get_localized_string(LANG_1094).c_str(), hasAnyCollision && !app->isLoading && map))
+		if (ImGui::BeginMenu(get_localized_string(LANG_0601).c_str()))
 		{
-			for (int i = 1; i < MAX_MAP_HULLS; i++)
+			Bsp* selectedMap = app->getSelectedMap();
+			for (BspRenderer* bspRend : app->mapRenderers)
 			{
-				if (ImGui::BeginMenu(("Hull " + std::to_string(i)).c_str()))
+				if (bspRend->map && !bspRend->map->is_bsp_model)
 				{
-					for (int k = 1; k < MAX_MAP_HULLS; k++)
+					if (ImGui::MenuItem(bspRend->map->bsp_name.c_str(), NULL, selectedMap == bspRend->map))
 					{
-						if (i == k)
-							continue;
-						if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), "", false, anyHullValid[k]))
-						{
-							//for (int j = 0; j < app->mapRenderers.size(); j++) {
-							//	Bsp* map = app->mapRenderers[j]->map;
-							map->delete_hull(i, k);
-							map->getBspRender()->reloadClipnodes();
-							//	app->mapRenderers[j]->reloadClipnodes();
-							print_log(get_localized_string(LANG_0361), i, k, map->bsp_name);
-							//}
-							checkValidHulls();
-						}
+						selectedMap->getBspRender()->renderCameraAngles = cameraAngles;
+						selectedMap->getBspRender()->renderCameraOrigin = cameraOrigin;
+						app->deselectObject();
+						app->clearSelection();
+						app->selectMap(bspRend->map);
+						cameraAngles = bspRend->renderCameraAngles;
+						cameraOrigin = bspRend->renderCameraOrigin;
+						makeVectors(cameraAngles, app->cameraForward, app->cameraRight, app->cameraUp);
 					}
-					ImGui::EndMenu();
 				}
 			}
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu(get_localized_string(LANG_0572).c_str(), !app->isLoading && map))
+		if (ImGui::BeginMenu(get_localized_string(LANG_0602).c_str()))
 		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0573).c_str()))
+			if (ImGui::MenuItem(get_localized_string(LANG_0603).c_str()))
 			{
-				for (int i = 0; i < map->faceCount; i++)
-				{
-					BSPFACE32& face = map->faces[i];
-					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
-					if (info.nFlags & TEX_SPECIAL)
-					{
-						continue;
-					}
-					int bmins[2];
-					int bmaxs[2];
-					if (!GetFaceExtents(map, i, bmins, bmaxs))
-					{
-						info.nFlags += TEX_SPECIAL;
-					}
-				}
+				showHelpWidget = true;
 			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			if (ImGui::MenuItem(get_localized_string(LANG_0604).c_str()))
 			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0574).c_str());
-				ImGui::EndTooltip();
+				showAboutWidget = true;
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0575).c_str()))
-			{
-				for (int i = 0; i < map->leafCount; i++)
-				{
-					for (int n = 0; n < 3; n++)
-					{
-						if (map->leaves[i].nMins[n] > map->leaves[i].nMaxs[n])
-						{
-							print_log(get_localized_string(LANG_0362), i);
-							std::swap(map->leaves[i].nMins[n], map->leaves[i].nMaxs[n]);
-						}
-					}
-				}
-			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0576).c_str());
-				ImGui::EndTooltip();
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0577).c_str()))
-			{
-				for (int i = 0; i < map->modelCount; i++)
-				{
-					for (int n = 0; n < 3; n++)
-					{
-						if (map->models[i].nMins[n] > map->models[i].nMaxs[n])
-						{
-							print_log(get_localized_string(LANG_0363), i);
-							std::swap(map->models[i].nMins[n], map->models[i].nMaxs[n]);
-						}
-					}
-				}
-			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0578).c_str());
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0579).c_str()))
-			{
-				for (int i = 0; i < map->marksurfCount; i++)
-				{
-					if (map->marksurfs[i] >= map->faceCount)
-					{
-						map->marksurfs[i] = 0;
-					}
-				}
-			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0580).c_str());
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0581).c_str()))
-			{
-				std::set<int> used_models; // Protected map
-				used_models.insert(0);
-
-				for (auto const& s : map->ents)
-				{
-					int ent_mdl_id = s->getBspModelIdx();
-					if (ent_mdl_id >= 0)
-					{
-						if (!used_models.count(ent_mdl_id))
-						{
-							used_models.insert(ent_mdl_id);
-						}
-					}
-				}
-
-				for (int i = 0; i < map->modelCount; i++)
-				{
-					if (!used_models.count(i))
-					{
-						Entity* ent = new Entity("func_wall");
-						ent->setOrAddKeyvalue("model", "*" + std::to_string(i));
-						ent->setOrAddKeyvalue("origin", map->models[i].vOrigin.toKeyvalueString());
-						map->ents.push_back(ent);
-					}
-				}
-
-				map->update_ent_lump();
-				if (map->getBspRender())
-				{
-					app->reloading = true;
-					map->getBspRender()->reload();
-					app->reloading = false;
-				}
-			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0582).c_str());
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0583).c_str()))
-			{
-				bool foundfixes = false;
-				for (int i = 0; i < map->textureCount; i++)
-				{
-					int texOffset = ((int*)map->textures)[i + 1];
-					if (texOffset >= 0)
-					{
-						int texlen = map->getBspTextureSize(i);
-						int dataOffset = (map->textureCount + 1) * sizeof(int);
-						BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + texOffset);
-						if (tex->szName[0] == '\0' || strlen(tex->szName) >= MAXTEXTURENAME)
-						{
-							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1055), i);
-						}
-						if (tex->nOffsets[0] > 0 && dataOffset + texOffset + texlen > map->bsp_header.lump[LUMP_TEXTURES].nLength)
-						{
-							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0364), i, map->bsp_header.lump[LUMP_TEXTURES].nLength, dataOffset + texOffset + texlen);
-
-							char* newlump = new char[dataOffset + texOffset + texlen];
-							memset(newlump, 0, dataOffset + texOffset + texlen);
-							memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
-							map->replace_lump(LUMP_TEXTURES, newlump, dataOffset + texOffset + texlen);
-							foundfixes = true;
-						}
-					}
-				}
-				if (foundfixes)
-				{
-					map->update_lump_pointers();
-				}
-			}
-
-			if (ImGui::MenuItem(get_localized_string(LANG_0584).c_str()))
-			{
-				std::set<std::string> textureset = std::set<std::string>();
-
-				for (int i = 0; i < map->faceCount; i++)
-				{
-					BSPFACE32& face = map->faces[i];
-					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
-					if (info.iMiptex >= 0 && info.iMiptex < map->textureCount)
-					{
-						int texOffset = ((int*)map->textures)[info.iMiptex + 1];
-						if (texOffset >= 0)
-						{
-							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-							if (tex.nOffsets[0] <= 0 && tex.szName[0] != '\0')
-							{
-								if (textureset.count(tex.szName))
-									continue;
-								textureset.insert(tex.szName);
-								bool textureFoundInWad = false;
-								for (auto& s : map->getBspRender()->wads)
-								{
-									if (s->hasTexture(tex.szName))
-									{
-										textureFoundInWad = true;
-										break;
-									}
-								}
-								if (!textureFoundInWad)
-								{
-									COLOR3* imageData = new COLOR3[tex.nWidth * tex.nHeight];
-									memset(imageData, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
-									map->add_texture(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
-									delete[] imageData;
-								}
-							}
-							else if (tex.nOffsets[0] <= 0)
-							{
-								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0365), i);
-								memset(tex.szName, 0, MAXTEXTURENAME);
-								memcpy(tex.szName, "aaatrigger", 10);
-							}
-						}
-					}
-				}
-				map->getBspRender()->reuploadTextures();
-			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted(get_localized_string(LANG_0585).c_str());
-				ImGui::TextUnformatted(get_localized_string(LANG_0586).c_str());
-				ImGui::EndTooltip();
-			}
-
-
 			ImGui::EndMenu();
 		}
 
-		ImGui::EndMenu();
+		if (DebugKeyPressed)
+		{
+			if (ImGui::BeginMenu(get_localized_string(LANG_0605).c_str()))
+			{
+				ImGui::EndMenu();
+			}
+		}
+
+		ImGui::EndMainMenuBar();
 	}
 
-	if (ImGui::BeginMenu(get_localized_string(LANG_0587).c_str(), (map && !map->is_mdl_model)))
+	if (ImGui::BeginViewportSideBar("BottomBar", ImGui::GetMainViewport(), ImGuiDir_Down, ImGui::GetTextLineHeightWithSpacing(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar))
 	{
-		if (ImGui::MenuItem(get_localized_string(LANG_0588).c_str(), 0, false, map))
+		if (ImGui::BeginMenuBar())
 		{
-			Entity* newEnt = new Entity();
-			vec3 origin = (cameraOrigin + app->cameraForward * 100);
-			if (app->gridSnappingEnabled)
-				origin = app->snapToGrid(origin);
-			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
-			newEnt->addKeyvalue("classname", "info_player_deathmatch");
+			ImGui::TextUnformatted(fmt::format("Origin [{:^5},{:^5},{:^5}]", floatRound(cameraOrigin.x), floatRound(cameraOrigin.y), floatRound(cameraOrigin.z)).c_str());
 
-			CreateEntityCommand* createCommand = new CreateEntityCommand("Create Entity", app->getSelectedMapId(), newEnt);
-			rend->pushUndoCommand(createCommand);
+			vec3 hlAngles = cameraAngles;
+			hlAngles = hlAngles.unflipUV();
+			hlAngles = hlAngles.normalize_angles();
+			hlAngles.y -= 90.0f;
 
-			delete newEnt;
+			ImGui::TextUnformatted(fmt::format("Angles [{:^4},{:^4},{:^4}]", floatRound(hlAngles.x), floatRound(hlAngles.y), floatRound(hlAngles.z)).c_str());
+
+			ImGui::TextUnformatted(fmt::format("Click [{:^5},{:^5},{:^5}]", floatRound(app->debugVec0.x), floatRound(app->debugVec0.y), floatRound(app->debugVec0.z)).c_str());
+
+
+			ImGui::EndMenuBar();
 		}
-
-		if (ImGui::MenuItem(get_localized_string(LANG_0589).c_str(), 0, false, !app->isLoading && map))
-		{
-			vec3 origin = cameraOrigin + app->cameraForward * 100;
-			if (app->gridSnappingEnabled)
-				origin = app->snapToGrid(origin);
-
-			Entity* newEnt = new Entity();
-			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
-			newEnt->addKeyvalue("classname", "func_illusionary");
-
-			float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
-			if (snapSize < 16)
-			{
-				snapSize = 16;
-			}
-
-			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
-			rend->pushUndoCommand(command);
-
-			delete newEnt;
-
-			newEnt = map->ents[map->ents.size() - 1];
-			if (newEnt && newEnt->getBspModelIdx() >= 0)
-			{
-				BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
-				for (int i = 0; i < model.nFaces; i++)
-				{
-					map->faces[model.iFirstFace + i].nStyles[0] = 0;
-				}
-			}
-		}
-
-		if (ImGui::MenuItem(get_localized_string(LANG_0590).c_str(), 0, false, !app->isLoading && map))
-		{
-			vec3 origin = cameraOrigin + app->cameraForward * 100;
-			if (app->gridSnappingEnabled)
-				origin = app->snapToGrid(origin);
-
-			Entity* newEnt = new Entity();
-			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
-			newEnt->addKeyvalue("classname", "trigger_once");
-
-			float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
-
-			if (snapSize < 16)
-			{
-				snapSize = 16;
-			}
-
-			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
-			rend->pushUndoCommand(command);
-
-			delete newEnt;
-
-			newEnt = map->ents[map->ents.size() - 1];
-			if (newEnt && newEnt->getBspModelIdx() >= 0)
-			{
-				BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
-				model.iFirstFace = 0;
-				model.nFaces = 0;
-			}
-		}
-
-		if (ImGui::MenuItem(get_localized_string(LANG_0591).c_str(), 0, false, !app->isLoading && map))
-		{
-			vec3 origin = cameraOrigin + app->cameraForward * 100;
-			if (app->gridSnappingEnabled)
-				origin = app->snapToGrid(origin);
-
-			Entity* newEnt = new Entity();
-			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
-			newEnt->addKeyvalue("classname", "func_wall");
-
-			float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
-			if (snapSize < 16)
-			{
-				snapSize = 16;
-			}
-
-			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
-			rend->pushUndoCommand(command);
-
-			delete newEnt;
-
-			newEnt = map->ents[map->ents.size() - 1];
-			if (newEnt && newEnt->getBspModelIdx() >= 0)
-			{
-				BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
-				for (int i = 0; i < model.nFaces; i++)
-				{
-					map->faces[model.iFirstFace + i].nStyles[0] = 0;
-				}
-			}
-		}
-		ImGui::EndMenu();
+		ImGui::End();
 	}
 
-	if (ImGui::BeginMenu(get_localized_string(LANG_0592).c_str()))
-	{
-		if (map && map->is_mdl_model)
-		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0594).c_str(), "", showLogWidget))
-			{
-				showLogWidget = !showLogWidget;
-			}
-		}
-		else
-		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0595).c_str(), NULL, showDebugWidget))
-			{
-				showDebugWidget = !showDebugWidget;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0596).c_str(), get_localized_string(LANG_0477).c_str(), showKeyvalueWidget))
-			{
-				showKeyvalueWidget = !showKeyvalueWidget;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1160).c_str(), get_localized_string(LANG_1161).c_str(), showTransformWidget))
-			{
-				showTransformWidget = !showTransformWidget;
-			}
-			if (ImGui::MenuItem("Go to", get_localized_string(LANG_1095).c_str(), showGOTOWidget))
-			{
-				showGOTOWidget = !showGOTOWidget;
-				showGOTOWidget_update = true;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0597).c_str(), "", showFaceEditWidget))
-			{
-				showFaceEditWidget = !showFaceEditWidget;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0598).c_str(), "", showTextureBrowser))
-			{
-				showTextureBrowser = !showTextureBrowser;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0599).c_str(), "", showLightmapEditorWidget))
-			{
-				showLightmapEditorWidget = !showLightmapEditorWidget;
-				FaceSelectePressed();
-				showLightmapEditorUpdate = true;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_0600).c_str(), "", showMergeMapWidget))
-			{
-				showMergeMapWidget = !showMergeMapWidget;
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1096).c_str(), "", showLogWidget))
-			{
-				showLogWidget = !showLogWidget;
-			}
-		}
-		ImGui::EndMenu();
-	}
-
-	if (ImGui::BeginMenu(get_localized_string(LANG_0601).c_str()))
-	{
-		Bsp* selectedMap = app->getSelectedMap();
-		for (BspRenderer* bspRend : app->mapRenderers)
-		{
-			if (bspRend->map && !bspRend->map->is_bsp_model)
-			{
-				if (ImGui::MenuItem(bspRend->map->bsp_name.c_str(), NULL, selectedMap == bspRend->map))
-				{
-					selectedMap->getBspRender()->renderCameraAngles = cameraAngles;
-					selectedMap->getBspRender()->renderCameraOrigin = cameraOrigin;
-					app->deselectObject();
-					app->clearSelection();
-					app->selectMap(bspRend->map);
-					cameraAngles = bspRend->renderCameraAngles;
-					cameraOrigin = bspRend->renderCameraOrigin;
-					makeVectors(cameraAngles, app->cameraForward, app->cameraRight, app->cameraUp);
-				}
-			}
-		}
-		ImGui::EndMenu();
-	}
-
-	if (ImGui::BeginMenu(get_localized_string(LANG_0602).c_str()))
-	{
-		if (ImGui::MenuItem(get_localized_string(LANG_0603).c_str()))
-		{
-			showHelpWidget = true;
-		}
-		if (ImGui::MenuItem(get_localized_string(LANG_0604).c_str()))
-		{
-			showAboutWidget = true;
-		}
-		ImGui::EndMenu();
-	}
-
-	if (DebugKeyPressed)
-	{
-		if (ImGui::BeginMenu(get_localized_string(LANG_0605).c_str()))
-		{
-			ImGui::EndMenu();
-		}
-	}
-
-	ImGui::EndMainMenuBar();
 }
 
 void Gui::drawToolbar()
@@ -4214,7 +4238,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 					}
 					else
 					{
-						ImGui::InputText(("##inval" + std::to_string(i)).c_str(), keyval, 
+						ImGui::InputText(("##inval" + std::to_string(i)).c_str(), keyval,
 							ImGuiInputTextFlags_CallbackEdit, InputChangeCallback::keyValueChanged, &inputData[i]);
 					}
 				}
@@ -4386,7 +4410,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 									}
 
 									g_app->updateEntConnections();
-									map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue", entId,selent);
+									map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue", entId, selent);
 								}
 							}
 						}
@@ -4655,7 +4679,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	if (!keyDragging && wasKeyDragging)
 	{
 		map->getBspRender()->refreshEnt(entIdx);
-		map->getBspRender()->pushEntityUndoStateDelay("Move Keyvalue", entIdx,ent);
+		map->getBspRender()->pushEntityUndoStateDelay("Move Keyvalue", entIdx, ent);
 	}
 
 	wasKeyDragging = keyDragging;
@@ -4766,7 +4790,7 @@ void Gui::drawGOTOWidget()
 			cameraAngles = cameraAngles.normalize_angles();
 			cameraAngles.y = 0.0f;
 			map->getBspRender()->renderCameraAngles = cameraAngles;
-			
+
 			makeVectors(cameraAngles, app->cameraForward, app->cameraRight, app->cameraUp);
 		}
 		ImGui::PopStyleColor(3);

@@ -2336,7 +2336,7 @@ void Renderer::updateDragAxes(vec3 delta)
 			{
 				moveAxes.origin = transformedOrigin;
 				moveAxes.origin += delta;
-				debugVec0 = transformedOrigin + delta;
+				debugVec2 = transformedOrigin + delta;
 			}
 			else
 			{
@@ -3362,7 +3362,7 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 	if (selectTotal != 0)
 		fromOrigin = min + (max - min) * 0.5f;
 
-	debugVec0 = fromOrigin;
+	debugVec1 = fromOrigin;
 
 	for (int i = 0; i < modelVerts.size(); i++)
 	{
