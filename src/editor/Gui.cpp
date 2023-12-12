@@ -3297,15 +3297,18 @@ void Gui::drawDebugWidget()
 
 				static float movemulttime = app->curTime;
 				static float movemult = (float)(app->curTime - app->oldTime) * app->moveSpeed;
+				static vec3 nextOrigin = app->getMoveDir() * (float)(app->curTime - app->oldTime) * app->moveSpeed;
 
 				if (fabs(app->curTime - movemulttime) > 0.5)
 				{
 					movemult = (float)(app->curTime - app->oldTime) * app->moveSpeed;
 					movemulttime = app->curTime;
+					nextOrigin = app->getMoveDir() * (float)(app->curTime - app->oldTime) * app->moveSpeed;
 				}
 
 				ImGui::Text(fmt::format("MoveDir mult: [{}]", movemult).c_str());
 				ImGui::Text(fmt::format("MoveSpeed: [{}]", app->moveSpeed).c_str());
+				ImGui::Text(fmt::format("nextOrigin: [{}]", nextOrigin.toString()).c_str());
 			}
 		}
 

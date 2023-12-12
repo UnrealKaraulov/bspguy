@@ -873,7 +873,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 #else 
 void signalHandler(int signal) {
 	print_log("Caught signal: {}", signal);
-
+	exit(signal);
 }
 #endif
 int main(int argc, char* argv[])
