@@ -102,6 +102,8 @@ bool g_verbose = false;
 
 #ifdef WIN32
 #include <Windows.h>
+#else 
+#include <csignal>
 #endif
 
 void hideConsoleWindow()
@@ -868,6 +870,11 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
+#else 
+void signalHandler(int signal) {
+	print_log("Caught signal: {}", signal);
+
+}
 #endif
 int main(int argc, char* argv[])
 {
@@ -892,6 +899,10 @@ int main(int argc, char* argv[])
 		AddVectoredExceptionHandler(1, unhandled_handler);
 #endif
 		DisableProcessWindowsGhosting();
+#else 
+		signal(SIGSEGV, signalHandler);
+		signal(SIGFPE, signalHandler);
+		signal(SIGBUS, signalHandler);
 #endif
 		
 		if (argv && argv[0] && argv[0][0] != '\0')
