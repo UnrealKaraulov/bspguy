@@ -537,6 +537,7 @@ namespace ifd
 				m_calledOpenPopup = true;
 			}
 
+			ImGui::SetNextWindowSizeConstraints(ImVec2(600, 400), ImVec2(FLT_MAX, FLT_MAX));
 			if (ImGui::BeginPopupModal(m_currentTitle.c_str(), &m_isOpen, ImGuiWindowFlags_NoScrollbar))
 			{
 				m_renderFileDialog();
@@ -1189,10 +1190,10 @@ namespace ifd
 		// table view
 		if (m_zoom == 1.0f)
 		{
-			if (ImGui::BeginTable(get_localized_string(LANG_0932).c_str(),3,/*ImGuiTableFlags_Resizable |*/ ImGuiTableFlags_Sortable,ImVec2(0,-FLT_MIN)))
+			if (ImGui::BeginTable(get_localized_string(LANG_0932).c_str(),3, ImGuiTableFlags_Sortable,ImVec2(0,-FLT_MIN)))
 			{
 				// header
-				ImGui::TableSetupColumn(get_localized_string(LANG_0933).c_str(),ImGuiTableColumnFlags_WidthStretch,0.0f - 1.0f,0);
+				ImGui::TableSetupColumn(get_localized_string(LANG_0933).c_str(), ImGuiTableColumnFlags_WidthFixed,-1.0f,0);
 				ImGui::TableSetupColumn(get_localized_string(LANG_0934).c_str(),ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize,0.0f,1);
 				ImGui::TableSetupColumn(get_localized_string(LANG_0935).c_str(),ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize,0.0f,2);
 				ImGui::TableSetupScrollFreeze(0, 1);
@@ -1457,7 +1458,7 @@ namespace ifd
 
 		/***** CONTENT *****/
 		float bottomBarHeight = (GImGui->FontSize + ImGui::GetStyle().FramePadding.y + ImGui::GetStyle().ItemSpacing.y * 2.0f) * 2;
-		if (ImGui::BeginTable(get_localized_string(LANG_0950).c_str(),2,ImGuiTableFlags_Resizable,ImVec2(0,-bottomBarHeight)))
+		if (ImGui::BeginTable(get_localized_string(LANG_0950).c_str(),2,ImGuiTableFlags_Resizable ,ImVec2(0,-bottomBarHeight)))
 		{
 			ImGui::TableSetupColumn(get_localized_string(LANG_0951).c_str(),ImGuiTableColumnFlags_WidthFixed,125.0f);
 			ImGui::TableSetupColumn(get_localized_string(LANG_0952).c_str(),ImGuiTableColumnFlags_WidthStretch);
@@ -1472,7 +1473,7 @@ namespace ifd
 
 			// content on the right side
 			ImGui::TableSetColumnIndex(1);
-			ImGui::BeginChild(get_localized_string(LANG_0954).c_str(),ImVec2(0,-bottomBarHeight));
+			ImGui::BeginChild(get_localized_string(LANG_0954).c_str(),ImVec2(0,-bottomBarHeight), 0, ImGuiWindowFlags_AlwaysHorizontalScrollbar || ImGuiWindowFlags_AlwaysVerticalScrollbar);
 			m_renderContent();
 			ImGui::EndChild();
 			if (ImGui::IsItemHovered() && ImGui::GetIO().KeyCtrl && ImGui::GetIO().MouseWheel != 0.0f)

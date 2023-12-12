@@ -96,7 +96,7 @@ bool Fgd::parse()
 		{
 			inputLines.push_back(line);
 		}
-		else if (line.find_first_of("[") != std::string::npos)
+		else if (line.find_first_of('[') != std::string::npos)
 		{
 			auto split = splitStringIgnoringQuotes(line, "[");
 			if (split.size())
@@ -117,7 +117,7 @@ bool Fgd::parse()
 					inputLines.pop_back();
 			}
 		}
-		else if (line.find_first_of("]") != std::string::npos)
+		else if (line.find_first_of(']') != std::string::npos)
 		{
 			auto split = splitStringIgnoringQuotes(line, "]");
 			if (split.size())

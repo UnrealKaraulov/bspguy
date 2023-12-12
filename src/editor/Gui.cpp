@@ -1696,6 +1696,7 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem(get_localized_string(LANG_0524).c_str()))
 				{
 					filterNeeded = true;
+
 					ifd::FileDialog::Instance().Open("MapOpenDialog", "Select map path", "Map file (*.bsp){.bsp}", false, g_settings.lastdir);
 				}
 

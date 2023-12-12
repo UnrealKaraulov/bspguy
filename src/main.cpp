@@ -348,11 +348,13 @@ int noclip(CommandLine& cli)
 			if (redirect < 1 || redirect >= MAX_MAP_HULLS)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0011));
+				delete map;
 				return 1;
 			}
 			if (redirect == hull)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0012));
+				delete map;
 				return 1;
 			}
 		}
@@ -374,6 +376,7 @@ int noclip(CommandLine& cli)
 			if (model < 0 || model >= map->modelCount)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0014), map->modelCount);
+				delete map;
 				return 1;
 			}
 
