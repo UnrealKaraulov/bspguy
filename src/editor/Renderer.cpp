@@ -362,11 +362,8 @@ void Renderer::renderLoop()
 		anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
 
 		oldControl = canControl;
-#ifndef WIN32
-		canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput/* && !gui->imgui_io->WantCaptureMouseUnlessPopupClose*/;
-#else
+
 		canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
-#endif
 
 
 		if (curTime - lastTitleTime > 0.5)

@@ -3254,9 +3254,6 @@ void Gui::drawDebugWidget()
 		if (ImGui::CollapsingHeader(get_localized_string(LANG_0625).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0366)), floatRound(cameraOrigin.x), floatRound(cameraOrigin.y), floatRound(cameraOrigin.z)).c_str());
-			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
-			ImGui::Text(fmt::format("Mouse left {} right {}", app->curLeftMouse, app->curRightMouse).c_str());
-			ImGui::Text(fmt::format("Time: {}", app->curTime).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0367)), floatRound(cameraAngles.x), floatRound(cameraAngles.y), floatRound(cameraAngles.z)).c_str());
 
 			vec3 hlAngles = cameraAngles;
@@ -3269,6 +3266,18 @@ void Gui::drawDebugWidget()
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0368)), (unsigned int)app->pickInfo.selectedFaces.size()).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0369)), app->pickMode).c_str());
 		}
+
+		if (ImGui::CollapsingHeader("DEBUG INFO", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
+			ImGui::Text(fmt::format("Mouse left {} right {}", app->curLeftMouse, app->curRightMouse).c_str());
+			ImGui::Text(fmt::format("Time: {}", app->curTime).c_str());
+			ImGui::Text(fmt::format("canControl:{} No WantTextInput:{}", app->canControl, !imgui_io->WantTextInput).c_str());
+			ImGui::Text(fmt::format("No WantCaptureMouseUnlessPopupClose:{}", !imgui_io->WantCaptureMouseUnlessPopupClose).c_str());
+			ImGui::Text(fmt::format("No WantCaptureMouse:{}", !imgui_io->WantCaptureMouse).c_str());
+			ImGui::Text(fmt::format("BlockMoving:{}", app->blockMoving).c_str());
+		}
+			
 		if (ImGui::CollapsingHeader(get_localized_string(LANG_1100).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			if (!map)
