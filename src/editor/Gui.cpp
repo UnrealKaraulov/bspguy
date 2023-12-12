@@ -3271,13 +3271,36 @@ void Gui::drawDebugWidget()
 		{
 			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
 			ImGui::Text(fmt::format("Mouse left {} right {}", app->curLeftMouse, app->curRightMouse).c_str());
+			std::string keysStr;
+			for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; key++) {
+				if (app->pressed[key]) {
+					const char* keyName = glfwGetKeyName(key, 0);
+					if (keyName != nullptr) {
+						keysStr += fmt::format("{} ", keyName);
+					}
+				}
+			}
+			ImGui::Text("KEYS: %s", keysStr.c_str());
 			ImGui::Text(fmt::format("Time: {}", app->curTime).c_str());
-			ImGui::Text(fmt::format("canControl:{} No WantTextInput:{}", app->canControl, !imgui_io->WantTextInput).c_str());
+			ImGui::Text(fmt::format("canControl:{}\noldControl:{}\nNo WantTextInput:{}", app->canControl,app->oldControl, !imgui_io->WantTextInput).c_str());
 			ImGui::Text(fmt::format("No WantCaptureMouseUnlessPopupClose:{}", !imgui_io->WantCaptureMouseUnlessPopupClose).c_str());
 			ImGui::Text(fmt::format("No WantCaptureMouse:{}", !imgui_io->WantCaptureMouse).c_str());
 			ImGui::Text(fmt::format("BlockMoving:{}", app->blockMoving).c_str());
+			ImGui::Text(fmt::format("MoveDir: [{}]", app->getMoveDir().toString()).c_str());
+
+			static float movemulttime = app->curTime;
+			static float movemult = (float)(app->curTime - app->oldTime) * app->moveSpeed;
+
+			if (fabs(app->curTime - movemulttime) > 0.5f)
+			{
+				movemult = (float)(app->curTime - app->oldTime) * app->moveSpeed;
+				movemulttime = app->curTime;
+			}
+
+			ImGui::Text(fmt::format("MoveDir mult: [{}]", movemult).c_str());
+			ImGui::Text(fmt::format("MoveSpeed: [{}]", app->moveSpeed).c_str());
 		}
-			
+
 		if (ImGui::CollapsingHeader(get_localized_string(LANG_1100).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			if (!map)

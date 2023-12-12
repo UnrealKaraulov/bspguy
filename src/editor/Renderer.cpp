@@ -1002,7 +1002,6 @@ void Renderer::drawEntConnections()
 
 void Renderer::controls()
 {
-
 	if (blockMoving)
 	{
 		if (!anyCtrlPressed || !pressed[GLFW_KEY_A])
