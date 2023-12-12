@@ -6,6 +6,8 @@
 
 #define EPSILON 0.0001f // EPSILON from rad.h / 10
 
+#define EPSILON2 0.00001f // EPSILON from rad.h / 100
+
 #define ON_EPSILON 0.03125f
 
 
@@ -13,36 +15,39 @@ struct vec3
 {
 	float x, y, z;
 
+	void Copy(const vec3& other) 
+	{
+		x = other.x;
+		y = other.y;
+		z = other.z;
+	}
+	vec3& operator =(const vec3& other)
+	{
+		Copy(other); 
+		return *this;
+	}
+
+	vec3(const vec3& other) 
+	{
+		Copy(other);
+	}
+
 	vec3() : x(+0.0f), y(+0.0f), z(+0.0f)
 	{
 
 	}
-	vec3(const vec3& other) : x(other.x), y(other.y), z(other.z)
-	{
-		if (abs(x) < EPSILON)
-		{
-			x = +0.0f;
-		}
-		if (abs(y) < EPSILON)
-		{
-			y = +0.0f;
-		}
-		if (abs(z) < EPSILON)
-		{
-			z = +0.0f;
-		}
-	}
+
 	vec3(float x, float y, float z) : x(x), y(y), z(z)
 	{
-		if (abs(x) < EPSILON)
+		if (abs(x) < EPSILON2)
 		{
 			x = +0.0f;
 		}
-		if (abs(y) < EPSILON)
+		if (abs(y) < EPSILON2)
 		{
 			y = +0.0f;
 		}
-		if (abs(z) < EPSILON)
+		if (abs(z) < EPSILON2)
 		{
 			z = +0.0f;
 		}
