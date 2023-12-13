@@ -37,7 +37,9 @@ struct lightmapVert
 	// last value scales the lightmap brightness
 	float luv[MAXLIGHTMAPS][3];
 
+	// color
 	float r, g, b, a;
+
 	vec3 pos;
 };
 

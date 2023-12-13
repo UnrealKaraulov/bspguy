@@ -5435,14 +5435,14 @@ void Gui::drawSettings()
 		static int fgdSelected = 0;
 
 
-		static const char* tab_titles[settings_tabs] = {
-			"General",
-			"FGDs",
-			"Asset Paths",
-			"Optimizing",
-			"Limits",
-			"Rendering",
-			"Controls"
+		std::string tab_titles[settings_tabs] = {
+			get_localized_string("LANG_SETTINGS_GENERAL"),
+			get_localized_string("LANG_SETTINGS_FGDPATH"),
+			get_localized_string("LANG_SETTINGS_WADPATH"),
+			get_localized_string("LANG_SETTINGS_OPTIMIZE"),
+			get_localized_string("LANG_SETTINGS_LIMITS"),
+			get_localized_string("LANG_SETTINGS_RENDER"),
+			get_localized_string("LANG_SETTINGS_CONTROL")
 		};
 
 		// left
@@ -5450,7 +5450,7 @@ void Gui::drawSettings()
 
 		for (int i = 0; i < settings_tabs; i++)
 		{
-			if (ImGui::Selectable(tab_titles[i], settingsTab == i))
+			if (ImGui::Selectable(tab_titles[i].c_str(), settingsTab == i))
 				settingsTab = i;
 		}
 
@@ -5473,7 +5473,7 @@ void Gui::drawSettings()
 		ImGui::BeginGroup();
 		float footerHeight = settingsTab <= 2 ? ImGui::GetFrameHeightWithSpacing() + 4.f : 0.f;
 		ImGui::BeginChild(get_localized_string(LANG_0711).c_str(), ImVec2(0, -footerHeight)); // Leave room for 1 line below us
-		ImGui::Text(tab_titles[settingsTab]);
+		ImGui::Text(tab_titles[settingsTab].c_str());
 		ImGui::Separator();
 
 		if (reloadSettings)
@@ -8067,7 +8067,7 @@ void Gui::drawFaceEditorWidget()
 	if (ImGui::Begin(get_localized_string(LANG_0870).c_str(), &showFaceEditWidget))
 	{
 		static float scaleX, scaleY, shiftX, shiftY;
-		static int lmSize[2];
+		static std::vector<std::array<int, 2>> lightmapSizes{};
 		static float rotateX, rotateY;
 		static bool lockRotate = true;
 		static int bestplane;
@@ -8170,10 +8170,19 @@ void Gui::drawFaceEditorWidget()
 						tmpStyles[i] = face.nStyles[i];
 					}
 
+					lightmapSizes.clear();
+
+					int lmSize[2];
+					GetFaceLightmapSize(map, faceIdx, lmSize);
+					lightmapSizes.push_back({ lmSize[0],lmSize[1] });
+
+
 					// show default values if not all faces share the same values
 					for (int i = 1; i < app->pickInfo.selectedFaces.size(); i++)
 					{
 						int faceIdx2 = app->pickInfo.selectedFaces[i];
+						GetFaceLightmapSize(map, faceIdx2, lmSize);
+						lightmapSizes.push_back({ lmSize[0],lmSize[1] });
 						BSPFACE32& face2 = map->faces[faceIdx2];
 						BSPTEXTUREINFO& texinfo2 = map->texinfos[face2.iTextureInfo];
 
@@ -8193,8 +8202,6 @@ void Gui::drawFaceEditorWidget()
 							textureName[0] = '\0';
 						}
 					}
-
-					GetFaceLightmapSize(map, faceIdx, lmSize);
 
 					for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
 					{
@@ -8224,7 +8231,7 @@ void Gui::drawFaceEditorWidget()
 		ImGui::PushItemWidth(inputWidth);
 
 		if (app->pickInfo.selectedFaces.size() == 1)
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0422)), lmSize[0], lmSize[1], lmSize[0] * lmSize[1]).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0422)), lightmapSizes[0][0], lightmapSizes[0][1], lightmapSizes[0][0] * lightmapSizes[0][1]).c_str());
 
 
 		ImGui::Text(get_localized_string(LANG_1169).c_str());
@@ -8554,6 +8561,23 @@ void Gui::drawFaceEditorWidget()
 				}
 
 				mapRenderer->updateFaceUVs(faceIdx);
+
+
+				if ((updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || stylesChanged
+					|| refreshSelectedFaces || updatedTexVec || mergeFaceVec))
+				{
+					for (int n = 0; n < app->pickInfo.selectedFaces.size(); n++)
+					{
+						int lmSize[2];
+						GetFaceLightmapSize(map, app->pickInfo.selectedFaces[n], lmSize);
+						if (lmSize[0] != lightmapSizes[n][0] ||
+							lmSize[1] != lightmapSizes[n][1])
+						{
+							print_log(PRINT_GREEN | PRINT_RED | PRINT_INTENSITY, "Warning need resize lightmap face {} from {}x{} to {}x{}\n",
+								app->pickInfo.selectedFaces[n], lightmapSizes[n][0], lightmapSizes[n][1], lmSize[0], lmSize[1]);
+						}
+					}
+				}
 			}
 
 			if (updatedFaceVec && app->pickInfo.selectedFaces.size() == 1)

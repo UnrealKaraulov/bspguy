@@ -1568,3 +1568,82 @@ void FixupAllSystemPaths()
 float floatRound(float f) {
 	return (float)((f >= 0 || (float)(int)f == f) ? (int)f : (int)f - 1);
 }
+
+
+void scaleImage(const COLOR4 * inputImage, std::vector<COLOR4>& outputImage,
+	int inputWidth, int inputHeight, int outputWidth, int outputHeight) {
+	outputImage.resize(outputWidth * outputHeight);
+
+	float xScale = static_cast<float>(inputWidth) / outputWidth;
+	float yScale = static_cast<float>(inputHeight) / outputHeight;
+
+	for (int y = 0; y < outputHeight; y++) {
+		for (int x = 0; x < outputWidth; x++) {
+			float srcX = x * xScale;
+			float srcY = y * yScale;
+
+			int x1 = static_cast<int>(srcX);
+			int y1 = static_cast<int>(srcY);
+			int x2 = x1 + 1;
+			int y2 = y1 + 1;
+
+			float xWeight = srcX - x1;
+			float yWeight = srcY - y1;
+
+			COLOR4 topLeft = inputImage[y1 * inputWidth + x1];
+			COLOR4 topRight = inputImage[y1 * inputWidth + x2];
+			COLOR4 bottomLeft = inputImage[y2 * inputWidth + x1];
+			COLOR4 bottomRight = inputImage[y2 * inputWidth + x2];
+
+			COLOR4 interpolatedColor;
+			interpolatedColor.r = (1 - xWeight) * ((1 - yWeight) * topLeft.r + yWeight * bottomLeft.r)
+				+ xWeight * ((1 - yWeight) * topRight.r + yWeight * bottomRight.r);
+			interpolatedColor.g = (1 - xWeight) * ((1 - yWeight) * topLeft.g + yWeight * bottomLeft.g)
+				+ xWeight * ((1 - yWeight) * topRight.g + yWeight * bottomRight.g);
+			interpolatedColor.b = (1 - xWeight) * ((1 - yWeight) * topLeft.b + yWeight * bottomLeft.b)
+				+ xWeight * ((1 - yWeight) * topRight.b + yWeight * bottomRight.b);
+			interpolatedColor.a = (1 - xWeight) * ((1 - yWeight) * topLeft.a + yWeight * bottomLeft.a)
+				+ xWeight * ((1 - yWeight) * topRight.a + yWeight * bottomRight.a);
+
+			outputImage[y * outputWidth + x] = interpolatedColor;
+		}
+	}
+}
+
+void scaleImage(const COLOR3 * inputImage, std::vector<COLOR3>& outputImage,
+	int inputWidth, int inputHeight, int outputWidth, int outputHeight) {
+	outputImage.resize(outputWidth * outputHeight);
+
+	float xScale = static_cast<float>(inputWidth) / outputWidth;
+	float yScale = static_cast<float>(inputHeight) / outputHeight;
+
+	for (int y = 0; y < outputHeight; y++) {
+		for (int x = 0; x < outputWidth; x++) {
+			float srcX = x * xScale;
+			float srcY = y * yScale;
+
+			int x1 = static_cast<int>(srcX);
+			int y1 = static_cast<int>(srcY);
+			int x2 = x1 + 1;
+			int y2 = y1 + 1;
+
+			float xWeight = srcX - x1;
+			float yWeight = srcY - y1;
+
+			COLOR3 topLeft = inputImage[y1 * inputWidth + x1];
+			COLOR3 topRight = inputImage[y1 * inputWidth + x2];
+			COLOR3 bottomLeft = inputImage[y2 * inputWidth + x1];
+			COLOR3 bottomRight = inputImage[y2 * inputWidth + x2];
+
+			COLOR3 interpolatedColor;
+			interpolatedColor.r = (1 - xWeight) * ((1 - yWeight) * topLeft.r + yWeight * bottomLeft.r)
+				+ xWeight * ((1 - yWeight) * topRight.r + yWeight * bottomRight.r);
+			interpolatedColor.g = (1 - xWeight) * ((1 - yWeight) * topLeft.g + yWeight * bottomLeft.g)
+				+ xWeight * ((1 - yWeight) * topRight.g + yWeight * bottomRight.g);
+			interpolatedColor.b = (1 - xWeight) * ((1 - yWeight) * topLeft.b + yWeight * bottomLeft.b)
+				+ xWeight * ((1 - yWeight) * topRight.b + yWeight * bottomRight.b);
+
+			outputImage[y * outputWidth + x] = interpolatedColor;
+		}
+	}
+}

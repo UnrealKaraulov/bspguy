@@ -235,6 +235,9 @@ int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p);
 	:						\
 		BoxOnPlaneSide(( emins ), ( emaxs ), ( p )))
 
-
+void scaleImage(const COLOR4* inputImage, std::vector<COLOR4>& outputImage,
+	int inputWidth, int inputHeight, int outputWidth, int outputHeight);
+void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
+	int inputWidth, int inputHeight, int outputWidth, int outputHeight);
 
 float floatRound(float f);
