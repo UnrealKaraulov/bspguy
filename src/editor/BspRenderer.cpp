@@ -423,34 +423,43 @@ void BspRenderer::reload()
 
 void BspRenderer::reloadTextures()
 {
-	texturesLoaded = false;
-	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
+	if (texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	{
+		texturesLoaded = false;
+		texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
+	}
 }
 
 void BspRenderer::reloadLightmaps()
 {
-	lightmapsGenerated = false;
-	lightmapsUploaded = false;
-	deleteLightmapTextures();
-	if (lightmaps)
+	if (lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
-		delete[] lightmaps;
-		lightmaps = NULL;
+		lightmapsGenerated = false;
+		lightmapsUploaded = false;
+		deleteLightmapTextures();
+		if (lightmaps)
+		{
+			delete[] lightmaps;
+			lightmaps = NULL;
+		}
+		lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
 	}
-	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
 }
 
 void BspRenderer::reloadClipnodes()
 {
-	clipnodesLoaded = false;
-	clipnodeLeafCount = 0;
+	if (clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	{
+		clipnodesLoaded = false;
+		clipnodeLeafCount = 0;
 
-	deleteRenderClipnodes();
+		deleteRenderClipnodes();
 
-	clipnodesBufferCache.clear();
-	nodesBufferCache.clear();
+		clipnodesBufferCache.clear();
+		nodesBufferCache.clear();
 
-	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
+		clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
+	}
 }
 
 RenderClipnodes* BspRenderer::addClipnodeModel(int modelIdx)
@@ -548,7 +557,7 @@ void BspRenderer::loadLightmaps()
 			info.midPolyU = (imins[0] + imaxs[0]) * 16.0f / 2.0f;
 			info.midPolyV = (imins[1] + imaxs[1]) * 16.0f / 2.0f;
 
-			for (int s = 0; s < MAXLIGHTMAPS; s++)
+			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
 				if (face.nStyles[s] == 255)
 					continue;
@@ -881,7 +890,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		lightmapVert* verts = new lightmapVert[face.nEdges];
 		int vertCount = face.nEdges;
-		Texture* lightmapAtlas[MAXLIGHTMAPS]{ NULL };
+		Texture* lightmapAtlas[MAX_LIGHTMAPS]{ NULL };
 
 		float lw = 0;
 		float lh = 0;
@@ -893,7 +902,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		bool isSpecial = texinfo.nFlags & TEX_SPECIAL;
 		bool hasLighting = face.nStyles[0] != 255 && face.nLightmapOffset >= 0 && !isSpecial;
-		for (int s = 0; s < MAXLIGHTMAPS; s++)
+		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
 			lightmapAtlas[s] = lmap ? glLightmapTextures[lmap->atlasId[s]] : NULL;
 		}
@@ -963,14 +972,14 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 				float pixelStep = 1.0f / (float)LIGHTMAP_ATLAS_SIZE;
 
-				for (int s = 0; s < MAXLIGHTMAPS; s++)
+				for (int s = 0; s < MAX_LIGHTMAPS; s++)
 				{
 					verts[e].luv[s][0] = uu + lmap->x[s] * pixelStep;
 					verts[e].luv[s][1] = vv + lmap->y[s] * pixelStep;
 				}
 			}
 			// set lightmap scales
-			for (int s = 0; s < MAXLIGHTMAPS; s++)
+			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
 				verts[e].luv[s][2] = (hasLighting && face.nStyles[s] != 255) ? 1.0f : 0.0f;
 				if (isSpecial && s == 0)
@@ -1035,7 +1044,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			if (textureMatch && renderGroups[k].transparent == isTransparent)
 			{
 				bool allMatch = true;
-				for (int s = 0; s < MAXLIGHTMAPS; s++)
+				for (int s = 0; s < MAX_LIGHTMAPS; s++)
 				{
 					if (renderGroups[k].lightmapAtlas[s] != lightmapAtlas[s])
 					{
@@ -1060,7 +1069,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			newGroup.transparent = isTransparent;
 			newGroup.special = isSpecial;
 			newGroup.texture = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : greyTex;
-			for (int s = 0; s < MAXLIGHTMAPS; s++)
+			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
 				newGroup.lightmapAtlas[s] = lightmapAtlas[s];
 			}
@@ -2327,7 +2336,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 		if (g_render_flags & RENDER_LIGHTMAPS)
 		{
-			for (int s = 0; s < MAXLIGHTMAPS; s++)
+			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
 				if (highlight)
 				{
@@ -2374,7 +2383,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 		if (ent)
 		{
-			for (int s = 0; s < MAXLIGHTMAPS; s++)
+			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
 				whiteTex->bind(s + 1);
 			}
@@ -2584,7 +2593,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		}
 	}
 
-	for (size_t i = 0; i < map->ents.size(); i++)
+	for (int i = 0; i < (int) map->ents.size(); i++)
 	{
 		if (renderEnts[i].hide)
 			continue;

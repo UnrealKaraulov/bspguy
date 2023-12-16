@@ -197,7 +197,7 @@ Renderer::Renderer()
 	g_app->bspShader->bind();
 	unsigned int sTexId = glGetUniformLocation(g_app->bspShader->ID, "sTex");
 	glUniform1i(sTexId, 0);
-	for (int s = 0; s < MAXLIGHTMAPS; s++)
+	for (int s = 0; s < MAX_LIGHTMAPS; s++)
 	{
 		unsigned int sLightmapTexIds = glGetUniformLocation(g_app->bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
 		// assign lightmap texture units (skips the normal texture unit)
@@ -243,12 +243,12 @@ Renderer::~Renderer()
 
 void Renderer::renderLoop()
 {
-	int value;
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &value);
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
 
-	if (LIGHTMAP_ATLAS_SIZE > value)
+	if (LIGHTMAP_ATLAS_SIZE > gl_max_texture_size)
 	{
-		print_log(get_localized_string(LANG_0904), value);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0904), gl_max_texture_size);
+		LIGHTMAP_ATLAS_SIZE = gl_max_texture_size;
 	}
 
 	{
@@ -1765,6 +1765,7 @@ bool Renderer::transformAxisControls()
 					else
 					{
 						map->getBspRender()->pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
+						map->resize_all_lightmaps();
 					}
 					map->getBspRender()->refreshModel(modelIdx);
 					map->getBspRender()->refreshModelClipnodes(modelIdx);
@@ -1816,7 +1817,10 @@ bool Renderer::transformAxisControls()
 						if (invalidSolid)
 							revertInvalidSolid(map, modelIdx);
 						else
+						{
 							map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
+							map->resize_all_lightmaps();
+						}
 						map->getBspRender()->refreshEnt(entIdx);
 						map->getBspRender()->refreshModel(modelIdx);
 						map->getBspRender()->refreshModelClipnodes(modelIdx);
@@ -1855,11 +1859,12 @@ bool Renderer::transformAxisControls()
 									if (tmpent->getBspModelIdx() >= 0)
 									{
 										map->move(origin_delta * -1, tmpent->getBspModelIdx());
-										map->getBspRender()->pushModelUndoState("Move origin of model", EDIT_MODEL_LUMPS | FL_ENTITIES);
+										map->getBspRender()->pushModelUndoState("Move model [all]", EDIT_MODEL_LUMPS | FL_ENTITIES);
+										map->resize_all_lightmaps();
 									}
 									else
 									{
-										map->getBspRender()->pushEntityUndoState("Move model origin", pickInfo.selectedEnts[i]);
+										map->getBspRender()->pushEntityUndoState("Move model [origin]", pickInfo.selectedEnts[i]);
 									}
 
 									g_progress.hide = false;
@@ -1902,6 +1907,7 @@ bool Renderer::transformAxisControls()
 					else
 					{
 						map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
+						map->resize_all_lightmaps();
 					}
 					map->getBspRender()->refreshModel(modelIdx);
 					map->getBspRender()->refreshModelClipnodes(modelIdx);
@@ -2916,7 +2922,7 @@ void Renderer::scaleSelectedObject(float x, float y, float z)
 	scaleSelectedObject(dir, vec3());
 }
 
-void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
+void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir, bool logging)
 {
 	int entIdx = pickInfo.GetSelectedEnt();
 	if (entIdx < 0 || !SelectedMap)
@@ -3000,85 +3006,85 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
 	//       Rewrite all of this after understanding texture axes.
 	//
 
-	if (!textureLock)
-		return;
-
-	minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	maxDist = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-
-	for (int i = 0; i < modelFaceVerts.size(); i++)
+	if (textureLock)
 	{
-		expandBoundingBox(modelFaceVerts[i].pos, minDist, maxDist);
-	}
-	vec3 newDistRange = maxDist - minDist;
-	vec3 scaleFactor = distRange / newDistRange;
+		minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+		maxDist = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
-	mat4x4 scaleMat;
-	scaleMat.loadIdentity();
-	scaleMat.scale(scaleFactor.x, scaleFactor.y, scaleFactor.z);
-
-	for (int i = 0; i < scaleTexinfos.size(); i++)
-	{
-		ScalableTexinfo& oldinfo = scaleTexinfos[i];
-		BSPTEXTUREINFO& info = map->texinfos[scaleTexinfos[i].texinfoIdx];
-
-		info.vS = (scaleMat * vec4(oldinfo.oldS, 1)).xyz();
-		info.vT = (scaleMat * vec4(oldinfo.oldT, 1)).xyz();
-
-		float shiftS = oldinfo.oldShiftS;
-		float shiftT = oldinfo.oldShiftT;
-
-		// magic guess-and-check code that somehow works some of the time
-		// also its shit
-		for (int k = 0; k < 3; k++)
+		for (int i = 0; i < modelFaceVerts.size(); i++)
 		{
-			vec3 stretchDir;
-			if (k == 0) stretchDir = vec3(dir.x, 0, 0).normalize();
-			if (k == 1) stretchDir = vec3(0, dir.y, 0).normalize();
-			if (k == 2) stretchDir = vec3(0, 0, dir.z).normalize();
-
-			float refDist = 0;
-			if (k == 0) refDist = scaleFromDist.x;
-			if (k == 1) refDist = scaleFromDist.y;
-			if (k == 2) refDist = scaleFromDist.z;
-
-			vec3 texFromDir;
-			if (k == 0) texFromDir = dir * vec3(1, 0, 0);
-			if (k == 1) texFromDir = dir * vec3(0, 1, 0);
-			if (k == 2) texFromDir = dir * vec3(0, 0, 1);
-
-			float dotS = dotProduct(oldinfo.oldS.normalize(), stretchDir);
-			float dotT = dotProduct(oldinfo.oldT.normalize(), stretchDir);
-
-			float dotSm = dotProduct(texFromDir, info.vS) < 0 ? 1.0f : -1.0f;
-			float dotTm = dotProduct(texFromDir, info.vT) < 0 ? 1.0f : -1.0f;
-
-			// hurr dur oh god im fucking retarded huurr
-			if (k == 0 && dotProduct(texFromDir, fromDir) < 0 != fromDir.x < 0)
-			{
-				dotSm *= -1.0f;
-				dotTm *= -1.0f;
-			}
-			if (k == 1 && dotProduct(texFromDir, fromDir) < 0 != fromDir.y < 0)
-			{
-				dotSm *= -1.0f;
-				dotTm *= -1.0f;
-			}
-			if (k == 2 && dotProduct(texFromDir, fromDir) < 0 != fromDir.z < 0)
-			{
-				dotSm *= -1.0f;
-				dotTm *= -1.0f;
-			}
-
-			float vsdiff = info.vS.length() - oldinfo.oldS.length();
-			float vtdiff = info.vT.length() - oldinfo.oldT.length();
-
-			shiftS += (refDist * vsdiff * abs(dotS)) * dotSm;
-			shiftT += (refDist * vtdiff * abs(dotT)) * dotTm;
+			expandBoundingBox(modelFaceVerts[i].pos, minDist, maxDist);
 		}
+		vec3 newDistRange = maxDist - minDist;
+		vec3 scaleFactor = distRange / newDistRange;
 
-		info.shiftS = shiftS;
-		info.shiftT = shiftT;
+		mat4x4 scaleMat;
+		scaleMat.loadIdentity();
+		scaleMat.scale(scaleFactor.x, scaleFactor.y, scaleFactor.z);
+
+		for (int i = 0; i < scaleTexinfos.size(); i++)
+		{
+			ScalableTexinfo& oldinfo = scaleTexinfos[i];
+			BSPTEXTUREINFO& info = map->texinfos[scaleTexinfos[i].texinfoIdx];
+
+			info.vS = (scaleMat * vec4(oldinfo.oldS, 1)).xyz();
+			info.vT = (scaleMat * vec4(oldinfo.oldT, 1)).xyz();
+
+			float shiftS = oldinfo.oldShiftS;
+			float shiftT = oldinfo.oldShiftT;
+
+			// magic guess-and-check code that somehow works some of the time
+			// also its shit
+			for (int k = 0; k < 3; k++)
+			{
+				vec3 stretchDir;
+				if (k == 0) stretchDir = vec3(dir.x, 0, 0).normalize();
+				if (k == 1) stretchDir = vec3(0, dir.y, 0).normalize();
+				if (k == 2) stretchDir = vec3(0, 0, dir.z).normalize();
+
+				float refDist = 0;
+				if (k == 0) refDist = scaleFromDist.x;
+				if (k == 1) refDist = scaleFromDist.y;
+				if (k == 2) refDist = scaleFromDist.z;
+
+				vec3 texFromDir;
+				if (k == 0) texFromDir = dir * vec3(1, 0, 0);
+				if (k == 1) texFromDir = dir * vec3(0, 1, 0);
+				if (k == 2) texFromDir = dir * vec3(0, 0, 1);
+
+				float dotS = dotProduct(oldinfo.oldS.normalize(), stretchDir);
+				float dotT = dotProduct(oldinfo.oldT.normalize(), stretchDir);
+
+				float dotSm = dotProduct(texFromDir, info.vS) < 0 ? 1.0f : -1.0f;
+				float dotTm = dotProduct(texFromDir, info.vT) < 0 ? 1.0f : -1.0f;
+
+				// hurr dur oh god im fucking retarded huurr
+				if (k == 0 && dotProduct(texFromDir, fromDir) < 0 != fromDir.x < 0)
+				{
+					dotSm *= -1.0f;
+					dotTm *= -1.0f;
+				}
+				if (k == 1 && dotProduct(texFromDir, fromDir) < 0 != fromDir.y < 0)
+				{
+					dotSm *= -1.0f;
+					dotTm *= -1.0f;
+				}
+				if (k == 2 && dotProduct(texFromDir, fromDir) < 0 != fromDir.z < 0)
+				{
+					dotSm *= -1.0f;
+					dotTm *= -1.0f;
+				}
+
+				float vsdiff = info.vS.length() - oldinfo.oldS.length();
+				float vtdiff = info.vT.length() - oldinfo.oldT.length();
+
+				shiftS += (refDist * vsdiff * abs(dotS)) * dotSm;
+				shiftT += (refDist * vtdiff * abs(dotT)) * dotTm;
+			}
+
+			info.shiftS = shiftS;
+			info.shiftT = shiftT;
+		}
 	}
 }
 
@@ -3327,7 +3333,10 @@ bool Renderer::splitModelFace()
 
 	gui->reloadLimits();
 
+	
+
 	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
+	map->resize_all_lightmaps();
 
 	return true;
 }

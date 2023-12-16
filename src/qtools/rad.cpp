@@ -4,7 +4,8 @@
 #include "Bsp.h"
 #include <algorithm>
 
-void qrad_get_lightmap_flags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut)
+// Used for better lightmap resizing
+void get_lightmap_luxelflags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut)
 {
 
 	BSPFACE32* f = &bsp->faces[faceIdx];
@@ -18,7 +19,7 @@ void qrad_get_lightmap_flags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut
 	l.face = f;
 
 	CalcFaceExtents(bsp, &l);
-	CalcPoints(bsp, &l, luxelFlagsOut);
+	fill_luxel_flags(bsp, &l, luxelFlagsOut);
 
 	return;
 }
@@ -275,11 +276,21 @@ int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum)
 	BSPFACE32& face = bsp->faces[facenum];
 
 	int lightmapCount = 0;
-	for (int k = 0; k < 4; k++)
+	for (int k = 0; k < MAX_LIGHTMAPS; k++)
 	{
 		lightmapCount += face.nStyles[k] != 255;
 	}
 	return size[0] * size[1] * lightmapCount * sizeof(COLOR3);
+}
+
+int GetFaceSingleLightmapSizeBytes(Bsp* bsp, int facenum)
+{
+	int size[2];
+	GetFaceLightmapSize(bsp, facenum, size);
+	BSPFACE32& face = bsp->faces[facenum];
+	if (face.nStyles[0] == 255)
+		return 0;
+	return size[0] * size[1] * sizeof(COLOR3);
 }
 
 
@@ -415,7 +426,7 @@ bool CalcFaceExtents(Bsp* bsp, lightinfo_t* l)
 	return true;
 }
 
-void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
+void fill_luxel_flags(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
 {
 	const int       h = l->texsize[1] + 1;
 	const int       w = l->texsize[0] + 1;

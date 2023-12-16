@@ -182,13 +182,13 @@ void Gui::draw()
 	{
 		if (contextMenuEnt != -1)
 		{
-			ImGui::OpenPopup(get_localized_string(LANG_0427).c_str());
+			ImGui::OpenPopup("ent_context");
 			contextMenuEnt = -1;
 		}
 		if (emptyContextMenu)
 		{
 			emptyContextMenu = 0;
-			ImGui::OpenPopup(get_localized_string(LANG_0428).c_str());
+			ImGui::OpenPopup("empty_context");
 		}
 	}
 	else
@@ -197,11 +197,11 @@ void Gui::draw()
 		{
 			emptyContextMenu = 0;
 			contextMenuEnt = -1;
-			ImGui::OpenPopup(get_localized_string(LANG_0429).c_str());
+			ImGui::OpenPopup("face_context");
 		}
 	}
 
-	draw3dContextMenus();
+	drawBspContexMenu();
 
 	ImGui::PopFont();
 
@@ -253,7 +253,7 @@ void Gui::copyTexture()
 
 void Gui::pasteTexture()
 {
-	refreshSelectedFaces = true;
+	pasteTextureNow = true;
 }
 
 void Gui::copyLightmap()
@@ -271,15 +271,15 @@ void Gui::copyLightmap()
 		return;
 	}
 
-	copiedLightmapFace = app->pickInfo.selectedFaces[0];
+	copiedLightmap.face = app->pickInfo.selectedFaces[0];
 
 	int size[2];
-	GetFaceLightmapSize(map, app->pickInfo.selectedFaces[0], size);
+	GetFaceLightmapSize(map, copiedLightmap.face, size);
 	copiedLightmap.width = size[0];
 	copiedLightmap.height = size[1];
 	copiedLightmap.layers = map->lightmap_count(app->pickInfo.selectedFaces[0]);
-	//copiedLightmap.luxelFlags = new unsigned char[size[0] * size[1]];
-	//qrad_get_lightmap_flags(map, app->pickInfo.faceIdx, copiedLightmap.luxelFlags);
+	copiedLightmap.luxelFlags = new unsigned char[size[0] * size[1]];
+	get_lightmap_luxelflags(map, copiedLightmap.face, copiedLightmap.luxelFlags);
 }
 
 void Gui::pasteLightmap()
@@ -300,27 +300,19 @@ void Gui::pasteLightmap()
 	int size[2];
 	GetFaceLightmapSize(map, faceIdx, size);
 
-	LIGHTMAP dstLightmap = LIGHTMAP();
-	dstLightmap.width = size[0];
-	dstLightmap.height = size[1];
-	dstLightmap.layers = map->lightmap_count(faceIdx);
-
-	if (dstLightmap.width != copiedLightmap.width || dstLightmap.height != copiedLightmap.height)
+	if (size[0] != copiedLightmap.width || size[1] != copiedLightmap.height)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, "WARNING: lightmap sizes don't match ({}x{} != {}{})",
 			copiedLightmap.width,
 			copiedLightmap.height,
-			dstLightmap.width,
-			dstLightmap.height);
-		// TODO: resize the lightmap, or maybe just shift if the face is the same size
+			size[0],
+			size[1]);
 	}
 
-	BSPFACE32& src = map->faces[copiedLightmapFace];
+	BSPFACE32& src = map->faces[copiedLightmap.face];
 	BSPFACE32& dst = map->faces[faceIdx];
+	memcpy(dst.nStyles, src.nStyles, MAX_LIGHTMAPS);
 	dst.nLightmapOffset = src.nLightmapOffset;
-	memcpy(dst.nStyles, src.nStyles, 4);
-
-	map->getBspRender()->reloadLightmaps();
 }
 
 void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
@@ -465,7 +457,7 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 }
 
 
-void Gui::draw3dContextMenus()
+void Gui::drawBspContexMenu()
 {
 	ImGuiContext& g = *GImGui;
 
@@ -479,7 +471,7 @@ void Gui::draw3dContextMenus()
 	if (app->originHovered && entIdx >= 0)
 	{
 		Entity* ent = map->ents[entIdx];
-		if (ImGui::BeginPopup(get_localized_string(LANG_1066).c_str()) || ImGui::BeginPopup(get_localized_string(LANG_1067).c_str()))
+		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
 		{
 			if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
 			{
@@ -537,9 +529,10 @@ void Gui::draw3dContextMenus()
 
 		return;
 	}
+
 	if (app->pickMode == PICK_FACE)
 	{
-		if (ImGui::BeginPopup(get_localized_string(LANG_1068).c_str()))
+		if (ImGui::BeginPopup("face_context"))
 		{
 			if (ImGui::MenuItem(get_localized_string(LANG_0438).c_str(), get_localized_string(LANG_0439).c_str()))
 			{
@@ -564,7 +557,7 @@ void Gui::draw3dContextMenus()
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0445).c_str(), "", false, copiedLightmapFace >= 0 && copiedLightmapFace < map->faceCount))
+			if (ImGui::MenuItem(get_localized_string(LANG_0445).c_str(), "", false, copiedLightmap.face >= 0 && copiedLightmap.face < map->faceCount))
 			{
 				pasteLightmap();
 			}
@@ -2904,7 +2897,7 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem(get_localized_string(LANG_0599).c_str(), "", showLightmapEditorWidget))
 				{
 					showLightmapEditorWidget = !showLightmapEditorWidget;
-					FaceSelectePressed();
+					FaceSelectPressed();
 					showLightmapEditorUpdate = true;
 				}
 				if (ImGui::MenuItem(get_localized_string(LANG_0600).c_str(), "", showMergeMapWidget))
@@ -3034,7 +3027,7 @@ void Gui::drawToolbar()
 		ImGui::SameLine();
 		if (ImGui::ImageButton((void*)(uint64_t)faceIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1), 4))
 		{
-			FaceSelectePressed();
+			FaceSelectPressed();
 			showFaceEditWidget = true;
 		}
 		ImGui::PopStyleColor();
@@ -3048,7 +3041,7 @@ void Gui::drawToolbar()
 	ImGui::End();
 }
 
-void Gui::FaceSelectePressed()
+void Gui::FaceSelectPressed()
 {
 	if (app->pickInfo.GetSelectedEnt() >= 0 && app->pickMode == PICK_FACE)
 	{
@@ -6631,6 +6624,7 @@ void Gui::drawLimits()
 					if (!loadedStats)
 					{
 						stats.clear();
+						stats.push_back(calcStat("GL_TEXTURES", (unsigned int)dumpTextures.size(), 0, false));
 						stats.push_back(calcStat("models", map->modelCount, MAX_MAP_MODELS, false));
 						stats.push_back(calcStat("planes", map->planeCount, MAX_MAP_PLANES, false));
 						stats.push_back(calcStat("vertexes", map->vertCount, MAX_MAP_VERTS, false));
@@ -7141,7 +7135,7 @@ void Gui::drawEntityReport()
 			}
 			if (map && !map->is_mdl_model)
 			{
-				draw3dContextMenus();
+				drawBspContexMenu();
 			}
 
 			clipper.End();
@@ -7585,7 +7579,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 		}
 	}
 
-	for (int lightId = 0; lightId < MAXLIGHTMAPS; lightId++)
+	for (int lightId = 0; lightId < MAX_LIGHTMAPS; lightId++)
 	{
 		colordata = std::vector<COLOR3>();
 		int current_x = 0;
@@ -7711,7 +7705,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 		map->update_lump_pointers();*/
 
 
-	for (int lightId = 0; lightId < MAXLIGHTMAPS; lightId++)
+	for (int lightId = 0; lightId < MAX_LIGHTMAPS; lightId++)
 	{
 		colordata = std::vector<COLOR3>();
 		int current_x = 0;
@@ -7768,7 +7762,7 @@ void ExportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 	GetFaceLightmapSize(map, faceIdx, size);
 	std::string filename;
 
-	for (int i = 0; i < MAXLIGHTMAPS; i++)
+	for (int i = 0; i < MAX_LIGHTMAPS; i++)
 	{
 		if (face.nStyles[i] == 255)
 			continue;
@@ -7785,7 +7779,7 @@ void ImportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 	std::string filename;
 	int size[2];
 	GetFaceLightmapSize(map, faceIdx, size);
-	for (int i = 0; i < MAXLIGHTMAPS; i++)
+	for (int i = 0; i < MAX_LIGHTMAPS; i++)
 	{
 		if (face.nStyles[i] == 255)
 			continue;
@@ -7819,7 +7813,7 @@ void ImportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 void Gui::drawLightMapTool()
 {
 	static float colourPatch[3];
-	static Texture* currentlightMap[MAXLIGHTMAPS] = { NULL };
+	static Texture* currentlightMap[MAX_LIGHTMAPS] = { NULL };
 	static float windowWidth = 570;
 	static float windowHeight = 600;
 	static int lightmaps = 0;
@@ -7857,13 +7851,13 @@ void Gui::drawLightMapTool()
 			{
 				lightmaps = 0;
 				{
-					for (int i = 0; i < MAXLIGHTMAPS; i++)
+					for (int i = 0; i < MAX_LIGHTMAPS; i++)
 					{
 						if (currentlightMap[i])
 							delete currentlightMap[i];
 						currentlightMap[i] = NULL;
 					}
-					for (int i = 0; i < MAXLIGHTMAPS; i++)
+					for (int i = 0; i < MAX_LIGHTMAPS; i++)
 					{
 						if (face.nStyles[i] == 255)
 							continue;
@@ -7989,7 +7983,7 @@ void Gui::drawLightMapTool()
 			ImGui::Separator();
 			if (ImGui::Button(get_localized_string(LANG_1126).c_str(), ImVec2(120, 0)))
 			{
-				for (int i = 0; i < MAXLIGHTMAPS; i++)
+				for (int i = 0; i < MAX_LIGHTMAPS; i++)
 				{
 					if (face.nStyles[i] == 255 || !currentlightMap[i])
 						continue;
@@ -8095,7 +8089,7 @@ void Gui::drawFaceEditorWidget()
 
 		static float verts_merge_epsilon = 1.0f;
 
-		static int tmpStyles[4] = { 255,255,255,255 };
+		static int tmpStyles[MAX_LIGHTMAPS] = { 255,255,255,255 };
 		static bool stylesChanged = false;
 
 		Bsp* map = app->getSelectedMap();
@@ -8165,7 +8159,7 @@ void Gui::drawFaceEditorWidget()
 					textureId = (void*)(uint64_t)mapRenderer->getFaceTextureId(faceIdx);
 					validTexture = true;
 
-					for (int i = 0; i < MAXLIGHTMAPS; i++)
+					for (int i = 0; i < MAX_LIGHTMAPS; i++)
 					{
 						tmpStyles[i] = face.nStyles[i];
 					}
@@ -8425,41 +8419,46 @@ void Gui::drawFaceEditorWidget()
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 		}
 
-		if (ImGui::InputText(get_localized_string(LANG_0892).c_str(), textureName, MAXTEXTURENAME))
+		ImGui::InputText(get_localized_string(LANG_0892).c_str(), textureName, MAXTEXTURENAME);
+		ImGui::SameLine();
+
+		if (ImGui::Button("APPLY"))
 		{
 			if (strcasecmp(textureName, textureName2) != 0)
 			{
 				textureChanged = true;
 			}
-			memcpy(textureName2, textureName, MAXTEXTURENAME);
 		}
 
-		if (refreshSelectedFaces)
-		{
-			textureChanged = true;
-			refreshSelectedFaces = false;
-			int texOffset = ((int*)map->textures)[copiedMiptex + 1];
-			if (texOffset >= 0)
-			{
-				BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-				memcpy(textureName, tex.szName, MAXTEXTURENAME);
-				textureName[15] = '\0';
-			}
-			else
-			{
-				textureName[0] = '\0';
-			}
-		}
 		if (!validTexture)
 		{
 			ImGui::PopStyleColor();
 		}
+
 		ImGui::SameLine();
 		ImGui::Text(get_localized_string(LANG_0893).c_str(), width, height);
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) &&
-			(updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || textureChanged || stylesChanged
-				|| refreshSelectedFaces || toggledFlags || updatedTexVec || mergeFaceVec))
+			(pasteTextureNow || updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || textureChanged || stylesChanged || toggledFlags || updatedTexVec || mergeFaceVec))
 		{
+			if (pasteTextureNow)
+			{
+				textureChanged = true;
+				pasteTextureNow = false;
+				int texOffset = ((int*)map->textures)[copiedMiptex + 1];
+				if (texOffset >= 0)
+				{
+					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+					memcpy(textureName, tex.szName, MAXTEXTURENAME);
+					textureName[15] = '\0';
+				}
+				else
+				{
+					textureName[0] = '\0';
+				}
+			}
+
+			memcpy(textureName2, textureName, MAXTEXTURENAME);
+
 			unsigned int newMiptex = 0;
 			pickCount++;
 			if (textureChanged)
@@ -8531,7 +8530,7 @@ void Gui::drawFaceEditorWidget()
 
 				if (stylesChanged)
 				{
-					for (int n = 0; n < MAXLIGHTMAPS; n++)
+					for (int n = 0; n < MAX_LIGHTMAPS; n++)
 					{
 						face.nStyles[n] = (unsigned char)tmpStyles[n];
 					}
@@ -8564,7 +8563,7 @@ void Gui::drawFaceEditorWidget()
 
 
 				if ((updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || stylesChanged
-					|| refreshSelectedFaces || updatedTexVec || mergeFaceVec))
+					|| pasteTextureNow || updatedTexVec || mergeFaceVec))
 				{
 					for (int n = 0; n < app->pickInfo.selectedFaces.size(); n++)
 					{
@@ -8629,9 +8628,10 @@ void Gui::drawFaceEditorWidget()
 			reloadLimits();
 
 			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
+			map->resize_all_lightmaps(true);
 		}
 
-		refreshSelectedFaces = false;
+		pasteTextureNow = false;
 
 		ImVec2 imgSize = ImVec2(inputWidth * 2 - 2, inputWidth * 2 - 2);
 		if (ImGui::ImageButton(textureId, imgSize, ImVec2(0, 0), ImVec2(1, 1), 1))
@@ -8647,11 +8647,11 @@ StatInfo Gui::calcStat(std::string name, unsigned int val, unsigned int max, boo
 {
 	StatInfo stat;
 	const float meg = 1024 * 1024;
-	float percent = (val / (float)max) * 100;
+	float percent = max != 0 ? (val / (float)max) * 100 : 0;
 
 	ImVec4 color;
 
-	if (val > max)
+	if (percent >= 100)
 	{
 		color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
 	}
@@ -8675,15 +8675,15 @@ StatInfo Gui::calcStat(std::string name, unsigned int val, unsigned int max, boo
 
 	if (isMem)
 	{
-		tmp = fmt::format("{:8.2f}", val / meg);
+		tmp = fmt::format("{:>8.2f}", val / meg);
 		stat.val = std::string(tmp);
 
-		tmp = fmt::format("{:>5.2f}", max / meg);
+		tmp = fmt::format("{:>8.2f}", max / meg);
 		stat.max = std::string(tmp);
 	}
 	else
 	{
-		tmp = fmt::format("{:8}", val);
+		tmp = fmt::format("{:>8}", val);
 		stat.val = std::string(tmp);
 
 		tmp = fmt::format("{:>8}", max);
@@ -8693,7 +8693,7 @@ StatInfo Gui::calcStat(std::string name, unsigned int val, unsigned int max, boo
 	stat.fullness = std::string(tmp);
 	stat.color = color;
 
-	stat.progress = (float)val / (float)max;
+	stat.progress = max != 0 ? (float)val / (float)max : 0;
 
 	return stat;
 }

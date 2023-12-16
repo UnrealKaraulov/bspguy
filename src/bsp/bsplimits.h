@@ -14,7 +14,7 @@
 #define MAX_MAP_VERTS 65535
 #define MAX_MAP_FACES 65535 // (unsgined short) This ought to be 32768, otherwise faces(in world) can become invisible. --vluzacn
 #define MAX_KEYS_PER_ENT 128
-#define MAXLIGHTMAPS 4
+#define MAX_LIGHTMAPS 4
 #define MAX_LIGHTSTYLES		256	// a byte limit, don't modify
 
 extern int LIGHTMAP_ATLAS_SIZE; //max for glTexImage2D

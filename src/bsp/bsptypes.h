@@ -237,7 +237,7 @@ struct BSPFACE16
 	int iFirstEdge;      // Index of the first surfedge
 	short nEdges;          // Number of consecutive surfedges
 	short iTextureInfo;    // Index of the texture info structure
-	unsigned char nStyles[4];       // Specify lighting styles
+	unsigned char nStyles[MAX_LIGHTMAPS];       // Specify lighting styles
 	int nLightmapOffset; // Offsets into the raw lightmap data
 };
 
@@ -248,7 +248,7 @@ struct BSPFACE32
 	int iFirstEdge;      // Index of the first surfedge
 	int nEdges;          // Number of consecutive surfedges
 	int iTextureInfo;    // Index of the texture info structure
-	unsigned char nStyles[4];       // Specify lighting styles
+	unsigned char nStyles[MAX_LIGHTMAPS];       // Specify lighting styles
 	int nLightmapOffset; // Offsets into the raw lightmap data
 };
 

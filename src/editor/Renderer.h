@@ -90,6 +90,9 @@ public:
 	double oldTime = 0.0;
 	double curTime = 0.0;
 
+	int gl_max_texture_size;
+
+
 	Gui* gui;
 
 	GLFWwindow* window;
@@ -282,7 +285,7 @@ public:
 	void deleteEnt(int entIdx = 0);
 	void deleteEnts();
 	void scaleSelectedObject(float x, float y, float z);
-	void scaleSelectedObject(vec3 dir, const vec3& fromDir);
+	void scaleSelectedObject(vec3 dir, const vec3& fromDir, bool logging = false);
 	void scaleSelectedVerts(float x, float y, float z);
 	vec3 getEdgeControlPoint(std::vector<TransformVert>& hullVerts, HullEdge& edge);
 	vec3 getCentroid(std::vector<TransformVert>& hullVerts);

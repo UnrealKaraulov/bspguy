@@ -276,7 +276,9 @@ void DuplicateBspModelCommand::execute()
 	//int dupLumps = FL_CLIPNODES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS;
 	oldLumps = map->duplicate_lumps(0xFFFFFFFF);
 
+	map->resize_all_lightmaps();
 	newModelIdx = map->duplicate_model(oldModelIdx);
+
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
 
 	renderer->updateLightmapInfos();
@@ -295,6 +297,8 @@ void DuplicateBspModelCommand::execute()
 	vertPickCount++;
 
 	g_app->gui->refresh();
+
+	map->save_undo_lightmaps();
 	/*
 	if (g_app->pickInfo.entIdx[0] == entIdx) {
 		g_modelIdx = newModelIdx;
@@ -551,6 +555,8 @@ void EditBspModelCommand::execute()
 	map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 	map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 
+
+
 	refresh();
 }
 
@@ -592,10 +598,22 @@ void EditBspModelCommand::refresh()
 		return;
 	BspRenderer* renderer = getBspRenderer();
 
-	renderer->updateLightmapInfos();
 	renderer->calcFaceMaths();
 	renderer->refreshModel(modelIdx);
-	renderer->refreshEnt(entIdx);
+
+	for (int i = 0; i < HEADER_LUMPS; i++)
+	{
+		if (i == LUMP_LIGHTING && newLumps.lumps[i].size())
+		{
+		//	renderer->updateLightmapInfos();
+		//	map->getBspRender()->reloadLightmaps();
+		}
+		else if (i == LUMP_ENTITIES && newLumps.lumps[i].size())
+		{
+			renderer->refreshEnt(entIdx);
+		}
+	}
+
 	g_app->gui->refresh();
 
 	if (g_app->pickInfo.GetSelectedEnt() == entIdx)

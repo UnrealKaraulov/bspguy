@@ -48,6 +48,9 @@ public:
 	unsigned char** lumps;
 	unsigned char** extralumps;
 
+	LIGHTMAP* undo_lightmaps;
+	int undo_lightmaps_count;
+
 	bool is_bsp30ext;
 
 	bool is_bsp2;
@@ -301,14 +304,18 @@ public:
 	std::vector<int> getFacesFromPlane(int iPlane);
 	bool is_texture_with_pal(int textureid);
 	int getBspTextureSize(int textureid);
+
+	void save_undo_lightmaps(bool logged = false);
+	void resize_all_lightmaps(bool logged = false);
+	bool should_resize_lightmap(LIGHTMAP& oldLightmap, LIGHTMAP& newLightmap);
+	int get_new_lightmaps_data_size();
+
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
 	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes, int * removeddata = NULL);
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 
-	void get_lightmaps(LIGHTMAP* outLightmaps, BSPMODEL* target, bool logged = false);
-	void resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, COLOR3** newLightData, int& newLightDataSize);
 
 	bool load_lumps(std::string fname);
 

@@ -16,9 +16,9 @@ class Command;
 struct LightmapInfo
 {
 	// each face can have 4 lightmaps, and those may be split across multiple atlases
-	int atlasId[MAXLIGHTMAPS];
-	int x[MAXLIGHTMAPS];
-	int y[MAXLIGHTMAPS];
+	int atlasId[MAX_LIGHTMAPS];
+	int x[MAX_LIGHTMAPS];
+	int y[MAX_LIGHTMAPS];
 
 	int w, h;
 
@@ -83,7 +83,7 @@ struct RenderGroup
 	int vertCount;
 	int wireframeVertCount;
 	Texture* texture;
-	Texture* lightmapAtlas[MAXLIGHTMAPS];
+	Texture* lightmapAtlas[MAX_LIGHTMAPS];
 	VertexBuffer* buffer;
 	VertexBuffer* wireframeBuffer;
 	bool transparent;
@@ -95,7 +95,7 @@ struct RenderGroup
 		transparent = special = false;
 		vertCount = wireframeVertCount = 0;
 		texture = NULL;
-		for (int i = 0; i < MAXLIGHTMAPS; i++)
+		for (int i = 0; i < MAX_LIGHTMAPS; i++)
 		{
 			lightmapAtlas[i] = NULL;
 		}

@@ -113,14 +113,13 @@ private:
 	int emptyContextMenu = 0; // open context menu for rightclicking world/void
 
 	int copiedMiptex = -1;
-	int copiedLightmapFace = -1; // index into faces
 	LIGHTMAP copiedLightmap = LIGHTMAP();
-	bool refreshSelectedFaces = false;
+	bool pasteTextureNow = false;
 
-	void draw3dContextMenus();
+	void drawBspContexMenu();
 	void drawMenuBar();
 	void drawToolbar();
-	void FaceSelectePressed();
+	void FaceSelectPressed();
 	void drawFpsOverlay();
 	void drawStatusMessage();
 	void drawDebugWidget();
