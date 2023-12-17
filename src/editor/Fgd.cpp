@@ -86,8 +86,10 @@ bool Fgd::parse()
 	line.clear();
 
 	std::vector<std::string> inputLines;
+	std::vector<int> inputLineNums;
 	while (std::getline(in, line))
 	{
+		lineNum++;
 		line = trimSpaces(line);
 
 		if (line.empty() || line.starts_with("//"))
@@ -96,6 +98,15 @@ bool Fgd::parse()
 		if (line[0] == '[' || line[0] == ']')
 		{
 			inputLines.push_back(line);
+			inputLineNums.push_back(lineNum);
+		}
+		else if (line.ends_with('['))
+		{
+			line.pop_back();
+			inputLines.push_back(line);
+			inputLines.push_back("[");
+			inputLineNums.push_back(lineNum);
+			inputLineNums.push_back(lineNum);
 		}
 		else if (line.find_first_of('[') != std::string::npos)
 		{
@@ -112,10 +123,15 @@ bool Fgd::parse()
 
 					inputLines.push_back(s);
 					inputLines.push_back("[");
+					inputLineNums.push_back(lineNum);
+					inputLineNums.push_back(lineNum);
 					added = true;
 				}
 				if (added)
+				{
+					inputLineNums.pop_back();
 					inputLines.pop_back();
+				}
 			}
 		}
 		else if (line.find_first_of(']') != std::string::npos)
@@ -133,14 +149,22 @@ bool Fgd::parse()
 
 					inputLines.push_back(s);
 					inputLines.push_back("]");
+					inputLineNums.push_back(lineNum);
+					inputLineNums.push_back(lineNum);
 					added = true;
 				}
 				if (added)
+				{
+					inputLineNums.pop_back();
 					inputLines.pop_back();
+				}
 			}
 		}
 		else
+		{
 			inputLines.push_back(line);
+			inputLineNums.push_back(lineNum);
+		}
 	}
 
 	/*std::ostringstream outs;
@@ -153,12 +177,11 @@ bool Fgd::parse()
 	FgdClass* fgdClass = new FgdClass();
 	int bracketNestLevel = 0;
 
-	lineNum = 0;
 	line.clear();
-	for (auto& s : inputLines)
+	for (int i = 0; i < inputLines.size() ;i++)
 	{
-		line = s;
-		lineNum++;
+		line = inputLines[i];
+		lineNum = inputLineNums[i];
 
 		if (line[0] == '@')
 		{
