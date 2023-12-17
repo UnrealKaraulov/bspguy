@@ -215,7 +215,7 @@ int GetImageColors(COLOR3* image, int size);
 int ColorDistance(COLOR3 color, COLOR3 other);
 void SimpeColorReduce(COLOR3* image, int size);
 
-bool FindPathInAssets(Bsp * map, const std::string& path, std::string& outpath, bool tracesearch = false);
+bool FindPathInAssets(Bsp * map, const std::string& filename, std::string& outpath, bool tracesearch = false);
 void FixupAllSystemPaths();
 
 int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p);

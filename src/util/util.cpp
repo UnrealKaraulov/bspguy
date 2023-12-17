@@ -1368,15 +1368,15 @@ void SimpeColorReduce(COLOR3* image, int size)
 	}
 }
 
-bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, bool tracesearch)
+bool FindPathInAssets(Bsp* map, const std::string & filename, std::string& outpath, bool tracesearch)
 {
 	int fPathId = 1;
-	if (fileExists(path))
+	if (fileExists(filename))
 	{
-		outpath = path;
+		outpath = filename;
 		return true;
 	}
-
+	
 	tracesearch = tracesearch && g_settings.verboseLogs;
 
 	std::ostringstream outTrace;
@@ -1384,39 +1384,39 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 	if (tracesearch)
 	{
 		outTrace << "-------------START PATH TRACING-------------\n";
-		outTrace << "Search paths [" << fPathId++ << "] : [" << path.c_str() << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << filename.c_str() << "]\n";
 	}
-	if (fileExists(path))
+	if (fileExists(filename))
 	{
-		outpath = path;
+		outpath = filename;
 		return true;
 	}
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetCurrentDir() + path) << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetCurrentDir() + filename) << "]\n";
 	}
-	if (fileExists(GetCurrentDir() + path))
+	if (fileExists(GetCurrentDir() + filename))
 	{
-		outpath = GetCurrentDir() + path;
+		outpath = GetCurrentDir() + filename;
 		return true;
 	}
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_working_dir + path) << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_working_dir + filename) << "]\n";
 	}
-	if (fileExists(g_working_dir + path))
+	if (fileExists(g_working_dir + filename))
 	{
-		outpath = g_working_dir + path;
+		outpath = g_working_dir + filename;
 		return true;
 	}
 
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_game_dir + path) << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_game_dir + filename) << "]\n";
 	}
-	if (fileExists(g_game_dir + path))
+	if (fileExists(g_game_dir + filename))
 	{
-		outpath = g_game_dir + path;
+		outpath = g_game_dir + filename;
 		return true;
 	}
 
@@ -1424,46 +1424,45 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 	{
 		if (dir.enabled)
 		{
-#ifndef WIN32
 			if (tracesearch)
 			{
-				outTrace << "Search paths [" << fPathId++ << "] : [" << (dir.path + path) << "]\n";
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (dir.path + filename) << "]\n";
 			}
-			if (fileExists(dir.path + path))
+			if (fileExists(dir.path + filename))
 			{
-				outpath = dir.path + path;
-				return true;
-			}
-#else 
-			if (tracesearch && dir.path.find(':') == std::string::npos)
-			{
-				outTrace << "Search paths [" << fPathId++ << "] : [" << (dir.path + path) << "]\n";
-			}
-			if (dir.path.find(':') == std::string::npos && fileExists(dir.path + path))
-			{
-				outpath = dir.path + path;
-				return true;
-			}
-			if (tracesearch)
-			{
-				outTrace << "Search paths [" << fPathId++ << "] : [" << (GetCurrentDir() + dir.path + path) << "]\n";
-			}
-			if (fileExists(GetCurrentDir() + dir.path + path))
-			{
-				outpath = GetCurrentDir() + dir.path + path;
-				return true;
-			}
-			if (tracesearch)
-			{
-				outTrace << "Search paths [" << fPathId++ << "] : [" << (g_game_dir + dir.path + path) << "]\n";
-			}
-			if (fileExists(g_game_dir + dir.path + path))
-			{
-				outpath = g_game_dir + dir.path + path;
+				outpath = dir.path + filename;
 				return true;
 			}
 
-#endif
+			if (tracesearch)
+			{
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (dir.path + basename(filename)) << "]\n";
+			}
+			if (fileExists(dir.path + basename(filename)))
+			{
+				outpath = dir.path + basename(filename);
+				return true;
+			}
+
+			if (tracesearch)
+			{
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (GetCurrentDir() + dir.path + filename) << "]\n";
+			}
+			if (fileExists(GetCurrentDir() + dir.path + filename))
+			{
+				outpath = GetCurrentDir() + dir.path + filename;
+				return true;
+			}
+
+			if (tracesearch)
+			{
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (g_game_dir + dir.path + filename) << "]\n";
+			}
+			if (fileExists(g_game_dir + dir.path + filename))
+			{
+				outpath = g_game_dir + dir.path + filename;
+				return true;
+			}
 		}
 	}
 
@@ -1471,11 +1470,11 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 	{
 		if (tracesearch)
 		{
-			outTrace << "Search paths [" << fPathId++ << "] : [" << (stripFileName(stripFileName(map->bsp_path)) + "/" + path) << "]\n";
+			outTrace << "Search paths [" << fPathId++ << "] : [" << (stripFileName(stripFileName(map->bsp_path)) + "/" + filename) << "]\n";
 		}
-		if (fileExists((stripFileName(stripFileName(map->bsp_path)) + "/" + path)))
+		if (fileExists((stripFileName(stripFileName(map->bsp_path)) + "/" + filename)))
 		{
-			outpath = stripFileName(stripFileName(map->bsp_path)) + "/" + path;
+			outpath = stripFileName(stripFileName(map->bsp_path)) + "/" + filename;
 			return true;
 		}
 	}
