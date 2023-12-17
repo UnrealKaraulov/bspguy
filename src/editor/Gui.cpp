@@ -8088,7 +8088,8 @@ void Gui::drawLightMapTool()
 					int offset = face.nLightmapOffset + i * lightmapSz;
 					memcpy(map->lightdata + offset, currentlightMap[i]->data, lightmapSz);
 				}
-				map->getBspRender()->reloadLightmaps();
+				map->getBspRender()->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
+				map->resize_all_lightmaps(true);
 			}
 			ImGui::SameLine();
 

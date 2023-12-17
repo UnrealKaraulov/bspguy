@@ -280,10 +280,10 @@ void DuplicateBspModelCommand::execute()
 
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
 
+	renderer->loadLightmaps();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
-	renderer->reloadLightmaps();
 	renderer->addClipnodeModel(newModelIdx);
 
 	g_app->pickInfo.selectedFaces.clear();

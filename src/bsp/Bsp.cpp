@@ -6206,14 +6206,12 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 
 			if (face.nLightmapOffset >= 0 && lightmapCount > 0)
 			{
-				if (is_bsp2 || is_bsp29)
+				COLOR3* lightmapSrc = (COLOR3*)(lightdata + face.nLightmapOffset);
+				for (int k = 0; k < lightmapSz; k++)
 				{
-					COLOR3* lightmapSrc = (COLOR3*)(lightdata + face.nLightmapOffset);
-					for (int k = 0; k < lightmapSz; k++)
-					{
-						newLightmaps.push_back(lightmapSrc[k]);
-					}
+					newLightmaps.push_back(lightmapSrc[k]);
 				}
+
 				face.nLightmapOffset = targetMap->lightDataLength + lightmapAppendSz;
 				if (face.nLightmapOffset < 0)
 				{
@@ -6224,7 +6222,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 			
 			newFaces.push_back(face);
 
-			//lightmapAppendSz += lightmapSz * sizeof(COLOR3);
+			lightmapAppendSz += lightmapSz * sizeof(COLOR3);
 		}
 	}
 
@@ -6291,7 +6289,6 @@ int Bsp::duplicate_model(int modelIdx)
 	std::vector<BSPCLIPNODE32> newClipnodes;
 
 	STRUCTREMAP remap(this);
-
 	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
 
 	if (newClipnodes.size())
@@ -6300,12 +6297,16 @@ int Bsp::duplicate_model(int modelIdx)
 		append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
 	if (newFaces.size())
 	{
-		append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
-		print_log("Base light offset = {}\n", lightDataLength);
-		for (auto f : newFaces)
+		if (g_verbose)
 		{
-			print_log("Face light offset = {}\n", f.nLightmapOffset);
+			print_log("Origin model faces: {}\n", models[modelIdx].nFaces);
+			print_log("Base light offset = {} copy faces {}\n", lightDataLength, newFaces.size());
+			for (int i = 0; i < newFaces.size(); i++)
+			{
+				print_log("Face {} light offset = {}\n", i, newFaces[i].nLightmapOffset);
+			}
 		}
+		append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
 	}
 	if (newNodes.size())
 		append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
@@ -6319,9 +6320,12 @@ int Bsp::duplicate_model(int modelIdx)
 		append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
 	if (newLightmaps.size())
 	{
+		if (g_verbose)
+		{
+			print_log("Added lightmap, size {}\n", newLightmaps.size());
+			print_log("Data {}x{}x{}\n", newLightmaps[0].r, newLightmaps[0].g, newLightmaps[0].b);
+		}
 		append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
-		print_log("Added lightmap, size {}\n", newLightmaps.size());
-		print_log("Data {}x{}x{}\n", newLightmaps[0].r, newLightmaps[0].g, newLightmaps[0].b);
 		save_undo_lightmaps();
 		resize_all_lightmaps();
 	}

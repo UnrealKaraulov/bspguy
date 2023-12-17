@@ -417,7 +417,6 @@ void BspRenderer::reload()
 	preRenderFaces();
 	preRenderEnts();
 	reloadTextures();
-	reloadLightmaps();
 	reloadClipnodes();
 }
 
@@ -514,7 +513,12 @@ void BspRenderer::loadLightmaps()
 
 	numRenderLightmapInfos = map->faceCount;
 	if (lightmaps)
+	{
+		lightmapsGenerated = false;
+		lightmapsUploaded = false;
+		deleteLightmapTextures();
 		delete[] lightmaps;
+	}
 	lightmaps = new LightmapInfo[map->faceCount]{};
 
 	print_log(get_localized_string(LANG_0274));
