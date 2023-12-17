@@ -305,32 +305,23 @@ void BspRenderer::loadTextures()
 	for (int i = 0; i < wadNames.size(); i++)
 	{
 		std::string path = std::string();
-		for (int k = 0; k < tryPaths.size(); k++)
+		if (FindPathInAssets(map, wadNames[i], path))
 		{
-			std::string tryPath = tryPaths[k] + wadNames[i];
-			if (!fileExists(tryPath))
-				tryPath = g_game_dir + tryPaths[k] + wadNames[i];
-			if (fileExists(tryPath))
+			print_log(get_localized_string(LANG_0269), path);
+			Wad* wad = new Wad(path);
+			if (wad->readInfo())
+				wads.push_back(wad);
+			else
 			{
-				path = std::move(tryPath);
-				break;
+				print_log(get_localized_string(LANG_0270), path);
+				delete wad;
 			}
 		}
-
-		if (path.empty())
+		else if (path.empty())
 		{
 			print_log(get_localized_string(LANG_0268), wadNames[i]);
+			FindPathInAssets(map, wadNames[i], path, true);
 			continue;
-		}
-
-		print_log(get_localized_string(LANG_0269), path);
-		Wad* wad = new Wad(path);
-		if (wad->readInfo())
-			wads.push_back(wad);
-		else
-		{
-			print_log(get_localized_string(LANG_0270), path);
-			delete wad;
 		}
 	}
 
