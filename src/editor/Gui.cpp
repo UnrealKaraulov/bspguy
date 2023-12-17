@@ -4763,6 +4763,14 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			ImGui::SetNextItemWidth(inputWidth);
 			ImGui::InputText(("##val" + std::to_string(i)).c_str(), &ent->keyvalues[ent->keyOrder[i]], ImGuiInputTextFlags_CallbackEdit,
 				TextChangeCallback::keyValueChanged, &valueIds[i]);
+			if (ImGui::IsItemHovered() && ent->keyvalues[ent->keyOrder[i]].size())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(ent->keyvalues[ent->keyOrder[i]].c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
 
 			if (ent->keyOrder[i] == "angles" ||
 				ent->keyOrder[i] == "angle")
@@ -5626,6 +5634,14 @@ void Gui::drawSettings()
 			ImGui::Text(get_localized_string(LANG_0713).c_str());
 			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::InputText(get_localized_string(LANG_0714).c_str(), &g_settings.gamedir);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay && g_settings.gamedir.size())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(g_settings.gamedir.c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(delWidth);
 			if (ImGui::Button(get_localized_string(LANG_0715).c_str()))
@@ -5635,6 +5651,14 @@ void Gui::drawSettings()
 			ImGui::Text(get_localized_string(LANG_0716).c_str());
 			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::InputText(get_localized_string(LANG_0717).c_str(), &g_settings.workingdir);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay && g_settings.workingdir.size())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(g_settings.workingdir.c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(delWidth);
 			if (ImGui::Button(get_localized_string(LANG_0718).c_str()))
@@ -5758,7 +5782,14 @@ void Gui::drawSettings()
 
 				ImGui::SetNextItemWidth(pathWidth * 0.80f);
 				ImGui::InputText(("##fgd" + std::to_string(i)).c_str(), &g_settings.fgdPaths[i].path);
-
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay && g_settings.fgdPaths[i].path.size())
+				{
+					ImGui::BeginTooltip();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+					ImGui::TextUnformatted(g_settings.fgdPaths[i].path.c_str());
+					ImGui::PopTextWrapPos();
+					ImGui::EndTooltip();
+				}
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
@@ -5797,7 +5828,14 @@ void Gui::drawSettings()
 
 				ImGui::SetNextItemWidth(pathWidth * 0.80f);
 				ImGui::InputText(("##res" + std::to_string(i)).c_str(), &g_settings.resPaths[i].path);
-
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay && g_settings.resPaths[i].path.size())
+				{
+					ImGui::BeginTooltip();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+					ImGui::TextUnformatted(g_settings.resPaths[i].path.c_str());
+					ImGui::PopTextWrapPos();
+					ImGui::EndTooltip();
+				}
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
