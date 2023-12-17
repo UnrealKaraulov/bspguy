@@ -412,7 +412,7 @@ void BspRenderer::loadTextures()
 
 void BspRenderer::reload()
 {
-	updateLightmapInfos();
+	loadLightmaps();
 	calcFaceMaths();
 	preRenderFaces();
 	preRenderEnts();
@@ -513,6 +513,8 @@ void BspRenderer::loadLightmaps()
 	memset(atlasTextures[0]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 	numRenderLightmapInfos = map->faceCount;
+	if (lightmaps)
+		delete[] lightmaps;
 	lightmaps = new LightmapInfo[map->faceCount]{};
 
 	print_log(get_localized_string(LANG_0274));

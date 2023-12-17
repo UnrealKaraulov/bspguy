@@ -3326,17 +3326,16 @@ bool Renderer::splitModelFace()
 		modelEdges[i].selected = false;
 	}
 
-	mapRenderer->updateLightmapInfos();
-	mapRenderer->calcFaceMaths();
-	mapRenderer->refreshModel(modelIdx);
-	updateModelVerts();
-
 	gui->reloadLimits();
 
-	
 
 	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
 	map->resize_all_lightmaps();
+
+	mapRenderer->reloadLightmaps();
+	mapRenderer->calcFaceMaths();
+	mapRenderer->refreshModel(modelIdx);
+	updateModelVerts();
 
 	return true;
 }

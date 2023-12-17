@@ -1524,12 +1524,20 @@ void FixupAllSystemPaths()
 		{
 			if (!dirExists(g_game_dir + g_settings.workingdir))
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Workdir {} not exits!", "[1]", g_settings.workingdir);
-				print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Workdir {} not exits!", "[2]", g_game_dir + g_settings.workingdir);
+				print_log(PRINT_RED | PRINT_INTENSITY, "Warning: Workdir {} not exits!\n", g_settings.workingdir);
+				print_log(PRINT_RED | PRINT_INTENSITY, "Warning: Workdir {} not exits!\n", g_game_dir + g_settings.workingdir);
+				print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "Using default path\n");
 			}
-			else
+			g_working_dir = g_game_dir + g_settings.workingdir;
+			try
 			{
-				g_working_dir = g_game_dir + g_settings.workingdir;
+				if (!dirExists(g_working_dir))
+					createDir(g_working_dir);
+			}
+			catch (...)
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, "Error: Can't create workdir at {} !\n", g_settings.workingdir);
+				g_working_dir = "./";
 			}
 		}
 		else
@@ -1570,7 +1578,7 @@ float floatRound(float f) {
 }
 
 
-void scaleImage(const COLOR4 * inputImage, std::vector<COLOR4>& outputImage,
+void scaleImage(const COLOR4* inputImage, std::vector<COLOR4>& outputImage,
 	int inputWidth, int inputHeight, int outputWidth, int outputHeight) {
 	outputImage.resize(outputWidth * outputHeight);
 
@@ -1610,7 +1618,7 @@ void scaleImage(const COLOR4 * inputImage, std::vector<COLOR4>& outputImage,
 	}
 }
 
-void scaleImage(const COLOR3 * inputImage, std::vector<COLOR3>& outputImage,
+void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 	int inputWidth, int inputHeight, int outputWidth, int outputHeight) {
 	outputImage.resize(outputWidth * outputHeight);
 

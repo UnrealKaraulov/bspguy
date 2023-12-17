@@ -322,6 +322,7 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 	src_map->update_lump_pointers();
 	src_map->write(src_map->bsp_path + ".tmp.bsp");
 
+
 	print_log(get_localized_string(LANG_0316));
 
 	Bsp* tmpMap = new Bsp(src_map->bsp_path + ".tmp.bsp");
@@ -403,7 +404,6 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 	tmpMap->update_ent_lump();
 	tmpMap->update_lump_pointers();
 
-	print_log(get_localized_string(LANG_0325));
 
 	/*int markid = 0;
 	for (int i = 0; i < tmpMap->leafCount; i++)
@@ -419,12 +419,14 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 	//tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
 
 	if (movemodel)
+	{
+		print_log(get_localized_string(LANG_0325));
 		tmpMap->move(-modelOrigin, 0, true, true);
+	}
 
-
-	tmpMap->update_lump_pointers();
 
 	print_log(get_localized_string(LANG_0326));
+	tmpMap->update_lump_pointers();
 	remove_unused_wad_files(src_map, tmpMap, ExportType);
 
 	print_log(get_localized_string(LANG_0327));
@@ -444,12 +446,18 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 		tmpMap->leaves[i].nVisOffset = -1;
 	}
 
+	tmpMap->update_ent_lump();
+	tmpMap->update_lump_pointers();
+
 	if (tmpMap->validate())
 	{
-		tmpMap->update_ent_lump();
-		tmpMap->update_lump_pointers();
+		createDir(g_working_dir);
 		removeFile(g_working_dir + src_map->bsp_name + "_model" + std::to_string(id) + ".bsp");
 		tmpMap->write(g_working_dir + src_map->bsp_name + "_model" + std::to_string(id) + ".bsp");
+	}
+	else
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
 	}
 
 	delete tmpMap;
@@ -1145,6 +1153,10 @@ void Gui::drawMenuBar()
 							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
 						}
 					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
+					}
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1193,6 +1205,10 @@ void Gui::drawMenuBar()
 							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 						}
 					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+					}
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1236,9 +1252,16 @@ void Gui::drawMenuBar()
 							is_need_reload = true;
 							map->write(map->bsp_path);
 						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
-
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -1281,10 +1304,16 @@ void Gui::drawMenuBar()
 							is_need_reload = true;
 							map->write(map->bsp_path);
 						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
-
-
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -1329,6 +1358,14 @@ void Gui::drawMenuBar()
 								is_need_reload = true;
 								map->write(map->bsp_path);
 							}
+							else
+							{
+								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+							}
+						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 						}
 					}
 
@@ -1373,6 +1410,14 @@ void Gui::drawMenuBar()
 								is_need_reload = true;
 								map->write(map->bsp_path);
 							}
+							else
+							{
+								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+							}
+						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 						}
 					}
 
@@ -1419,6 +1464,14 @@ void Gui::drawMenuBar()
 							is_need_reload = true;
 							map->write(map->bsp_path);
 						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
 
@@ -1465,6 +1518,14 @@ void Gui::drawMenuBar()
 							is_need_reload = true;
 							map->write(map->bsp_path);
 						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
 
@@ -1510,9 +1571,16 @@ void Gui::drawMenuBar()
 							is_need_reload = true;
 							map->write(map->bsp_path);
 						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
-
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -1556,9 +1624,16 @@ void Gui::drawMenuBar()
 							is_need_reload = true;
 							map->write(map->bsp_path);
 						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
-
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -1602,6 +1677,14 @@ void Gui::drawMenuBar()
 							is_need_reload = true;
 							map->write(map->bsp_path);
 						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
 
@@ -1647,6 +1730,14 @@ void Gui::drawMenuBar()
 							is_need_reload = true;
 							map->write(map->bsp_path);
 						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
 					}
 				}
 
@@ -2145,6 +2236,8 @@ void Gui::drawMenuBar()
 								Wad* tmpWad = new Wad(wad->filename);
 
 								std::vector<WADTEX*> textureList{};
+
+								createDir(g_working_dir);
 								fs::path tmpPath = g_working_dir + "wads/" + basename(wad->filename);
 
 								std::vector<std::string> files{};
@@ -2259,7 +2352,10 @@ void Gui::drawMenuBar()
 				if (map)
 				{
 					print_log(get_localized_string(LANG_0358), map->bsp_name);
-					map->validate();
+					if (!map->validate())
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1051));
+					}
 				}
 			}
 			ImGui::Separator();
@@ -3264,6 +3360,7 @@ void Gui::drawDebugWidget()
 		if (ImGui::CollapsingHeader("DEBUG INFO", ImGuiTreeNodeFlags_None))
 		{
 			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
+			ImGui::Text(fmt::format("Workdir: {}", g_working_dir).c_str());
 
 			if (app && imgui_io)
 			{
@@ -8621,7 +8718,6 @@ void Gui::drawFaceEditorWidget()
 			mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
 				textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
 
-			mapRenderer->updateLightmapInfos();
 			mapRenderer->calcFaceMaths();
 			app->updateModelVerts();
 

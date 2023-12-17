@@ -276,12 +276,10 @@ void DuplicateBspModelCommand::execute()
 	//int dupLumps = FL_CLIPNODES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS;
 	oldLumps = map->duplicate_lumps(0xFFFFFFFF);
 
-	map->resize_all_lightmaps();
 	newModelIdx = map->duplicate_model(oldModelIdx);
 
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
 
-	renderer->updateLightmapInfos();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
@@ -298,7 +296,6 @@ void DuplicateBspModelCommand::execute()
 
 	g_app->gui->refresh();
 
-	map->save_undo_lightmaps();
 	/*
 	if (g_app->pickInfo.entIdx[0] == entIdx) {
 		g_modelIdx = newModelIdx;
@@ -324,7 +321,6 @@ void DuplicateBspModelCommand::undo()
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(oldModelIdx));
 
 
-	renderer->updateLightmapInfos();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
@@ -423,7 +419,6 @@ void CreateBspModelCommand::execute()
 	//renderer->refreshModel(modelIdx);
 	//
 
-	renderer->updateLightmapInfos();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
@@ -606,7 +601,7 @@ void EditBspModelCommand::refresh()
 		if (i == LUMP_LIGHTING && newLumps.lumps[i].size())
 		{
 		//	renderer->updateLightmapInfos();
-		//	map->getBspRender()->reloadLightmaps();
+			map->getBspRender()->reloadLightmaps();
 		}
 		else if (i == LUMP_ENTITIES && newLumps.lumps[i].size())
 		{

@@ -174,10 +174,6 @@
     <ClInclude Include=".\..\..\fmt\include\fmt\ranges.h" />
     <ClInclude Include=".\..\..\fmt\include\fmt\std.h" />
     <ClInclude Include=".\..\..\fmt\include\fmt\xchar.h" />
-    <None Include=".\..\..\fmt\README.rst">
-    </None>
-    <None Include=".\..\..\fmt\ChangeLog.rst">
-    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

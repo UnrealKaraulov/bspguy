@@ -1159,6 +1159,8 @@ TEST(format_test, format_bool) {
   EXPECT_EQ("true", fmt::format("{:s}", true));
   EXPECT_EQ("false", fmt::format("{:s}", false));
   EXPECT_EQ("false ", fmt::format("{:6s}", false));
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:c}"), false), format_error,
+                   "invalid format specifier");
 }
 
 TEST(format_test, format_short) {
@@ -2171,6 +2173,13 @@ auto format_as(scoped_enum_as_string) -> std::string { return "foo"; }
 
 struct struct_as_int {};
 auto format_as(struct_as_int) -> int { return 42; }
+
+struct struct_as_const_reference {
+  const std::string name = "foo";
+};
+auto format_as(const struct_as_const_reference& s) -> const std::string& {
+  return s.name;
+}
 }  // namespace test
 
 TEST(format_test, format_as) {
@@ -2178,6 +2187,7 @@ TEST(format_test, format_as) {
   EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string_view()), "foo");
   EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string()), "foo");
   EXPECT_EQ(fmt::format("{}", test::struct_as_int()), "42");
+  EXPECT_EQ(fmt::format("{}", test::struct_as_const_reference()), "foo");
 }
 
 TEST(format_test, format_as_to_string) {
@@ -2285,6 +2295,14 @@ TEST(format_test, format_facet_grouping) {
 TEST(format_test, format_named_arg_with_locale) {
   EXPECT_EQ(fmt::format(std::locale(), "{answer}", fmt::arg("answer", 42)),
             "42");
+}
+
+TEST(format_test, format_locale) {
+  auto loc =
+      std::locale({}, new fmt::format_facet<std::locale>(","));
+  EXPECT_EQ("7,5bc,d15", fmt::format(loc, "{:Lx}", 123456789));
+  EXPECT_EQ("-0b111,010,110,111,100,110,100,010,101", fmt::format(loc, "{:#Lb}", -123456789));
+  EXPECT_EQ("    30,071", fmt::format(loc, "{:10Lo}", 12345));
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

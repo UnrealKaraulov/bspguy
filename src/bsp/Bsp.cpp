@@ -4275,19 +4275,23 @@ bool Bsp::validate()
 			BSPMIPTEX* tex = (BSPMIPTEX*)(textures + texOffset);
 			if (tex->szName[0] == '\0')
 			{
+				isValid = false;
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0133), i);
 			}
 			else if (strlen(tex->szName) >= MAXTEXTURENAME)
 			{
+				isValid = false;
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0134), i);
 			}
-			if (tex->nOffsets[0] > 0 && dataOffset + texOffset + texlen > bsp_header.lump[LUMP_TEXTURES].nLength)
+			if (tex->nOffsets[0] > 0 && /*dataOffset + */texOffset + texlen > bsp_header.lump[LUMP_TEXTURES].nLength)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0135), i, dataOffset + texOffset + texlen, bsp_header.lump[LUMP_TEXTURES].nLength);
+				isValid = false;
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0135), i, /*dataOffset + */texOffset + texlen, bsp_header.lump[LUMP_TEXTURES].nLength);
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
 			}
 			if (texlen == 0)
 			{
+				isValid = false;
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string("LANG_ERROR_TEXLEN"), i);
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
 			}
@@ -6210,16 +6214,17 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 						newLightmaps.push_back(lightmapSrc[k]);
 					}
 				}
+				face.nLightmapOffset = targetMap->lightDataLength + lightmapAppendSz;
+				if (face.nLightmapOffset < 0)
+				{
+					memset(face.nStyles, 255, MAX_LIGHTMAPS);
+				}
 			}
-
-			face.nLightmapOffset = lightmapCount > 0 && face.nLightmapOffset >= 0 ? targetMap->lightDataLength + lightmapAppendSz : -1;
-			if (face.nLightmapOffset == -1)
-			{
-				memset(face.nStyles, 255, MAX_LIGHTMAPS);
-			}
+			
+			
 			newFaces.push_back(face);
 
-			lightmapAppendSz += lightmapSz * sizeof(COLOR3);
+			//lightmapAppendSz += lightmapSz * sizeof(COLOR3);
 		}
 	}
 
@@ -6271,6 +6276,8 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 	}
 }
 
+
+
 int Bsp::duplicate_model(int modelIdx)
 {
 	std::vector<BSPPLANE> newPlanes;
@@ -6292,7 +6299,14 @@ int Bsp::duplicate_model(int modelIdx)
 	if (newEdges.size())
 		append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
 	if (newFaces.size())
+	{
 		append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
+		print_log("Base light offset = {}\n", lightDataLength);
+		for (auto f : newFaces)
+		{
+			print_log("Face light offset = {}\n", f.nLightmapOffset);
+		}
+	}
 	if (newNodes.size())
 		append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
 	if (newPlanes.size())
@@ -6304,7 +6318,13 @@ int Bsp::duplicate_model(int modelIdx)
 	if (newVerts.size())
 		append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
 	if (newLightmaps.size())
+	{
 		append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
+		print_log("Added lightmap, size {}\n", newLightmaps.size());
+		print_log("Data {}x{}x{}\n", newLightmaps[0].r, newLightmaps[0].g, newLightmaps[0].b);
+		save_undo_lightmaps();
+		resize_all_lightmaps();
+	}
 
 	int newModelIdx = create_model();
 	BSPMODEL& oldModel = models[modelIdx];
@@ -6312,10 +6332,10 @@ int Bsp::duplicate_model(int modelIdx)
 	memcpy(&newModel, &oldModel, sizeof(BSPMODEL));
 
 	newModel.iFirstFace = remap.faces[oldModel.iFirstFace];
-	newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap.nodes[oldModel.iHeadnodes[0]];
+	newModel.iHeadnodes[0] = remap.nodes[oldModel.iHeadnodes[0]];
 	for (int i = 1; i < MAX_MAP_HULLS; i++)
 	{
-		newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
+		newModel.iHeadnodes[i] = remap.clipnodes[oldModel.iHeadnodes[i]];
 	}
 	newModel.nVisLeafs = 0; // techinically should match the old model, but leaves aren't duplicated yet
 

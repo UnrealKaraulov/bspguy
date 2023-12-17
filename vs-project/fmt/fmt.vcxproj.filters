@@ -50,10 +50,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include=".\..\..\fmt\README.rst" />
-    <None Include=".\..\..\fmt\ChangeLog.rst" />
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Header Files">
       <UniqueIdentifier>{C09879EB-61FD-3200-896A-5A951468767D}</UniqueIdentifier>
     </Filter>
