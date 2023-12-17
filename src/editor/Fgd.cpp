@@ -56,6 +56,8 @@ void Fgd::merge(Fgd* other)
 
         if (it != classes.end())
         {
+			// Here keyvalues can be merged
+
 			print_log(get_localized_string(LANG_0299), otherClass->name, other->name);
 			continue;
         }

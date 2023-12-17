@@ -1,107 +1,106 @@
+---
 name: C/C++ CI
-
-on: [push, pull_request]
-
+on:
+  - push
+  - pull_request
 jobs:
-    get_time_build:
-        name: "TAG NAME"
-        runs-on: ubuntu-latest
-        
-        outputs:
-            release_tag: ${{ steps.tag.outputs.release_tag }}
+  get_time_build:
+    name: TAG NAME
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+    steps:
+      - name: Generate nightly release tag
+        id: tag
+        run: >
+          echo "release_tag=NightBuild_$(date +"%Y.%m.%d_%H-%M")" >> $GITHUB_OUTPUT
+  linux_build:
+    name: Linux
+    needs: get_time_build
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Setup cmake
+        uses: jwlawson/actions-setup-cmake@v1
+        with:
+          cmake-version: latest
+      - name: Download and install dependencies
+        run: >
+          sudo apt update
 
-        steps:
-            - name: Generate nightly release tag
-              id: tag
-              run: |
-               echo "release_tag=NightBuild_$(date +"%Y.%m.%d_%H-%M")" >> $GITHUB_OUTPUT
-            
-    linux_build:
-        name: "Linux"
-        needs: get_time_build
-        runs-on: ubuntu-latest
-        
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-        outputs:
-            release_tag: ${{ steps.tag.outputs.release_tag }}
-
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v2
-              
-            - name: Setup cmake
-              uses: jwlawson/actions-setup-cmake@v1
-              with:
-                cmake-version: "latest"
-
-            - name: Download and install dependencies
-              run: |
-                 sudo apt update
-                 sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev libfmt-dev --allow-unauthenticated --fix-missing
-                 
-            - name: Build release
-              run: |
-                 mkdir build; cd build
-                 cmake .. -DCMAKE_BUILD_TYPE=RELEASE
-                 make
-
-            - name: Publish nightly binaries for linux
-              uses: softprops/action-gh-release@v1
-              with:
-                  tag_name: ${{ needs.get_time_build.outputs.release_tag }}
-                  files: |
-                    build/bspguy
-                    cfg/bspguy.cfg
-                    cfg/language.ini
-                    cfg/language_ru.ini
-
-    window_build:
-
-        name: 'Windows'
-        needs: get_time_build
-        runs-on: windows-latest
-
-        env:
-            solution: 'vs-project/bspguy.sln'
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v2
-              with:
-                  fetch-depth: 0
-                  submodules: true
-
-            - name: Add msbuild to PATH
-              uses: microsoft/setup-msbuild@v1.1
-              with:
-                  vs-prerelease: true
-
-            - name: Build app for release
-              run: |
-                 msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=Release
-
-            - name: Publish nightly binaries for windows
-              uses: softprops/action-gh-release@v1
-              with:
-                  tag_name: ${{ needs.get_time_build.outputs.release_tag }}
-                  files: |
-                    vs-project/Release/bspguy.exe
-                    cfg/bspguy.cfg
-                    cfg/language.ini
-            
-            - name: Build app for debug
-              run: |
-                 msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=DebugGithub
-
-            - name: Publish nightly debug binaries for windows
-              uses: softprops/action-gh-release@v1
-              with:
-                  tag_name: ${{ needs.get_time_build.outputs.release_tag }}
-                  files: |
-                    vs-project/Release/bspguy_debug.exe
-                    cfg/bspguy.cfg
-                    cfg/language.ini
-            
+          sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev libfmt-dev --allow-unauthenticated --fix-missing
+      - name: Build release
+        run: |
+          mkdir build; cd build
+          cmake .. -DCMAKE_BUILD_TYPE=RELEASE
+          make
+      - name: Create Linux release archive
+        run: |
+          mkdir -p build/linux_release
+          cp build/bspguy build/linux_release/
+          cp cfg/bspguy.cfg build/linux_release/
+          cp cfg/language.ini build/linux_release/
+          cp cfg/language_ru.ini build/linux_release/
+          cd build && zip -r newbspguy_ubuntu_release.zip linux_release/
+      - name: Publish nightly binaries for linux
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+          files: |
+            build/newbspguy_ubuntu_release.zip
+  window_build:
+    name: Windows
+    needs: get_time_build
+    runs-on: windows-latest
+    env:
+      solution: vs-project/bspguy.sln
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-prerelease: true
+      - name: Build app for release
+        run: >
+          msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag
+          -property:Configuration=Release
+      - name: Create Windows release archive
+        run: |
+          mkdir -p build/win64_release
+          cp vs-project/Release/bspguy.exe build/win64_release/
+          cp cfg/bspguy.cfg build/win64_release/
+          cp cfg/language.ini build/win64_release/
+          cd build && zip -r newbspguy_win64_release.zip win64_release/
+      - name: Publish nightly binaries for windows
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+          files: |
+            build/newbspguy_win64_release.zip
+      - name: Build app for debug
+        run: >
+          msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag
+          -property:Configuration=DebugGithub
+      - name: Create Windows debug archive
+        run: |
+          mkdir -p build/win64_debug
+          cp vs-project/Release/bspguy_debug.exe build/win64_debug/
+          cp cfg/bspguy.cfg build/win64_debug/
+          cp cfg/language.ini build/win64_debug/
+          cd build && zip -r newbspguy_win64_dbg.zip win64_debug/
+      - name: Publish nightly debug binaries for windows
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+          files: |
+            build/newbspguy_win64_dbg.zip
