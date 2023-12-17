@@ -321,11 +321,11 @@ void DuplicateBspModelCommand::undo()
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(oldModelIdx));
 
 
+	renderer->loadLightmaps();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
 	renderer->reloadTextures();
-	renderer->reloadLightmaps();
 	g_app->gui->refresh();
 
 	/*
@@ -419,12 +419,12 @@ void CreateBspModelCommand::execute()
 	//renderer->refreshModel(modelIdx);
 	//
 
+	renderer->loadLightmaps();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
 	if (NeedreloadTextures)
 		renderer->reloadTextures();
-	renderer->reloadLightmaps();
 	renderer->addClipnodeModel(modelIdx);
 	//renderer->reload();
 
@@ -601,7 +601,7 @@ void EditBspModelCommand::refresh()
 		if (i == LUMP_LIGHTING && newLumps.lumps[i].size())
 		{
 		//	renderer->updateLightmapInfos();
-			map->getBspRender()->reloadLightmaps();
+			map->getBspRender()->loadLightmaps();
 		}
 		else if (i == LUMP_ENTITIES && newLumps.lumps[i].size())
 		{

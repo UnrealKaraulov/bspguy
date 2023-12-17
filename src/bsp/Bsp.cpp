@@ -6363,14 +6363,13 @@ int Bsp::duplicate_model(int modelIdx)
 	BSPMODEL& oldModel = models[modelIdx];
 	BSPMODEL& newModel = models[newModelIdx];
 	memcpy(&newModel, &oldModel, sizeof(BSPMODEL));
-
 	newModel.iFirstFace = remap.faces[oldModel.iFirstFace];
-	newModel.iHeadnodes[0] = remap.nodes[oldModel.iHeadnodes[0]];
+	newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap.nodes[oldModel.iHeadnodes[0]];
 	for (int i = 1; i < MAX_MAP_HULLS; i++)
 	{
-		newModel.iHeadnodes[i] = remap.clipnodes[oldModel.iHeadnodes[i]];
+		newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
 	}
-	newModel.nVisLeafs = 0; // techinically should match the old model, but leaves aren't duplicated yet
+	//newModel.nVisLeafs = 0; // techinically should match the old model, but leaves aren't duplicated yetx
 	return newModelIdx;
 }
 

@@ -3334,7 +3334,7 @@ bool Renderer::splitModelFace()
 	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
 	map->resize_all_lightmaps();
 
-	mapRenderer->reloadLightmaps();
+	mapRenderer->loadLightmaps();
 	mapRenderer->calcFaceMaths();
 	mapRenderer->refreshModel(modelIdx);
 	updateModelVerts();
