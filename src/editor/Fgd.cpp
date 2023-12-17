@@ -30,13 +30,13 @@ Fgd::~Fgd()
 	}
 }
 
-FgdClass* Fgd::getFgdClass(std::string cname)
+FgdClass* Fgd::getFgdClass(const std::string & cname)
 {
-	if (classMap.size() && cname.size() && classMap.find(cname) != classMap.end())
-	{
-		return classMap[cname];
-	}
-	return NULL;
+	auto it = std::find_if(classes.begin(), classes.end(), [&cname](const auto& fgdClass) {
+		return fgdClass->name == cname;
+		});
+
+	return (it != classes.end()) ? *it : NULL;
 }
 
 void Fgd::merge(Fgd* other)
@@ -48,23 +48,22 @@ void Fgd::merge(Fgd* other)
 		this->lineNum = 0;
 	}
 
-	for (auto it : other->classMap)
-	{
-		std::string className = it.first;
-		FgdClass* fgdClass = it.second;
+	for (FgdClass* otherClass : other->classes)
+    {
+        auto it = std::find_if(classes.begin(), classes.end(), [&otherClass](const auto& fgdClass) {
+            return fgdClass->name == otherClass->name && fgdClass->classType == otherClass->classType;
+        });
 
-		if (classMap.find(className) != classMap.end())
-		{
-			print_log(get_localized_string(LANG_0299), className, other->name);
+        if (it != classes.end())
+        {
+			print_log(get_localized_string(LANG_0299), otherClass->name, other->name);
 			continue;
-		}
-
-		FgdClass* newClass = new FgdClass();
-		*newClass = *fgdClass;
-
-		classes.push_back(newClass);
-		classMap[className] = newClass;
-	}
+        }
+        else
+        {
+            classes.push_back(new FgdClass(*otherClass));
+        }
+    }
 }
 
 bool Fgd::parse()
@@ -560,12 +559,6 @@ void Fgd::processClassInheritance()
 {
 	for (int i = 0; i < classes.size(); i++)
 	{
-		classMap[classes[i]->name] = classes[i];
-		//print_log(get_localized_string(LANG_0309),classes[i]->name);
-	}
-
-	for (int i = 0; i < classes.size(); i++)
-	{
 		if (classes[i]->classType == FGD_CLASS_BASE)
 			continue;
 
@@ -736,13 +729,18 @@ void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList)
 	{
 		for (int i = (int)baseClasses.size() - 1; i >= 0; i--)
 		{
-			if (fgd->classMap.find(baseClasses[i]) == fgd->classMap.end())
+			auto it = std::find_if(fgd->classes.begin(), fgd->classes.end(), [this, i](const auto& fgdClass) {
+				return fgdClass->name == baseClasses[i];
+				});
+
+			if (it == fgd->classes.end())
 			{
 				print_log(get_localized_string(LANG_0310), baseClasses[i], name);
 				continue;
 			}
-			inheritanceList.push_back(fgd->classMap[baseClasses[i]]);
-			fgd->classMap[baseClasses[i]]->getBaseClasses(fgd, inheritanceList);
+
+			inheritanceList.push_back(*it);
+			(*it)->getBaseClasses(fgd, inheritanceList);
 		}
 	}
 }

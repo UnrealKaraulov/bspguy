@@ -113,7 +113,6 @@ public:
 	std::string path;
 	std::string name;
 	std::vector<FgdClass*> classes;
-	std::map<std::string, FgdClass*> classMap;
 
 	std::vector<FgdGroup> pointEntGroups;
 	std::vector<FgdGroup> solidEntGroups;
@@ -129,7 +128,7 @@ public:
 	bool parse();
 	void merge(Fgd* other);
 
-	FgdClass* getFgdClass(std::string cname);
+	FgdClass* getFgdClass(const std::string & cname);
 
 private:
 	int lineNum = 0;
