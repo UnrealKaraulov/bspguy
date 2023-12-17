@@ -1217,7 +1217,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 			newLight.height = size[1];
 			newLight.layers = lightmap_count(i);
 
-			LIGHTMAP & oldLight = newLight;
+			LIGHTMAP& oldLight = newLight;
 			if (i < undo_lightmaps_count)
 			{
 				oldLight = undo_lightmaps[i];
@@ -1806,7 +1806,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, 
 	int decompressedVisSize = oldLeafCount * oldVisRowSize;
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
 	memset(decompressedVis, 0xFF, decompressedVisSize);
-	decompress_vis_lump(this,oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
+	decompress_vis_lump(this, oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
 		oldWorldLeaves, oldVisLeafCount - 1, oldVisLeafCount - 1, oldLeavesMemSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
 
 	if (oldVisRowSize != newVisRowSize)
@@ -4302,7 +4302,7 @@ bool Bsp::validate()
 	int decompressedVisSize = leafCount * newVisRowSize;
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
 	memset(decompressedVis, 0xFF, decompressedVisSize);
-	decompress_vis_lump(this,leaves, visdata, decompressedVis,
+	decompress_vis_lump(this, leaves, visdata, decompressedVis,
 		models[0].nVisLeafs, leafCount, leafCount, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
 	delete decompressedVis;
 
@@ -4518,6 +4518,35 @@ void Bsp::recurse_node(int nodeIdx, int depth)
 
 	recurse_node(nodes[nodeIdx].iChildren[0], depth + 1);
 	recurse_node(nodes[nodeIdx].iChildren[1], depth + 1);
+}
+
+
+void Bsp::get_last_node(int nodeIdx, int& node, int& count)
+{
+	if (nodeIdx < 0)
+	{
+		return;
+	}
+
+	count++;
+	node = nodeIdx;
+
+	get_last_node(nodes[nodeIdx].iChildren[0], node, count);
+	get_last_node(nodes[nodeIdx].iChildren[1], node, count);
+}
+
+void Bsp::get_last_clipnode(int nodeIdx, int& node, int& count)
+{
+	if (nodeIdx < 0)
+	{
+		return;
+	}
+
+	count++;
+	node = nodeIdx;
+
+	get_last_clipnode(clipnodes[nodeIdx].iChildren[0], node, count);
+	get_last_clipnode(clipnodes[nodeIdx].iChildren[1], node, count);
 }
 
 void Bsp::print_node(const BSPNODE32& node)
@@ -6218,8 +6247,8 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 					memset(face.nStyles, 255, MAX_LIGHTMAPS);
 				}
 			}
-			
-			
+
+
 			newFaces.push_back(face);
 
 			lightmapAppendSz += lightmapSz * sizeof(COLOR3);
@@ -6342,8 +6371,84 @@ int Bsp::duplicate_model(int modelIdx)
 		newModel.iHeadnodes[i] = remap.clipnodes[oldModel.iHeadnodes[i]];
 	}
 	newModel.nVisLeafs = 0; // techinically should match the old model, but leaves aren't duplicated yet
-
 	return newModelIdx;
+}
+
+int Bsp::add_model_to_worldspawn(int modelIdx)
+{
+	int newfaces = models[modelIdx].nFaces;
+
+	std::vector<BSPFACE32> all_faces;
+
+	for (int f = 0; f < faceCount; f++)
+	{
+		all_faces.push_back(faces[f]);
+		if (f == models[0].iFirstFace + models[0].nFaces)
+		{
+			for (int f2 = 0; f2 < models[modelIdx].nFaces; f2++)
+			{
+				all_faces.push_back(faces[models[modelIdx].iFirstFace + f2]);
+			}
+		}
+	}
+
+	for (int m = 1; m < modelCount; m++)
+	{
+		if (models[m].iFirstFace >= models[0].iFirstFace + models[0].nFaces)
+		{
+			models[m].iFirstFace += newfaces;
+		}
+	}
+
+	for (int m = 0; m < nodeCount; m++)
+	{
+		if (nodes[m].firstFace >= models[0].iFirstFace + models[0].nFaces)
+		{
+			nodes[m].firstFace += newfaces;
+		}
+	}
+
+	for (int m = 0; m < marksurfCount; m++)
+	{
+		if (marksurfs[m] >= models[0].iFirstFace + models[0].nFaces)
+		{
+			marksurfs[m] += newfaces;
+		}
+	}
+
+	models[0].nFaces += newfaces;
+	//models[0].nVisLeafs += models[modelIdx].nVisLeafs; //0
+
+	int nodecount = 0;
+	int nodeidx = 0;
+	get_last_node(models[modelIdx].iHeadnodes[0], nodeidx, nodecount);
+	nodes[nodeidx].iChildren[0] = nodes[models[modelIdx].iHeadnodes[0]].iChildren[1];
+	nodes[nodeidx].iChildren[1] = nodes[models[modelIdx].iHeadnodes[0]].iChildren[0];
+
+	for (int i = 1; i < MAX_MAP_HULLS; i++)
+	{
+		int clipnodecount = 0;
+		int clipnodeidx = 0;
+		get_last_clipnode(models[modelIdx].iHeadnodes[i], clipnodeidx, clipnodecount);
+		clipnodes[clipnodeidx].iChildren[0] = nodes[models[modelIdx].iHeadnodes[i]].iChildren[1];
+		clipnodes[clipnodeidx].iChildren[1] = nodes[models[modelIdx].iHeadnodes[i]].iChildren[0];
+	}
+
+	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
+	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
+	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
+
+	int tmplefs = models[modelIdx].nVisLeafs;
+
+	models[modelIdx].nFaces = 0;
+	models[modelIdx].nVisLeafs = 0;
+	models[modelIdx].iHeadnodes[0] = models[modelIdx].iHeadnodes[1] =
+		models[modelIdx].iHeadnodes[2] = models[modelIdx].iHeadnodes[3] = CONTENTS_EMPTY;
+
+	update_lump_pointers();
+
+	/*return newModelIdx;*/
+	return modelIdx;
 }
 
 BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx)
@@ -7069,7 +7174,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 }
 
 
-void recurse_node(Bsp* map, int nodeIdx)
+void recurse_node_map(Bsp* map, int nodeIdx)
 {
 	if (nodeIdx < 0)
 	{
@@ -7078,8 +7183,8 @@ void recurse_node(Bsp* map, int nodeIdx)
 		return;
 	}
 
-	recurse_node(map, map->nodes[nodeIdx].iChildren[0]);
-	recurse_node(map, map->nodes[nodeIdx].iChildren[1]);
+	recurse_node_map(map, map->nodes[nodeIdx].iChildren[0]);
+	recurse_node_map(map, map->nodes[nodeIdx].iChildren[1]);
 }
 
 void Bsp::ExportPortalFile()

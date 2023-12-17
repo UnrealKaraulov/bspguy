@@ -349,6 +349,8 @@ void Renderer::renderLoop()
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
 
+		glLineWidth(1.25);
+
 		//Update keyboard / mouse state 
 		oldLeftMouse = curLeftMouse;
 		curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);

@@ -126,6 +126,10 @@ public:
 	void print_model_hull(int modelIdx, int hull);
 	void print_clipnode_tree(int iNode, int depth);
 	void recurse_node(int node, int depth);
+
+	void get_last_node(int nodeIdx, int& node, int& count);
+	void get_last_clipnode(int nodeIdx, int& node, int& count);
+
 	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
 	int pointContents(int iNode, const vec3& p, int hull);
 	const char* getLeafContentsName(int contents);
@@ -246,6 +250,7 @@ public:
 						std::vector<BSPCLIPNODE32>& newClipnodes);
 
 	int duplicate_model(int modelIdx);
+	int add_model_to_worldspawn(int modelIdx);
 
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
 	BSPTEXTUREINFO* get_unique_texinfo(int faceIdx);
