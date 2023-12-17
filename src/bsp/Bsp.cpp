@@ -1806,7 +1806,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, 
 	int decompressedVisSize = oldLeafCount * oldVisRowSize;
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
 	memset(decompressedVis, 0xFF, decompressedVisSize);
-	decompress_vis_lump(oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
+	decompress_vis_lump(this,oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
 		oldWorldLeaves, oldVisLeafCount - 1, oldVisLeafCount - 1, oldLeavesMemSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
 
 	if (oldVisRowSize != newVisRowSize)
@@ -4302,7 +4302,7 @@ bool Bsp::validate()
 	int decompressedVisSize = leafCount * newVisRowSize;
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
 	memset(decompressedVis, 0xFF, decompressedVisSize);
-	decompress_vis_lump(leaves, visdata, decompressedVis,
+	decompress_vis_lump(this,leaves, visdata, decompressedVis,
 		models[0].nVisLeafs, leafCount, leafCount, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
 	delete decompressedVis;
 

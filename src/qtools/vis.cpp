@@ -61,7 +61,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 
 	if (shift < 0)
 	{
-// TODO: memcpy for negative shifts
+		// TODO: memcpy for negative shifts
 		bitShifts += byteShifts * 8;
 		byteShifts = 0;
 	}
@@ -142,12 +142,12 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 		}
 	}
 	if (overflow)
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0993),overflow);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0993), overflow);
 
 
 	if (byteShifts > 0)
 	{
-// TODO: detect overflows here too
+		// TODO: detect overflows here too
 		if (shift > 0)
 		{
 			unsigned char* temp = new unsigned char[MAX_MAP_LEAVES / 8];
@@ -163,7 +163,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 		}
 		else
 		{
-	  // TODO LOL
+			// TODO LOL
 		}
 
 	}
@@ -175,7 +175,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 // iterationLeaves = number of leaves to decompress vis for
 // visDataLeafCount = total leaves in this map (exluding the shared solid leaf 0)
 // newNumLeaves = total leaves that will be in the map after merging is finished (again, excluding solid leaf 0)
-void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned char* output,
+void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, unsigned char* output,
 	int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize)
 {
 	unsigned char* dest;
@@ -196,9 +196,9 @@ void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned c
 		dest = output + i * newVisRowSize;
 		if (lastUsedIdx >= 0)
 		{
-			if ((i + 1) * sizeof(BSPLEAF32) > leafMemSize)
+			if ((i + 1) * sizeof(BSPLEAF32) >= leafMemSize)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0994),i + 1,leafMemSize / sizeof(BSPLEAF32));
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0994), i + 1, leafMemSize / sizeof(BSPLEAF32));
 				return;
 			}
 
@@ -209,9 +209,9 @@ void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned c
 				continue;
 			}
 
-			if (leafLump[i + 1].nVisOffset > visLumpMemSize)
+			if (leafLump[i + 1].nVisOffset >= visLumpMemSize)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0995),leafLump[i + 1].nVisOffset,visLumpMemSize);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0995), leafLump[i + 1].nVisOffset, visLumpMemSize);
 				return;
 			}
 			// Tracing ... 
@@ -261,12 +261,12 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 		{
 			if (out > startdst + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0998),(int)(out - startdst),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0998), (int)(out - startdst), dest_length);
 				return;
 			}
 			if (src > startsrc + src_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0999),(int)(src - startsrc),src_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0999), (int)(src - startsrc), src_length);
 				return;
 			}
 			*out = *src;
@@ -281,7 +281,7 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 		{
 			if (out > startdst + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1142),(int)(out - startdst),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1142), (int)(out - startdst), dest_length);
 				return;
 			}
 			*out = 0;
@@ -308,7 +308,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 
 		if (current_length > dest_length)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1000),current_length,dest_length);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1000), current_length, dest_length);
 			return (int)(dest_p - dest);
 		}
 
@@ -337,7 +337,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 		current_length++;
 		if (current_length > dest_length)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1143),current_length,dest_length);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1143), current_length, dest_length);
 			return (int)(dest_p - dest);
 		}
 		*dest_p = rep;
@@ -386,7 +386,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	{
 		if (i + 1 >= maxLeafs)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1001),i + 1,maxLeafs);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1001), i + 1, maxLeafs);
 			delete[] sharedRows;
 			delete[] compressed;
 			return (int)(vismap_p - output);
@@ -396,7 +396,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 		{
 			if (sharedRows[i] + 1 >= maxLeafs)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1002),(int)(sharedRows[i] + 1),maxLeafs);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1002), (int)(sharedRows[i] + 1), maxLeafs);
 				delete[] sharedRows;
 				delete[] compressed;
 				return (int)(vismap_p - output);
@@ -417,7 +417,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 
 		if (vismap_p >= output + bufferSize)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1003),(void*)vismap_p,(void*)(output + bufferSize));
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1003), (void*)vismap_p, (void*)(output + bufferSize));
 
 			delete[] sharedRows;
 			return (int)(vismap_p - output);
@@ -461,7 +461,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1004),(int)(out - dest),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1004), (int)(out - dest), dest_length);
 				return;
 			}
 
@@ -478,13 +478,13 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1005),(int)(out - dest),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1005), (int)(out - dest), dest_length);
 				return;
 			}
 
 			if (src > src_start + src_len)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1006),(int)(out - dest),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1006), (int)(out - dest), dest_length);
 				return;
 			}
 
@@ -498,7 +498,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 
 		if (src > src_start + src_len)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1144),(int)(out - dest),dest_length);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1144), (int)(out - dest), dest_length);
 			return;
 		}
 
@@ -506,7 +506,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1007),(int)(out - dest),dest_length);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1007), (int)(out - dest), dest_length);
 				return;
 			}
 

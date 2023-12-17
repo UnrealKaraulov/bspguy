@@ -1808,12 +1808,12 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 
 	// decompress this map's world leaves
 	// model leaves don't need to be decompressed because the game ignores VIS for them.
-	decompress_vis_lump(allLeaves, mapA.visdata, decompressedVis,
+	decompress_vis_lump(&mapA, allLeaves, mapA.visdata, decompressedVis,
 		thisWorldLeafCount, thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_VISIBILITY].nLength, mapA.visDataLength);
 
 	// decompress other map's world-leaf vis data (skip empty first leaf, which now only the first map should have)
 	unsigned char* decompressedOtherVis = decompressedVis + thisWorldLeafCount * newVisRowSize;
-	decompress_vis_lump(allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
+	decompress_vis_lump(&mapB,allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
 		otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_VISIBILITY].nLength, mapB.visDataLength);
 
 	// shift mapB's world leaves after mapA's world leaves
