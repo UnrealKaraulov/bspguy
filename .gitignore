@@ -52,3 +52,8 @@ vs-project/Release/language.ini
 vs-project/log.txt
 vs-project/Release/language_ru.ini
 vs-project/Release/imgui.ini
+vs-project/bspguy.cfg
+vs-project/Release/scripts/maps/bspguy/v2/bspguy.as
+vs-project/Release/scripts/maps/bspguy/v2/bspguy.fgd
+vs-project/Release/scripts/maps/bspguy/v2/bspguy_equip.as
+vs-project/Release/scripts/maps/bspguy/v2/map.as
