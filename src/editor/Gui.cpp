@@ -4708,11 +4708,35 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 					{
 						bool needreloadmodels = false;
 						std::string key = map2->ents[g_app->pickInfo.selectedEnts[0]]->keyOrder[inputData->idx];
+						int part_vec = -1;
+
 						for (auto entId : g_app->pickInfo.selectedEnts)
 						{
 							Entity* selent = map2->ents[entId];
 							if (selent->keyvalues[key] != data->Buf)
 							{
+								if (part_vec == -1 && g_app->pickInfo.selectedEnts.size() > 1)
+								{
+									if (key == "origin")
+									{
+										vec3 newOrigin = parseVector(data->Buf);
+										vec3 oldOrigin = parseVector(selent->keyvalues[key]);
+										vec3 testOrigin = newOrigin - oldOrigin;
+										if (abs(testOrigin.x) > EPSILON2)
+										{
+											part_vec = 0;
+										}
+										else if (abs(testOrigin.y) > EPSILON2)
+										{
+											part_vec = 1;
+										}
+										else
+										{
+											part_vec = 2;
+										}
+									}
+								}
+
 								bool needrefreshmodel = false;
 								if (key == "model")
 								{
@@ -4751,8 +4775,17 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 										needrefreshmodel = true;
 									}
 								}
-
-								selent->setOrAddKeyvalue(key, data->Buf);
+								if (key == "origin" && part_vec != -1)
+								{
+									vec3 newOrigin = parseVector(data->Buf);
+									vec3 oldOrigin = parseVector(selent->keyvalues[key]);
+									oldOrigin[part_vec] = newOrigin[part_vec];
+									selent->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
+								}
+								else
+								{
+									selent->setOrAddKeyvalue(key, data->Buf);
+								}
 								render->refreshEnt(entId);
 								pickCount++;
 								vertPickCount++;
