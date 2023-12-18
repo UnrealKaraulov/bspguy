@@ -280,6 +280,9 @@ void DuplicateBspModelCommand::execute()
 
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
 
+
+	map->remove_unused_model_structures(CLEAN_LEAVES);
+
 	renderer->loadLightmaps();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
@@ -293,9 +296,6 @@ void DuplicateBspModelCommand::execute()
 
 	pickCount++;
 	vertPickCount++;
-
-
-	map->remove_unused_model_structures(CLEAN_LEAVES);
 
 	g_app->gui->refresh();
 

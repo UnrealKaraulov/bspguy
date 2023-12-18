@@ -36,7 +36,7 @@ struct WADTEX
 	int nWidth, nHeight;
 	int nOffsets[MIPLEVELS];
 	unsigned char* data; // all mip-maps and pallete
-	bool needclean = false;
+	bool needclean;
 	WADTEX()
 	{
 		needclean = false;
@@ -47,7 +47,6 @@ struct WADTEX
 	}
 	WADTEX(BSPMIPTEX* tex)
 	{
-		needclean = false;
 		memcpy(szName, tex->szName, MAXTEXTURENAME);
 
 		nWidth = tex->nWidth;
@@ -57,6 +56,7 @@ struct WADTEX
 
 		if (nOffsets[0] <= 0)
 		{
+			needclean = false;
 			data = NULL;
 			return;
 		}
@@ -83,7 +83,7 @@ struct WADTEX
 	}
 	~WADTEX()
 	{
-		if (needclean)
+		if (needclean && data)
 			delete[] data;
 		needclean = false;
 		szName[0] = '\0';

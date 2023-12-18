@@ -247,7 +247,7 @@ public:
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 						std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 						std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-						std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX>& newTextures);
+						std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX *>& newTextures);
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);

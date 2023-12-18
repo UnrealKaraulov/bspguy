@@ -6710,7 +6710,7 @@ void Gui::drawImportMapWidget()
 					std::vector<COLOR3> newLightmaps;
 					std::vector<BSPNODE32> newNodes;
 					std::vector<BSPCLIPNODE32> newClipnodes;
-					std::vector<WADTEX> newTextures;
+					std::vector<WADTEX*> newTextures;
 
 					STRUCTREMAP remap = STRUCTREMAP(map);
 					bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes, newTextures);
@@ -6744,15 +6744,19 @@ void Gui::drawImportMapWidget()
 					{
 						while (newTextures.size())
 						{
-							auto tex = newTextures[newTextures.size() - 1];
-							map->add_texture(tex.szName, tex.data, tex.nWidth, tex.nHeight);
+							auto& tex = newTextures[newTextures.size() - 1];
+							auto data = ConvertWadTexToRGB(tex);
+							map->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+							delete tex;
+							delete[]data;
 							newTextures.pop_back();
 						}
 					}
 
+					map->update_lump_pointers();
+
 					if (newTexinfo.size())
 					{
-						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
 						for (auto& texinfo : newTexinfo)
 						{
 							if (texinfo.iMiptex < 0 || texinfo.iMiptex >= map->textureCount)
@@ -6765,13 +6769,13 @@ void Gui::drawImportMapWidget()
 							if (texOffset < 0)
 								continue;
 							BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
-							for (int i = 0; i < map->textureCount; i++)
+							for (int i = map->textureCount - 1; i >= 0; i--)
 							{
 								int tex2Offset = ((int*)map->textures)[i + 1];
 								if (tex2Offset >= 0)
 								{
-									BSPMIPTEX& tex2 = *((BSPMIPTEX*)(map->textures + tex2Offset));
-									if (strcasecmp(tex.szName, tex2.szName) == 0)
+									BSPMIPTEX * tex2 = ((BSPMIPTEX*)(map->textures + tex2Offset));
+									if (strcasecmp(tex.szName, tex2->szName) == 0)
 									{
 										newMiptex = i;
 										break;
@@ -6792,14 +6796,15 @@ void Gui::drawImportMapWidget()
 										if (texinfo.iMiptex == -1)
 											texinfo.iMiptex = 0;
 
-										delete[] imageData;
 										delete wadTex;
+										delete[] imageData;
 										break;
 									}
 								}
 							}
 							texinfo.iMiptex = newMiptex;
 						}
+						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
 					}
 
 					if (newVerts.size())
@@ -8347,6 +8352,7 @@ void Gui::drawFaceEditorWidget()
 		static char textureName[MAXTEXTURENAME];
 		static char textureName2[MAXTEXTURENAME];
 		static int lastPickCount = -1;
+		static int miptex = 0;
 		static bool validTexture = true;
 		static bool scaledX = false;
 		static bool scaledY = false;
@@ -8415,7 +8421,7 @@ void Gui::drawFaceEditorWidget()
 						textureName[0] = '\0';
 					}
 
-					int miptex = texinfo.iMiptex;
+					miptex = texinfo.iMiptex;
 
 					vec3 xv, yv;
 					bestplane = TextureAxisFromPlane(plane, xv, yv);
@@ -8684,7 +8690,6 @@ void Gui::drawFaceEditorWidget()
 				"\nLightmaps may break in strange ways if this is used on a normal face.");
 			ImGui::EndTooltip();
 		}
-
 		ImGui::Dummy(ImVec2(0, 8));
 
 		ImGui::Text(get_localized_string(LANG_0891).c_str());
@@ -8695,6 +8700,9 @@ void Gui::drawFaceEditorWidget()
 		}
 
 		ImGui::InputText(get_localized_string(LANG_0892).c_str(), textureName, MAXTEXTURENAME);
+		ImGui::SameLine();
+		ImGui::Text(fmt::format("#{}", miptex).c_str());
+
 		ImGui::SameLine();
 
 		if (ImGui::Button("APPLY"))
