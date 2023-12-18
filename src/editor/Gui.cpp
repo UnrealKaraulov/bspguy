@@ -831,7 +831,7 @@ void Gui::drawBspContexMenu()
 							ImGui::EndTooltip();
 						}
 
-						bool disableBspDupStruct = !app->isTransformableSolid;
+						bool disableBspDupStruct = !app->modelUsesSharedStructures;
 						if (disableBspDupStruct)
 						{
 							ImGui::BeginDisabled();
@@ -2551,7 +2551,7 @@ void Gui::drawMenuBar()
 				ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_BSP").c_str());
 				ImGui::EndTooltip();
 			}
-			bool disableBspDupStruct = !app->isTransformableSolid;
+			bool disableBspDupStruct = !app->modelUsesSharedStructures;
 			if (disableBspDupStruct)
 			{
 				ImGui::BeginDisabled();
