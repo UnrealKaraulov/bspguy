@@ -6574,25 +6574,22 @@ void Gui::drawMergeWindow()
 	static bool NoRipent = false;
 	static bool NoScript = true;
 
+	bool addNew = false;
+	if (inPaths.size() < 1)
+	{
+		inPaths.push_back(std::string(""));
+	}
 
 	if (ImGui::Begin(get_localized_string(LANG_0825).c_str(), &showMergeMapWidget))
 	{
-
-		if (inPaths.size() < 2)
+		for (size_t i = 0; i < inPaths.size(); i++)
 		{
-			inPaths.push_back(std::string());
-			inPaths.push_back(std::string());
-		}
-
-		ImGui::InputText(get_localized_string(LANG_0826).c_str(), &inPaths[0]);
-		ImGui::InputText(get_localized_string(LANG_0827).c_str(), &inPaths[1]);
-		int p = 1;
-		while (inPaths[p].size())
-		{
-			p++;
-			if (inPaths.size() < p)
-				inPaths.push_back(std::string());
-			ImGui::InputText(get_localized_string(LANG_1120).c_str(), &inPaths[p]);
+			std::string& s = inPaths[i];
+			ImGui::InputText(fmt::format(fmt::runtime(get_localized_string(LANG_0826)), i).c_str(), &s);
+			if (s.length() > 1 && i + 1 == inPaths.size())
+			{
+				addNew = true;
+			}
 		}
 
 		ImGui::InputText(get_localized_string(LANG_0828).c_str(), &outPath);
@@ -6693,6 +6690,11 @@ void Gui::drawMergeWindow()
 	}
 
 	ImGui::End();
+
+	if (addNew)
+	{
+		inPaths.push_back(std::string(""));
+	}
 }
 
 void Gui::drawImportMapWidget()

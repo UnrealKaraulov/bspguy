@@ -38,7 +38,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 	if (shift == 0)
 		return false;
 
-	g_debug_shift = g_verbose;
+	g_debug_shift = false;
 
 	unsigned char bitsPerStep = 8;
 	unsigned char offsetBit = offsetLeaf % bitsPerStep;
