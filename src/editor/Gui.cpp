@@ -242,10 +242,23 @@ void Gui::copyTexture()
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0313));
 		return;
 	}
-	else if (app->pickInfo.selectedFaces.size() == 0 || app->pickInfo.selectedFaces.size() > 1)
+	else if (app->pickInfo.selectedFaces.size() == 0 )
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0314));
 		return;
+	}
+	else if (app->pickInfo.selectedFaces.size() >= 1)
+	{
+		std::string outfaces;
+		for (const auto& f : app->pickInfo.selectedFaces)
+		{
+			outfaces += std::to_string(f) + " ";
+		}
+		if (outfaces.size())
+		{
+			outfaces.pop_back();
+			ImGui::SetClipboardText(outfaces.c_str());
+		}
 	}
 	BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[app->pickInfo.selectedFaces[0]].iTextureInfo];
 	copiedMiptex = texinfo.iMiptex == -1 || texinfo.iMiptex >= map->textureCount ? 0 : texinfo.iMiptex;

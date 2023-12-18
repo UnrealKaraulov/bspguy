@@ -280,7 +280,6 @@ void DuplicateBspModelCommand::execute()
 
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
 
-
 	map->remove_unused_model_structures(CLEAN_LEAVES);
 
 	renderer->loadLightmaps();
