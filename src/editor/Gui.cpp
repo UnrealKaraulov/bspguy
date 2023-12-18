@@ -2497,9 +2497,12 @@ void Gui::drawMenuBar()
 			{
 				app->cutEnt();
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1083).c_str(), get_localized_string(LANG_1084).c_str(), false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size()))
+			if (ImGui::MenuItem(get_localized_string(LANG_1083).c_str(), get_localized_string(LANG_1084).c_str(), false, app->pickInfo.selectedFaces.size() || (nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size())))
 			{
-				app->copyEnt();
+				if (app->pickInfo.selectedEnts.size())
+					app->copyEnt();
+				if (app->pickInfo.selectedFaces.size())
+					copyTexture();
 			}
 			if (ImGui::MenuItem(get_localized_string(LANG_1157).c_str(), get_localized_string(LANG_1158).c_str(), false, mapSelected && app->copiedEnts.size()))
 			{
