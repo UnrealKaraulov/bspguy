@@ -41,7 +41,7 @@ FgdClass* Fgd::getFgdClass(const std::string& cname)
 
 FgdClass* Fgd::getFgdClass(const std::string& cname, int type)
 {
-	auto it = std::find_if(classes.begin(), classes.end(), [&cname,&type](const auto& fgdClass) {
+	auto it = std::find_if(classes.begin(), classes.end(), [&cname, &type](const auto& fgdClass) {
 		return fgdClass->name == cname && fgdClass->classType == type;
 		});
 
@@ -58,23 +58,23 @@ void Fgd::merge(Fgd* other)
 	}
 
 	for (FgdClass* otherClass : other->classes)
-    {
-        auto it = std::find_if(classes.begin(), classes.end(), [&otherClass](const auto& fgdClass) {
-            return fgdClass->name == otherClass->name && fgdClass->classType == otherClass->classType;
-        });
+	{
+		auto it = std::find_if(classes.begin(), classes.end(), [&otherClass](const auto& fgdClass) {
+			return fgdClass->name == otherClass->name && fgdClass->classType == otherClass->classType;
+			});
 
-        if (it != classes.end())
-        {
+		if (it != classes.end())
+		{
 			// Here keyvalues can be merged
 
 			print_log(get_localized_string(LANG_0299), otherClass->name, other->name);
 			continue;
-        }
-        else
-        {
-            classes.push_back(new FgdClass(*otherClass));
-        }
-    }
+		}
+		else
+		{
+			classes.push_back(new FgdClass(*otherClass));
+		}
+	}
 
 	processClassInheritance();
 	createEntGroups();
@@ -88,7 +88,7 @@ bool Fgd::parse()
 		return false;
 	}
 
-	std::regex brackEnd(R"(\s*\[\s*\]$)");
+	std::regex brackEnd(R"(\s*\[\s*\]\s*$)");
 
 
 	print_log(get_localized_string(LANG_0300), path);
@@ -121,77 +121,91 @@ bool Fgd::parse()
 			inputLineNums.push_back(lineNum);
 			inputLineNums.push_back(lineNum);
 		}
-		else if (line.find_first_of('[') != std::string::npos)
-		{
-			auto split = splitStringIgnoringQuotes(line, "[");
-			if (split.size())
-			{
-				bool added = false;
-				for (auto& s : split)
-				{
-					s = trimSpaces(s);
-
-					if (s.empty() || s.starts_with("//"))
-						continue;
-
-					inputLines.push_back(s);
-					inputLines.push_back("[");
-					inputLineNums.push_back(lineNum);
-					inputLineNums.push_back(lineNum);
-					added = true;
-				}
-				if (added)
-				{
-					inputLineNums.pop_back();
-					inputLines.pop_back();
-				}
-			}
-		}
-		else if (line.find_first_of(']') != std::string::npos)
-		{
-			auto split = splitStringIgnoringQuotes(line, "]");
-			if (split.size())
-			{
-				bool added = false;
-				for (auto& s : split)
-				{
-					s = trimSpaces(s);
-
-					if (s.empty() || s.starts_with("//"))
-						continue;
-
-					inputLines.push_back(s);
-					inputLines.push_back("]");
-					inputLineNums.push_back(lineNum);
-					inputLineNums.push_back(lineNum);
-					added = true;
-				}
-				if (added)
-				{
-					inputLineNums.pop_back();
-					inputLines.pop_back();
-				}
-			}
-		}
 		else
 		{
-			inputLines.push_back(line);
-			inputLineNums.push_back(lineNum);
+			replaceAll(line, "//", " :: :: ");
+			if (line.find_first_of('[') != std::string::npos)
+			{
+				auto split = splitStringIgnoringQuotes(line, "[");
+				if (split.size())
+				{
+					bool added = false;
+					for (auto& s : split)
+					{
+						s = trimSpaces(s);
+
+						if (s.empty())
+							continue;
+
+						inputLines.push_back(s);
+						inputLines.push_back("[");
+						inputLineNums.push_back(lineNum);
+						inputLineNums.push_back(lineNum);
+						added = true;
+					}
+					if (added)
+					{
+						inputLineNums.pop_back();
+						inputLines.pop_back();
+					}
+				}
+			}
+			else if (line.find_first_of(']') != std::string::npos)
+			{
+				auto split = splitStringIgnoringQuotes(line, "]");
+				if (split.size())
+				{
+					bool added = false;
+					for (auto& s : split)
+					{
+						s = trimSpaces(s);
+
+						if (s.empty())
+							continue;
+
+						inputLines.push_back(s);
+						inputLines.push_back("]");
+						inputLineNums.push_back(lineNum);
+						inputLineNums.push_back(lineNum);
+						added = true;
+					}
+					if (added)
+					{
+						inputLineNums.pop_back();
+						inputLines.pop_back();
+					}
+				}
+			}
+			else if (line.ends_with(']'))
+			{
+				line.pop_back();
+				inputLines.push_back(line);
+				inputLines.push_back("\n");
+				inputLines.push_back("]");
+				inputLineNums.push_back(lineNum);
+				inputLineNums.push_back(lineNum);
+				inputLineNums.push_back(lineNum);
+			}
+			else
+			{
+				inputLines.push_back(line);
+				inputLineNums.push_back(lineNum);
+			}
 		}
 	}
 
-	/*std::ostringstream outs;
-	for (auto& s : inputLines)
+	std::ostringstream outs;
+	for (const auto& s : inputLines)
 	{
 		outs << s << "\n";
 	}
-	writeFile(path + "_test.fgd", outs.str());*/
+	writeFile(path + "_test.fgd", outs.str());
 
 	FgdClass* fgdClass = new FgdClass();
 	int bracketNestLevel = 0;
 
 	line.clear();
-	for (int i = 0; i < inputLines.size() ;i++)
+	for (int i = 0; i < inputLines.size(); i++)
 	{
 		line = inputLines[i];
 		lineNum = inputLineNums[i];
@@ -201,6 +215,9 @@ bool Fgd::parse()
 			if (bracketNestLevel)
 			{
 				print_log(get_localized_string(LANG_0301), lineNum, name);
+				classes.push_back(fgdClass);
+				fgdClass = new FgdClass();
+				bracketNestLevel = 0;
 			}
 
 			parseClassHeader(*fgdClass);
@@ -211,7 +228,7 @@ bool Fgd::parse()
 			bracketNestLevel++;
 		}
 
-		if ((line.size() && (line[0] == ']' || line[line.size()-1] == ']')))
+		if ((line.size() && (line[0] == ']' || line[line.size() - 1] == ']')))
 		{
 			bracketNestLevel--;
 			if (bracketNestLevel == 0)
@@ -419,15 +436,20 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		// fgdClass.name = fgdClass.name.substr(0, fgdClass.name.find(' '));
 		nameParts.erase(nameParts.begin());
 	}
+
+	fgdClass.description = "";
 	if (nameParts.size() >= 1)
 	{
 		for (size_t i = 0; i < nameParts.size(); i++)
 		{
-			if (i == 0)
-				fgdClass.description = getValueInQuotes(nameParts[i]);
-			else
-				fgdClass.description += "\n" + getValueInQuotes(nameParts[i]);
+			std::string input = getValueInQuotes(nameParts[i]);
+			trimSpaces(input);
+			if (input.size())
+				fgdClass.description += input + "\n";
 		}
+
+		if (fgdClass.description.size())
+			fgdClass.description.pop_back();
 	}
 }
 
@@ -471,15 +493,19 @@ void Fgd::parseKeyvalue(FgdClass& outClass)
 		{ // integer
 			def.defaultValue = trimSpaces(keyParts[2]);
 		}
+		def.fullDescription = "";
 		if (keyParts.size() > 3)
 		{
 			for (size_t i = 3; i < keyParts.size(); i++)
 			{
-				if (i == 3)
-					def.fullDescription = getValueInQuotes(keyParts[i]);
-				else
-					def.fullDescription += "\n" + getValueInQuotes(keyParts[i]);
+				std::string input = getValueInQuotes(keyParts[i]);
+				trimSpaces(input);
+				if (input.size())
+					def.fullDescription += input + "\n";
 			}
+
+			if (def.fullDescription.size())
+				def.fullDescription.pop_back();
 		}
 	}
 
@@ -490,7 +516,7 @@ void Fgd::parseKeyvalue(FgdClass& outClass)
 
 void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
 {
-	std::vector<std::string> keyParts = splitString(line, ":");
+	std::vector<std::string> keyParts = splitStringIgnoringQuotes(line, ":");
 
 	KeyvalueChoice def;
 
@@ -513,15 +539,19 @@ void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
 	if (keyParts.size() > 2)
 		def.sdefvalue = keyParts[2];
 
+	def.fullDescription = "";
+
 	if (keyParts.size() > 3)
 	{
 		for (size_t i = 3; i < keyParts.size(); i++)
 		{
-			if (i == 3)
-				def.fullDescription = getValueInQuotes(keyParts[i]);
-			else
-				def.fullDescription += "\n" + getValueInQuotes(keyParts[i]);
+			std::string input = getValueInQuotes(keyParts[i]);
+			trimSpaces(input);
+			if (input.size())
+				def.fullDescription += input + "\n";
 		}
+		if (def.fullDescription.size())
+			def.fullDescription.pop_back();
 	}
 
 	outKey.choices.push_back(def);
@@ -581,16 +611,40 @@ bool Fgd::stringGroupEnds(const std::string& s)
 
 std::string Fgd::getValueInParens(std::string s)
 {
-	s = s.substr(s.find('(') + 1);
-	s = s.substr(0, s.rfind(')'));
-	return trimSpaces(s);
+	if (s.length() <= 2)
+	{
+		replaceAll(s, "(", "");
+		replaceAll(s, ")", "");
+		return s;
+	}
+
+	auto find1 = s.find('(');
+	auto find2 = s.rfind(')');
+	if (find1 == std::string::npos || find1 >= find2)
+	{
+		replaceAll(s, "(", "");
+		replaceAll(s, ")", "");
+		return s;
+	}
+	return s.substr(find1 + 1, (find2 - find1) - 1);
 }
 
 std::string Fgd::getValueInQuotes(std::string s)
 {
-	s = s.substr(s.find('\"') + 1);
-	s = s.substr(0, s.rfind('\"'));
-	return s;
+	if (s.length() <= 2)
+	{
+		replaceAll(s, "\"", "");
+		return s;
+	}
+
+	auto find1 = s.find('\"');
+	auto find2 = s.rfind('\"');
+	if (find1 == std::string::npos || find1 == find2)
+	{
+		replaceAll(s, "\"", "");
+		return s;
+	}
+	return s.substr(find1 + 1, (find2 - find1) - 1);
 }
 
 void Fgd::processClassInheritance()

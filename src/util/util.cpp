@@ -105,8 +105,9 @@ std::streampos fileSize(const std::string& filePath)
 	return fsize;
 }
 
-std::vector<std::string> splitString(std::string s, const std::string& delimiter, int maxParts)
+std::vector<std::string> splitString(const std::string& str, const std::string& delimiter, int maxParts)
 {
+	std::string s = str;
 	std::vector<std::string> split;
 	size_t pos;
 	while ((pos = s.find(delimiter)) != std::string::npos && (maxParts == 0 || split.size() < maxParts - 1)) {
@@ -120,12 +121,12 @@ std::vector<std::string> splitString(std::string s, const std::string& delimiter
 	return split;
 }
 
-std::vector<std::string> splitStringIgnoringQuotes(std::string s, const std::string& delimitter)
+std::vector<std::string> splitStringIgnoringQuotes(const std::string& str, const std::string& delimitter)
 {
 	std::vector<std::string> split;
-	if (s.empty() || delimitter.empty())
+	if (str.empty() || delimitter.empty())
 		return split;
-
+	std::string s = str;
 	size_t delimitLen = delimitter.length();
 
 	while (s.size())

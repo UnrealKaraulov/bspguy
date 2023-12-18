@@ -242,7 +242,7 @@ void Gui::copyTexture()
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0313));
 		return;
 	}
-	else if (app->pickInfo.selectedFaces.size() == 0 )
+	else if (app->pickInfo.selectedFaces.size() == 0)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0314));
 		return;
@@ -4375,7 +4375,22 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 							g_app->updateEntConnections();
 						}
+
+						if (choice.fullDescription.size())
+						{
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::BeginTooltip();
+								ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+								ImGui::PushStyleColor(ImGuiCol_Text, { 0.9f,0.4f,0.2f,1.0f });
+								ImGui::TextUnformatted(choice.fullDescription.c_str());
+								ImGui::PopStyleColor();
+								ImGui::PopTextWrapPos();
+								ImGui::EndTooltip();
+							}
+						}
 					}
+
 
 					ImGui::EndCombo();
 				}
@@ -6820,7 +6835,7 @@ void Gui::drawImportMapWidget()
 								int tex2Offset = ((int*)map->textures)[i + 1];
 								if (tex2Offset >= 0)
 								{
-									BSPMIPTEX * tex2 = ((BSPMIPTEX*)(map->textures + tex2Offset));
+									BSPMIPTEX* tex2 = ((BSPMIPTEX*)(map->textures + tex2Offset));
 									if (strcasecmp(tex.szName, tex2->szName) == 0)
 									{
 										newMiptex = i;

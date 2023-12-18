@@ -120,8 +120,8 @@ bool removeFile(const std::string& fileName);
 
 std::streampos fileSize(const std::string& filePath);
 
-std::vector<std::string> splitStringIgnoringQuotes(std::string s, const std::string& delimitter);
-std::vector<std::string> splitString(std::string s, const std::string& delimiter, int maxParts = 0);
+std::vector<std::string> splitStringIgnoringQuotes(const std::string & s, const std::string& delimitter);
+std::vector<std::string> splitString(const std::string& s, const std::string& delimiter, int maxParts = 0);
 
 std::string basename(const std::string& path);
 

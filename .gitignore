@@ -57,3 +57,7 @@ vs-project/Release/scripts/maps/bspguy/v2/bspguy.as
 vs-project/Release/scripts/maps/bspguy/v2/bspguy.fgd
 vs-project/Release/scripts/maps/bspguy/v2/bspguy_equip.as
 vs-project/Release/scripts/maps/bspguy/v2/map.as
+vs-project/Release/sveen_coop/bspguy.cfg
+vs-project/Release/sveen_coop/language.ini
+vs-project/Release/sveen_coop/language_ru.ini
+vs-project/Release/sveen_coop/log.txt
