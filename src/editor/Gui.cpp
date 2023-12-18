@@ -811,22 +811,55 @@ void Gui::drawBspContexMenu()
 					}
 					if (modelIdx > 0)
 					{
-						if (ImGui::MenuItem(get_localized_string(LANG_0464).c_str(), 0, false, !app->isLoading && allowDuplicate))
+						if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
 						{
 							print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
 							for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
 							{
-								DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", tmpEntIdx);
-								map->getBspRender()->pushUndoCommand(command);
+								if (map->ents[tmpEntIdx]->isBspModel())
+								{
+									DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), tmpEntIdx);
+									map->getBspRender()->pushUndoCommand(command);
+								}
 							}
 						}
+
 						if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 						{
 							ImGui::BeginTooltip();
-							ImGui::TextUnformatted(get_localized_string(LANG_0465).c_str());
+							ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_BSP").c_str());
 							ImGui::EndTooltip();
 						}
 
+						bool disableBspDupStruct = !app->isTransformableSolid;
+						if (disableBspDupStruct)
+						{
+							ImGui::BeginDisabled();
+						}
+						if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP_STRUCT").c_str(), 0, false, !app->isLoading && allowDuplicate))
+						{
+							print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
+							for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+							{
+								if (map->ents[tmpEntIdx]->isBspModel())
+								{
+									pickCount++;
+									map->duplicate_model_structures(map->ents[tmpEntIdx]->getBspModelIdx());
+									map->getBspRender()->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
+								}
+							}
+						}
+
+						if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+						{
+							ImGui::BeginTooltip();
+							ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_STRUCT").c_str());
+							ImGui::EndTooltip();
+						}
+						if (disableBspDupStruct)
+						{
+							ImGui::EndDisabled();
+						}
 						/*if (ImGui::MenuItem("ADD TO WORLDSPAWN!", 0, false, !app->isLoading && allowDuplicate))
 						{
 							print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
@@ -2499,14 +2532,53 @@ void Gui::drawMenuBar()
 				}
 			}
 
-			if (ImGui::MenuItem(get_localized_string(LANG_1087).c_str(), 0, false, !app->isLoading && allowDuplicate))
+			if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
 			{
-				print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
-				for (auto& ent : app->pickInfo.selectedEnts)
+				print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
+				for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
 				{
-					DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", ent);
-					map->getBspRender()->pushUndoCommand(command);
+					if (map->ents[tmpEntIdx]->isBspModel())
+					{
+						DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), tmpEntIdx);
+						map->getBspRender()->pushUndoCommand(command);
+					}
 				}
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_BSP").c_str());
+				ImGui::EndTooltip();
+			}
+			bool disableBspDupStruct = !app->isTransformableSolid;
+			if (disableBspDupStruct)
+			{
+				ImGui::BeginDisabled();
+			}
+			if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP_STRUCT").c_str(), 0, false, !app->isLoading && allowDuplicate))
+			{
+				print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
+				for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+				{
+					if (map->ents[tmpEntIdx]->isBspModel())
+					{
+						pickCount++;
+						map->duplicate_model_structures(map->ents[tmpEntIdx]->getBspModelIdx());
+						map->getBspRender()->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
+					}
+				}
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_STRUCT").c_str());
+				ImGui::EndTooltip();
+			}
+			if (disableBspDupStruct)
+			{
+				ImGui::EndDisabled();
 			}
 
 			/*if (ImGui::MenuItem("ADD TO WORLDSPAWN!", 0, false, !app->isLoading && allowDuplicate))
@@ -6623,9 +6695,11 @@ void Gui::drawImportMapWidget()
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
 				{
-					Bsp* bspModel = new Bsp(mapPath);
-					BspRenderer* mapRenderer = new BspRenderer(bspModel, app->pointEntRenderer);
 					Bsp* map = app->getSelectedMap();
+
+					Bsp* bspModel = new Bsp(mapPath);
+
+					BspRenderer* mapRenderer = new BspRenderer(bspModel, app->pointEntRenderer);
 
 					std::vector<BSPPLANE> newPlanes;
 					std::vector<vec3> newVerts;
@@ -6636,10 +6710,10 @@ void Gui::drawImportMapWidget()
 					std::vector<COLOR3> newLightmaps;
 					std::vector<BSPNODE32> newNodes;
 					std::vector<BSPCLIPNODE32> newClipnodes;
+					std::vector<WADTEX> newTextures;
 
-					STRUCTREMAP* remap = new STRUCTREMAP(map);
-
-					bspModel->copy_bsp_model(0, map, *remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
+					STRUCTREMAP remap = STRUCTREMAP(map);
+					bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes, newTextures);
 
 					if (newClipnodes.size())
 					{
@@ -6665,12 +6739,27 @@ void Gui::drawImportMapWidget()
 					{
 						map->append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
 					}
+
+					if (newTextures.size())
+					{
+						while (newTextures.size())
+						{
+							auto tex = newTextures[newTextures.size() - 1];
+							map->add_texture(tex.szName, tex.data, tex.nWidth, tex.nHeight);
+							newTextures.pop_back();
+						}
+					}
+
 					if (newTexinfo.size())
 					{
+						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
 						for (auto& texinfo : newTexinfo)
 						{
 							if (texinfo.iMiptex < 0 || texinfo.iMiptex >= map->textureCount)
+							{
+								texinfo.iMiptex = -1;
 								continue;
+							}
 							int newMiptex = -1;
 							int texOffset = ((int*)bspModel->textures)[texinfo.iMiptex + 1];
 							if (texOffset < 0)
@@ -6698,7 +6787,7 @@ void Gui::drawImportMapWidget()
 										WADTEX* wadTex = s->readTexture(tex.szName);
 										COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
-										texinfo.iMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+										newMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
 										if (texinfo.iMiptex == -1)
 											texinfo.iMiptex = 0;
@@ -6709,15 +6798,10 @@ void Gui::drawImportMapWidget()
 									}
 								}
 							}
-							else
-							{
-								if (newMiptex == -1)
-									newMiptex = 0;
-								texinfo.iMiptex = newMiptex;
-							}
+							texinfo.iMiptex = newMiptex;
 						}
-						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
 					}
+
 					if (newVerts.size())
 					{
 						map->append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
@@ -6732,12 +6816,12 @@ void Gui::drawImportMapWidget()
 					BSPMODEL& newModel = map->models[newModelIdx];
 					memcpy(&newModel, &oldModel, sizeof(BSPMODEL));
 
-					newModel.iFirstFace = (*remap).faces[oldModel.iFirstFace];
-					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : (*remap).nodes[oldModel.iHeadnodes[0]];
+					newModel.iFirstFace = remap.faces[oldModel.iFirstFace];
+					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap.nodes[oldModel.iHeadnodes[0]];
 
 					for (int i = 1; i < MAX_MAP_HULLS; i++)
 					{
-						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : (*remap).clipnodes[oldModel.iHeadnodes[i]];
+						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
 					}
 
 					newModel.nVisLeafs = 0;
@@ -6749,7 +6833,7 @@ void Gui::drawImportMapWidget()
 					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", "0 0 0");
 					map->update_ent_lump();
 					app->updateEnts();
-
+					map->update_lump_pointers();
 					map->getBspRender()->reload();
 					delete mapRenderer;
 				}

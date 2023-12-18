@@ -294,6 +294,9 @@ void DuplicateBspModelCommand::execute()
 	pickCount++;
 	vertPickCount++;
 
+
+	map->remove_unused_model_structures(CLEAN_LEAVES);
+
 	g_app->gui->refresh();
 
 	/*

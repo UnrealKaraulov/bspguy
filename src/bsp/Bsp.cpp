@@ -6155,7 +6155,7 @@ int Bsp::create_texinfo()
 void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 	std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 	std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-	std::vector<BSPCLIPNODE32>& newClipnodes)
+	std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX> & newTextures)
 {
 	STRUCTUSAGE usage(this);
 	mark_model_structures(modelIdx, &usage, true);
@@ -6303,7 +6303,56 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 	}
 }
 
+void Bsp::duplicate_model_structures(int modelIdx)
+{
+	std::vector<BSPPLANE> newPlanes;
+	std::vector<vec3> newVerts;
+	std::vector<BSPEDGE32> newEdges;
+	std::vector<int> newSurfedges;
+	std::vector<BSPTEXTUREINFO> newTexinfo;
+	std::vector<BSPFACE32> newFaces;
+	std::vector<COLOR3> newLightmaps;
+	std::vector<BSPNODE32> newNodes;
+	std::vector<BSPCLIPNODE32> newClipnodes;
+	std::vector<WADTEX> newTextures;
 
+	STRUCTREMAP remap(this);
+	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes, newTextures);
+
+	if (newClipnodes.size())
+		append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE32) * newClipnodes.size());
+	if (newEdges.size())
+		append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
+	if (newFaces.size())
+	{
+		append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
+	}
+	if (newNodes.size())
+		append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
+	if (newPlanes.size())
+		append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
+	if (newSurfedges.size())
+		append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
+	if (newTexinfo.size())
+		append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
+	if (newVerts.size())
+		append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
+	if (newLightmaps.size())
+	{
+		append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
+		save_undo_lightmaps();
+		resize_all_lightmaps();
+		renderer->loadLightmaps();
+	}
+
+	BSPMODEL& oldModel = models[modelIdx];
+	oldModel.iFirstFace = remap.faces[oldModel.iFirstFace];
+	oldModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap.nodes[oldModel.iHeadnodes[0]];
+	for (int i = 1; i < MAX_MAP_HULLS; i++)
+	{
+		oldModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
+	}
+}
 
 int Bsp::duplicate_model(int modelIdx)
 {
@@ -6316,9 +6365,10 @@ int Bsp::duplicate_model(int modelIdx)
 	std::vector<COLOR3> newLightmaps;
 	std::vector<BSPNODE32> newNodes;
 	std::vector<BSPCLIPNODE32> newClipnodes;
+	std::vector<WADTEX> newTextures;
 
 	STRUCTREMAP remap(this);
-	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
+	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes, newTextures);
 
 	if (newClipnodes.size())
 		append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE32) * newClipnodes.size());
@@ -6370,6 +6420,7 @@ int Bsp::duplicate_model(int modelIdx)
 		newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
 	}
 	//newModel.nVisLeafs = 0; // techinically should match the old model, but leaves aren't duplicated yetx
+	// recalculate leafs 
 	return newModelIdx;
 }
 

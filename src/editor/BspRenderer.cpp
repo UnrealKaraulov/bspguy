@@ -715,8 +715,6 @@ void BspRenderer::deleteRenderModel(RenderModel* renderModel)
 		return;
 	}
 
-
-
 	if (renderModel->renderGroups)
 	{
 		for (int k = 0; k < renderModel->groupCount; k++)
@@ -847,9 +845,9 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 	renderModel->renderFaces = new RenderFace[model.nFaces];
 
-	std::vector<RenderGroup> renderGroups;
-	std::vector<std::vector<lightmapVert>> renderGroupVerts;
-	std::vector<std::vector<lightmapVert>> renderGroupWireframeVerts;
+	std::vector<RenderGroup> renderGroups{};
+	std::vector<std::vector<lightmapVert>> renderGroupVerts{};
+	std::vector<std::vector<lightmapVert>> renderGroupWireframeVerts{};
 
 	for (int i = 0; i < model.nFaces; i++)
 	{
