@@ -30,10 +30,19 @@ Fgd::~Fgd()
 	}
 }
 
-FgdClass* Fgd::getFgdClass(const std::string & cname)
+FgdClass* Fgd::getFgdClass(const std::string& cname)
 {
 	auto it = std::find_if(classes.begin(), classes.end(), [&cname](const auto& fgdClass) {
 		return fgdClass->name == cname;
+		});
+
+	return (it != classes.end()) ? *it : NULL;
+}
+
+FgdClass* Fgd::getFgdClass(const std::string& cname, int type)
+{
+	auto it = std::find_if(classes.begin(), classes.end(), [&cname,&type](const auto& fgdClass) {
+		return fgdClass->name == cname && fgdClass->classType == type;
 		});
 
 	return (it != classes.end()) ? *it : NULL;
@@ -66,6 +75,10 @@ void Fgd::merge(Fgd* other)
             classes.push_back(new FgdClass(*otherClass));
         }
     }
+
+	processClassInheritance();
+	createEntGroups();
+	setSpawnflagNames();
 }
 
 bool Fgd::parse()
@@ -392,18 +405,18 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		}
 	}
 
-	if (headerParts.size() == 1)
+	if (headerParts.size() <= 1)
 	{
 		print_log(get_localized_string(LANG_1048), lineNum, name);
 		return;
 	}
+
 	std::vector<std::string> nameParts = splitStringIgnoringQuotes(headerParts[1], ":");
 	if (nameParts.size() >= 1)
 	{
 		fgdClass.name = trimSpaces(nameParts[0]);
 		// strips brackets if they're there
-		fgdClass.name = fgdClass.name.substr(0, fgdClass.name.find(' '));
-
+		// fgdClass.name = fgdClass.name.substr(0, fgdClass.name.find(' '));
 		nameParts.erase(nameParts.begin());
 	}
 	if (nameParts.size() >= 1)
@@ -772,6 +785,9 @@ void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList)
 
 void Fgd::createEntGroups()
 {
+	solidEntGroups.clear();
+	pointEntGroups.clear();
+
 	std::set<std::string> addedPointGroups;
 	std::set<std::string> addedSolidGroups;
 
@@ -780,7 +796,12 @@ void Fgd::createEntGroups()
 		if (classes[i]->classType == FGD_CLASS_BASE || classes[i]->name == "worldspawn")
 			continue;
 		std::string cname = classes[i]->name;
-		std::string groupName = cname.substr(0, cname.find('_'));
+		std::string groupName = cname;
+
+		if (cname.find('_') != std::string::npos)
+		{
+			groupName = cname.substr(0, cname.find('_'));
+		}
 
 		bool isPointEnt = classes[i]->classType == FGD_CLASS_POINT;
 
@@ -796,13 +817,19 @@ void Fgd::createEntGroups()
 			targetSet.insert(groupName);
 		}
 
+		bool added = false;
 		for (int k = 0; k < targetGroup.size(); k++)
 		{
 			if (targetGroup[k].groupName == groupName)
 			{
+				added = true;
 				targetGroup[k].classes.push_back(classes[i]);
 				break;
 			}
+		}
+		if (!added && targetGroup.size())
+		{
+			targetGroup[0].classes.push_back(classes[i]);
 		}
 	}
 
@@ -810,7 +837,7 @@ void Fgd::createEntGroups()
 	otherPointEnts.groupName = "other";
 	for (int i = 0; i < pointEntGroups.size(); i++)
 	{
-		if (pointEntGroups[i].classes.size() == 1)
+		if (pointEntGroups[i].classes.size() <= 1)
 		{
 			otherPointEnts.classes.push_back(pointEntGroups[i].classes[0]);
 			pointEntGroups.erase(pointEntGroups.begin() + i);
@@ -823,7 +850,7 @@ void Fgd::createEntGroups()
 	otherSolidEnts.groupName = "other";
 	for (int i = 0; i < solidEntGroups.size(); i++)
 	{
-		if (solidEntGroups[i].classes.size() == 1)
+		if (solidEntGroups[i].classes.size() <= 1)
 		{
 			otherSolidEnts.classes.push_back(solidEntGroups[i].classes[0]);
 			solidEntGroups.erase(solidEntGroups.begin() + i);

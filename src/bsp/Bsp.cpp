@@ -6326,7 +6326,7 @@ int Bsp::duplicate_model(int modelIdx)
 		append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
 	if (newFaces.size())
 	{
-		if (g_verbose)
+		/*if (g_verbose)
 		{
 			print_log("Origin model faces: {}\n", models[modelIdx].nFaces);
 			print_log("Base light offset = {} copy faces {}\n", lightDataLength, newFaces.size());
@@ -6334,7 +6334,7 @@ int Bsp::duplicate_model(int modelIdx)
 			{
 				print_log("Face {} light offset = {}\n", i, newFaces[i].nLightmapOffset);
 			}
-		}
+		}*/
 		append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
 	}
 	if (newNodes.size())
@@ -6349,11 +6349,11 @@ int Bsp::duplicate_model(int modelIdx)
 		append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
 	if (newLightmaps.size())
 	{
-		if (g_verbose)
+		/*if (g_verbose)
 		{
 			print_log("Added lightmap, size {}\n", newLightmaps.size());
 			print_log("Data {}x{}x{}\n", newLightmaps[0].r, newLightmaps[0].g, newLightmaps[0].b);
-		}
+		}*/
 		append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
 		save_undo_lightmaps();
 		resize_all_lightmaps();

@@ -438,7 +438,7 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 
 	while (tmpMap->models[0].nVisLeafs >= tmpMap->leafCount)
 		tmpMap->create_leaf(CONTENTS_EMPTY);
-	
+
 	tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
 
 	for (int i = 0; i < tmpMap->leafCount; i++)
@@ -825,8 +825,8 @@ void Gui::drawBspContexMenu()
 							ImGui::BeginTooltip();
 							ImGui::TextUnformatted(get_localized_string(LANG_0465).c_str());
 							ImGui::EndTooltip();
-						}	
-						
+						}
+
 						/*if (ImGui::MenuItem("ADD TO WORLDSPAWN!", 0, false, !app->isLoading && allowDuplicate))
 						{
 							print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
@@ -3969,20 +3969,44 @@ void Gui::drawKeyvalueEditor()
 
 			Entity* ent = map->ents[entIdx];
 			std::string cname = ent->keyvalues["classname"];
-			FgdClass* fgdClass = app->fgd->getFgdClass(cname);
+			FgdClass* fgdClass = app->fgd->getFgdClass(cname, FGD_CLASS_POINT);
+			std::vector<FgdGroup> targetGroup = app->fgd->pointEntGroups;
+
+
+			if (!fgdClass || (ent->hasKey("model") &&
+				(ent->keyvalues["model"].starts_with('*') || toLowerCase(ent->keyvalues["model"]).ends_with(".bsp"))))
+			{
+				FgdClass* tmpfgdClass = app->fgd->getFgdClass(cname, FGD_CLASS_SOLID);
+				if (tmpfgdClass)
+				{
+					targetGroup = app->fgd->solidEntGroups;
+					fgdClass = tmpfgdClass;
+				}
+			}
 
 			ImGui::PushFont(largeFont);
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text(get_localized_string(LANG_0654).c_str()); ImGui::SameLine();
 			if (cname != "worldspawn")
 			{
+				if (!targetGroup.size())
+				{
+					ImGui::BeginDisabled();
+				}
+
 				if (ImGui::Button((" " + cname + " ").c_str()))
-					ImGui::OpenPopup(get_localized_string(LANG_0655).c_str());
+					ImGui::OpenPopup("classname_popup");
+
+				if (!targetGroup.size())
+				{
+					ImGui::EndDisabled();
+				}
 			}
 			else
 			{
 				ImGui::Text(cname.c_str());
 			}
+
 			ImGui::PopFont();
 
 			if (fgdClass)
@@ -4000,27 +4024,18 @@ void Gui::drawKeyvalueEditor()
 			}
 
 
-			if (ImGui::BeginPopup(get_localized_string(LANG_1104).c_str()))
+			if (ImGui::BeginPopup("classname_popup"))
 			{
 				ImGui::Text(get_localized_string(LANG_0656).c_str());
 				ImGui::Separator();
 
-				std::vector<FgdGroup> targetGroup = app->fgd->pointEntGroups;
-
-				if (fgdClass)
-				{
-					if (fgdClass->classType == FGD_CLASS_TYPES::FGD_CLASS_SOLID)
-					{
-						targetGroup = app->fgd->solidEntGroups;
-					}
-				}
-				else if (ent->hasKey("model") && ent->keyvalues["model"].starts_with('*'))
-				{
-					targetGroup = app->fgd->solidEntGroups;
-				}
-
 				for (FgdGroup& group : targetGroup)
 				{
+					if (!group.classes.size())
+					{
+						ImGui::BeginDisabled();
+					}
+
 					if (ImGui::BeginMenu(group.groupName.c_str()))
 					{
 						for (int k = 0; k < group.classes.size(); k++)
@@ -4034,6 +4049,11 @@ void Gui::drawKeyvalueEditor()
 						}
 
 						ImGui::EndMenu();
+					}
+
+					if (!group.classes.size())
+					{
+						ImGui::EndDisabled();
 					}
 				}
 
@@ -5531,7 +5551,7 @@ void Gui::drawLog()
 			ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[line_no]));
 			clipper.ItemsHeight = ImGui::GetTextLineHeight();
 			ImGui::TextUnformatted(log_buffer_copy[line_no].c_str());
-			if (line_no  < log_buffer_copy.size() && log_buffer_copy[line_no].size() && log_buffer_copy[line_no][log_buffer_copy[line_no].size() - 1] != '\n')
+			if (line_no < log_buffer_copy.size() && log_buffer_copy[line_no].size() && log_buffer_copy[line_no][log_buffer_copy[line_no].size() - 1] != '\n')
 			{
 				clipper.ItemsHeight = 0.0f;
 				ImGui::SameLine();

@@ -3,16 +3,16 @@
 #include "Wad.h"
 #include "Entity.h"
 
-enum FGD_CLASS_TYPES
+enum FGD_CLASS_TYPES : int
 {
-	FGD_CLASS_BASE,
+	FGD_CLASS_BASE = 0,
 	FGD_CLASS_SOLID,
 	FGD_CLASS_POINT
 };
 
-enum FGD_KEY_TYPES
+enum FGD_KEY_TYPES : int
 {
-	FGD_KEY_INTEGER,
+	FGD_KEY_INTEGER = 0,
 	FGD_KEY_STRING,
 	FGD_KEY_CHOICES,
 	FGD_KEY_FLAGS,
@@ -91,7 +91,7 @@ struct FgdClass
 		// default to the purple cube
 		mins = vec3(-8, -8, -8);
 		maxs = vec3(8, 8, 8);
-		color = {220, 0, 220};
+		color = { 220, 0, 220 };
 		offset = vec3(0, 0, 0);
 		modelSkin = modelBody = modelSequence = 0;
 	}
@@ -128,7 +128,8 @@ public:
 	bool parse();
 	void merge(Fgd* other);
 
-	FgdClass* getFgdClass(const std::string & cname);
+	FgdClass* getFgdClass(const std::string& cname);
+	FgdClass* getFgdClass(const std::string& cname, int type);
 
 private:
 	int lineNum = 0;
