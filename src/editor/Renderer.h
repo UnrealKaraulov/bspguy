@@ -116,6 +116,8 @@ public:
 	void saveSettings();
 	void loadSettings();
 
+	int gl_errors = 0;
+
 	bool is_minimized = false;
 	bool is_focused = true;
 	bool reloading = false;

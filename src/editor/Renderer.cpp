@@ -129,6 +129,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 Renderer::Renderer()
 {
 	g_app = this;
+	gl_errors = 0;
 
 	glfwSetErrorCallback(error_callback);
 
@@ -654,7 +655,10 @@ void Renderer::renderLoop()
 		int glerror = glGetError();
 		while (glerror != GL_NO_ERROR)
 		{
-			print_log(get_localized_string(LANG_0905), glerror);
+			gl_errors++;
+#ifndef NDEBUG
+			std::cout << fmt::format(fmt::runtime(get_localized_string(LANG_0905)), glerror) << std::endl;
+#endif 
 			glerror = glGetError();
 		}
 

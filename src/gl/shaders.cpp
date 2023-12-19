@@ -11,8 +11,8 @@ namespace Shaders
 		"uniform vec4 colorMult;\n"
 
 		// vertex variables
-		"attribute vec3 vPosition;\n"
 		"attribute vec4 vColor;\n"
+		"attribute vec3 vPosition;\n"
 
 		// fragment variables
 		"varying vec4 fColor;\n"
@@ -39,8 +39,8 @@ namespace Shaders
 		"uniform mat4 modelViewProjection;\n"
 
 		// vertex variables
-		"attribute vec3 vPosition;\n"
 		"attribute vec2 vTex;\n"
+		"attribute vec3 vPosition;\n"
 
 		// fragment variables
 		"varying vec2 fTex;\n"
@@ -67,8 +67,8 @@ namespace Shaders
 		"uniform mat4 modelViewProjection;\n"
 
 		// vertex variables
-		"attribute vec3 vPosition;\n"
 		"attribute vec2 vTex;\n"
+		"attribute vec3 vPosition;\n"
 
 		// fragment variables
 		"varying vec2 fTex;\n"
@@ -94,13 +94,13 @@ namespace Shaders
 		"uniform mat4 modelViewProjection;\n"
 
 		// vertex variables
-		"attribute vec3 vPosition;\n"
 		"attribute vec2 vTex;\n"
 		"attribute vec3 vLightmapTex0;\n"
 		"attribute vec3 vLightmapTex1;\n"
 		"attribute vec3 vLightmapTex2;\n"
 		"attribute vec3 vLightmapTex3;\n"
 		"attribute vec4 vColor;\n"
+		"attribute vec3 vPosition;\n"
 
 		// fragment variables
 		"varying vec2 fTex;\n"
@@ -170,13 +170,13 @@ namespace Shaders
 		"uniform mat4 modelViewProjection;\n"
 
 		// vertex variables
-		"attribute vec3 vPosition;\n"
 		"attribute vec2 vTex;\n"
 		"attribute vec3 vLightmapTex0;\n"
 		"attribute vec3 vLightmapTex1;\n"
 		"attribute vec3 vLightmapTex2;\n"
 		"attribute vec3 vLightmapTex3;\n"
 		"attribute vec4 vColor;\n"
+		"attribute vec3 vPosition;\n"
 
 		// fragment variables
 		"varying vec2 fTex;\n"

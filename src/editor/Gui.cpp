@@ -3482,7 +3482,7 @@ void Gui::drawDebugWidget()
 		{
 			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
 			ImGui::Text(fmt::format("Workdir: {}", g_working_dir).c_str());
-
+			ImGui::Text(fmt::format("Opengl Errors: {} ", app->gl_errors).c_str());
 			if (app && imgui_io)
 			{
 				ImGui::Text(fmt::format("Mouse left {} right {}", app->curLeftMouse, app->curRightMouse).c_str());

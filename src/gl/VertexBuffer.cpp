@@ -52,11 +52,11 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, void * dat, int numVerts, int primitive)
 {
 	attribs = std::vector<VertexAttr>();
+	vboId = (GLuint)-1;
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	addAttributes(attFlags);
 	setData(dat, numVerts);
-	vboId = (GLuint)-1;
 }
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive)
@@ -169,9 +169,9 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 
 void VertexBuffer::setData(void* _data, int _numVerts)
 {
+	deleteBuffer();
 	data = (unsigned char*)_data;
 	numVerts = _numVerts;
-	deleteBuffer();
 }
 
 void VertexBuffer::upload(bool hideErrors)
