@@ -2375,12 +2375,12 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (map && dirExists(g_game_dir + "/svencoop_addon/maps/"))
+			if (map && dirExists(g_game_dir + "svencoop_addon/maps/"))
 			{
 				if (ImGui::MenuItem(get_localized_string(LANG_0550).c_str()))
 				{
-					std::string mapPath = g_game_dir + "/svencoop_addon/maps/" + map->bsp_name + ".bsp";
-					std::string entPath = g_game_dir + "/svencoop_addon/scripts/maps/bspguy/maps/" + map->bsp_name + ".ent";
+					std::string mapPath = g_game_dir + "svencoop_addon/maps/" + map->bsp_name + ".bsp";
+					std::string entPath = g_game_dir + "svencoop_addon/scripts/maps/bspguy/maps/" + map->bsp_name + ".ent";
 
 					map->update_ent_lump(true); // strip nodes before writing (to skip slow node graph generation)
 					map->write(mapPath);
@@ -6566,7 +6566,7 @@ void Gui::drawMergeWindow()
 {
 	ImGui::SetNextWindowSize(ImVec2(500.f, 240.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(500.f, 240.f), ImVec2(500.f, 240.f));
-	static std::string outPath;
+	static std::string outPath = "outbsp.bsp";
 	static std::vector<std::string> inPaths;
 	static bool DeleteUnusedInfo = true;
 	static bool Optimize = false;

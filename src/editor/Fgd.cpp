@@ -194,12 +194,12 @@ bool Fgd::parse()
 		}
 	}
 
-	std::ostringstream outs;
-	for (const auto& s : inputLines)
-	{
-		outs << s << "\n";
-	}
-	writeFile(path + "_test.fgd", outs.str());
+	//std::ostringstream outs;
+	//for (const auto& s : inputLines)
+	//{
+	//	outs << s << "\n";
+	//}
+	//writeFile(path + "_test.fgd", outs.str());
 
 	FgdClass* fgdClass = new FgdClass();
 	int bracketNestLevel = 0;
