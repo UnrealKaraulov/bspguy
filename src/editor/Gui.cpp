@@ -5621,22 +5621,12 @@ void Gui::drawLog()
 
 	static std::vector<std::string> log_buffer_copy;
 	static std::vector<unsigned short> color_buffer_copy;
-	static int real_string_count = 0;
 
 	g_mutex_list[0].lock();
 	if (log_buffer_copy.size() != g_log_buffer.size())
 	{
 		log_buffer_copy = g_log_buffer;
 		color_buffer_copy = g_color_buffer;
-		real_string_count = 0;
-		for (size_t line_no = 0; line_no < log_buffer_copy.size(); line_no++)
-		{
-			real_string_count++;
-			if (line_no + 1 < log_buffer_copy.size() && log_buffer_copy[line_no].size() && log_buffer_copy[line_no][log_buffer_copy[line_no].size() - 1] != '\n')
-			{
-				real_string_count--;
-			}
-		}
 	}
 	g_mutex_list[0].unlock();
 
@@ -5679,20 +5669,21 @@ void Gui::drawLog()
 	}
 
 	ImGuiListClipper clipper;
-	clipper.Begin(real_string_count, ImGui::GetTextLineHeight());
+	clipper.Begin(log_buffer_copy.size());
 	while (clipper.Step())
 	{
-		for (int line_no = clipper.DisplayStart; line_no < log_buffer_copy.size(); line_no++)
+		for (int line_no = clipper.DisplayStart; line_no < clipper.DisplayEnd; line_no++)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[line_no]));
-			clipper.ItemsHeight = ImGui::GetTextLineHeight();
-			ImGui::TextUnformatted(log_buffer_copy[line_no].c_str());
-			if (line_no < log_buffer_copy.size() && log_buffer_copy[line_no].size() && log_buffer_copy[line_no][log_buffer_copy[line_no].size() - 1] != '\n')
+			if (line_no < log_buffer_copy.size())
 			{
-				clipper.ItemsHeight = 0.0f;
-				ImGui::SameLine();
+				if (line_no > 0 && !log_buffer_copy[line_no - 1].ends_with("\n"))
+				{
+					ImGui::SameLine();
+				}
+				ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[line_no]));
+				ImGui::Text(log_buffer_copy[line_no].c_str());
+				ImGui::PopStyleColor();
 			}
-			ImGui::PopStyleColor();
 		}
 	}
 	clipper.End();

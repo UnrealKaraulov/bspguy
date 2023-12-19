@@ -32,6 +32,9 @@ std::vector<unsigned short> g_color_buffer;
 
 std::mutex g_mutex_list[10] = {};
 
+
+
+
 bool fileExists(const std::string& fileName)
 {
 	return fs::exists(fileName) && !fs::is_directory(fileName);

@@ -56,25 +56,44 @@ extern unsigned short g_console_colors;
 //ImVec4 imguiColorFromConsole(unsigned short colors);
 void set_console_colors(unsigned short colors = 0);
 
+std::vector<std::string> splitStringIgnoringQuotes(const std::string& s, const std::string& delimitter);
+std::vector<std::string> splitString(const std::string& s, const std::string& delimiter, int maxParts = 0);
+
 
 template<class ...Args>
 inline void print_log(const std::string& format, Args ...args) noexcept
 {
 	g_mutex_list[0].lock();
 
-	std::string log_line = fmt::vformat(format, fmt::make_format_args(args...));
+	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 
 #ifndef NDEBUG
 	static std::ofstream outfile("log.txt", std::ios_base::app);
-	outfile << log_line;
+	outfile << line;
 	outfile.flush();
+	std::cout << line;
 #endif
 
-	if (g_log_buffer.size() == 0 || g_log_buffer[g_log_buffer.size() - 1] != log_line)
+	auto splitstr = splitString(line, "\n");
+
+	if (splitstr.size() == 1)
 	{
-		std::cout << log_line;
-		g_log_buffer.push_back(log_line);
-		g_color_buffer.push_back(g_console_colors);
+		if (splitstr.size())
+		{
+			g_log_buffer.push_back(line);
+			g_color_buffer.push_back(g_console_colors);
+		}
+	}
+	else
+	{
+		for (const auto& s : splitstr)
+		{
+			if (s.size())
+			{
+				g_log_buffer.push_back(s + "\n");
+				g_color_buffer.push_back(g_console_colors);
+			}
+		}
 	}
 	g_mutex_list[0].unlock();
 }
@@ -84,28 +103,40 @@ template<class ...Args>
 inline void print_log(unsigned short colors, const std::string& format, Args ...args) noexcept
 {
 	g_mutex_list[0].lock();
-
 	set_console_colors(colors);
-
-	std::string log_line = fmt::vformat(format, fmt::make_format_args(args...));
+	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 
 #ifndef NDEBUG
 	static std::ofstream outfile("log.txt", std::ios_base::app);
-	outfile << log_line;
+	outfile << line;
 	outfile.flush();
+	std::cout << line;
 #endif
 
-	if (g_log_buffer.size() == 0 || g_log_buffer[g_log_buffer.size() - 1] != log_line)
+	auto splitstr = splitString(line, "\n");
+
+	if (splitstr.size() == 1)
 	{
-		std::cout << log_line;
-		g_log_buffer.push_back(log_line);
-		g_color_buffer.push_back(colors);
+		if (splitstr.size())
+		{
+			g_log_buffer.push_back(line);
+			g_color_buffer.push_back(g_console_colors);
+		}
 	}
-	g_mutex_list[0].unlock();
-
+	else
+	{
+		for (const auto& s : splitstr)
+		{
+			if (s.size())
+			{
+				g_log_buffer.push_back(s + "\n");
+				g_color_buffer.push_back(g_console_colors);
+			}
+		}
+	}
 	set_console_colors();
+	g_mutex_list[0].unlock();
 }
-
 
 bool fileExists(const std::string& fileName);
 
@@ -119,9 +150,6 @@ bool writeFile(const std::string& fileName, const std::string& data);
 bool removeFile(const std::string& fileName);
 
 std::streampos fileSize(const std::string& filePath);
-
-std::vector<std::string> splitStringIgnoringQuotes(const std::string & s, const std::string& delimitter);
-std::vector<std::string> splitString(const std::string& s, const std::string& delimiter, int maxParts = 0);
 
 std::string basename(const std::string& path);
 
