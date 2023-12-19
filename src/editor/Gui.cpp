@@ -2047,8 +2047,7 @@ void Gui::drawMenuBar()
 					ImGui::EndTooltip();
 				}
 
-
-
+				ImGui::SetNextWindowSize({ -1.0f, 600.0f });
 				if (ImGui::BeginMenu(get_localized_string(LANG_1076).c_str(), map && !map->is_mdl_model))
 				{
 					int modelIdx = -1;
@@ -2057,7 +2056,6 @@ void Gui::drawMenuBar()
 					{
 						modelIdx = map->ents[app->pickInfo.GetSelectedEnt()]->getBspModelIdx();
 					}
-
 					for (int i = 0; i < map->modelCount; i++)
 					{
 						if (ImGui::BeginMenu(((modelIdx != i ? "Export Model" : "+ Export Model") + std::to_string(i) + ".bsp").c_str()))
