@@ -1473,7 +1473,7 @@ namespace ifd
 
 			// content on the right side
 			ImGui::TableSetColumnIndex(1);
-			ImGui::BeginChild(get_localized_string(LANG_0954).c_str(),ImVec2(0,-bottomBarHeight), 0, ImGuiWindowFlags_AlwaysHorizontalScrollbar || ImGuiWindowFlags_AlwaysVerticalScrollbar);
+			ImGui::BeginChild(get_localized_string(LANG_0954).c_str(),ImVec2(0,-bottomBarHeight), 0, ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar);
 			m_renderContent();
 			ImGui::EndChild();
 			if (ImGui::IsItemHovered() && ImGui::GetIO().KeyCtrl && ImGui::GetIO().MouseWheel != 0.0f)

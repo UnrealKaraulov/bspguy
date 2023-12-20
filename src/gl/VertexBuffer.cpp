@@ -111,7 +111,11 @@ void VertexBuffer::addAttribute(int numValues, int valueType, int normalized, co
 }
 
 void VertexBuffer::addAttribute(int type, const char* varName) {
-
+	if (!varName || varName[0] == '\0')
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "VertexBuffer::addAttribute -> varName is null");
+		return;
+	}
 	int idx = 0;
 	while (type >>= 1) // unroll for more speed...
 	{
@@ -119,7 +123,7 @@ void VertexBuffer::addAttribute(int type, const char* varName) {
 	}
 
 	if (idx >= VBUF_FLAGBITS) {
-		print_log(get_localized_string(LANG_0974));
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0974));
 		return;
 	}
 
@@ -178,6 +182,11 @@ void VertexBuffer::upload(bool hideErrors)
 {
 	if (!shaderProgram)
 		return;
+	while (glGetError() != GL_NO_ERROR)
+	{
+
+	}
+
 	shaderProgram->bind();
 	bindAttributes(hideErrors && !g_verbose);
 
@@ -199,6 +208,10 @@ void VertexBuffer::upload(bool hideErrors)
 		glBindBuffer(GL_ARRAY_BUFFER, vboId);
 		glEnableVertexAttribArray(a.handle);
 		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, ptr);
+		if (glGetError() != GL_NO_ERROR)
+		{
+			std::cout << "Error! Name:" << a.varName;
+		}
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

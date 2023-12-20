@@ -9,6 +9,7 @@ static unsigned int g_active_shader_program = 0xFFFFFFFF;
 ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSource)
 {
 	modelViewID = modelViewProjID = -1;
+	ID = 0xFFFFFFFF;
 	vposID = vcolorID = vtexID = 0;
 	projMat = viewMat = modelMat = nullptr;
 	vShader = new Shader(vshaderSource, GL_VERTEX_SHADER);
@@ -56,8 +57,8 @@ void ShaderProgram::bind()
 	{
 		g_active_shader_program = ID;
 		glUseProgram(ID);
-		updateMatrixes();
 	}
+	updateMatrixes();
 }
 
 void ShaderProgram::removeShader(int shaderID)

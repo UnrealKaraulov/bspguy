@@ -488,8 +488,8 @@ void BspRenderer::updateModelShaders()
 		RenderModel& model = renderModels[i];
 		for (int k = 0; k < model.groupCount; k++)
 		{
-			model.renderGroups[k].buffer->setShader(g_app->activeShader, true);
-			model.renderGroups[k].wireframeBuffer->setShader(g_app->activeShader, true);
+			model.renderGroups[k].buffer->setShader(g_app->bspShader, true);
+			model.renderGroups[k].wireframeBuffer->setShader(g_app->bspShader, true);
 		}
 	}
 }
@@ -663,8 +663,6 @@ void BspRenderer::preRenderFaces()
 		RenderModel& model = renderModels[i];
 		for (int k = 0; k < model.groupCount; k++)
 		{
-			model.renderGroups[k].buffer->bindAttributes(true);
-			model.renderGroups[k].wireframeBuffer->bindAttributes(true);
 			model.renderGroups[k].buffer->upload();
 			model.renderGroups[k].wireframeBuffer->upload();
 		}
@@ -1098,7 +1096,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		renderGroups[i].wireframeVertCount = (int)renderGroupWireframeVerts[i].size();
 		memcpy(renderGroups[i].wireframeVerts, &renderGroupWireframeVerts[i][0], renderGroups[i].wireframeVertCount * sizeof(lightmapVert));
 
-		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->activeShader, 0, GL_TRIANGLES);
+		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
 		tmpBuf->addAttribute(TEX_2F, "vTex");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
@@ -1108,7 +1106,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		tmpBuf->addAttribute(POS_3F, "vPosition");
 		tmpBuf->setData(renderGroups[i].verts, renderGroups[i].vertCount);
 
-		auto tmpWireBuff = renderGroups[i].wireframeBuffer = new VertexBuffer(g_app->activeShader, 0, GL_LINES);
+		auto tmpWireBuff = renderGroups[i].wireframeBuffer = new VertexBuffer(g_app->bspShader, 0, GL_LINES);
 		tmpWireBuff->addAttribute(TEX_2F, "vTex");
 		tmpWireBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
 		tmpWireBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
@@ -1976,7 +1974,6 @@ void BspRenderer::delayLoadData()
 				{
 					if (clip.clipnodeBuffer[k])
 					{
-						clip.clipnodeBuffer[k]->bindAttributes(true);
 						clip.clipnodeBuffer[k]->upload();
 					}
 				}
@@ -2112,10 +2109,10 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
 
-	g_app->activeShader->bind();
-	g_app->activeShader->modelMat->loadIdentity();
-	g_app->activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-	g_app->activeShader->updateMatrixes();
+	g_app->bspShader->bind();
+	g_app->bspShader->modelMat->loadIdentity();
+	g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	g_app->bspShader->updateMatrixes();
 
 	for (int pass = 0; pass < 2; pass++)
 	{
@@ -2134,14 +2131,14 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 			{
 				if (renderEnts[i].hide)
 					continue;
-				g_app->activeShader->pushMatrix(MAT_MODEL);
-				*g_app->activeShader->modelMat = renderEnts[i].modelMatAngles;
-				g_app->activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-				g_app->activeShader->updateMatrixes();
+				g_app->bspShader->pushMatrix(MAT_MODEL);
+				*g_app->bspShader->modelMat = renderEnts[i].modelMatAngles;
+				g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->bspShader->updateMatrixes();
 
 				drawModel(&renderEnts[i], drawTransparentFaces, g_app->pickInfo.IsSelectedEnt(i), false);
 
-				g_app->activeShader->popMatrix(MAT_MODEL);
+				g_app->bspShader->popMatrix(MAT_MODEL);
 			}
 		}
 		if (drawTransparentFaces)
@@ -2152,7 +2149,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 		if ((g_render_flags & RENDER_POINT_ENTS) && pass == 0)
 		{
 			drawPointEntities(highlightEnts);
-			g_app->activeShader->bind();
+			g_app->bspShader->bind();
 		}
 	}
 
@@ -2207,7 +2204,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 	glDepthFunc(GL_ALWAYS);
 	if (highlightEnts.size())
 	{
-		g_app->activeShader->bind();
+		g_app->bspShader->bind();
 
 		for (int highlightEnt : highlightEnts)
 		{
@@ -2215,9 +2212,9 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 			{
 				if (renderEnts[highlightEnt].hide)
 					continue;
-				*g_app->activeShader->modelMat = renderEnts[highlightEnt].modelMatAngles;
-				g_app->activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-				g_app->activeShader->updateMatrixes();
+				*g_app->bspShader->modelMat = renderEnts[highlightEnt].modelMatAngles;
+				g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->bspShader->updateMatrixes();
 				if (modelVertsDraw)
 					glDisable(GL_CULL_FACE);
 				drawModel(&renderEnts[highlightEnt], false, true, true);
@@ -2293,14 +2290,14 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 		if (ent && ent->needAngles)
 		{
-			g_app->activeShader->pushMatrix(MAT_MODEL);
-			*g_app->activeShader->modelMat = ent->modelMatOrigin;
-			g_app->activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-			g_app->activeShader->updateMatrixes();
+			g_app->bspShader->pushMatrix(MAT_MODEL);
+			*g_app->bspShader->modelMat = ent->modelMatOrigin;
+			g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+			g_app->bspShader->updateMatrixes();
 			yellowTex->bind(0);
 			greyTex->bind(1);
 			rgroup.wireframeBuffer->drawFull();
-			g_app->activeShader->popMatrix(MAT_MODEL);
+			g_app->bspShader->popMatrix(MAT_MODEL);
 		}
 
 		if (highlight || (g_render_flags & RENDER_WIREFRAME))
@@ -2329,37 +2326,35 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			whiteTex->bind(0);
 		}
 
-		if (g_render_flags & RENDER_LIGHTMAPS)
+
+		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
-			for (int s = 0; s < MAX_LIGHTMAPS; s++)
+			if (highlight)
 			{
-				if (highlight)
+				redTex->bind(s + 1);
+			}
+			else if (lightmapsUploaded && lightmapsGenerated && (g_render_flags & RENDER_LIGHTMAPS))
+			{
+				if (showLightFlag != -1)
 				{
-					redTex->bind(s + 1);
-				}
-				else if (lightmapsUploaded && lightmapsGenerated)
-				{
-					if (showLightFlag != -1)
+					if (showLightFlag == s)
 					{
-						if (showLightFlag == s)
-						{
-							blackTex->bind(s + 1);
-							continue;
-						}
+						blackTex->bind(s + 1);
+						continue;
 					}
-					if (rgroup.lightmapAtlas[s])
-						rgroup.lightmapAtlas[s]->bind(s + 1);
+				}
+				if (rgroup.lightmapAtlas[s])
+					rgroup.lightmapAtlas[s]->bind(s + 1);
+			}
+			else
+			{
+				if (s == 0)
+				{
+					whiteTex->bind(s + 1);
 				}
 				else
 				{
-					if (s == 0)
-					{
-						greyTex->bind(s + 1);
-					}
-					else
-					{
-						blackTex->bind(s + 1);
-					}
+					blackTex->bind(s + 1);
 				}
 			}
 		}
@@ -2383,12 +2378,12 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 				whiteTex->bind(s + 1);
 			}
 
-			g_app->activeShader->pushMatrix(MAT_MODEL);
-			*g_app->activeShader->modelMat = ent->modelMatOrigin;
-			g_app->activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-			g_app->activeShader->updateMatrixes();
+			g_app->bspShader->pushMatrix(MAT_MODEL);
+			*g_app->bspShader->modelMat = ent->modelMatOrigin;
+			g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+			g_app->bspShader->updateMatrixes();
 			rgroup.buffer->drawFull();
-			g_app->activeShader->popMatrix(MAT_MODEL);
+			g_app->bspShader->popMatrix(MAT_MODEL);
 		}
 	}
 }
@@ -2588,7 +2583,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		}
 	}
 
-	for (int i = 0; i < (int) map->ents.size(); i++)
+	for (int i = 0; i < (int)map->ents.size(); i++)
 	{
 		if (renderEnts[i].hide)
 			continue;

@@ -82,10 +82,8 @@ public:
 
 	unsigned int colorShaderMultId;
 	ShaderProgram* modelShader;
-	ShaderProgram* bspShader;
-	ShaderProgram* fullBrightBspShader;
 	ShaderProgram* colorShader;
-	ShaderProgram* activeShader;
+	ShaderProgram* bspShader;
 
 	double oldTime = 0.0;
 	double curTime = 0.0;

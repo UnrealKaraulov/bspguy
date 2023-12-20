@@ -4304,7 +4304,7 @@ bool Bsp::validate()
 	memset(decompressedVis, 0xFF, decompressedVisSize);
 	decompress_vis_lump(this, leaves, visdata, decompressedVis,
 		models[0].nVisLeafs, leafCount, leafCount, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
-	delete decompressedVis;
+	delete [] decompressedVis;
 
 	return isValid;
 }

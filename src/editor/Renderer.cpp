@@ -145,6 +145,7 @@ Renderer::Renderer()
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 	window = glfwCreateWindow(g_settings.windowWidth, g_settings.windowHeight, "bspguy", NULL, NULL);
 
 	glfwSetWindowPos(window, g_settings.windowX, g_settings.windowY);
@@ -182,10 +183,6 @@ Renderer::Renderer()
 	bspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	bspShader->setMatrixNames(NULL, "modelViewProjection");
 
-	fullBrightBspShader = new ShaderProgram(Shaders::g_shader_fullbright_vertex, Shaders::g_shader_fullbright_fragment);
-	fullBrightBspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
-	fullBrightBspShader->setMatrixNames(NULL, "modelViewProjection");
-
 	modelShader = new ShaderProgram(Shaders::g_shader_model_vertex, Shaders::g_shader_model_fragment);
 	modelShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	modelShader->setMatrixNames(NULL, "modelViewProjection");
@@ -196,8 +193,7 @@ Renderer::Renderer()
 	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL);
 
 	g_app->bspShader->bind();
-	unsigned int sTexId = glGetUniformLocation(g_app->bspShader->ID, "sTex");
-	glUniform1i(sTexId, 0);
+	glUniform1i(glGetUniformLocation(g_app->bspShader->ID, "sTex"), 0);
 	for (int s = 0; s < MAX_LIGHTMAPS; s++)
 	{
 		unsigned int sLightmapTexIds = glGetUniformLocation(g_app->bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
@@ -205,19 +201,12 @@ Renderer::Renderer()
 		glUniform1i(sLightmapTexIds, s + 1);
 	}
 
-	g_app->fullBrightBspShader->bind();
-	unsigned int sTexId2 = glGetUniformLocation(g_app->fullBrightBspShader->ID, "sTex");
-	glUniform1i(sTexId2, 0);
-
 	g_app->modelShader->bind();
-	sTexId2 = glGetUniformLocation(g_app->modelShader->ID, "sTex");
-	glUniform1i(sTexId2, 0);
+	glUniform1i(glGetUniformLocation(g_app->modelShader->ID, "sTex"), 0);
 
 	colorShader->bind();
 	colorShaderMultId = glGetUniformLocation(g_app->colorShader->ID, "colorMult");
 	glUniform4f(colorShaderMultId, 1, 1, 1, 1);
-
-	activeShader = bspShader;
 
 
 	clearSelection();
@@ -344,9 +333,6 @@ void Renderer::renderLoop()
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		glEnable(GL_ALPHA_TEST);
-		glAlphaFunc(GL_GREATER, 0.05f);
-
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
 
@@ -377,8 +363,6 @@ void Renderer::renderLoop()
 				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + SelectedMap->bsp_path).c_str());
 			}
 		}
-
-		activeShader = (g_render_flags & RENDER_LIGHTMAPS) ? bspShader : fullBrightBspShader;
 
 		int modelIdx = -1;
 		int entIdx = pickInfo.GetSelectedEnt();

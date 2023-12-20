@@ -29,6 +29,8 @@ namespace Shaders
 
 		"void main()\n"
 		"{\n"
+		"	if(fColor.a <= 0.01)\n"
+		"		discard;\n"
 		"	float gamma = 1.5;\n"
 		"	gl_FragColor = vec4(pow(fColor.rgb, vec3(1.0/gamma)), fColor.a);\n"
 		"}\n";
@@ -60,6 +62,8 @@ namespace Shaders
 		"void main()\n"
 		"{\n"
 		"	gl_FragColor = texture2D(sTex, fTex);\n"
+		"	if(gl_FragColor.a <= 0.05)\n"
+		"		discard;\n"
 		"}\n";
 
 	const char* g_shader_model_vertex =
@@ -87,6 +91,8 @@ namespace Shaders
 		"void main()\n"
 		"{\n"
 		"	gl_FragColor = texture2D(sTex, fTex);\n"
+		"	if(gl_FragColor.a <= 0.05)\n"
+		"		discard;\n"
 		"}\n";
 
 	const char* g_shader_multitexture_vertex =
@@ -138,6 +144,8 @@ namespace Shaders
 		"void main()\n"
 		"{\n"
 		"	vec4 color = texture2D(sTex, fTex);\n"
+		"	if(color.a <= 0.05)\n"
+		"		discard;\n"
 		"	vec4 fcolor = fColor.rgba;\n"
 	/*	"	if (fcolor.g == 5.0)\n"
 		"	{\n"
@@ -163,47 +171,5 @@ namespace Shaders
 		"	color.rgb = color.rgb * lightmap * fcolor.rgb; \n"
 		"	float gamma = 1.5;\n"
 		"	gl_FragColor = vec4(pow(color.rgb, vec3(1.0/gamma)), color.a * fcolor.a );\n"
-		"}\n";
-
-	const char* g_shader_fullbright_vertex =
-		// object variables
-		"uniform mat4 modelViewProjection;\n"
-
-		// vertex variables
-		"attribute vec2 vTex;\n"
-		"attribute vec3 vLightmapTex0;\n"
-		"attribute vec3 vLightmapTex1;\n"
-		"attribute vec3 vLightmapTex2;\n"
-		"attribute vec3 vLightmapTex3;\n"
-		"attribute vec4 vColor;\n"
-		"attribute vec3 vPosition;\n"
-
-		// fragment variables
-		"varying vec2 fTex;\n"
-		"varying vec4 fColor;\n"
-
-		"void main()\n"
-		"{\n"
-		"	gl_Position = modelViewProjection * vec4(vPosition, 1);\n"
-		"	fTex = vTex;\n"
-		"	fColor = vColor;\n"
-		"}\n";
-
-	// vec4(0.86f, 0, 0, 1.0f); //highlight color (texture color*2)
-
-	const char* g_shader_fullbright_fragment =
-		"varying vec2 fTex;\n"
-		"varying vec4 fColor;\n"
-
-		"uniform sampler2D sTex;\n"
-
-		"void main()\n"
-		"{\n"
-		"	vec4 fcolor = fColor;\n"
-		"   if (fcolor.g > 1.0)\n"
-		"	{\n"
-		"		fcolor.g = 1.0;"
-		"	}\n"
-		"	gl_FragColor = texture2D(sTex, fTex) * fcolor;\n"
 		"}\n";
 }

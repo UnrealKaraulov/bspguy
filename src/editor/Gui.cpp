@@ -6291,8 +6291,6 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox(get_localized_string(LANG_0781).c_str(), &renderLightmaps))
 			{
 				g_render_flags ^= RENDER_LIGHTMAPS;
-				for (int i = 0; i < app->mapRenderers.size(); i++)
-					app->mapRenderers[i]->updateModelShaders();
 			}
 			if (ImGui::Checkbox(get_localized_string(LANG_0782).c_str(), &renderWireframe))
 			{

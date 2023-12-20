@@ -3,9 +3,6 @@ namespace Shaders
 	extern const char* g_shader_model_vertex;
 	extern const char* g_shader_model_fragment;
 
-	extern const char* g_shader_fullbright_vertex;
-	extern const char* g_shader_fullbright_fragment;
-
 	extern const char* g_shader_multitexture_vertex;
 	extern const char* g_shader_multitexture_fragment;
 
