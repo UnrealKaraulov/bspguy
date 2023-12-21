@@ -879,7 +879,7 @@ void StudioModel::RefreshMeshList(int body)
 		delete mdl_cube;
 	}
 	mdl_cube = new EntCube();
-	mdl_cube->color = { 10, 100, 255, 255 };
+	mdl_cube->color = { 255, 255, 0, 255 };
 	mdl_cube->mins = mins;
 	mdl_cube->maxs = maxs;
 	g_app->pointEntRenderer->genCubeBuffers(mdl_cube);

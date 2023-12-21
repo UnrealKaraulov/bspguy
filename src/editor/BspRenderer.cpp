@@ -2569,6 +2569,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 
 				g_app->colorShader->updateMatrixes();
+
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 				{
 					renderEnts[i].mdl->mdl_cube->selectBuffer->drawFull();
@@ -3108,9 +3109,12 @@ int PickInfo::GetSelectedEnt()
 
 void PickInfo::AddSelectedEnt(int entIdx)
 {
-	if (!IsSelectedEnt(entIdx))
+	if (entIdx >= 0)
 	{
-		selectedEnts.push_back(entIdx);
+		if (!IsSelectedEnt(entIdx))
+		{
+			selectedEnts.push_back(entIdx);
+		}
 	}
 	pickCount++;
 }
