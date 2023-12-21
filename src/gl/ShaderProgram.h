@@ -23,9 +23,9 @@ public:
 	unsigned int vcolorID;
 	unsigned int vtexID;
 
-	mat4x4* projMat;
-	mat4x4* viewMat;
-	mat4x4* modelMat;
+	mat4x4 * projMat;
+	mat4x4 * viewMat;
+	mat4x4 * modelMat;
 
 	// Creates a shader program to replace the fixed-function pipeline
 	ShaderProgram(const char* vshaderSource, const char* fshaderSource);
@@ -51,8 +51,8 @@ public:
 	void updateMatrixes();
 
 	// save/restore matrices
-	void pushMatrix(int matType);
-	void popMatrix(int matType);
+	void pushMatrix(int matType = MAT_MODEL);
+	void popMatrix(int matType = MAT_MODEL);
 
 private:
 	// uniforms
@@ -60,8 +60,8 @@ private:
 	int modelViewProjID;
 
 	// computed from model, view, and projection matrices
-	mat4x4* modelViewProjMat; // for transforming vertices onto the screen
-	mat4x4* modelViewMat;
+	mat4x4 * modelViewProjMat; // for transforming vertices onto the screen
+	mat4x4 * modelViewMat;
 
 	// stores previous states of matrices
 	std::vector<mat4x4> matStack[3];

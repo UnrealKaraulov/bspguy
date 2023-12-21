@@ -873,22 +873,25 @@ void Gui::drawBspContexMenu()
 						{
 							ImGui::EndDisabled();
 						}
-						/*if (ImGui::MenuItem("ADD TO WORLDSPAWN!", 0, false, !app->isLoading && allowDuplicate))
+						if (DebugKeyPressed && ImGui::MenuItem("DEBUG[ADD TO WORLDSPAWN!]", 0, false, !app->isLoading && allowDuplicate))
 						{
 							print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
-							for (auto& ent : app->pickInfo.selectedEnts)
+							for (auto& ent2 : app->pickInfo.selectedEnts)
 							{
-								if (map->ents[ent]->isBspModel())
+								if (map->ents[ent2]->isBspModel())
 								{
-									map->add_model_to_worldspawn(map->ents[ent]->getBspModelIdx());
-									map->ents[ent]->removeKeyvalue("model");
+									map->add_model_to_worldspawn(map->ents[ent2]->getBspModelIdx());
+									map->ents[ent2]->clearAllKeyvalues();
+									map->ents[ent2]->setOrAddKeyvalue("classname", "info_target");
 								}
 							}
 							map->getBspRender()->loadLightmaps();
 							map->getBspRender()->calcFaceMaths();
 							map->getBspRender()->preRenderFaces();
 							map->getBspRender()->preRenderEnts();
-						}*/
+							map->update_lump_pointers();
+							map->update_ent_lump();
+						}
 					}
 					if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading))
 					{

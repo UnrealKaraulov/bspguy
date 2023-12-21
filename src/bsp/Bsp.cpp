@@ -4304,7 +4304,7 @@ bool Bsp::validate()
 	memset(decompressedVis, 0xFF, decompressedVisSize);
 	decompress_vis_lump(this, leaves, visdata, decompressedVis,
 		models[0].nVisLeafs, leafCount, leafCount, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
-	delete [] decompressedVis;
+	delete[] decompressedVis;
 
 	return isValid;
 }
@@ -4521,32 +4521,40 @@ void Bsp::recurse_node(int nodeIdx, int depth)
 }
 
 
-void Bsp::get_last_node(int nodeIdx, int& node, int& count)
+void Bsp::get_last_node(int nodeIdx, int& node, int& count, int last_node)
 {
 	if (nodeIdx < 0)
 	{
 		return;
 	}
 
+	if (last_node != -1 && count >= last_node)
+	{
+		return;
+	}
 	count++;
 	node = nodeIdx;
 
-	get_last_node(nodes[nodeIdx].iChildren[0], node, count);
-	get_last_node(nodes[nodeIdx].iChildren[1], node, count);
+	get_last_node(nodes[nodeIdx].iChildren[0], node, count, last_node);
+	get_last_node(nodes[nodeIdx].iChildren[1], node, count, last_node);
 }
 
-void Bsp::get_last_clipnode(int nodeIdx, int& node, int& count)
+void Bsp::get_last_clipnode(int nodeIdx, int& node, int& count, int last_node)
 {
 	if (nodeIdx < 0)
 	{
 		return;
 	}
 
+	if (last_node != -1 && count >= last_node)
+	{
+		return;
+	}
 	count++;
 	node = nodeIdx;
 
-	get_last_clipnode(clipnodes[nodeIdx].iChildren[0], node, count);
-	get_last_clipnode(clipnodes[nodeIdx].iChildren[1], node, count);
+	get_last_clipnode(clipnodes[nodeIdx].iChildren[0], node, count, last_node);
+	get_last_clipnode(clipnodes[nodeIdx].iChildren[1], node, count, last_node);
 }
 
 void Bsp::print_node(const BSPNODE32& node)
@@ -6155,7 +6163,7 @@ int Bsp::create_texinfo()
 void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 	std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 	std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-	std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX *> & newTextures)
+	std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures)
 {
 	STRUCTUSAGE usage(this);
 	mark_model_structures(modelIdx, &usage, true);
@@ -6216,7 +6224,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 			if (texOffset >= 0)
 			{
 				usedmips.insert(texinfo.iMiptex);
-				BSPMIPTEX * tex = ((BSPMIPTEX*)(this->textures + texOffset));
+				BSPMIPTEX* tex = ((BSPMIPTEX*)(this->textures + texOffset));
 				WADTEX* newTex = new WADTEX(tex);
 				newTextures.push_back(newTex);
 			}
@@ -6387,12 +6395,12 @@ int Bsp::duplicate_model(int modelIdx)
 	std::vector<COLOR3> newLightmaps;
 	std::vector<BSPNODE32> newNodes;
 	std::vector<BSPCLIPNODE32> newClipnodes;
-	std::vector<WADTEX *> newTextures;
+	std::vector<WADTEX*> newTextures;
 
 	STRUCTREMAP remap(this);
 	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes, newTextures);
 
-	for (auto & s : newTextures)
+	for (auto& s : newTextures)
 	{
 		delete s;
 	}
@@ -6493,34 +6501,69 @@ int Bsp::add_model_to_worldspawn(int modelIdx)
 		}
 	}
 
-	models[0].nFaces += newfaces;
-	//models[0].nVisLeafs += models[modelIdx].nVisLeafs; //0
+	std::vector<int> all_mark_surfaces;
+	int surface_idx = 0;
+	for (int i = 0; i < leafCount; i++)
+	{
+		for (int n = 0; n < leaves[i].nMarkSurfaces; n++)
+		{
+			all_mark_surfaces.push_back(marksurfs[leaves[i].iFirstMarkSurface + n]);
+		}
 
+		leaves[i].iFirstMarkSurface = surface_idx;
+		leaves[i].nMarkSurfaces += newfaces;
+
+		surface_idx += leaves[i].nMarkSurfaces;
+
+		for (int f2 = 0; f2 < models[modelIdx].nFaces; f2++)
+		{
+			all_mark_surfaces.push_back(models[0].iFirstFace + models[0].nFaces + f2);
+		}
+	}
+
+
+	
 	int nodecount = 0;
 	int nodeidx = 0;
 	get_last_node(models[modelIdx].iHeadnodes[0], nodeidx, nodecount);
-	nodes[nodeidx].iChildren[0] = nodes[models[modelIdx].iHeadnodes[0]].iChildren[1];
-	nodes[nodeidx].iChildren[1] = nodes[models[modelIdx].iHeadnodes[0]].iChildren[0];
+	nodes[nodeidx].iChildren[0] = models[modelIdx].iHeadnodes[0];
 
 	for (int i = 1; i < MAX_MAP_HULLS; i++)
 	{
 		int clipnodecount = 0;
 		int clipnodeidx = 0;
 		get_last_clipnode(models[modelIdx].iHeadnodes[i], clipnodeidx, clipnodecount);
-		clipnodes[clipnodeidx].iChildren[0] = nodes[models[modelIdx].iHeadnodes[i]].iChildren[1];
-		clipnodes[clipnodeidx].iChildren[1] = nodes[models[modelIdx].iHeadnodes[i]].iChildren[0];
+		int clipnodetarget = clipnodecount;
+		clipnodecount = 0;
+		get_last_clipnode(models[modelIdx].iHeadnodes[i], clipnodeidx, clipnodecount, clipnodetarget - 1);
+		clipnodes[clipnodeidx].iChildren[0] = models[modelIdx].iHeadnodes[i];
 	}
 
-	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
+	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
+	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
+	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
+
+	newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 
-	int tmplefs = models[modelIdx].nVisLeafs;
 
-	models[modelIdx].nFaces = 0;
-	models[modelIdx].nVisLeafs = 0;
+	std::set<int> visited;
+	for (int f2 = 0; f2 < models[modelIdx].nFaces; f2++)
+	{
+		BSPFACE32& face = faces[models[0].iFirstFace + models[0].nFaces + f2];
+	}
+
+
+
+	models[0].nFaces += newfaces;
+	models[0].nVisLeafs += 0; //0
+
+	models[modelIdx].iFirstFace = 0;
 	models[modelIdx].iHeadnodes[0] = models[modelIdx].iHeadnodes[1] =
 		models[modelIdx].iHeadnodes[2] = models[modelIdx].iHeadnodes[3] = CONTENTS_EMPTY;
+	models[modelIdx].nFaces = 0;
+	models[modelIdx].nVisLeafs = 0;
 
 	update_lump_pointers();
 

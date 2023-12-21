@@ -144,8 +144,11 @@ Renderer::Renderer()
 	loadSettings();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_FALSE);
+
 	window = glfwCreateWindow(g_settings.windowWidth, g_settings.windowHeight, "bspguy", NULL, NULL);
 
 	glfwSetWindowPos(window, g_settings.windowX, g_settings.windowY);
@@ -176,9 +179,15 @@ Renderer::Renderer()
 	glfwSetWindowFocusCallback(window, window_focus_callback);
 
 	glewInit();
+
+	//GLuint in;
+	//glGenVertexArrays(1, &in);
+	//glBindVertexArray(in);
+
 	// init to black screen instead of white
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glfwSwapBuffers(window);
+
 	bspShader = new ShaderProgram(Shaders::g_shader_multitexture_vertex, Shaders::g_shader_multitexture_fragment);
 	bspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	bspShader->setMatrixNames(NULL, "modelViewProjection");
@@ -261,7 +270,6 @@ void Renderer::renderLoop()
 		moveAxes.hoverColor[1] = { 64, 64, 255, 255 };
 		moveAxes.hoverColor[2] = { 64, 255, 64, 255 };
 		moveAxes.hoverColor[3] = { 255, 255, 255, 255 };
-
 		// flipped for HL coords
 		moveAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &moveAxes.model, 6 * 6 * 4, GL_TRIANGLES);
 		moveAxes.numAxes = 4;
@@ -283,7 +291,6 @@ void Renderer::renderLoop()
 		scaleAxes.hoverColor[3] = { 128, 64, 255, 255 };
 		scaleAxes.hoverColor[4] = { 64, 64, 255, 255 };
 		scaleAxes.hoverColor[5] = { 64, 255, 64, 255 };
-
 		// flipped for HL coords
 		scaleAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &scaleAxes.model, 6 * 6 * 6, GL_TRIANGLES);
 		scaleAxes.numAxes = 6;
@@ -295,7 +302,7 @@ void Renderer::renderLoop()
 	curTime = oldTime;
 	double lastTitleTime = curTime;
 
-	glfwSwapInterval(g_settings.vsync);
+	glfwSwapInterval(0);
 	static bool vsync = g_settings.vsync;
 
 
@@ -311,8 +318,6 @@ void Renderer::renderLoop()
 
 	while (!glfwWindowShouldClose(window))
 	{
-		glfwPollEvents();
-
 		oldTime = curTime;
 		curTime = glfwGetTime();
 		double xpos, ypos;
@@ -613,7 +618,6 @@ void Renderer::renderLoop()
 			vsync = g_settings.vsync;
 		}
 
-		glfwSwapBuffers(window);
 
 		if (reloading && fgdFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 		{
@@ -655,6 +659,9 @@ void Renderer::renderLoop()
 		}
 
 		memcpy(oldPressed, pressed, sizeof(pressed));
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
 	}
 
 	glfwTerminate();
@@ -970,6 +977,9 @@ void Renderer::drawTransformAxes()
 			vec3 ori = moveAxes.origin;
 			matmodel.translate(ori.x, ori.z, -ori.y);
 			colorShader->updateMatrixes();
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_CULL_FACE);
+			glDisable(GL_CULL_FACE);
 			glDisable(GL_CULL_FACE);
 			moveAxes.buffer->drawFull();
 			glEnable(GL_CULL_FACE);

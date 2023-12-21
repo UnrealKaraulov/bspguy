@@ -182,10 +182,6 @@ void VertexBuffer::upload(bool hideErrors)
 {
 	if (!shaderProgram)
 		return;
-	while (glGetError() != GL_NO_ERROR)
-	{
-
-	}
 
 	shaderProgram->bind();
 	bindAttributes(hideErrors && !g_verbose);
@@ -197,21 +193,19 @@ void VertexBuffer::upload(bool hideErrors)
 	glBufferData(GL_ARRAY_BUFFER, elementSize * numVerts, data, GL_STATIC_DRAW);
 
 	int offset = 0;
-	for (int i = 0; i < attribs.size(); i++)
+	for (const VertexAttr& a : attribs)
 	{
-		VertexAttr& a = attribs[i];
-		void* ptr = ((char*)0) + offset;
-		offset += a.size;
-		if (a.handle == -1) {
+		if (a.handle == -1)
 			continue;
-		}
-		glBindBuffer(GL_ARRAY_BUFFER, vboId);
+
 		glEnableVertexAttribArray(a.handle);
-		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, ptr);
+		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, reinterpret_cast<void*>(offset));
 		if (glGetError() != GL_NO_ERROR)
 		{
-			std::cout << "Error! Name:" << a.varName;
+			std::cout << "Error! Name: " << a.varName << std::endl;
 		}
+
+		offset += a.size;
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

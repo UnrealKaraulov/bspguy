@@ -11,10 +11,10 @@ ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSourc
 	modelViewID = modelViewProjID = -1;
 	ID = 0xFFFFFFFF;
 	vposID = vcolorID = vtexID = 0;
-	projMat = viewMat = modelMat = nullptr;
+	projMat = viewMat = modelMat = NULL;
 	vShader = new Shader(vshaderSource, GL_VERTEX_SHADER);
 	fShader = new Shader(fshaderSource, GL_FRAGMENT_SHADER);
-	modelViewProjMat = modelViewMat = nullptr;
+	modelViewProjMat = modelViewMat = NULL;
 	link();
 }
 
@@ -57,8 +57,8 @@ void ShaderProgram::bind()
 	{
 		g_active_shader_program = ID;
 		glUseProgram(ID);
+		updateMatrixes();
 	}
-	updateMatrixes();
 }
 
 void ShaderProgram::removeShader(int shaderID)
@@ -83,9 +83,9 @@ void ShaderProgram::updateMatrixes()
 	*modelViewProjMat = modelViewProjMat->transpose();
 
 	if (modelViewID != -1)
-		glUniformMatrix4fv(modelViewID, 1, false, (float*)modelViewMat);
+		glUniformMatrix4fv(modelViewID, 1, false, (float*)&modelViewMat->m[0]);
 	if (modelViewProjID != -1)
-		glUniformMatrix4fv(modelViewProjID, 1, false, (float*)modelViewProjMat);
+		glUniformMatrix4fv(modelViewProjID, 1, false, (float*)&modelViewProjMat->m[0] );
 }
 
 void ShaderProgram::setMatrixNames(const char* _modelViewMat, const char* _modelViewProjMat)
@@ -132,7 +132,7 @@ void ShaderProgram::pushMatrix(int matType)
 
 void ShaderProgram::popMatrix(int matType)
 {
-	mat4x4* targets[3] = {modelMat, viewMat, projMat};
+	mat4x4 * targets[3] = {modelMat, viewMat, projMat};
 	for (int idx = 0, mask = 1; idx < 3; ++idx, mask <<= 1)
 	{
 		if (matType & mask)

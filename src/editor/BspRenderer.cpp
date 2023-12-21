@@ -403,6 +403,7 @@ void BspRenderer::loadTextures()
 
 void BspRenderer::reload()
 {
+	map->update_lump_pointers();
 	loadLightmaps();
 	calcFaceMaths();
 	preRenderFaces();
@@ -2109,6 +2110,12 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
 
+
+	g_app->colorShader->bind();
+	g_app->colorShader->modelMat->loadIdentity();
+	g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	g_app->colorShader->updateMatrixes();
+
 	g_app->bspShader->bind();
 	g_app->bspShader->modelMat->loadIdentity();
 	g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
@@ -2131,14 +2138,14 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 			{
 				if (renderEnts[i].hide)
 					continue;
-				g_app->bspShader->pushMatrix(MAT_MODEL);
+				g_app->bspShader->pushMatrix();
 				*g_app->bspShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->bspShader->updateMatrixes();
 
 				drawModel(&renderEnts[i], drawTransparentFaces, g_app->pickInfo.IsSelectedEnt(i), false);
 
-				g_app->bspShader->popMatrix(MAT_MODEL);
+				g_app->bspShader->popMatrix();
 			}
 		}
 		if (drawTransparentFaces)
@@ -2175,7 +2182,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 					{
 						continue; // skip rendering for models that have faces, if in auto mode
 					}
-					g_app->colorShader->pushMatrix(MAT_MODEL);
+					g_app->colorShader->pushMatrix();
 					*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 					g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 					g_app->colorShader->updateMatrixes();
@@ -2194,38 +2201,45 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 						glUniform4f(g_app->colorShaderMultId, 1.0f, 1.0f, 1.0f, 1.0f);
 					}
 
-					g_app->colorShader->popMatrix(MAT_MODEL);
+					g_app->colorShader->popMatrix();
 				}
 			}
 		}
 	}
 
-	glDepthMask(GL_FALSE);
-	glDepthFunc(GL_ALWAYS);
 	if (highlightEnts.size())
 	{
 		g_app->bspShader->bind();
 
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
 		for (int highlightEnt : highlightEnts)
 		{
 			if (highlightEnt > 0 && renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 			{
 				if (renderEnts[highlightEnt].hide)
 					continue;
+				g_app->bspShader->pushMatrix();
 				*g_app->bspShader->modelMat = renderEnts[highlightEnt].modelMatAngles;
 				g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->bspShader->updateMatrixes();
 				if (modelVertsDraw)
+				{
 					glDisable(GL_CULL_FACE);
+					glDisable(GL_CULL_FACE);
+				}
 				drawModel(&renderEnts[highlightEnt], false, true, true);
 				drawModel(&renderEnts[highlightEnt], true, true, true);
 				if (modelVertsDraw)
+				{
 					glEnable(GL_CULL_FACE);
+				}
+				g_app->bspShader->popMatrix();
 			}
 		}
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
 	}
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
 	delayLoadData();
 }
 
@@ -2290,14 +2304,14 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 		if (ent && ent->needAngles)
 		{
-			g_app->bspShader->pushMatrix(MAT_MODEL);
+			g_app->bspShader->pushMatrix();
 			*g_app->bspShader->modelMat = ent->modelMatOrigin;
 			g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			g_app->bspShader->updateMatrixes();
 			yellowTex->bind(0);
 			greyTex->bind(1);
 			rgroup.wireframeBuffer->drawFull();
-			g_app->bspShader->popMatrix(MAT_MODEL);
+			g_app->bspShader->popMatrix();
 		}
 
 		if (highlight || (g_render_flags & RENDER_WIREFRAME))
@@ -2378,12 +2392,12 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 				whiteTex->bind(s + 1);
 			}
 
-			g_app->bspShader->pushMatrix(MAT_MODEL);
+			g_app->bspShader->pushMatrix();
 			*g_app->bspShader->modelMat = ent->modelMatOrigin;
 			g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			g_app->bspShader->updateMatrixes();
 			rgroup.buffer->drawFull();
-			g_app->bspShader->popMatrix(MAT_MODEL);
+			g_app->bspShader->popMatrix();
 		}
 	}
 }
@@ -2462,7 +2476,6 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 	renderOffset = mapOffset.flip();
 
 	// skip worldspawn
-	g_app->colorShader->pushMatrix(MAT_MODEL);
 
 	for (int i = 1, sz = (int)map->ents.size(); i < sz; i++)
 	{
@@ -2476,33 +2489,35 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
 			{
 				g_app->modelShader->bind();
-
+				g_app->modelShader->pushMatrix();
 				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->modelShader->updateMatrixes();
 
 				renderEnts[i].mdl->DrawModel();
 
-				g_app->colorShader->bind();
+				g_app->modelShader->popMatrix();
 
+				g_app->colorShader->bind();
+				g_app->colorShader->pushMatrix();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-
 				g_app->colorShader->updateMatrixes();
 
 				if (renderEnts[i].mdl->mdl_cube)
 				{
 					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 				}
+
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+				g_app->colorShader->popMatrix();
 			}
 			else
 			{
 				g_app->colorShader->bind();
-
+				g_app->colorShader->pushMatrix();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-
 				g_app->colorShader->updateMatrixes();
 
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
@@ -2512,20 +2527,25 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				}
 				renderEnts[i].pointEntCube->selectBuffer->drawFull();
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+
+				g_app->colorShader->popMatrix();
 			}
 		}
 		else
 		{
 			if ((g_render_flags & RENDER_MODELS) && renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
 			{
+				g_app->modelShader->bind();
+				g_app->modelShader->pushMatrix();
 				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 
 				g_app->modelShader->updateMatrixes();
 				renderEnts[i].mdl->DrawModel();
+				g_app->modelShader->popMatrix();
 
 				g_app->colorShader->bind();
-
+				g_app->colorShader->pushMatrix();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 
@@ -2539,11 +2559,12 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				{
 					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 				}
+				g_app->colorShader->popMatrix();
 			}
 			else
 			{
 				g_app->colorShader->bind();
-
+				g_app->colorShader->pushMatrix();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 
@@ -2554,12 +2575,11 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 				}
 				renderEnts[i].pointEntCube->buffer->drawFull();
+
+				g_app->colorShader->popMatrix();
 			}
-			//renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 		}
 	}
-
-	g_app->colorShader->popMatrix(MAT_MODEL);
 }
 
 bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& tempPickInfo, Bsp** tmpMap)
@@ -2680,10 +2700,10 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 	{
 		FaceMath& faceMath = faceMaths[model.iFirstFace + k];
 		BSPFACE32& face = map->faces[model.iFirstFace + k];
+		BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 
 		if (skipSpecial && modelIdx == 0)
 		{
-			BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 			if (info.nFlags & TEX_SPECIAL)
 			{
 				continue;

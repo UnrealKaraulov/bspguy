@@ -5,7 +5,7 @@
 // A row-major 4x4 matrix for use in OpenGL shader programs
 struct mat4x4
 {
-	float m[16] = {0.0f};
+	float m[16];
 
 	void loadIdentity();
 
@@ -60,3 +60,6 @@ mat4x4 operator*(const mat4x4& m1, const mat4x4& m2);
 vec4 operator*(const mat4x4& mat, const vec4& vec);
 mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z);
 void mat4x4print(const mat4x4& mat);
+
+extern float m_identity[16];
+void mat4x4_saveIdentity();

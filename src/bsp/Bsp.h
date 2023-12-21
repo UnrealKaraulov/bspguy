@@ -127,8 +127,8 @@ public:
 	void print_clipnode_tree(int iNode, int depth);
 	void recurse_node(int node, int depth);
 
-	void get_last_node(int nodeIdx, int& node, int& count);
-	void get_last_clipnode(int nodeIdx, int& node, int& count);
+	void get_last_node(int nodeIdx, int& node, int& count, int last_node = -1);
+	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1);
 
 	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
 	int pointContents(int iNode, const vec3& p, int hull);

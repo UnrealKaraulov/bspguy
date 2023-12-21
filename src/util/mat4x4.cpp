@@ -3,13 +3,20 @@
 #include "util.h"
 #include <string.h>
 
+float m_identity[16] = { 0.0f };
+
+void mat4x4_saveIdentity()
+{
+	memset(m_identity, 0, sizeof(m_identity));
+	m_identity[4 * 0 + 0] = 1.0f;
+	m_identity[4 * 1 + 1] = 1.0f;
+	m_identity[4 * 2 + 2] = 1.0f;
+	m_identity[4 * 3 + 3] = 1.0f;
+}
+
 void mat4x4::loadIdentity()
 {
-	memset(m, 0, sizeof(m));
-	m[4 * 0 + 0] = 1.0f;
-	m[4 * 1 + 1] = 1.0f;
-	m[4 * 2 + 2] = 1.0f;
-	m[4 * 3 + 3] = 1.0f;
+	memcpy(m, m_identity, sizeof(m_identity));
 }
 
 void glhFrustumf2(float* matrix, float left, float right, float bottom, float top,
