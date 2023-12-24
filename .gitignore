@@ -25,7 +25,8 @@ vs-project/Release/bspguy.exe
 *.exe
 /build/*
 /vs-project/bspguy.dir*
-vs-project/Release/bspguy.cfg
+vs-project/Release/*
+vs-project/Debug/*
 vs-project/glfw/src/Debug/glfw3.lib
 vs-project/glfw/src/Release/glfw3.lib
 vs-project/bspguy.dir/Debug/vc143.idb
