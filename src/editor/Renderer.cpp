@@ -32,6 +32,7 @@ Texture* blackTex = NULL;
 Texture* blueTex = NULL;
 Texture* missingTex = NULL;
 Texture* missingTex_rgba = NULL;
+Texture* clipTex_rgba = NULL;
 
 std::future<void> Renderer::fgdFuture;
 
@@ -195,8 +196,12 @@ Renderer::Renderer()
 	missingTex_rgba = new Texture(w, h, img_dat, "missing", true);
 	missingTex_rgba->upload();
 
+	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/clip.png");
+	clipTex_rgba = new Texture(w, h, img_dat, "clip", true);
+	clipTex_rgba->upload();
+
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/missing.png");
-	missingTex = new Texture(w, h, img_dat, "missing", true);
+	missingTex = new Texture(w, h, img_dat, "missing_rgb");
 	missingTex->upload();
 
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/white.png");
