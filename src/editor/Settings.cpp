@@ -9,6 +9,7 @@
 std::string g_settings_path = "";
 std::string g_game_dir = "/";
 std::string g_working_dir = "./";
+std::string g_startup_dir = "";
 
 AppSettings g_settings{};
 

@@ -5,6 +5,7 @@
 extern std::string g_settings_path;
 extern std::string g_game_dir;
 extern std::string g_working_dir;
+extern std::string g_startup_dir;
 
 extern int g_render_flags;
 

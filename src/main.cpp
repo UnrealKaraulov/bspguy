@@ -211,6 +211,11 @@ int merge_maps(CommandLine& cli)
 
 	for (int i = 0; i < input_maps.size(); i++)
 	{
+		if (!fileExists(input_maps[i]))
+		{
+			input_maps[i] = g_startup_dir + input_maps[i];
+		}
+
 		Bsp* map = new Bsp(input_maps[i]);
 		if (!map->bsp_valid)
 		{
@@ -907,7 +912,7 @@ int main(int argc, char* argv[])
 		signal(SIGBUS, signalHandler);
 #endif
 		std::string bspguy_dir = "./";
-		std::string current_dir = fs::current_path().string() + "/";
+		g_startup_dir = fs::current_path().string() + "/";
 
 #ifdef WIN32
 		int nArgs;
@@ -943,7 +948,7 @@ int main(int argc, char* argv[])
 
 		if (!fileExists(cli.bspfile))
 		{
-			cli.bspfile = current_dir + cli.bspfile;
+			cli.bspfile = g_startup_dir + cli.bspfile;
 		}
 
 		if (cli.command == "exportobj")
