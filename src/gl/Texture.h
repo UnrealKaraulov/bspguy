@@ -14,12 +14,11 @@ public:
 	std::string wad_name;
 	int transparentMode;
 
-	Texture(GLsizei width, GLsizei height, const char* name);
-	Texture(GLsizei width, GLsizei height, unsigned char* data, const char* name);
+	Texture(GLsizei width, GLsizei height, unsigned char* data, const char* name, bool rgba = false);
 	~Texture();
 
 	// upload the texture with the specified settings
-	void upload(int format, bool lightmap = false);
+	void upload(bool lightmap = false);
 
 	void setWadName(const std::string& s) {
 		wad_name = s;

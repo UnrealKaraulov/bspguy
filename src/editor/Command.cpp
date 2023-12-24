@@ -3,7 +3,6 @@
 #include "Command.h"
 #include "Gui.h"
 #include <lodepng.h>
-#include "icons/aaatrigger.h"
 #include "Settings.h"
 
 
@@ -493,14 +492,7 @@ int CreateBspModelCommand::addDefaultTexture()
 	Bsp* map = getBsp();
 	if (!map)
 		return -1;
-	unsigned char* tex_dat = NULL;
-	unsigned int w, h;
-
-	lodepng_decode24(&tex_dat, &w, &h, aaatrigger_dat, sizeof(aaatrigger_dat));
-
-	int aaatriggerIdx = map->add_texture("aaatrigger", tex_dat, w, h);
-
-	delete[] tex_dat;
+	int aaatriggerIdx = map->add_texture("aaatrigger", missingTex->data, missingTex->width, missingTex->height);
 
 	return aaatriggerIdx;
 }

@@ -7,8 +7,6 @@
 #include <string>
 
 std::string g_settings_path = "";
-std::string g_config_dir = "";
-std::string g_current_dir = ".";
 std::string g_game_dir = "/";
 std::string g_working_dir = "./";
 
@@ -193,11 +191,7 @@ void AppSettings::load()
 		return;
 	}
 
-	fillLanguages(g_config_dir);
-	if (GetCurrentDir() != g_config_dir)
-	{
-		fillLanguages(GetCurrentDir());
-	}
+	fillLanguages("./languages/");
 
 	int lines_readed = 0;
 	std::string line;
@@ -743,10 +737,6 @@ void AppSettings::save(std::string path)
 void AppSettings::save()
 {
 	FixupAllSystemPaths();
-	if (!dirExists(g_config_dir))
-	{
-		createDir(g_config_dir);
-	}
 	g_app->saveSettings();
 	save(g_settings_path);
 }

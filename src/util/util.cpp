@@ -95,14 +95,13 @@ bool copyFile(const std::string& fileName, const std::string& fileName2)
 	return fs::copy_file(fileName, fileName2);
 }
 
-std::streampos fileSize(const std::string& filePath)
+size_t fileSize(const std::string& filePath)
 {
-	std::streampos fsize = 0;
+	size_t fsize = 0;
 	std::ifstream file(filePath, std::ios::binary);
 
-	fsize = file.tellg();
 	file.seekg(0, std::ios::end);
-	fsize = file.tellg() - fsize;
+	fsize = file.tellg();
 	file.close();
 
 	return fsize;
@@ -529,7 +528,7 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 	return true;
 }
 
-vec2 getCenter(std::vector<vec2>& verts)
+vec2 getCenter(const std::vector<vec2>& verts)
 {
 	vec2 maxs = vec2(-FLT_MAX_COORD, -FLT_MAX_COORD);
 	vec2 mins = vec2(FLT_MAX_COORD, FLT_MAX_COORD);
@@ -542,7 +541,20 @@ vec2 getCenter(std::vector<vec2>& verts)
 	return mins + (maxs - mins) * 0.5f;
 }
 
-vec3 getCenter(std::vector<vec3>& verts)
+vec3 getCenter(const std::vector<vec3>& verts)
+{
+	vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+	vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+
+	for (int i = 0; i < verts.size(); i++)
+	{
+		expandBoundingBox(verts[i], mins, maxs);
+	}
+
+	return mins + (maxs - mins) * 0.5f;
+}
+
+vec3 getCenter(const std::vector<cVert>& verts)
 {
 	vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
@@ -581,6 +593,17 @@ void expandBoundingBox(const vec3& v, vec3& mins, vec3& maxs)
 	if (v.x < mins.x) mins.x = v.x;
 	if (v.y < mins.y) mins.y = v.y;
 	if (v.z < mins.z) mins.z = v.z;
+}
+
+void expandBoundingBox(const cVert& v, vec3& mins, vec3& maxs)
+{
+	if (v.pos.x > maxs.x) maxs.x = v.pos.x;
+	if (v.pos.y > maxs.y) maxs.y = v.pos.y;
+	if (v.pos.z > maxs.z) maxs.z = v.pos.z;
+
+	if (v.pos.x < mins.x) mins.x = v.pos.x;
+	if (v.pos.y < mins.y) mins.y = v.pos.y;
+	if (v.pos.z < mins.z) mins.z = v.pos.z;
 }
 
 void expandBoundingBox(const vec2& v, vec2& mins, vec2& maxs)
@@ -1165,10 +1188,7 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 	replaceAll(path, "\\", "/");
 	replaceAll(path, "//", "/");
 }
-std::string GetCurrentDir()
-{
-	return g_current_dir + "/";
-}
+
 unsigned short g_console_colors = 0;
 
 #ifdef WIN32
@@ -1397,11 +1417,11 @@ bool FindPathInAssets(Bsp* map, const std::string & filename, std::string& outpa
 	}
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetCurrentDir() + filename) << "]\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << ("./" + filename) << "]\n";
 	}
-	if (fileExists(GetCurrentDir() + filename))
+	if (fileExists("./" + filename))
 	{
-		outpath = GetCurrentDir() + filename;
+		outpath = "./" + filename;
 		return true;
 	}
 	if (tracesearch)
@@ -1450,11 +1470,11 @@ bool FindPathInAssets(Bsp* map, const std::string & filename, std::string& outpa
 
 			if (tracesearch)
 			{
-				outTrace << "Search paths [" << fPathId++ << "] : [" << (GetCurrentDir() + dir.path + filename) << "]\n";
+				outTrace << "Search paths [" << fPathId++ << "] : [" << ("./" + dir.path + filename) << "]\n";
 			}
-			if (fileExists(GetCurrentDir() + dir.path + filename))
+			if (fileExists("./" + dir.path + filename))
 			{
-				outpath = GetCurrentDir() + dir.path + filename;
+				outpath = "./" + dir.path + filename;
 				return true;
 			}
 
@@ -1498,14 +1518,14 @@ void FixupAllSystemPaths()
 	fixupPath(g_settings.gamedir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	if (!dirExists(g_settings.gamedir))
 	{
-		if (!dirExists(GetCurrentDir() + g_settings.gamedir))
+		if (!dirExists("./" + g_settings.gamedir))
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Gamedir {} not exits!", "[1]", g_settings.gamedir);
-			print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Gamedir {} not exits!", "[2]", GetCurrentDir() + g_settings.gamedir);
+			print_log(PRINT_RED | PRINT_INTENSITY, "Error{}: Gamedir {} not exits!", "[2]", "./" + g_settings.gamedir);
 		}
 		else
 		{
-			g_game_dir = GetCurrentDir() + g_settings.gamedir;
+			g_game_dir = "./" + g_settings.gamedir;
 		}
 	}
 	else
@@ -1523,7 +1543,7 @@ void FixupAllSystemPaths()
 		*/
 		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 
-		if (!dirExists(GetCurrentDir() + g_settings.workingdir))
+		if (!dirExists("./" + g_settings.workingdir))
 		{
 			if (!dirExists(g_game_dir + g_settings.workingdir))
 			{
@@ -1545,7 +1565,7 @@ void FixupAllSystemPaths()
 		}
 		else
 		{
-			g_working_dir = GetCurrentDir() + g_settings.workingdir;
+			g_working_dir = "./" + g_settings.workingdir;
 		}
 	}
 	else
@@ -1657,4 +1677,73 @@ void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 			outputImage[y * outputWidth + x] = interpolatedColor;
 		}
 	}
+}
+
+
+std::string GetExecutableDirInternal(std::string arg_0_dir)
+{
+	std::string retdir = arg_0_dir;
+	if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
+	{
+		return retdir;
+	}
+	else
+	{
+#ifdef WIN32
+		char path[MAX_PATH];
+		GetModuleFileName(NULL, path, MAX_PATH);
+		retdir = std::filesystem::canonical(path).parent_path().string();
+#else
+		retdir = std::filesystem::canonical("/proc/self/exe").parent_path().string();
+#endif
+	}
+	return retdir;
+}
+
+std::string GetExecutableDir(std::string arg_0)
+{
+	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
+	return GetExecutableDirInternal(retpath.parent_path().string());
+}
+
+std::string GetExecutableDir(std::wstring arg_0)
+{
+	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
+	return GetExecutableDirInternal(retpath.parent_path().string());
+}
+
+
+
+std::vector<vec3> stretch_model(const std::vector<vec3>& vertices, float stretch_value)
+{
+	vec3 center_model = getCenter(vertices);
+
+	std::vector<vec3> stretched_vertices;
+
+	for (const vec3& vertex : vertices) {
+		vec3 shifted_vertex = { vertex.x - center_model.x, vertex.y - center_model.y, vertex.z - center_model.z };
+		vec3 stretched_vertex = { shifted_vertex.x * stretch_value, shifted_vertex.y * stretch_value, shifted_vertex.z * stretch_value };
+		vec3 final_vertex = vertex;
+		final_vertex = { stretched_vertex.x + center_model.x, stretched_vertex.y + center_model.y, stretched_vertex.z + center_model.z };
+		stretched_vertices.push_back(final_vertex);
+	}
+
+	return stretched_vertices;
+}
+
+std::vector<cVert> stretch_model(const std::vector<cVert>& vertices, float stretch_value)
+{
+	vec3 center_model = getCenter(vertices);
+
+	std::vector<cVert> stretched_vertices;
+
+	for (const cVert& vertex : vertices) {
+		vec3 shifted_vertex = { vertex.pos.x - center_model.x, vertex.pos.y - center_model.y, vertex.pos.z - center_model.z };
+		vec3 stretched_vertex = { shifted_vertex.x * stretch_value, shifted_vertex.y * stretch_value, shifted_vertex.z * stretch_value };
+		cVert final_vertex = vertex;
+		final_vertex.pos = { stretched_vertex.x + center_model.x, stretched_vertex.y + center_model.y, stretched_vertex.z + center_model.z };
+		stretched_vertices.push_back(final_vertex);
+	}
+
+	return stretched_vertices;
 }

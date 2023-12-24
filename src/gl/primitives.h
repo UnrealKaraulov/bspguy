@@ -1,4 +1,5 @@
 #pragma once
+
 #include <vector>
 #include "vectors.h"
 #include "Wad.h"

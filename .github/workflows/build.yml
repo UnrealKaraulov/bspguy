@@ -43,7 +43,7 @@ jobs:
         run: |
           mkdir -p build/linux_release
           cp build/bspguy build/linux_release/
-          cp -r cfg/. build/linux_release/
+          cp -r resources/. build/linux_release/
           cd build && zip -r newbspguy_ubuntu_release.zip linux_release/
       - name: Publish nightly binaries for linux
         uses: softprops/action-gh-release@v1
@@ -76,7 +76,7 @@ jobs:
         run: |
           mkdir -p build/win64_release
           cp vs-project/Release/bspguy.exe build/win64_release/
-          cp cfg/* build/win64_release/
+          cp resources/* build/win64_release/
           Compress-Archive -Path "build/win64_release/*" -DestinationPath "build/newbspguy_win64_release.zip"
       - name: Publish nightly binaries for windows
         uses: softprops/action-gh-release@v1
@@ -92,7 +92,7 @@ jobs:
         run: |
           mkdir -p build/win64_debug
           cp vs-project/Release/bspguy_debug.exe build/win64_debug/
-          cp cfg/* build/win64_debug/
+          cp resources/* build/win64_debug/
           Compress-Archive -Path "build/win64_debug/*" -DestinationPath "build/newbspguy_win64_dbg.zip"
       - name: Publish nightly debug binaries for windows
         uses: softprops/action-gh-release@v1

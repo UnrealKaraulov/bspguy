@@ -77,22 +77,14 @@ void set_localize_lang(std::string lang)
 			ft = NULL;
 		}
 		// Search lang file in config/current directories
-		std::string langfile = g_config_dir + "language_" + toLowerCase(lang) + ".ini";
+		std::string langfile = "./languages/language_" + toLowerCase(lang) + ".ini";
 		if (!fileExists(langfile))
 		{
-			langfile = g_current_dir + "language_" + toLowerCase(lang) + ".ini";
+			langfile = "./languages/language.ini";
 		}
 		if (!fileExists(langfile))
 		{
-			langfile = g_config_dir + "language.ini";
-		}
-		if (!fileExists(langfile))
-		{
-			langfile = g_current_dir + "language.ini";
-		}
-		if (!fileExists(langfile))
-		{
-			print_log(PRINT_RED | PRINT_INTENSITY, "Fatal error");
+			print_log(PRINT_RED | PRINT_INTENSITY, "Fatal error. Language file not found!");
 		}
 		else
 		{
@@ -102,7 +94,7 @@ void set_localize_lang(std::string lang)
 			}
 			catch (std::runtime_error runtime)
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "Language parse from {} fatal error: {}\n", g_config_dir + "language.ini", runtime.what());
+				print_log(PRINT_RED | PRINT_INTENSITY, "Language parse from {} fatal error: {}\n", langfile, runtime.what());
 			}
 		}
 		last_lang = lang;

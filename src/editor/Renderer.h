@@ -54,6 +54,16 @@ extern vec2 mousePos;
 extern vec3 cameraOrigin;
 extern vec3 cameraAngles;
 
+extern Texture* whiteTex;
+extern Texture* redTex;
+extern Texture* yellowTex;
+extern Texture* greyTex;
+extern Texture* blackTex;
+extern Texture* blueTex;
+extern Texture* missingTex;
+extern Texture* missingTex_rgba;
+
+
 
 extern int pickCount; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
 extern int vertPickCount;

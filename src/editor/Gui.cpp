@@ -13,11 +13,6 @@
 #include "filedialog/ImFileDialog.h"
 // embedded binary data
 
-#include "fonts/rusfont.h"
-#include "fonts/robotomono.h"
-#include "fonts/robotomedium.h"
-#include "icons/object.h"
-#include "icons/face.h"
 #include "imgui_stdlib.h"
 #include "quantizer.h"
 #include <execution>
@@ -37,7 +32,7 @@ Gui::Gui(Renderer* app)
 
 void Gui::init()
 {
-	iniPath = g_config_dir + "imgui.ini";
+	iniPath = "./imgui.ini";
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -82,12 +77,12 @@ void Gui::init()
 	unsigned char* icon_data = NULL;
 	unsigned int w, h;
 
-	lodepng_decode32(&icon_data, &w, &h, object_icon, sizeof(object_icon));
-	objectIconTexture = new Texture(w, h, icon_data, "objIcon");
-	objectIconTexture->upload(GL_RGBA);
-	lodepng_decode32(&icon_data, &w, &h, face_icon, sizeof(face_icon));
-	faceIconTexture = new Texture(w, h, icon_data, "faceIcon");
-	faceIconTexture->upload(GL_RGBA);
+	lodepng_decode32_file(&icon_data, &w, &h, "./pictures/object.png");
+	objectIconTexture = new Texture(w, h, icon_data, "objIcon", true);
+	objectIconTexture->upload();
+	lodepng_decode32_file(&icon_data, &w, &h, "./pictures/face.png");
+	faceIconTexture = new Texture(w, h, icon_data, "faceIcon", true);
+	faceIconTexture->upload();
 }
 
 ImVec4 imguiColorFromConsole(unsigned short colors)
@@ -220,7 +215,6 @@ void Gui::draw()
 
 		loadFonts();
 
-		imgui_io->Fonts->Build();
 		ImGui_ImplOpenGL3_CreateFontsTexture();
 	}
 }
@@ -873,18 +867,28 @@ void Gui::drawBspContexMenu()
 						{
 							ImGui::EndDisabled();
 						}
-						if (DebugKeyPressed && ImGui::MenuItem("DEBUG[ADD TO WORLDSPAWN!]", 0, false, !app->isLoading && allowDuplicate))
+						if (DebugKeyPressed && ImGui::MenuItem("DEBUG[ADD TO WORLDSPAWN!]", 0, false, !app->isLoading && allowDuplicate && 
+							app->pickInfo.selectedEnts.size() == 2 &&
+							map->ents[app->pickInfo.selectedEnts[0]]->isBspModel() && map->ents[app->pickInfo.selectedEnts[1]]->isBspModel()))
 						{
+							int ent1 = app->pickInfo.selectedEnts[0];
+							int ent2 = app->pickInfo.selectedEnts[1];
+
 							print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
-							for (auto& ent2 : app->pickInfo.selectedEnts)
+							int newmodelid = 
+								map->merge_two_models(map->ents[ent1]->getBspModelIdx()	, map->ents[ent2]->getBspModelIdx());
+
+							if (map->ents[ent1]->getBspModelIdx() == newmodelid)
 							{
-								if (map->ents[ent2]->isBspModel())
-								{
-									map->add_model_to_worldspawn(map->ents[ent2]->getBspModelIdx());
-									map->ents[ent2]->clearAllKeyvalues();
-									map->ents[ent2]->setOrAddKeyvalue("classname", "info_target");
-								}
+								map->ents[ent1]->clearAllKeyvalues();
+								map->ents[ent1]->setOrAddKeyvalue("classname", "info_target");
 							}
+							else
+							{
+								map->ents[ent2]->clearAllKeyvalues();
+								map->ents[ent2]->setOrAddKeyvalue("classname", "info_target");
+							}
+
 							map->getBspRender()->loadLightmaps();
 							map->getBspRender()->calcFaceMaths();
 							map->getBspRender()->preRenderFaces();
@@ -2161,7 +2165,7 @@ void Gui::drawMenuBar()
 					{
 						for (const auto& tex : dumpTextures)
 						{
-							if (tex != rend->missingTex)
+							if (tex != missingTex)
 							{
 								if (tex->format == GL_RGBA)
 									lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
@@ -5578,34 +5582,25 @@ void Gui::drawTransformWidget()
 void Gui::loadFonts()
 {
 	// data copied to new array so that ImGui doesn't delete static data
-	unsigned char* smallFontData = new unsigned char[sizeof(robotomedium)];
-	unsigned char* largeFontData = new unsigned char[sizeof(robotomedium)];
-	unsigned char* consoleFontData = new unsigned char[sizeof(robotomono)];
-	unsigned char* consoleFontLargeData = new unsigned char[sizeof(robotomono)];
-	memcpy(smallFontData, robotomedium, sizeof(robotomedium));
-	memcpy(largeFontData, robotomedium, sizeof(robotomedium));
-	memcpy(consoleFontData, robotomono, sizeof(robotomono));
-	memcpy(consoleFontLargeData, robotomono, sizeof(robotomono));
 
 	ImFontConfig config;
-
 	config.SizePixels = fontSize * 2.0f;
 	config.OversampleH = 3;
 	config.OversampleV = 1;
 	config.RasterizerMultiply = 1.5f;
 	config.PixelSnapH = true;
 
-	defaultFont = imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config);
+	defaultFont = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config);
 	config.MergeMode = true;
-	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, imgui_io->Fonts->GetGlyphRangesDefault());
+	imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config, imgui_io->Fonts->GetGlyphRangesDefault());
 	config.MergeMode = true;
-	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, imgui_io->Fonts->GetGlyphRangesCyrillic());
+	imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config, imgui_io->Fonts->GetGlyphRangesCyrillic());
 	imgui_io->Fonts->Build();
 
-	smallFont = imgui_io->Fonts->AddFontFromMemoryTTF((void*)smallFontData, sizeof(robotomedium), fontSize, &config);
-	largeFont = imgui_io->Fonts->AddFontFromMemoryTTF((void*)largeFontData, sizeof(robotomedium), fontSize * 1.1f, &config);
-	consoleFont = imgui_io->Fonts->AddFontFromMemoryTTF((void*)consoleFontData, sizeof(robotomono), fontSize, &config);
-	consoleFontLarge = imgui_io->Fonts->AddFontFromMemoryTTF((void*)consoleFontLargeData, sizeof(robotomono), fontSize * 1.1f, &config);
+	smallFont = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config);
+	largeFont = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize * 1.1f, &config);
+	consoleFont = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config);
+	consoleFontLarge = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize * 1.1f, &config);
 }
 
 void Gui::drawLog()
@@ -8196,11 +8191,11 @@ void Gui::drawLightMapTool()
 					{
 						if (face.nStyles[i] == 255)
 							continue;
-						currentlightMap[i] = new Texture(size[0], size[1], "LIGHTMAP");
 						int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
+						currentlightMap[i] = new Texture(size[0], size[1], new unsigned char[lightmapSz], "LIGHTMAP");
 						int offset = face.nLightmapOffset + i * lightmapSz;
 						memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
-						currentlightMap[i]->upload(GL_RGB, true);
+						currentlightMap[i]->upload(true);
 						lightmaps++;
 						//print_log(get_localized_string(LANG_0418),i,offset);
 					}
@@ -8298,7 +8293,7 @@ void Gui::drawLightMapTool()
 					{
 						lighdata[offset] = COLOR3((unsigned char)(colourPatch[0] * 255.f),
 							(unsigned char)(colourPatch[1] * 255.f), (unsigned char)(colourPatch[2] * 255.f));
-						currentlightMap[i]->upload(GL_RGB, true);
+						currentlightMap[i]->upload(true);
 					}
 				}
 			}

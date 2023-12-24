@@ -431,10 +431,9 @@ public:
 		g_lambert = 1.0f;
 		mdl_textures = std::vector<Texture*>();
 		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
-		whiteTex = new Texture(1, 1, "white");
+		whiteTex = new Texture(1, 1, new unsigned char[] {255, 255, 255},"white");
 		whiteTex->setWadName("default");
-		*((COLOR3*)(whiteTex->data)) = {255, 255, 255};
-		whiteTex->upload(GL_RGB);
+		whiteTex->upload();
 		m_sequence = m_bodynum = m_skinnum = 0;
 		m_frame = 0.0f;
 		m_mouth = 0;

@@ -192,7 +192,7 @@ void VertexBuffer::upload(bool hideErrors)
 	glBindBuffer(GL_ARRAY_BUFFER, vboId);
 	glBufferData(GL_ARRAY_BUFFER, elementSize * numVerts, data, GL_STATIC_DRAW);
 
-	int offset = 0;
+	unsigned char * offset = 0;
 	for (const VertexAttr& a : attribs)
 	{
 		if (a.handle == -1)
@@ -248,7 +248,9 @@ void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors
 	else if (end - start <= 0)
 		print_log(get_localized_string(LANG_0978),start,end);
 	else
+	{
 		glDrawArrays(_primitive, start, end - start);
+	}
 
 	if (vboId != (GLuint)-1) {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

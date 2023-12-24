@@ -18,6 +18,7 @@ namespace fs = std::filesystem;
 #include "ProgressMeter.h"
 #include "bsptypes.h"
 #include <math.h>
+#include "primitives.h"
 
 class Bsp;
 
@@ -149,7 +150,7 @@ bool writeFile(const std::string& fileName, const std::string& data);
 
 bool removeFile(const std::string& fileName);
 
-std::streampos fileSize(const std::string& filePath);
+size_t fileSize(const std::string& filePath);
 
 std::string basename(const std::string& path);
 
@@ -190,13 +191,17 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 
 void getBoundingBox(const std::vector<vec3>& verts, vec3& mins, vec3& maxs);
 
-vec2 getCenter(std::vector<vec2>& verts);
+vec2 getCenter(const std::vector<vec2>& verts);
 
-vec3 getCenter(std::vector<vec3>& verts);
+vec3 getCenter(const std::vector<vec3>& verts);
+
+vec3 getCenter(const std::vector<cVert>& verts);
 
 vec3 getCenter(const vec3& maxs, const vec3& mins);
 
 void expandBoundingBox(const vec3& v, vec3& mins, vec3& maxs);
+
+void expandBoundingBox(const cVert& v, vec3& mins, vec3& maxs);
 
 void expandBoundingBox(const vec2& v, vec2& mins, vec2& maxs);
 
@@ -230,8 +235,6 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 void replaceAll(std::string& str, const std::string& from, const std::string& to);
 
 void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int height, int bytesPerPixel);
-
-std::string GetCurrentDir();
 
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);
@@ -269,3 +272,9 @@ void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 	int inputWidth, int inputHeight, int outputWidth, int outputHeight);
 
 float floatRound(float f);
+
+std::string GetExecutableDir(std::string arg_0);
+std::string GetExecutableDir(std::wstring arg_0);
+
+std::vector<vec3> stretch_model(const std::vector<vec3>& vertices, float stretch_value);
+std::vector<cVert> stretch_model(const std::vector<cVert>& vertices, float stretch_value);

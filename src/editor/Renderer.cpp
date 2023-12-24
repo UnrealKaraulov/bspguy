@@ -12,6 +12,7 @@
 #include <chrono>
 #include <execution>
 #include "filedialog/ImFileDialog.h"
+#include "lodepng.h"
 
 Renderer* g_app = NULL;
 
@@ -23,7 +24,14 @@ int pickCount = 0; // used to give unique IDs to text inputs so switching ents d
 int vertPickCount = 0;
 
 
-// everything except VIS, ENTITIES, MARKSURFS
+Texture* whiteTex = NULL;
+Texture* redTex = NULL;
+Texture* yellowTex = NULL;
+Texture* greyTex = NULL;
+Texture* blackTex = NULL;
+Texture* blueTex = NULL;
+Texture* missingTex = NULL;
+Texture* missingTex_rgba = NULL;
 
 std::future<void> Renderer::fgdFuture;
 
@@ -180,9 +188,42 @@ Renderer::Renderer()
 
 	glewInit();
 
+	unsigned char* img_dat = NULL;
+	unsigned int w, h;
+
+	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/missing.png");
+	missingTex_rgba = new Texture(w, h, img_dat, "missing", true);
+	missingTex_rgba->upload();
+
+	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/missing.png");
+	missingTex = new Texture(w, h, img_dat, "missing", true);
+	missingTex->upload();
+
+	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/white.png");
+	whiteTex = new Texture(w, h, img_dat, "white");
+	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/grey.png");
+	greyTex = new Texture(w, h, img_dat, "grey");
+	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/red.png");
+	redTex = new Texture(w, h, img_dat, "red");
+	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/yellow.png");
+	yellowTex = new Texture(w, h, img_dat, "yellow");
+	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/black.png");
+	blackTex = new Texture(w, h, img_dat, "black");
+	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/blue.png");
+	blueTex = new Texture(w, h, img_dat, "blue");
+
+	whiteTex->upload();
+	redTex->upload();
+	yellowTex->upload();
+	greyTex->upload();
+	blackTex->upload();
+	blueTex->upload();
+
 	//GLuint in;
 	//glGenVertexArrays(1, &in);
 	//glBindVertexArray(in);
+
+	glLineWidth(1.2f);
 
 	// init to black screen instead of white
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -341,7 +382,6 @@ void Renderer::renderLoop()
 		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LESS);
 
-		glLineWidth(1.25);
 
 		//Update keyboard / mouse state 
 		oldLeftMouse = curLeftMouse;
@@ -424,9 +464,6 @@ void Renderer::renderLoop()
 				}
 			}
 		}
-		matmodel.loadIdentity();
-		matmodel.rotateZ((float)oldTime);
-		matmodel.rotateX((float)curTime);
 
 		setupView();
 
@@ -1289,6 +1326,7 @@ void Renderer::cameraRotationControls()
 			{
 				cameraAngles.z += 360.0f;
 			}
+
 			cameraAngles.y = 0.0f;
 			lastMousePos = mousePos;
 		}

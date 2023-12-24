@@ -250,13 +250,6 @@ public:
 
 	Texture** glTextures = NULL;
 	Texture** glLightmapTextures = NULL;
-	Texture* whiteTex = NULL;
-	Texture* redTex = NULL;
-	Texture* yellowTex = NULL;
-	Texture* greyTex = NULL;
-	Texture* blackTex = NULL;
-	Texture* blueTex = NULL;
-	Texture* missingTex = NULL;
 	std::future<void> texturesFuture;
 
 	bool lightmapsGenerated = false;

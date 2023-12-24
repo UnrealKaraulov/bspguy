@@ -1185,9 +1185,6 @@ void Bsp::resize_all_lightmaps(bool logged)
 	if (logged)
 		g_progress.update("Resize lightmaps", faceCount);
 
-	int totalLightmaps = 0;
-	int lightmapsResizeCount = 0;
-
 	int newLightmapsSize = get_new_lightmaps_data_size();
 
 	if (newLightmapsSize > 0)
@@ -1210,8 +1207,6 @@ void Bsp::resize_all_lightmaps(bool logged)
 			int size[2];
 			GetFaceLightmapSize(this, i, size);
 
-			int lightmapSz = size[0] * size[1];
-
 			LIGHTMAP newLight = LIGHTMAP();
 			newLight.width = size[0];
 			newLight.height = size[1];
@@ -1224,7 +1219,6 @@ void Bsp::resize_all_lightmaps(bool logged)
 			}
 
 			bool lightmapResized = oldLight.width != newLight.width || oldLight.height != newLight.height;
-			int newColorCount = (lightmapSz * newLight.layers);
 
 			int oldLayerSz = (oldLight.width * oldLight.height) * sizeof(COLOR3);
 			int newLayerSz = (newLight.width * newLight.height) * sizeof(COLOR3);
@@ -6459,27 +6453,30 @@ int Bsp::duplicate_model(int modelIdx)
 	return newModelIdx;
 }
 
-int Bsp::add_model_to_worldspawn(int modelIdx)
+int Bsp::merge_two_models(int src_model, int dst_model)
 {
-	int newfaces = models[modelIdx].nFaces;
+	if (dst_model > src_model)
+		std::swap(src_model, dst_model);
+
+	int newfaces = models[src_model].nFaces;
 
 	std::vector<BSPFACE32> all_faces;
 
 	for (int f = 0; f < faceCount; f++)
 	{
 		all_faces.push_back(faces[f]);
-		if (f == models[0].iFirstFace + models[0].nFaces)
+		if (f == models[dst_model].iFirstFace + models[dst_model].nFaces)
 		{
-			for (int f2 = 0; f2 < models[modelIdx].nFaces; f2++)
+			for (int f2 = 0; f2 < models[src_model].nFaces; f2++)
 			{
-				all_faces.push_back(faces[models[modelIdx].iFirstFace + f2]);
+				all_faces.push_back(faces[models[src_model].iFirstFace + f2]);
 			}
 		}
 	}
 
 	for (int m = 1; m < modelCount; m++)
 	{
-		if (models[m].iFirstFace >= models[0].iFirstFace + models[0].nFaces)
+		if (models[m].iFirstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
 		{
 			models[m].iFirstFace += newfaces;
 		}
@@ -6487,7 +6484,7 @@ int Bsp::add_model_to_worldspawn(int modelIdx)
 
 	for (int m = 0; m < nodeCount; m++)
 	{
-		if (nodes[m].firstFace >= models[0].iFirstFace + models[0].nFaces)
+		if (nodes[m].firstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
 		{
 			nodes[m].firstFace += newfaces;
 		}
@@ -6495,7 +6492,7 @@ int Bsp::add_model_to_worldspawn(int modelIdx)
 
 	for (int m = 0; m < marksurfCount; m++)
 	{
-		if (marksurfs[m] >= models[0].iFirstFace + models[0].nFaces)
+		if (marksurfs[m] >= models[dst_model].iFirstFace + models[dst_model].nFaces)
 		{
 			marksurfs[m] += newfaces;
 		}
@@ -6515,28 +6512,26 @@ int Bsp::add_model_to_worldspawn(int modelIdx)
 
 		surface_idx += leaves[i].nMarkSurfaces;
 
-		for (int f2 = 0; f2 < models[modelIdx].nFaces; f2++)
+		for (int f2 = 0; f2 < models[src_model].nFaces; f2++)
 		{
-			all_mark_surfaces.push_back(models[0].iFirstFace + models[0].nFaces + f2);
+			all_mark_surfaces.push_back(models[dst_model].iFirstFace + models[dst_model].nFaces + f2);
 		}
 	}
-
-
 	
 	int nodecount = 0;
 	int nodeidx = 0;
-	get_last_node(models[modelIdx].iHeadnodes[0], nodeidx, nodecount);
-	nodes[nodeidx].iChildren[0] = models[modelIdx].iHeadnodes[0];
+	get_last_node(models[src_model].iHeadnodes[0], nodeidx, nodecount);
+	nodes[nodeidx].iChildren[0] = models[src_model].iHeadnodes[0];
 
 	for (int i = 1; i < MAX_MAP_HULLS; i++)
 	{
 		int clipnodecount = 0;
 		int clipnodeidx = 0;
-		get_last_clipnode(models[modelIdx].iHeadnodes[i], clipnodeidx, clipnodecount);
+		get_last_clipnode(models[src_model].iHeadnodes[i], clipnodeidx, clipnodecount);
 		int clipnodetarget = clipnodecount;
 		clipnodecount = 0;
-		get_last_clipnode(models[modelIdx].iHeadnodes[i], clipnodeidx, clipnodecount, clipnodetarget - 1);
-		clipnodes[clipnodeidx].iChildren[0] = models[modelIdx].iHeadnodes[i];
+		get_last_clipnode(models[src_model].iHeadnodes[i], clipnodeidx, clipnodecount, clipnodetarget);
+		clipnodes[clipnodeidx].iChildren[0] = models[src_model].iHeadnodes[i];
 	}
 
 	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
@@ -6548,27 +6543,18 @@ int Bsp::add_model_to_worldspawn(int modelIdx)
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 
 
-	std::set<int> visited;
-	for (int f2 = 0; f2 < models[modelIdx].nFaces; f2++)
-	{
-		BSPFACE32& face = faces[models[0].iFirstFace + models[0].nFaces + f2];
-	}
+	models[dst_model].nFaces += newfaces;
+	models[dst_model].nVisLeafs += models[src_model].nVisLeafs; //0
 
-
-
-	models[0].nFaces += newfaces;
-	models[0].nVisLeafs += 0; //0
-
-	models[modelIdx].iFirstFace = 0;
-	models[modelIdx].iHeadnodes[0] = models[modelIdx].iHeadnodes[1] =
-		models[modelIdx].iHeadnodes[2] = models[modelIdx].iHeadnodes[3] = CONTENTS_EMPTY;
-	models[modelIdx].nFaces = 0;
-	models[modelIdx].nVisLeafs = 0;
+	models[src_model].iFirstFace = 0;
+	models[src_model].iHeadnodes[0] = models[src_model].iHeadnodes[1] =
+		models[src_model].iHeadnodes[2] = models[src_model].iHeadnodes[3] = CONTENTS_EMPTY;
+	models[src_model].nFaces = 0;
+	models[src_model].nVisLeafs = 0;
 
 	update_lump_pointers();
 
-	/*return newModelIdx;*/
-	return modelIdx;
+	return dst_model;
 }
 
 BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx)
@@ -7463,7 +7449,7 @@ void Bsp::ExportExtFile()
 	std::vector<std::string> addedTextures;
 	std::vector<WADTEX*> outTextures;
 
-	int missingTex = 0;
+	int missingTexures = 0;
 
 	for (int i = 0; i < faceCount; i++)
 	{
@@ -7498,7 +7484,7 @@ void Bsp::ExportExtFile()
 						memset(tmpColor, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
 						texture = create_wadtex(tex.szName, tmpColor, tex.nWidth, tex.nHeight);
 						delete[] tmpColor;
-						missingTex++;
+						missingTexures++;
 
 						addedTextures.push_back(tex.szName);
 						outTextures.push_back(texture);
@@ -7508,7 +7494,7 @@ void Bsp::ExportExtFile()
 		}
 	}
 
-	print_log(get_localized_string(LANG_0216), addedTextures.size() - missingTex, missingTex);
+	print_log(get_localized_string(LANG_0216), addedTextures.size() - missingTexures, missingTexures);
 
 	tmpWad->write(targetMapFileName + "_nolight.wa_", outTextures);
 

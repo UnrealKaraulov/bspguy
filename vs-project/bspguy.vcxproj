@@ -144,8 +144,11 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)\..\cfg\language_ru.ini" "$(TargetDir)\language_ru.ini"
-copy "$(SolutionDir)\..\cfg\language.ini" "$(TargetDir)\language.ini"</Command>
+      <Command>copy "$(TargetDir)bspguy.cfg" "$(TargetDir)bspguy.cfg_bak" 
+xcopy /I /E /Y  "$(SolutionDir)..\resources\*" "$(TargetDir)"
+del "$(TargetDir)bspguy.cfg"
+copy "$(TargetDir)bspguy.cfg_bak" "$(TargetDir)bspguy.cfg" 
+del "$(TargetDir)bspguy.cfg_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">
@@ -290,8 +293,11 @@ copy "$(SolutionDir)\..\cfg\language.ini" "$(TargetDir)\language.ini"</Command>
       </LinkLibraryDependencies>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>copy "$(SolutionDir)\..\cfg\language_ru.ini" "$(TargetDir)\language_ru.ini"
-copy "$(SolutionDir)\..\cfg\language.ini" "$(TargetDir)\language.ini"</Command>
+      <Command>copy "$(TargetDir)bspguy.cfg" "$(TargetDir)bspguy.cfg_bak" 
+xcopy /I /E /Y  "$(SolutionDir)..\resources\*" "$(TargetDir)"
+del "$(TargetDir)bspguy.cfg"
+copy "$(TargetDir)bspguy.cfg_bak" "$(TargetDir)bspguy.cfg" 
+del "$(TargetDir)bspguy.cfg_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

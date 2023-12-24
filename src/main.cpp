@@ -9,6 +9,7 @@
 #include "Renderer.h"
 #include "Settings.h"
 #include "winding.h"
+#include "fmt/format.h"
 
 // super todo:
 // gui scale not accurate and mostly broken
@@ -604,7 +605,7 @@ int unembed(CommandLine& cli)
 		int deleted = map->delete_embedded_textures();
 		print_log(get_localized_string(LANG_0029), deleted);
 
-		if (map->isValid()) 
+		if (map->isValid())
 			map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
 		print_log("\n");
 		delete map;
@@ -798,17 +799,15 @@ void make_minidump(EXCEPTION_POINTERS* e)
 	if (pMiniDumpWriteDump == nullptr)
 		return;
 
-	char name[1024]{};
-	auto nameEnd = name + GetModuleFileNameA(GetModuleHandleA(0), name, 1024);
 	SYSTEMTIME t;
 	GetSystemTime(&t);
-	wsprintfA(nameEnd - strlen(".exe"),
-		"_%4d%02d%02d_%02d%02d%02d(%d).dmp",
-		t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
+	createDir("./crashes");
+	std::string name = fmt::format("./crashes/{}_{:04}{:02}{:02}_{:02}{:02}{:02}{:02}.dmp", "bspguy", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
+
 
 	print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0030), name);
 
-	auto hFile = CreateFileA(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	auto hFile = CreateFileA(name.c_str(), GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hFile == INVALID_HANDLE_VALUE)
 		return;
 
@@ -907,28 +906,27 @@ int main(int argc, char* argv[])
 		signal(SIGFPE, signalHandler);
 		signal(SIGBUS, signalHandler);
 #endif
-		
-		if (argv && argv[0] && argv[0][0] != '\0')
-		{
-#ifdef WIN32
-			int nArgs;
-			LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-			g_current_dir = fs::path(szArglist[0]).parent_path().string();
-#else
-			g_current_dir = fs::path(argv[0]).parent_path().string();
-#endif
-			if (g_current_dir.empty())
-				g_current_dir = "./";
-			fs::current_path(g_current_dir);
-		}
+		std::string current_dir = "./";
 
 #ifdef WIN32
-		g_settings_path = GetCurrentDir() + "bspguy.cfg";
-		g_config_dir = GetCurrentDir();
+		int nArgs;
+		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+		current_dir = GetExecutableDir(szArglist[0]);
 #else
-		g_settings_path = GetCurrentDir() + "bspguy.cfg";
-		g_config_dir = GetCurrentDir();
+		if (argv && argv[0])
+		{
+			current_dir = GetExecutableDir(argv[0]);
+		}
+		else
+		{
+			current_dir = GetExecutableDir("./");
+		}
 #endif
+
+		fs::current_path(current_dir);
+
+
+		g_settings_path = "./bspguy.cfg";
 
 		g_settings.loadDefault();
 		g_settings.load();
@@ -964,8 +962,8 @@ int main(int argc, char* argv[])
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
 				retval = 1;
 			}
-			else 
-			retval = print_info(cli);
+			else
+				retval = print_info(cli);
 		}
 		else if (cli.command == "noclip")
 		{
@@ -1063,7 +1061,7 @@ int main(int argc, char* argv[])
 	}
 	catch (...)
 	{
-		std::cout << g_version_string << "UNKNOWN FATAL ERROR" <<  std::endl;
+		std::cout << g_version_string << "UNKNOWN FATAL ERROR" << std::endl;
 		return 1;
 	}
 	return 0;

@@ -274,6 +274,11 @@ vec3 vec3::unflipUV()
 {
 	return flip();
 }
+vec3 vec3::round(float val)
+{
+	return vec3(roundf(x / val) * val,
+		roundf(y / val) * val, roundf(z / val) * val);
+}
 
 bool operator==(const vec2& v1, const vec2& v2)
 {

@@ -11,7 +11,6 @@
 #include "Renderer.h"
 #include "Clipper.h"
 #include "Command.h"
-#include "icons/missing.h"
 #include <execution>
 
 #ifdef WIN32
@@ -190,32 +189,6 @@ BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
 	renderModels = NULL;
 	faceMaths = NULL;
 
-	whiteTex = new Texture(1, 1, "white");
-	greyTex = new Texture(1, 1, "grey");
-	redTex = new Texture(1, 1, "red");
-	yellowTex = new Texture(1, 1, "yellow");
-	blackTex = new Texture(1, 1, "black");
-	blueTex = new Texture(1, 1, "blue");
-
-	*((COLOR3*)(whiteTex->data)) = { 255, 255, 255 };
-	*((COLOR3*)(redTex->data)) = { 110, 0, 0 };
-	*((COLOR3*)(yellowTex->data)) = { 255, 255, 0 };
-	*((COLOR3*)(greyTex->data)) = { 64, 64, 64 };
-	*((COLOR3*)(blackTex->data)) = { 0, 0, 0 };
-	*((COLOR3*)(blueTex->data)) = { 0, 0, 200 };
-
-	whiteTex->upload(GL_RGB);
-	redTex->upload(GL_RGB);
-	yellowTex->upload(GL_RGB);
-	greyTex->upload(GL_RGB);
-	blackTex->upload(GL_RGB);
-	blueTex->upload(GL_RGB);
-
-	unsigned char* img_dat = NULL;
-	unsigned int w, h;
-	lodepng_decode24(&img_dat, &w, &h, missing_dat, sizeof(missing_dat));
-	missingTex = new Texture(w, h, img_dat, "missing");
-	missingTex->upload(GL_RGB);
 
 	nodesBufferCache.clear();
 	clipnodesBufferCache.clear();
@@ -287,9 +260,7 @@ void BspRenderer::loadTextures()
 	}
 
 	std::vector<std::string> tryPaths{};
-	tryPaths.push_back(GetCurrentDir());
-	if (GetCurrentDir() != g_config_dir)
-		tryPaths.push_back(g_config_dir);
+	tryPaths.push_back("./");
 
 	for (auto& path : g_settings.resPaths)
 	{
@@ -500,7 +471,8 @@ void BspRenderer::loadLightmaps()
 	std::vector<LightmapNode*> atlases;
 	std::vector<Texture*> atlasTextures;
 	atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
-	atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, "LIGHTMAP"));
+	atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE,
+		new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 	memset(atlasTextures[0]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 	numRenderLightmapInfos = map->faceCount;
@@ -565,10 +537,10 @@ void BspRenderer::loadLightmaps()
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 				{
 					atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
-					atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, "LIGHTMAP"));
+					atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
+					memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 					atlasId++;
-					memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 					{
@@ -1196,6 +1168,9 @@ void BspRenderer::loadClipnodes()
 
 void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 {
+	if (hullIdx < 0 || hullIdx > 3)
+		return;
+
 	BSPMODEL& model = map->models[modelIdx];
 	Clipper clipper;
 
@@ -1416,6 +1391,9 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 		return;
 	}
 
+	if (modelIdx != 0)
+		allVerts = stretch_model(allVerts, 1.02f);
+
 	cVert* output = new cVert[allVerts.size()];
 	if (allVerts.size())
 		std::copy(allVerts.begin(), allVerts.end(), output);
@@ -1423,6 +1401,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
 	if (wireframeVerts.size())
 		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
+
 
 	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
 	renderClip.clipnodeBuffer[hullIdx]->ownData = true;
@@ -1932,7 +1911,7 @@ void BspRenderer::reuploadTextures()
 
 	for (int i = 0; i < map->textureCount; i++)
 	{
-		glTextures[i]->upload(GL_RGB);
+		glTextures[i]->upload();
 	}
 
 	numLoadedTextures = map->textureCount;
@@ -1951,7 +1930,7 @@ void BspRenderer::delayLoadData()
 		for (int i = 0; i < numLightmapAtlases; i++)
 		{
 			if (glLightmapTextures[i])
-				glLightmapTextures[i]->upload(GL_RGB);
+				glLightmapTextures[i]->upload();
 		}
 
 		preRenderFaces();
@@ -2226,7 +2205,6 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 				if (modelVertsDraw)
 				{
 					glDisable(GL_CULL_FACE);
-					glDisable(GL_CULL_FACE);
 				}
 				drawModel(&renderEnts[highlightEnt], false, true, true);
 				drawModel(&renderEnts[highlightEnt], true, true, true);
@@ -2309,7 +2287,6 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			g_app->bspShader->updateMatrixes();
 			yellowTex->bind(0);
-			greyTex->bind(1);
 			rgroup.wireframeBuffer->drawFull();
 			g_app->bspShader->popMatrix();
 		}
@@ -2325,7 +2302,6 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 				else
 					greyTex->bind(0);
 			}
-			whiteTex->bind(1);
 
 			rgroup.wireframeBuffer->drawFull();
 		}
@@ -2407,7 +2383,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	if (hullIdx == -1)
 	{
 		hullIdx = getBestClipnodeHull(modelIdx);
-		if (hullIdx == -1)
+		if (hullIdx == -1 || hullIdx > 3)
 		{
 			return; // nothing can be drawn
 		}
