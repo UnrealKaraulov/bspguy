@@ -921,11 +921,11 @@ int main(int argc, char* argv[])
 #else
 		if (argv && argv[0])
 		{
-			current_dir = GetExecutableDir(argv[0]);
+			bspguy_dir = GetExecutableDir(argv[0]);
 		}
 		else
 		{
-			current_dir = GetExecutableDir("./");
+			bspguy_dir = GetExecutableDir("./");
 		}
 #endif
 
