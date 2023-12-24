@@ -1,5 +1,5 @@
 ---
-name: C\C++ CI
+name: C/C++ CI
 on:
   - push
   - pull_request
@@ -24,9 +24,9 @@ jobs:
       release_tag: ${{ steps.tag.outputs.release_tag }}
     steps:
       - name: Checkout repository
-        uses: actions\checkout@v2
+        uses: actions/checkout@v2
       - name: Setup cmake
-        uses: jwlawson\actions-setup-cmake@v1
+        uses: jwlawson/actions-setup-cmake@v1
         with:
           cmake-version: latest
       - name: Download and install dependencies
@@ -41,31 +41,31 @@ jobs:
           make
       - name: Create Linux release archive
         run: |
-          mkdir -p build\linux_release
-          cp build\bspguy build\linux_release\
-          cp -r resources\. build\linux_release\
-          cd build && zip -r newbspguy_ubuntu_release.zip linux_release\
+          mkdir -p build/linux_release
+          cp build/bspguy build/linux_release/
+          cp -r resources/. build/linux_release/
+          cd build && zip -r newbspguy_ubuntu_release.zip linux_release/
       - name: Publish nightly binaries for linux
-        uses: softprops\action-gh-release@v1
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
-            build\newbspguy_ubuntu_release.zip
+            build/newbspguy_ubuntu_release.zip
   window_build:
     name: Windows
     needs: get_time_build
     runs-on: windows-latest
     env:
-      solution: vs-project\bspguy.sln
+      solution: vs-project/bspguy.sln
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions\checkout@v2
+        uses: actions/checkout@v2
         with:
           fetch-depth: 0
           submodules: true
       - name: Add msbuild to PATH
-        uses: microsoft\setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@v1.1
         with:
           vs-prerelease: true
       - name: Build app for release
@@ -76,14 +76,14 @@ jobs:
         run: |
           mkdir -p build\win64_release
           cp vs-project\Release\bspguy.exe build\win64_release\
-          xcopy \I \E \Y "resources\*" "build\win64_release\"
+          xcopy /I /E /Y "resources\*" "build\win64_release\"
           Compress-Archive -Path "build\win64_release\*" -DestinationPath "build\newbspguy_win64_release.zip"
       - name: Publish nightly binaries for windows
-        uses: softprops\action-gh-release@v1
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
-            build\newbspguy_win64_release.zip
+            build/newbspguy_win64_release.zip
       - name: Build app for debug
         run: >
           msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag
@@ -92,11 +92,11 @@ jobs:
         run: |
           mkdir -p build\win64_debug
           cp vs-project\Release\bspguy_debug.exe build\win64_debug\
-          xcopy \I \E \Y "resources\*" "build\win64_debug\"
+          xcopy /I /E /Y "resources\*" "build\win64_debug\"
           Compress-Archive -Path "build\win64_debug\*" -DestinationPath "build\newbspguy_win64_dbg.zip"
       - name: Publish nightly debug binaries for windows
-        uses: softprops\action-gh-release@v1
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
-            build\newbspguy_win64_dbg.zip
+            build/newbspguy_win64_dbg.zip
