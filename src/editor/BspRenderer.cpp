@@ -1392,7 +1392,10 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	}
 
 	if (modelIdx != 0)
-		allVerts = stretch_model(allVerts, 1.02f);
+	{
+		allVerts = stretch_model(allVerts, 1.001f);
+		wireframeVerts = stretch_model(wireframeVerts, 1.0011f);
+	}
 
 	cVert* output = new cVert[allVerts.size()];
 	if (allVerts.size())
