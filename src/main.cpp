@@ -906,12 +906,13 @@ int main(int argc, char* argv[])
 		signal(SIGFPE, signalHandler);
 		signal(SIGBUS, signalHandler);
 #endif
-		std::string current_dir = "./";
+		std::string bspguy_dir = "./";
+		std::string current_dir = fs::current_path().string() + "/";
 
 #ifdef WIN32
 		int nArgs;
 		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-		current_dir = GetExecutableDir(szArglist[0]);
+		bspguy_dir = GetExecutableDir(szArglist[0]);
 #else
 		if (argv && argv[0])
 		{
@@ -923,7 +924,7 @@ int main(int argc, char* argv[])
 		}
 #endif
 
-		fs::current_path(current_dir);
+		fs::current_path(bspguy_dir);
 
 
 		g_settings_path = "./bspguy.cfg";
@@ -938,6 +939,11 @@ int main(int argc, char* argv[])
 		if (cli.command == "version" || cli.command == "--version" || cli.command == "-version")
 		{
 			return 0;
+		}
+
+		if (!fileExists(cli.bspfile))
+		{
+			cli.bspfile = current_dir + cli.bspfile;
 		}
 
 		if (cli.command == "exportobj")
