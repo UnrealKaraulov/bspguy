@@ -642,308 +642,306 @@ void Gui::drawBspContexMenu()
 			}
 
 			ImGui::Separator();
-			if (app->pickInfo.selectedEnts.size() == 1)
+			if (modelIdx >= 0)
 			{
-				if (modelIdx >= 0)
+				BSPMODEL& model = map->models[modelIdx];
+				if (ImGui::BeginMenu(get_localized_string(LANG_0456).c_str()))
 				{
-					BSPMODEL& model = map->models[modelIdx];
-					if (ImGui::BeginMenu(get_localized_string(LANG_0456).c_str()))
+					if (modelIdx > 0 || map->is_bsp_model)
 					{
-						if (modelIdx > 0 || map->is_bsp_model)
+						if (ImGui::BeginMenu(get_localized_string(LANG_0457).c_str(), !app->invalidSolid && app->isTransformableSolid))
 						{
-							if (ImGui::BeginMenu(get_localized_string(LANG_0457).c_str(), !app->invalidSolid && app->isTransformableSolid))
+							if (ImGui::MenuItem(get_localized_string(LANG_0458).c_str()))
 							{
-								if (ImGui::MenuItem(get_localized_string(LANG_0458).c_str()))
-								{
-									map->regenerate_clipnodes(modelIdx, -1);
-									checkValidHulls();
-									print_log(get_localized_string(LANG_0328), modelIdx);
-								}
-
-								ImGui::Separator();
-
-								for (int i = 1; i < MAX_MAP_HULLS; i++)
-								{
-									if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
-									{
-										map->regenerate_clipnodes(modelIdx, i);
-										checkValidHulls();
-										print_log(get_localized_string(LANG_0329), i, modelIdx);
-									}
-								}
-								ImGui::EndMenu();
+								map->regenerate_clipnodes(modelIdx, -1);
+								checkValidHulls();
+								print_log(get_localized_string(LANG_0328), modelIdx);
 							}
 
-							if (ImGui::BeginMenu(get_localized_string(LANG_0459).c_str(), !app->isLoading))
-							{
-								if (ImGui::MenuItem(get_localized_string(LANG_0460).c_str()))
-								{
-									map->delete_hull(0, modelIdx, -1);
-									map->delete_hull(1, modelIdx, -1);
-									map->delete_hull(2, modelIdx, -1);
-									map->delete_hull(3, modelIdx, -1);
-									map->getBspRender()->refreshModel(modelIdx);
-									checkValidHulls();
-									print_log(get_localized_string(LANG_0330), modelIdx);
-								}
-								if (ImGui::MenuItem(get_localized_string(LANG_1069).c_str()))
-								{
-									map->delete_hull(1, modelIdx, -1);
-									map->delete_hull(2, modelIdx, -1);
-									map->delete_hull(3, modelIdx, -1);
-									map->getBspRender()->refreshModelClipnodes(modelIdx);
-									checkValidHulls();
-									print_log(get_localized_string(LANG_0331), modelIdx);
-								}
+							ImGui::Separator();
 
-								ImGui::Separator();
-
-								for (int i = 0; i < MAX_MAP_HULLS; i++)
-								{
-									bool isHullValid = model.iHeadnodes[i] >= 0;
-
-									if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
-									{
-										map->delete_hull(i, modelIdx, -1);
-										checkValidHulls();
-										if (i == 0)
-											map->getBspRender()->refreshModel(modelIdx);
-										else
-											map->getBspRender()->refreshModelClipnodes(modelIdx);
-										print_log(get_localized_string(LANG_0332), i, modelIdx);
-									}
-								}
-
-								ImGui::EndMenu();
-							}
-
-							if (ImGui::BeginMenu(get_localized_string(LANG_0461).c_str(), !app->isLoading))
-							{
-								if (ImGui::MenuItem(get_localized_string(LANG_1152).c_str()))
-								{
-									map->simplify_model_collision(modelIdx, 1);
-									map->simplify_model_collision(modelIdx, 2);
-									map->simplify_model_collision(modelIdx, 3);
-									map->getBspRender()->refreshModelClipnodes(modelIdx);
-									print_log(get_localized_string(LANG_0333), modelIdx);
-								}
-
-								ImGui::Separator();
-
-								for (int i = 1; i < MAX_MAP_HULLS; i++)
-								{
-									bool isHullValid = map->models[modelIdx].iHeadnodes[i] >= 0;
-
-									if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
-									{
-										map->simplify_model_collision(modelIdx, 1);
-										map->getBspRender()->refreshModelClipnodes(modelIdx);
-										print_log(get_localized_string(LANG_0334), i, modelIdx);
-									}
-								}
-
-								ImGui::EndMenu();
-							}
-
-							bool canRedirect = map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[2] || map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[3];
-
-							if (ImGui::BeginMenu(get_localized_string(LANG_0462).c_str(), canRedirect && !app->isLoading))
-							{
-								for (int i = 1; i < MAX_MAP_HULLS; i++)
-								{
-									if (ImGui::BeginMenu(("Hull " + std::to_string(i)).c_str()))
-									{
-
-										for (int k = 1; k < MAX_MAP_HULLS; k++)
-										{
-											if (i == k)
-												continue;
-
-											bool isHullValid = map->models[modelIdx].iHeadnodes[k] >= 0 && map->models[modelIdx].iHeadnodes[k] != map->models[modelIdx].iHeadnodes[i];
-
-											if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
-											{
-												map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
-												map->getBspRender()->refreshModelClipnodes(modelIdx);
-												checkValidHulls();
-												print_log(get_localized_string(LANG_0335), i, k, modelIdx);
-											}
-										}
-
-										ImGui::EndMenu();
-									}
-								}
-
-								ImGui::EndMenu();
-							}
-						}
-						if (ImGui::BeginMenu(get_localized_string(LANG_0463).c_str(), !app->isLoading))
-						{
-							for (int i = 0; i < MAX_MAP_HULLS; i++)
+							for (int i = 1; i < MAX_MAP_HULLS; i++)
 							{
 								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
 								{
-									map->print_model_hull(modelIdx, i);
-									showLogWidget = true;
+									map->regenerate_clipnodes(modelIdx, i);
+									checkValidHulls();
+									print_log(get_localized_string(LANG_0329), i, modelIdx);
 								}
 							}
 							ImGui::EndMenu();
 						}
 
+						if (ImGui::BeginMenu(get_localized_string(LANG_0459).c_str(), !app->isLoading))
+						{
+							if (ImGui::MenuItem(get_localized_string(LANG_0460).c_str()))
+							{
+								map->delete_hull(0, modelIdx, -1);
+								map->delete_hull(1, modelIdx, -1);
+								map->delete_hull(2, modelIdx, -1);
+								map->delete_hull(3, modelIdx, -1);
+								map->getBspRender()->refreshModel(modelIdx);
+								checkValidHulls();
+								print_log(get_localized_string(LANG_0330), modelIdx);
+							}
+							if (ImGui::MenuItem(get_localized_string(LANG_1069).c_str()))
+							{
+								map->delete_hull(1, modelIdx, -1);
+								map->delete_hull(2, modelIdx, -1);
+								map->delete_hull(3, modelIdx, -1);
+								map->getBspRender()->refreshModelClipnodes(modelIdx);
+								checkValidHulls();
+								print_log(get_localized_string(LANG_0331), modelIdx);
+							}
+
+							ImGui::Separator();
+
+							for (int i = 0; i < MAX_MAP_HULLS; i++)
+							{
+								bool isHullValid = model.iHeadnodes[i] >= 0;
+
+								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
+								{
+									map->delete_hull(i, modelIdx, -1);
+									checkValidHulls();
+									if (i == 0)
+										map->getBspRender()->refreshModel(modelIdx);
+									else
+										map->getBspRender()->refreshModelClipnodes(modelIdx);
+									print_log(get_localized_string(LANG_0332), i, modelIdx);
+								}
+							}
+
+							ImGui::EndMenu();
+						}
+
+						if (ImGui::BeginMenu(get_localized_string(LANG_0461).c_str(), !app->isLoading))
+						{
+							if (ImGui::MenuItem(get_localized_string(LANG_1152).c_str()))
+							{
+								map->simplify_model_collision(modelIdx, 1);
+								map->simplify_model_collision(modelIdx, 2);
+								map->simplify_model_collision(modelIdx, 3);
+								map->getBspRender()->refreshModelClipnodes(modelIdx);
+								print_log(get_localized_string(LANG_0333), modelIdx);
+							}
+
+							ImGui::Separator();
+
+							for (int i = 1; i < MAX_MAP_HULLS; i++)
+							{
+								bool isHullValid = map->models[modelIdx].iHeadnodes[i] >= 0;
+
+								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
+								{
+									map->simplify_model_collision(modelIdx, 1);
+									map->getBspRender()->refreshModelClipnodes(modelIdx);
+									print_log(get_localized_string(LANG_0334), i, modelIdx);
+								}
+							}
+
+							ImGui::EndMenu();
+						}
+
+						bool canRedirect = map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[2] || map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[3];
+
+						if (ImGui::BeginMenu(get_localized_string(LANG_0462).c_str(), canRedirect && !app->isLoading))
+						{
+							for (int i = 1; i < MAX_MAP_HULLS; i++)
+							{
+								if (ImGui::BeginMenu(("Hull " + std::to_string(i)).c_str()))
+								{
+
+									for (int k = 1; k < MAX_MAP_HULLS; k++)
+									{
+										if (i == k)
+											continue;
+
+										bool isHullValid = map->models[modelIdx].iHeadnodes[k] >= 0 && map->models[modelIdx].iHeadnodes[k] != map->models[modelIdx].iHeadnodes[i];
+
+										if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
+										{
+											map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
+											map->getBspRender()->refreshModelClipnodes(modelIdx);
+											checkValidHulls();
+											print_log(get_localized_string(LANG_0335), i, k, modelIdx);
+										}
+									}
+
+									ImGui::EndMenu();
+								}
+							}
+
+							ImGui::EndMenu();
+						}
+					}
+					if (ImGui::BeginMenu(get_localized_string(LANG_0463).c_str(), !app->isLoading))
+					{
+						for (int i = 0; i < MAX_MAP_HULLS; i++)
+						{
+							if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
+							{
+								map->print_model_hull(modelIdx, i);
+								showLogWidget = true;
+							}
+						}
 						ImGui::EndMenu();
 					}
 
+					ImGui::EndMenu();
+				}
 
-					ImGui::Separator();
 
-					bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
-					if (allowDuplicate && app->pickInfo.selectedEnts.size() > 1)
+				ImGui::Separator();
+
+				bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
+				if (allowDuplicate && app->pickInfo.selectedEnts.size() > 1)
+				{
+					for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
 					{
-						for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+						if (tmpEntIdx < 0)
 						{
-							if (tmpEntIdx < 0)
+							allowDuplicate = false;
+							break;
+						}
+						else
+						{
+							if (map->ents[tmpEntIdx]->getBspModelIdx() <= 0)
 							{
 								allowDuplicate = false;
 								break;
 							}
-							else
-							{
-								if (map->ents[tmpEntIdx]->getBspModelIdx() <= 0)
-								{
-									allowDuplicate = false;
-									break;
-								}
-							}
 						}
 					}
-					if (modelIdx > 0)
+				}
+				if (modelIdx > 0)
+				{
+					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
 					{
-						if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
+						print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
+						for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
 						{
-							print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
-							for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+							if (map->ents[tmpEntIdx]->isBspModel())
 							{
-								if (map->ents[tmpEntIdx]->isBspModel())
-								{
-									DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), tmpEntIdx);
-									map->getBspRender()->pushUndoCommand(command);
-								}
+								DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), tmpEntIdx);
+								map->getBspRender()->pushUndoCommand(command);
 							}
 						}
-
-						if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-						{
-							ImGui::BeginTooltip();
-							ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_BSP").c_str());
-							ImGui::EndTooltip();
-						}
-
-						bool disableBspDupStruct = !app->modelUsesSharedStructures;
-						if (disableBspDupStruct)
-						{
-							ImGui::BeginDisabled();
-						}
-						if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP_STRUCT").c_str(), 0, false, !app->isLoading && allowDuplicate))
-						{
-							print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
-							for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
-							{
-								if (map->ents[tmpEntIdx]->isBspModel())
-								{
-									pickCount++;
-									map->duplicate_model_structures(map->ents[tmpEntIdx]->getBspModelIdx());
-									map->getBspRender()->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
-								}
-							}
-						}
-
-						if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-						{
-							ImGui::BeginTooltip();
-							ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_STRUCT").c_str());
-							ImGui::EndTooltip();
-						}
-						if (disableBspDupStruct)
-						{
-							ImGui::EndDisabled();
-						}
-						if (DebugKeyPressed && ImGui::MenuItem("DEBUG[ADD TO WORLDSPAWN!]", 0, false, !app->isLoading && allowDuplicate && 
-							app->pickInfo.selectedEnts.size() == 2 &&
-							map->ents[app->pickInfo.selectedEnts[0]]->isBspModel() && map->ents[app->pickInfo.selectedEnts[1]]->isBspModel()))
-						{
-							int ent1 = app->pickInfo.selectedEnts[0];
-							int ent2 = app->pickInfo.selectedEnts[1];
-
-							print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
-							int newmodelid = 
-								map->merge_two_models(map->ents[ent1]->getBspModelIdx()	, map->ents[ent2]->getBspModelIdx());
-
-							if (map->ents[ent1]->getBspModelIdx() == newmodelid)
-							{
-								map->ents[ent1]->clearAllKeyvalues();
-								map->ents[ent1]->setOrAddKeyvalue("classname", "info_target");
-							}
-							else
-							{
-								map->ents[ent2]->clearAllKeyvalues();
-								map->ents[ent2]->setOrAddKeyvalue("classname", "info_target");
-							}
-
-							map->getBspRender()->loadLightmaps();
-							map->getBspRender()->calcFaceMaths();
-							map->getBspRender()->preRenderFaces();
-							map->getBspRender()->preRenderEnts();
-							map->update_lump_pointers();
-							map->update_ent_lump();
-						}
-					}
-					if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading))
-					{
-						if (ImGui::BeginMenu(get_localized_string(LANG_0467).c_str(), !app->isLoading))
-						{
-							if (ImGui::MenuItem(get_localized_string(LANG_0468).c_str(), 0, false, !app->isLoading))
-							{
-								ExportModel(map, modelIdx, 0, false);
-							}
-							if (ImGui::MenuItem(get_localized_string(LANG_0469).c_str(), 0, false, !app->isLoading))
-							{
-								ExportModel(map, modelIdx, 2, false);
-							}
-							if (ImGui::MenuItem(get_localized_string(LANG_0470).c_str(), 0, false, !app->isLoading))
-							{
-								ExportModel(map, modelIdx, 1, false);
-							}
-							ImGui::EndMenu();
-						}
-
-						if (ImGui::BeginMenu(get_localized_string(LANG_0471).c_str(), !app->isLoading))
-						{
-							if (ImGui::MenuItem(get_localized_string(LANG_1070).c_str(), 0, false, !app->isLoading))
-							{
-								ExportModel(map, modelIdx, 0, true);
-							}
-							if (ImGui::MenuItem(get_localized_string(LANG_1071).c_str(), 0, false, !app->isLoading))
-							{
-								ExportModel(map, modelIdx, 2, true);
-							}
-							if (ImGui::MenuItem(get_localized_string(LANG_1072).c_str(), 0, false, !app->isLoading))
-							{
-								ExportModel(map, modelIdx, 1, true);
-							}
-							ImGui::EndMenu();
-						}
-
-						ImGui::EndMenu();
 					}
 
 					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 					{
 						ImGui::BeginTooltip();
-						ImGui::TextUnformatted(get_localized_string(LANG_0472).c_str());
+						ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_BSP").c_str());
 						ImGui::EndTooltip();
 					}
 
+					bool disableBspDupStruct = !app->modelUsesSharedStructures;
+					if (disableBspDupStruct)
+					{
+						ImGui::BeginDisabled();
+					}
+					if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP_STRUCT").c_str(), 0, false, !app->isLoading && allowDuplicate))
+					{
+						print_log(get_localized_string(LANG_0336), app->pickInfo.selectedEnts.size());
+						for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+						{
+							if (map->ents[tmpEntIdx]->isBspModel())
+							{
+								pickCount++;
+								map->duplicate_model_structures(map->ents[tmpEntIdx]->getBspModelIdx());
+								map->getBspRender()->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
+							}
+						}
+					}
+
+					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+					{
+						ImGui::BeginTooltip();
+						ImGui::TextUnformatted(get_localized_string("LANG_CREATE_DUPLICATE_STRUCT").c_str());
+						ImGui::EndTooltip();
+					}
+					if (disableBspDupStruct)
+					{
+						ImGui::EndDisabled();
+					}
+					if (DebugKeyPressed && ImGui::MenuItem("DEBUG[MERGE TWO BSPMODELS!]", 0, false, !app->isLoading && allowDuplicate &&
+						app->pickInfo.selectedEnts.size() == 2 &&
+						map->ents[app->pickInfo.selectedEnts[0]]->isBspModel() && map->ents[app->pickInfo.selectedEnts[1]]->isBspModel()))
+					{
+						int ent1 = app->pickInfo.selectedEnts[0];
+						int ent2 = app->pickInfo.selectedEnts[1];
+
+						print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
+
+						int newmodelid =
+							map->merge_two_models(map->ents[ent1]->getBspModelIdx(), map->ents[ent2]->getBspModelIdx());
+
+						if (map->ents[ent1]->getBspModelIdx() != newmodelid)
+						{
+							map->ents[ent1]->clearAllKeyvalues();
+							map->ents[ent1]->setOrAddKeyvalue("classname", "info_target");
+						}
+						else
+						{
+							map->ents[ent2]->clearAllKeyvalues();
+							map->ents[ent2]->setOrAddKeyvalue("classname", "info_target");
+						}
+
+						map->getBspRender()->loadLightmaps();
+						map->getBspRender()->calcFaceMaths();
+						map->getBspRender()->preRenderFaces();
+						map->getBspRender()->preRenderEnts();
+						map->update_lump_pointers();
+						map->update_ent_lump();
+					}
 				}
+				if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading))
+				{
+					if (ImGui::BeginMenu(get_localized_string(LANG_0467).c_str(), !app->isLoading))
+					{
+						if (ImGui::MenuItem(get_localized_string(LANG_0468).c_str(), 0, false, !app->isLoading))
+						{
+							ExportModel(map, modelIdx, 0, false);
+						}
+						if (ImGui::MenuItem(get_localized_string(LANG_0469).c_str(), 0, false, !app->isLoading))
+						{
+							ExportModel(map, modelIdx, 2, false);
+						}
+						if (ImGui::MenuItem(get_localized_string(LANG_0470).c_str(), 0, false, !app->isLoading))
+						{
+							ExportModel(map, modelIdx, 1, false);
+						}
+						ImGui::EndMenu();
+					}
+
+					if (ImGui::BeginMenu(get_localized_string(LANG_0471).c_str(), !app->isLoading))
+					{
+						if (ImGui::MenuItem(get_localized_string(LANG_1070).c_str(), 0, false, !app->isLoading))
+						{
+							ExportModel(map, modelIdx, 0, true);
+						}
+						if (ImGui::MenuItem(get_localized_string(LANG_1071).c_str(), 0, false, !app->isLoading))
+						{
+							ExportModel(map, modelIdx, 2, true);
+						}
+						if (ImGui::MenuItem(get_localized_string(LANG_1072).c_str(), 0, false, !app->isLoading))
+						{
+							ExportModel(map, modelIdx, 1, true);
+						}
+						ImGui::EndMenu();
+					}
+
+					ImGui::EndMenu();
+				}
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0472).c_str());
+					ImGui::EndTooltip();
+				}
+
 			}
 			if (modelIdx > 0)
 			{

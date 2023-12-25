@@ -278,3 +278,5 @@ std::string GetExecutableDir(std::wstring arg_0);
 
 std::vector<vec3> stretch_model(const std::vector<vec3>& vertices, float stretch_value);
 std::vector<cVert> stretch_model(const std::vector<cVert>& vertices, float stretch_value);
+
+BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax);

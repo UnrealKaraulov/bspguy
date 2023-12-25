@@ -909,7 +909,7 @@ int BspMerger::force_unique_ent_names_per_map(Bsp* mergedMap)
 bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 {
 	// TODO: Create a new map and store result there. Don't break mapA.
-	BSPPLANE separationPlane = separate(mapA, mapB);
+	BSPPLANE separationPlane = separate_plane(mapA, mapB);
 	if (separationPlane.nType == -1 && !modelMerge)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0236));
@@ -1013,7 +1013,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 	return true;
 }
 
-BSPPLANE BspMerger::separate(Bsp& mapA, Bsp& mapB)
+BSPPLANE BspMerger::separate_plane(Bsp& mapA, Bsp& mapB)
 {
 	BSPMODEL& thisWorld = mapA.models[0];
 	BSPMODEL& otherWorld = mapB.models[0];
@@ -1023,58 +1023,7 @@ BSPPLANE BspMerger::separate(Bsp& mapA, Bsp& mapB)
 	vec3 bmin = otherWorld.nMins;
 	vec3 bmax = otherWorld.nMaxs;
 
-	BSPPLANE separationPlane = BSPPLANE();
-
-	// separating plane points toward the other map (b)
-	if (bmin.x >= amax.x)
-	{
-		separationPlane.nType = PLANE_X;
-		separationPlane.vNormal = { 1, 0, 0 };
-		separationPlane.fDist = amax.x + (bmin.x - amax.x) * 0.5f;
-	}
-	else if (bmax.x <= amin.x)
-	{
-		separationPlane.nType = PLANE_X;
-		separationPlane.vNormal = { -1, 0, 0 };
-		separationPlane.fDist = bmax.x + (amin.x - bmax.x) * 0.5f;
-	}
-	else if (bmin.y >= amax.y)
-	{
-		separationPlane.nType = PLANE_Y;
-		separationPlane.vNormal = { 0, 1, 0 };
-		separationPlane.fDist = bmin.y;
-	}
-	else if (bmax.y <= amin.y)
-	{
-		separationPlane.nType = PLANE_Y;
-		separationPlane.vNormal = { 0, -1, 0 };
-		separationPlane.fDist = bmax.y;
-	}
-	else if (bmin.z >= amax.z)
-	{
-		separationPlane.nType = PLANE_Z;
-		separationPlane.vNormal = { 0, 0, 1 };
-		separationPlane.fDist = bmin.z;
-	}
-	else if (bmax.z <= amin.z)
-	{
-		separationPlane.nType = PLANE_Z;
-		separationPlane.vNormal = { 0, 0, -1 };
-		separationPlane.fDist = bmax.z;
-	}
-	else
-	{
-		separationPlane.nType = -1; // no simple separating axis
-
-		print_log(get_localized_string(LANG_0239));
-		print_log("({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
-		print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, mapA.bsp_name);
-
-		print_log("({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
-		print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, mapB.bsp_name);
-	}
-
-	return separationPlane;
+	return getSeparatePlane(amin,amax,bmin,bmax);
 }
 
 void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)

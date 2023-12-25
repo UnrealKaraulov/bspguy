@@ -4399,7 +4399,7 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 void Bsp::print_model_bsp(int modelIdx)
 {
 	int node = models[modelIdx].iHeadnodes[0];
-	recurse_node(node, 0);
+	recurse_node_print(node, 0);
 }
 
 void Bsp::print_clipnode_tree(int iNode, int depth)
@@ -4417,8 +4417,24 @@ void Bsp::print_clipnode_tree(int iNode, int depth)
 	}
 	else
 	{
-		BSPPLANE& plane = planes[clipnodes[iNode].iPlane];
-		print_log(get_localized_string(LANG_0140), plane.vNormal.x, plane.vNormal.y, plane.vNormal.z, plane.fDist);
+		if (iNode >= clipnodeCount)
+		{
+			print_log(PRINT_RED, "!NODE ERROR!");
+			return;
+		}
+		else
+		{
+			if (clipnodes[iNode].iPlane < 0 || clipnodes[iNode].iPlane >= planeCount)
+			{
+				print_log(PRINT_RED, "!PLANE ERROR!");
+				return;
+			}
+			else
+			{
+				BSPPLANE& plane = planes[clipnodes[iNode].iPlane];
+				print_log(get_localized_string(LANG_0140), plane.vNormal.x, plane.vNormal.y, plane.vNormal.z, plane.fDist);
+			}
+		}
 	}
 
 
@@ -4491,7 +4507,7 @@ std::vector<int> Bsp::get_model_ents_ids(int modelIdx)
 	return uses;
 }
 
-void Bsp::recurse_node(int nodeIdx, int depth)
+void Bsp::recurse_node_print(int nodeIdx, int depth)
 {
 	for (int i = 0; i < depth; i++)
 	{
@@ -4500,6 +4516,11 @@ void Bsp::recurse_node(int nodeIdx, int depth)
 
 	if (nodeIdx < 0)
 	{
+		if (~nodeIdx >= leafCount)
+		{
+			print_log(PRINT_RED, "!LEAF ERROR!");
+			return;
+		}
 		BSPLEAF32& leaf = leaves[~nodeIdx];
 		print_leaf(leaf);
 		print_log(get_localized_string(LANG_0143), ~nodeIdx);
@@ -4507,11 +4528,16 @@ void Bsp::recurse_node(int nodeIdx, int depth)
 	}
 	else
 	{
+		if (nodeIdx >= nodeCount)
+		{
+			print_log(PRINT_RED, "!NODE ERROR!");
+			return;
+		}
 		print_node(nodes[nodeIdx]);
 	}
 
-	recurse_node(nodes[nodeIdx].iChildren[0], depth + 1);
-	recurse_node(nodes[nodeIdx].iChildren[1], depth + 1);
+	recurse_node_print(nodes[nodeIdx].iChildren[0], depth + 1);
+	recurse_node_print(nodes[nodeIdx].iChildren[1], depth + 1);
 }
 
 
@@ -4553,13 +4579,21 @@ void Bsp::get_last_clipnode(int nodeIdx, int& node, int& count, int last_node)
 
 void Bsp::print_node(const BSPNODE32& node)
 {
-	BSPPLANE& plane = planes[node.iPlane];
+	if (node.iPlane < 0 || node.iPlane >= planeCount)
+	{
+		print_log(PRINT_RED, "!PLANE ERROR!");
+		return;
+	}
+	else
+	{
+		BSPPLANE& plane = planes[node.iPlane];
 
-	print_log("Plane ({} {} {}) d: {}, Faces: {}, Min({}, {}, {}), Max({}, {}, {})\n",
-		plane.vNormal.x, plane.vNormal.y, plane.vNormal.z,
-		plane.fDist, node.nFaces,
-		node.nMins[0], node.nMins[1], node.nMins[2],
-		node.nMaxs[0], node.nMaxs[1], node.nMaxs[2]);
+		print_log("Plane ({} {} {}) d: {}, Faces: {}, Min({}, {}, {}), Max({}, {}, {})\n",
+			plane.vNormal.x, plane.vNormal.y, plane.vNormal.z,
+			plane.fDist, node.nFaces,
+			node.nMins[0], node.nMins[1], node.nMins[2],
+			node.nMaxs[0], node.nMaxs[1], node.nMaxs[2]);
+	}
 }
 
 int Bsp::pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx)
@@ -6455,7 +6489,7 @@ int Bsp::duplicate_model(int modelIdx)
 
 int Bsp::merge_two_models(int src_model, int dst_model)
 {
-	if (dst_model > src_model)
+	if (models[dst_model].iFirstFace > models[src_model].iFirstFace)
 		std::swap(src_model, dst_model);
 
 	int newfaces = models[src_model].nFaces;
@@ -6469,7 +6503,7 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 		{
 			for (int f2 = 0; f2 < models[src_model].nFaces; f2++)
 			{
-				all_faces.push_back(faces[models[src_model].iFirstFace + f2]);
+				all_faces.push_back(faces[models[src_model].iFirstFace + f2 + 1]);
 			}
 		}
 	}
@@ -6517,22 +6551,6 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 			all_mark_surfaces.push_back(models[dst_model].iFirstFace + models[dst_model].nFaces + f2);
 		}
 	}
-	
-	int nodecount = 0;
-	int nodeidx = 0;
-	get_last_node(models[src_model].iHeadnodes[0], nodeidx, nodecount);
-	nodes[nodeidx].iChildren[0] = models[src_model].iHeadnodes[0];
-
-	for (int i = 1; i < MAX_MAP_HULLS; i++)
-	{
-		int clipnodecount = 0;
-		int clipnodeidx = 0;
-		get_last_clipnode(models[src_model].iHeadnodes[i], clipnodeidx, clipnodecount);
-		int clipnodetarget = clipnodecount;
-		clipnodecount = 0;
-		get_last_clipnode(models[src_model].iHeadnodes[i], clipnodeidx, clipnodecount, clipnodetarget);
-		clipnodes[clipnodeidx].iChildren[0] = models[src_model].iHeadnodes[i];
-	}
 
 	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
 	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
@@ -6542,6 +6560,96 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 
+	vec3 amin = models[dst_model].nMins;
+	vec3 amax = models[dst_model].nMaxs;
+	vec3 bmin = models[src_model].nMins;
+	vec3 bmax = models[src_model].nMaxs;
+
+	//std::vector<vec3> veclist;
+	//veclist.push_back(amin);
+	//veclist.push_back(amax);
+	//veclist.push_back(bmin);
+	//veclist.push_back(bmax);
+
+	//vec3 new_min, new_max;
+
+	//getBoundingBox(veclist, new_min, new_max);
+
+	BSPPLANE separate_plane = getSeparatePlane(amin, amax, bmin, bmax);
+
+	int separationPlaneIdx = planeCount;
+
+	BSPPLANE* newThisPlanes = new BSPPLANE[planeCount + 1];
+	memcpy(newThisPlanes, planes, planeCount * sizeof(BSPPLANE));
+
+	bool swapNodeChildren = separate_plane.vNormal.x < 0 || separate_plane.vNormal.y < 0 || separate_plane.vNormal.z < 0;
+	if (swapNodeChildren)
+		separate_plane.vNormal = separate_plane.vNormal.invert();
+
+	newThisPlanes[planeCount] = separate_plane;
+	replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
+
+	{
+		BSPNODE32 headNode = {
+			separationPlaneIdx,			// plane idx
+			{ models[src_model].iHeadnodes[0],
+			models[dst_model].iHeadnodes[0] },		// child nodes
+			{ amin.x, amin.y, amin.z },	// mins
+			{ amax.x, amax.y, amax.z },	// maxs
+			0, // first face
+			0  // n faces (none since this plane is in the void)
+		};
+
+		if (swapNodeChildren)
+		{
+			int temp = headNode.iChildren[0];
+			headNode.iChildren[0] = headNode.iChildren[1];
+			headNode.iChildren[1] = temp;
+		}
+
+
+		BSPNODE32* newThisNodes = new BSPNODE32[nodeCount + 1];
+		memcpy(newThisNodes, nodes, nodeCount * sizeof(BSPNODE32));
+		newThisNodes[nodeCount] = headNode;
+		replace_lump(LUMP_NODES, newThisNodes, (nodeCount + 1) * sizeof(BSPNODE32));
+
+
+		models[dst_model].iHeadnodes[0] = nodeCount - 1;
+	}
+
+	{
+		const int NEW_NODE_COUNT = MAX_MAP_HULLS - 1;
+
+		BSPCLIPNODE32 newHeadNodes[NEW_NODE_COUNT];
+		for (int i = 0; i < NEW_NODE_COUNT; i++)
+		{
+			newHeadNodes[i] = {
+				separationPlaneIdx,	// plane idx
+				{	// child nodes
+					models[src_model].iHeadnodes[i + 1],
+					models[dst_model].iHeadnodes[i + 1]
+				},
+			};
+
+			if (swapNodeChildren)
+			{
+				int temp = newHeadNodes[i].iChildren[0];
+				newHeadNodes[i].iChildren[0] = newHeadNodes[i].iChildren[1];
+				newHeadNodes[i].iChildren[1] = temp;
+			}
+		}
+
+		BSPCLIPNODE32* newThisNodes = new BSPCLIPNODE32[clipnodeCount + NEW_NODE_COUNT];
+
+		memcpy(newThisNodes, clipnodes, clipnodeCount * sizeof(BSPCLIPNODE32));
+		memcpy(&newThisNodes[clipnodeCount], &newHeadNodes[0], NEW_NODE_COUNT * sizeof(BSPCLIPNODE32));
+		replace_lump(LUMP_CLIPNODES, newThisNodes, (clipnodeCount + NEW_NODE_COUNT) * sizeof(BSPCLIPNODE32));
+
+		for (int i = 1; i < MAX_MAP_HULLS; i++)
+		{
+			models[dst_model].iHeadnodes[i] = (clipnodeCount - i);
+		}
+	}
 
 	models[dst_model].nFaces += newfaces;
 	models[dst_model].nVisLeafs += models[src_model].nVisLeafs; //0

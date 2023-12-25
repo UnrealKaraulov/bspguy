@@ -1722,7 +1722,9 @@ std::vector<vec3> stretch_model(const std::vector<vec3>& vertices, float stretch
 
 	for (const vec3& vertex : vertices) {
 		vec3 shifted_vertex = { vertex.x - center_model.x, vertex.y - center_model.y, vertex.z - center_model.z };
-		vec3 stretched_vertex = { shifted_vertex.x * stretch_value, shifted_vertex.y * stretch_value, shifted_vertex.z * stretch_value };
+		vec3 stretched_vertex = { std::signbit(shifted_vertex.x) ? shifted_vertex.x - stretch_value : shifted_vertex.x + stretch_value ,
+			std::signbit(shifted_vertex.y) ? shifted_vertex.y - stretch_value : shifted_vertex.y + stretch_value,
+		std::signbit(shifted_vertex.z) ? shifted_vertex.z - stretch_value : shifted_vertex.z + stretch_value };
 		vec3 final_vertex = vertex;
 		final_vertex = { stretched_vertex.x + center_model.x, stretched_vertex.y + center_model.y, stretched_vertex.z + center_model.z };
 		stretched_vertices.push_back(final_vertex);
@@ -1739,11 +1741,69 @@ std::vector<cVert> stretch_model(const std::vector<cVert>& vertices, float stret
 
 	for (const cVert& vertex : vertices) {
 		vec3 shifted_vertex = { vertex.pos.x - center_model.x, vertex.pos.y - center_model.y, vertex.pos.z - center_model.z };
-		vec3 stretched_vertex = { shifted_vertex.x * stretch_value, shifted_vertex.y * stretch_value, shifted_vertex.z * stretch_value };
+		vec3 stretched_vertex = { std::signbit(shifted_vertex.x) ? shifted_vertex.x - stretch_value : shifted_vertex.x + stretch_value ,
+			std::signbit(shifted_vertex.y) ? shifted_vertex.y - stretch_value : shifted_vertex.y + stretch_value,
+		std::signbit(shifted_vertex.z) ? shifted_vertex.z - stretch_value : shifted_vertex.z + stretch_value };
 		cVert final_vertex = vertex;
 		final_vertex.pos = { stretched_vertex.x + center_model.x, stretched_vertex.y + center_model.y, stretched_vertex.z + center_model.z };
 		stretched_vertices.push_back(final_vertex);
 	}
 
 	return stretched_vertices;
+}
+
+BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax)
+{
+	BSPPLANE separationPlane = BSPPLANE();
+
+	// separating plane points toward the other map (b)
+	if (bmin.x >= amax.x)
+	{
+		separationPlane.nType = PLANE_X;
+		separationPlane.vNormal = { 1, 0, 0 };
+		separationPlane.fDist = amax.x + (bmin.x - amax.x) * 0.5f;
+	}
+	else if (bmax.x <= amin.x)
+	{
+		separationPlane.nType = PLANE_X;
+		separationPlane.vNormal = { -1, 0, 0 };
+		separationPlane.fDist = bmax.x + (amin.x - bmax.x) * 0.5f;
+	}
+	else if (bmin.y >= amax.y)
+	{
+		separationPlane.nType = PLANE_Y;
+		separationPlane.vNormal = { 0, 1, 0 };
+		separationPlane.fDist = bmin.y;
+	}
+	else if (bmax.y <= amin.y)
+	{
+		separationPlane.nType = PLANE_Y;
+		separationPlane.vNormal = { 0, -1, 0 };
+		separationPlane.fDist = bmax.y;
+	}
+	else if (bmin.z >= amax.z)
+	{
+		separationPlane.nType = PLANE_Z;
+		separationPlane.vNormal = { 0, 0, 1 };
+		separationPlane.fDist = bmin.z;
+	}
+	else if (bmax.z <= amin.z)
+	{
+		separationPlane.nType = PLANE_Z;
+		separationPlane.vNormal = { 0, 0, -1 };
+		separationPlane.fDist = bmax.z;
+	}
+	else
+	{
+		separationPlane.nType = -1; // no simple separating axis
+
+		print_log(get_localized_string(LANG_0239));
+		print_log("({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
+		print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
+
+		print_log("({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
+		print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, "MODEL2");
+	}
+
+	return separationPlane;
 }

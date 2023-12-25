@@ -125,7 +125,7 @@ public:
 	void print_info(bool perModelStats, int perModelLimit, int sortMode);
 	void print_model_hull(int modelIdx, int hull);
 	void print_clipnode_tree(int iNode, int depth);
-	void recurse_node(int node, int depth);
+	void recurse_node_print(int node, int depth);
 
 	void get_last_node(int nodeIdx, int& node, int& count, int last_node = -1);
 	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1);

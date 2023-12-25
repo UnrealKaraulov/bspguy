@@ -946,7 +946,7 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
-		if (!fileExists(cli.bspfile))
+		if (!cli.bspfile.empty() && !fileExists(cli.bspfile))
 		{
 			cli.bspfile = g_startup_dir + cli.bspfile;
 		}

@@ -45,7 +45,7 @@ public:
 	// renames any entity that shares a name with an entity in another map
 	int force_unique_ent_names_per_map(Bsp* mergedMap);
 
-	BSPPLANE separate(Bsp& mapA, Bsp& mapB);
+	BSPPLANE separate_plane(Bsp& mapA, Bsp& mapB);
 
 	void merge_ents(Bsp& mapA, Bsp& mapB);
 	void merge_planes(Bsp& mapA, Bsp& mapB);

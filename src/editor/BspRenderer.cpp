@@ -1888,13 +1888,6 @@ BspRenderer::~BspRenderer()
 	nodesBufferCache.clear();
 
 	// TODO: share these with all renderers
-	delete whiteTex;
-	delete redTex;
-	delete yellowTex;
-	delete greyTex;
-	delete blackTex;
-	delete blueTex;
-	delete missingTex;
 	map->setBspRender(NULL);
 	delete map;
 	map = NULL;

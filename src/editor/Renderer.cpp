@@ -283,7 +283,10 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+	g_settings.save();
+	print_log(get_localized_string(LANG_0901));
 	glfwTerminate();
+	std::quick_exit(0);
 }
 
 void Renderer::renderLoop()
