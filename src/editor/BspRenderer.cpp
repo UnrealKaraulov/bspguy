@@ -2453,7 +2453,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
 
 
-	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end()) //-V1051
+	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 	{
 		oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
 	}
@@ -2492,6 +2492,8 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 	// skip worldspawn
 
+	g_app->modelShader->pushMatrix();
+	g_app->colorShader->pushMatrix();
 	for (int i = 1, sz = (int)map->ents.size(); i < sz; i++)
 	{
 		if (renderEnts[i].modelIdx >= 0)
@@ -2504,17 +2506,14 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
 			{
 				g_app->modelShader->bind();
-				g_app->modelShader->pushMatrix();
 				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->modelShader->updateMatrixes();
 
 				renderEnts[i].mdl->DrawModel();
 
-				g_app->modelShader->popMatrix();
 
 				g_app->colorShader->bind();
-				g_app->colorShader->pushMatrix();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();
@@ -2525,12 +2524,10 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				}
 
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
-				g_app->colorShader->popMatrix();
 			}
 			else
 			{
 				g_app->colorShader->bind();
-				g_app->colorShader->pushMatrix();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();
@@ -2542,8 +2539,6 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				}
 				renderEnts[i].pointEntCube->selectBuffer->drawFull();
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
-
-				g_app->colorShader->popMatrix();
 			}
 		}
 		else
@@ -2551,19 +2546,15 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
 			{
 				g_app->modelShader->bind();
-				g_app->modelShader->pushMatrix();
 				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-
 				g_app->modelShader->updateMatrixes();
+
 				renderEnts[i].mdl->DrawModel();
-				g_app->modelShader->popMatrix();
 
 				g_app->colorShader->bind();
-				g_app->colorShader->pushMatrix();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-
 				g_app->colorShader->updateMatrixes();
 
 				if (renderEnts[i].mdl->mdl_cube)
@@ -2574,15 +2565,12 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				{
 					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 				}
-				g_app->colorShader->popMatrix();
 			}
 			else
 			{
 				g_app->colorShader->bind();
-				g_app->colorShader->pushMatrix();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-
 				g_app->colorShader->updateMatrixes();
 
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
@@ -2592,10 +2580,11 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				}
 				renderEnts[i].pointEntCube->buffer->drawFull();
 
-				g_app->colorShader->popMatrix();
 			}
 		}
 	}
+	g_app->modelShader->popMatrix();
+	g_app->colorShader->popMatrix();
 }
 
 bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& tempPickInfo, Bsp** tmpMap)
