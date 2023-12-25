@@ -1683,18 +1683,30 @@ void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 std::string GetExecutableDirInternal(std::string arg_0_dir)
 {
 	std::string retdir = arg_0_dir;
+	retdir = fs::path(retdir).parent_path().string();
+	fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
 	{
 		return retdir;
 	}
 	else
 	{
+		retdir = std::filesystem::canonical(arg_0_dir).parent_path().string();
+		fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+		if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
+		{
+			return retdir;
+		}
 #ifdef WIN32
 		char path[MAX_PATH];
 		GetModuleFileName(NULL, path, MAX_PATH);
 		retdir = std::filesystem::canonical(path).parent_path().string();
 #else
 		retdir = std::filesystem::canonical("/proc/self/exe").parent_path().string();
+		if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
+		{
+			return retdir;
+		}
 #endif
 	}
 	return retdir;
@@ -1703,13 +1715,13 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 std::string GetExecutableDir(std::string arg_0)
 {
 	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
-	return GetExecutableDirInternal(retpath.parent_path().string());
+	return GetExecutableDirInternal(retpath.string());
 }
 
 std::string GetExecutableDir(std::wstring arg_0)
 {
 	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
-	return GetExecutableDirInternal(retpath.parent_path().string());
+	return GetExecutableDirInternal(retpath.string());
 }
 
 

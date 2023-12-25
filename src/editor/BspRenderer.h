@@ -78,7 +78,7 @@ struct RenderEnt
 
 struct RenderGroup
 {
-	lightmapVert* wireframeVerts; // verts for rendering wireframe
+	cVert* wireframeVerts; // verts for rendering wireframe
 	lightmapVert* verts;
 	int vertCount;
 	int wireframeVertCount;
@@ -88,9 +88,12 @@ struct RenderGroup
 	VertexBuffer* wireframeBuffer;
 	bool transparent;
 	bool special;
+	bool highlighted;
 	RenderGroup()
 	{
-		wireframeVerts = verts = NULL;
+		highlighted = false;
+		wireframeVerts = NULL;
+		verts = NULL;
 		buffer = wireframeBuffer = NULL;
 		transparent = special = false;
 		vertCount = wireframeVertCount = 0;

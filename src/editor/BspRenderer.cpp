@@ -461,7 +461,7 @@ void BspRenderer::updateModelShaders()
 		for (int k = 0; k < model.groupCount; k++)
 		{
 			model.renderGroups[k].buffer->setShader(g_app->bspShader, true);
-			model.renderGroups[k].wireframeBuffer->setShader(g_app->bspShader, true);
+			model.renderGroups[k].wireframeBuffer->setShader(g_app->colorShader, true);
 		}
 	}
 }
@@ -818,7 +818,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 	std::vector<RenderGroup> renderGroups{};
 	std::vector<std::vector<lightmapVert>> renderGroupVerts{};
-	std::vector<std::vector<lightmapVert>> renderGroupWireframeVerts{};
+	std::vector<std::vector<cVert>> renderGroupWireframeVerts{};
 
 	for (int i = 0; i < model.nFaces; i++)
 	{
@@ -959,24 +959,23 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 
 		int wireframeVertCount = face.nEdges * 2;
-		lightmapVert* wireframeVerts = new lightmapVert[wireframeVertCount];
-
+		cVert* wireframeVerts = new cVert[wireframeVertCount];
 		for (int k = 0; k < face.nEdges && (k + 1) % face.nEdges < face.nEdges; k++)
 		{
-			wireframeVerts[idx++] = verts[k];
-			wireframeVerts[idx++] = verts[(k + 1) % face.nEdges];
+			wireframeVerts[idx++].pos = verts[k].pos;
+			wireframeVerts[idx++].pos = verts[(k + 1) % face.nEdges].pos;
 		}
 
-		for (int k = 0; k < wireframeVertCount; k++)
+		for (int w = 0; w < wireframeVertCount; w++)
 		{
-			wireframeVerts[k].luv[0][2] = 1.0f;
-			wireframeVerts[k].luv[1][2] = 0.0f;
-			wireframeVerts[k].luv[2][2] = 0.0f;
-			wireframeVerts[k].luv[3][2] = 0.0f;
-			wireframeVerts[k].r = 1.0f;
-			wireframeVerts[k].g = 1.0f;
-			wireframeVerts[k].b = 1.0f;
-			wireframeVerts[k].a = 1.0f;
+			if (modelIdx > 0)
+			{
+				wireframeVerts[w].c = COLOR4(0, 100, 255,200);
+			}
+			else
+			{
+				wireframeVerts[w].c = COLOR4(100, 100, 100, 200);
+			}
 		}
 
 		if (!noTriangulate)
@@ -1042,7 +1041,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			groupIdx = (int)renderGroups.size();
 			renderGroups.push_back(newGroup);
 			renderGroupVerts.emplace_back(std::vector<lightmapVert>());
-			renderGroupWireframeVerts.emplace_back(std::vector<lightmapVert>());
+			renderGroupWireframeVerts.emplace_back(std::vector<cVert>());
 		}
 
 		renderModel->renderFaces[i].group = groupIdx;
@@ -1065,9 +1064,9 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		renderGroups[i].vertCount = (int)renderGroupVerts[i].size();
 		memcpy(renderGroups[i].verts, &renderGroupVerts[i][0], renderGroups[i].vertCount * sizeof(lightmapVert));
 
-		renderGroups[i].wireframeVerts = new lightmapVert[renderGroupWireframeVerts[i].size() + 1];
+		renderGroups[i].wireframeVerts = new cVert[renderGroupWireframeVerts[i].size() + 1];
 		renderGroups[i].wireframeVertCount = (int)renderGroupWireframeVerts[i].size();
-		memcpy(renderGroups[i].wireframeVerts, &renderGroupWireframeVerts[i][0], renderGroups[i].wireframeVertCount * sizeof(lightmapVert));
+		memcpy(renderGroups[i].wireframeVerts, &renderGroupWireframeVerts[i][0], renderGroups[i].wireframeVertCount * sizeof(cVert));
 
 		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
 		tmpBuf->addAttribute(TEX_2F, "vTex");
@@ -1079,15 +1078,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		tmpBuf->addAttribute(POS_3F, "vPosition");
 		tmpBuf->setData(renderGroups[i].verts, renderGroups[i].vertCount);
 
-		auto tmpWireBuff = renderGroups[i].wireframeBuffer = new VertexBuffer(g_app->bspShader, 0, GL_LINES);
-		tmpWireBuff->addAttribute(TEX_2F, "vTex");
-		tmpWireBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
-		tmpWireBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
-		tmpWireBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
-		tmpWireBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
-		tmpWireBuff->addAttribute(4, GL_FLOAT, 0, "vColor");
-		tmpWireBuff->addAttribute(POS_3F, "vPosition");
-		tmpWireBuff->setData(renderGroups[i].wireframeVerts, renderGroups[i].wireframeVertCount);
+		renderGroups[i].wireframeBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, renderGroups[i].wireframeVerts, renderGroups[i].wireframeVertCount,  GL_LINES);
+		//tmpWireBuff->ownData = true;
 
 		renderModel->renderGroups[i] = renderGroups[i];
 	}
@@ -1405,13 +1397,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	if (wireframeVerts.size())
 		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
-
 	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
 	renderClip.clipnodeBuffer[hullIdx]->ownData = true;
 
 	renderClip.wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
 	renderClip.wireframeClipnodeBuffer[hullIdx]->ownData = true;
-
 
 	nodeBuffStr curHullIdxStruct = nodeBuffStr();
 	curHullIdxStruct.hullIdx = hullIdx;
@@ -2109,18 +2099,39 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 
 		for (int i = 0, sz = (int)map->ents.size(); i < sz; i++)
 		{
-			if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
+			if (g_app->pickInfo.IsSelectedEnt(i))
 			{
-				if (renderEnts[i].hide)
-					continue;
-				g_app->bspShader->pushMatrix();
-				*g_app->bspShader->modelMat = renderEnts[i].modelMatAngles;
-				g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-				g_app->bspShader->updateMatrixes();
+				glDepthFunc(GL_ALWAYS);
+				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
+				{
+					if (renderEnts[i].hide)
+						continue;
+					g_app->bspShader->pushMatrix();
+					*g_app->bspShader->modelMat = renderEnts[i].modelMatAngles;
+					g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+					g_app->bspShader->updateMatrixes();
 
-				drawModel(&renderEnts[i], drawTransparentFaces, g_app->pickInfo.IsSelectedEnt(i), false);
+					drawModel(&renderEnts[i], drawTransparentFaces, true, false);
 
-				g_app->bspShader->popMatrix();
+					g_app->bspShader->popMatrix();
+				}
+				glDepthFunc(GL_LESS);
+			}
+			else
+			{
+				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
+				{
+					if (renderEnts[i].hide)
+						continue;
+					g_app->bspShader->pushMatrix();
+					*g_app->bspShader->modelMat = renderEnts[i].modelMatAngles;
+					g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+					g_app->bspShader->updateMatrixes();
+
+					drawModel(&renderEnts[i], drawTransparentFaces, false, false);
+
+					g_app->bspShader->popMatrix();
+				}
 			}
 		}
 		if (drawTransparentFaces)
@@ -2235,19 +2246,33 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 		for (int i = 0; i < renderModels[modelIdx].groupCount; i++)
 		{
 			RenderGroup& rgroup = renderModels[modelIdx].renderGroups[i];
-
-			if (highlight)
-				yellowTex->bind(0);
-			else
+			if (highlight && !rgroup.highlighted)
 			{
-				if (modelIdx > 0)
-					blueTex->bind(0);
-				else
-					greyTex->bind(0);
+				rgroup.highlighted = true;
+				for (int n = 0; n < rgroup.wireframeVertCount; n++)
+				{
+					rgroup.wireframeVerts[n].c = COLOR4(245, 212, 66, 220);
+				}
 			}
-
-			whiteTex->bind(1);
-
+			else if (!highlight && rgroup.highlighted)
+			{
+				rgroup.highlighted = false;
+				if (modelIdx > 0)
+				{
+					for (int n = 0; n < rgroup.wireframeVertCount; n++)
+					{
+						rgroup.wireframeVerts[n].c = COLOR4(0, 100, 255, 220);
+					}
+				}
+				else
+				{
+					for (int n = 0; n < rgroup.wireframeVertCount; n++)
+					{
+						rgroup.wireframeVerts[n].c = COLOR4(100, 100, 100, 220);
+					}
+				}
+			}
+			g_app->colorShader->bind();
 			rgroup.wireframeBuffer->drawFull();
 		}
 		return;
@@ -2278,30 +2303,49 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 		if (ent && ent->needAngles)
 		{
-			g_app->bspShader->pushMatrix();
-			*g_app->bspShader->modelMat = ent->modelMatOrigin;
-			g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-			g_app->bspShader->updateMatrixes();
-			yellowTex->bind(0);
+			g_app->colorShader->bind();
+			g_app->colorShader->pushMatrix();
+			*g_app->colorShader->modelMat = ent->modelMatOrigin;
+			g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+			g_app->colorShader->updateMatrixes();
 			rgroup.wireframeBuffer->drawFull();
-			g_app->bspShader->popMatrix();
+			g_app->colorShader->popMatrix();
 		}
 
 		if (highlight || (g_render_flags & RENDER_WIREFRAME))
 		{
-			if (highlight)
-				yellowTex->bind(0);
-			else
+			if (highlight && !rgroup.highlighted)
 			{
-				if (modelIdx > 0)
-					blueTex->bind(0);
-				else
-					greyTex->bind(0);
+				rgroup.highlighted = true;
+				for (int n = 0; n < rgroup.wireframeVertCount;n++)
+				{
+					rgroup.wireframeVerts[n].c = COLOR4(245, 212, 66, 220);
+				}
 			}
-
+			else if (!highlight && rgroup.highlighted)
+			{
+				rgroup.highlighted = false;
+				if (modelIdx > 0)
+				{
+					for (int n = 0; n < rgroup.wireframeVertCount; n++)
+					{
+						rgroup.wireframeVerts[n].c = COLOR4(0, 100, 255, 220);
+					}
+				}
+				else
+				{
+					for (int n = 0; n < rgroup.wireframeVertCount; n++)
+					{
+						rgroup.wireframeVerts[n].c = COLOR4(100, 100, 100, 220);
+					}
+				}
+			}
+			g_app->colorShader->bind();
 			rgroup.wireframeBuffer->drawFull();
 		}
 
+
+		g_app->bspShader->bind();
 
 		if (texturesLoaded && g_render_flags & RENDER_TEXTURES)
 		{
@@ -2344,19 +2388,18 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 				}
 			}
 		}
-		/*if (!ent)
+	/*	if (highlight)
 		{
-			//test
-			tempmodel->mdl_meshes[0][0].tex->bind(0);
-			whiteTex->bind(1);
-			whiteTex->bind(2);
-			whiteTex->bind(3);
-			whiteTex->bind(4);
-			tempmodelBuff->drawFull();
-		}
-		else*/
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_ALWAYS);
+		}*/
 		rgroup.buffer->drawFull();
-
+		/*
+		if (highlight)
+		{
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
+		}*/
 		if (ent)
 		{
 			for (int s = 0; s < MAX_LIGHTMAPS; s++)
@@ -2379,12 +2422,12 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	if (hullIdx == -1)
 	{
 		hullIdx = getBestClipnodeHull(modelIdx);
-		if (hullIdx == -1 || hullIdx > 3)
-		{
-			return; // nothing can be drawn
-		}
 	}
 
+	if (hullIdx == -1 || hullIdx > 3)
+	{
+		return; // nothing can be drawn
+	}
 	int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
 
 	if (hullIdx == 0)
@@ -3108,6 +3151,6 @@ void PickInfo::DelSelectedEnt(int entIdx)
 
 bool PickInfo::IsSelectedEnt(int entIdx)
 {
-	return std::find(selectedEnts.begin(), selectedEnts.end(), entIdx) != selectedEnts.end();
+	return selectedEnts.size() && std::find(selectedEnts.begin(), selectedEnts.end(), entIdx) != selectedEnts.end();
 }
 
