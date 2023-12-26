@@ -25,7 +25,10 @@ BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
 	this->renderModels = NULL;
 	this->renderEnts = NULL;
 	this->renderClipnodes = NULL;
-	
+
+	lightEnableFlags[0] = true;
+	lightEnableFlags[1] = lightEnableFlags[2] = lightEnableFlags[3] = false;
+
 	intersectVec = vec3();
 
 	renderCameraOrigin = renderCameraAngles = vec3();
@@ -457,7 +460,7 @@ void BspRenderer::loadLightmaps()
 	atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
 	atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE,
 		new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
-	memset(atlasTextures[0]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
+	memset(atlasTextures[0]->data, 255, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 	numRenderLightmapInfos = map->faceCount;
 	if (lightmaps)
@@ -489,7 +492,7 @@ void BspRenderer::loadLightmaps()
 	{
 		BSPFACE32& face = map->faces[i];
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-		if (!atlases.size() || face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
+		if (!atlases.size())
 		{
 
 		}
@@ -524,7 +527,7 @@ void BspRenderer::loadLightmaps()
 					atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
 					atlasId++;
-					memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
+					memset(atlasTextures[atlasId]->data, 255, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 					{
@@ -539,6 +542,7 @@ void BspRenderer::loadLightmaps()
 				// copy lightmap data into atlas
 				int lightmapSz = info.w * info.h * sizeof(COLOR3);
 				int offset = face.nLightmapOffset + s * lightmapSz;
+
 				COLOR3* lightSrc = (COLOR3*)(map->lightdata + offset);
 				COLOR3* lightDst = (COLOR3*)(atlasTextures[atlasId]->data);
 				for (int y = 0; y < info.h; y++)
@@ -547,15 +551,14 @@ void BspRenderer::loadLightmaps()
 					{
 						int src = y * info.w + x;
 						int dst = (info.y[s] + y) * LIGHTMAP_ATLAS_SIZE + info.x[s] + x;
-						if (offset + src * sizeof(COLOR3) < map->lightDataLength)
+						if (face.nLightmapOffset < 0 || texinfo.nFlags & TEX_SPECIAL || offset + src * sizeof(COLOR3) >= map->lightDataLength)
 						{
-							lightDst[dst] = lightSrc[src];
-							//lightDst[dst] = getLightMapRGB(lightSrc[src], face.nStyles[s]);
+							// missing lightmap default white
+							lightDst[dst] = { 255,255,255 };
 						}
 						else
 						{
-							bool checkers = x % 2 == 0 != y % 2 == 0;
-							lightDst[dst] = { (unsigned char)(checkers ? 255 : 0), 0, (unsigned char)(checkers ? 255 : 0) };
+							lightDst[dst] = lightSrc[src];
 						}
 					}
 				}
@@ -2346,17 +2349,13 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			}
 			else if (lightmapsUploaded && lightmapsGenerated && (g_render_flags & RENDER_LIGHTMAPS))
 			{
-				if (showLightFlag != -1)
-				{
-					if (showLightFlag == s)
-					{
-						blackTex->bind(s + 1);
-						continue;
-					}
-				}
-				if (rgroup.lightmapAtlas[s])
+				if (rgroup.lightmapAtlas[s] && lightEnableFlags[s])
 				{
 					rgroup.lightmapAtlas[s]->bind(s + 1);
+				}
+				else
+				{
+					blackTex->bind(s + 1);
 				}
 			}
 			else

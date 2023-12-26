@@ -8156,27 +8156,23 @@ void Gui::drawLightMapTool()
 {
 	static float colourPatch[3];
 	static Texture* currentlightMap[MAX_LIGHTMAPS] = { NULL };
-	static float windowWidth = 570;
-	static float windowHeight = 600;
+	static float windowWidth = 500.0f;
+	static float windowHeight = 600.0f;
 	static int lightmaps = 0;
 	static bool needPickColor = false;
 	const char* light_names[] =
 	{
-		"OFF",
+		"ALL",
 		"Main light",
 		"Light 1",
 		"Light 2",
 		"Light 3"
 	};
-	static int type = 0;
 
 	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(windowWidth, windowHeight), ImVec2(windowWidth, windowHeight));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(windowWidth, windowHeight), ImVec2(windowWidth, -1.0f));
 
-	const char* lightToolTitle = "LightMap Editor";
-
-
-	if (ImGui::Begin(lightToolTitle, &showLightmapEditorWidget))
+	if (ImGui::Begin(get_localized_string(LANG_0599).c_str(), &showLightmapEditorWidget))
 	{
 		if (needPickColor)
 		{
@@ -8185,6 +8181,7 @@ void Gui::drawLightMapTool()
 		Bsp* map = app->getSelectedMap();
 		if (map && app->pickInfo.selectedFaces.size())
 		{
+			BspRenderer* renderer = map->getBspRender();
 			int faceIdx = app->pickInfo.selectedFaces[0];
 			BSPFACE32& face = map->faces[faceIdx];
 			int size[2];
@@ -8192,28 +8189,27 @@ void Gui::drawLightMapTool()
 			if (showLightmapEditorUpdate)
 			{
 				lightmaps = 0;
+
+				for (int i = 0; i < MAX_LIGHTMAPS; i++)
 				{
-					for (int i = 0; i < MAX_LIGHTMAPS; i++)
-					{
-						if (currentlightMap[i])
-							delete currentlightMap[i];
-						currentlightMap[i] = NULL;
-					}
-					for (int i = 0; i < MAX_LIGHTMAPS; i++)
-					{
-						if (face.nStyles[i] == 255)
-							continue;
-						int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
-						currentlightMap[i] = new Texture(size[0], size[1], new unsigned char[lightmapSz], "LIGHTMAP");
-						int offset = face.nLightmapOffset + i * lightmapSz;
-						memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
-						currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
-						lightmaps++;
-						//print_log(get_localized_string(LANG_0418),i,offset);
-					}
+					if (currentlightMap[i])
+						delete currentlightMap[i];
+					currentlightMap[i] = NULL;
+				}
+				for (int i = 0; i < MAX_LIGHTMAPS; i++)
+				{
+					if (face.nStyles[i] == 255)
+						continue;
+					int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
+					currentlightMap[i] = new Texture(size[0], size[1], new unsigned char[lightmapSz], "LIGHTMAP");
+					int offset = face.nLightmapOffset + i * lightmapSz;
+					memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
+					currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
+					lightmaps++;
+					//print_log(get_localized_string(LANG_0418),i,offset);
 				}
 
-				windowWidth = lightmaps > 1 ? 550.f : 250.f;
+				windowWidth = lightmaps > 1 ? 500.f : 290.f;
 				showLightmapEditorUpdate = false;
 			}
 			ImVec2 imgSize = ImVec2(200, 200);
@@ -8320,8 +8316,14 @@ void Gui::drawLightMapTool()
 			}
 			ImGui::Separator();
 			ImGui::SetNextItemWidth(100.f);
-			ImGui::Combo(get_localized_string(LANG_0865).c_str(), &type, light_names, IM_ARRAYSIZE(light_names));
-			map->getBspRender()->showLightFlag = type - 1;
+			ImGui::Checkbox(light_names[1], &renderer->lightEnableFlags[0]);
+			ImGui::SameLine();
+			ImGui::Checkbox(light_names[2], &renderer->lightEnableFlags[1]);
+			ImGui::Checkbox(light_names[3], &renderer->lightEnableFlags[2]);
+			ImGui::SameLine();
+			ImGui::Dummy({ 22,0 });
+			ImGui::SameLine();
+			ImGui::Checkbox(light_names[4], &renderer->lightEnableFlags[3]);
 			ImGui::Separator();
 			if (ImGui::Button(get_localized_string(LANG_1126).c_str(), ImVec2(120, 0)))
 			{
@@ -8333,7 +8335,7 @@ void Gui::drawLightMapTool()
 					int offset = face.nLightmapOffset + i * lightmapSz;
 					memcpy(map->lightdata + offset, currentlightMap[i]->data, lightmapSz);
 				}
-				map->getBspRender()->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
+				renderer->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
 				map->resize_all_lightmaps(true);
 			}
 			ImGui::SameLine();
@@ -8356,7 +8358,7 @@ void Gui::drawLightMapTool()
 				print_log(get_localized_string(LANG_0421));
 				ImportLightmap(face, faceIdx, map);
 				showLightmapEditorUpdate = true;
-				map->getBspRender()->reloadLightmaps();
+				renderer->reloadLightmaps();
 			}
 			ImGui::Separator();
 
@@ -8387,7 +8389,7 @@ void Gui::drawLightMapTool()
 				//}
 
 				ImportOneBigLightmapFile(map);
-				map->getBspRender()->reloadLightmaps();
+				renderer->reloadLightmaps();
 			}
 		}
 		else

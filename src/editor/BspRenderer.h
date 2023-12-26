@@ -180,7 +180,7 @@ public:
 	Bsp* map;
 	PointEntRenderer* pointEntRenderer;
 	vec3 mapOffset;
-	int showLightFlag = -1;
+	bool lightEnableFlags[4] = { true,false,false,false };
 	std::vector<Wad*> wads;
 	bool texturesLoaded = false;
 	bool needReloadDebugTextures = false;
@@ -295,7 +295,7 @@ public:
 
 	void pushModelUndoState(const std::string& actionDesc, unsigned int targets);
 	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
-	void pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity * ent);
+	void pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity* ent);
 	void pushUndoCommand(Command* cmd);
 	void undo();
 	void redo();
@@ -308,7 +308,7 @@ public:
 
 	vec3 renderCameraOrigin;
 	vec3 renderCameraAngles;
-	
+
 	vec3 intersectVec;
 private:
 
