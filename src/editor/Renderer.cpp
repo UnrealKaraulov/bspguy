@@ -3699,31 +3699,48 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 	if (entIdx >= 0)
 	{
 		ent = map->ents[entIdx];
-	}
-
-	if (!add)
-	{
-		pickInfo.SetSelectedEnt(entIdx);
-	}
-	else
-	{
-		if (!pickInfo.IsSelectedEnt(entIdx))
+		if (!add)
 		{
-			pickInfo.AddSelectedEnt(entIdx);
+			add = true;
+			pickInfo.SetSelectedEnt(entIdx);
 		}
 		else
 		{
-			pickInfo.DelSelectedEnt(entIdx);
+			if (ent && ent->isWorldSpawn())
+			{
+				add = false;
+			}
+			else
+			{
+				if (!pickInfo.IsSelectedEnt(entIdx))
+				{
+					pickInfo.AddSelectedEnt(entIdx);
+				}
+				else
+				{
+					pickInfo.DelSelectedEnt(entIdx);
+				}
+			}
 		}
 	}
+	else
+	{
+		add = true;
+		pickInfo.SetSelectedEnt(-1);
+	}
 
-	filterNeeded = true;
+	
 
-	updateSelectionSize();
-	updateEntConnections();
+	if (add)
+	{
+		filterNeeded = true;
 
-	map->getBspRender()->saveEntityState(entIdx);
-	pickCount++; // force transform window update
+		updateSelectionSize();
+		updateEntConnections();
+
+		map->getBspRender()->saveEntityState(entIdx);
+		pickCount++; // force transform window update
+	}
 }
 void Renderer::goToFace(Bsp* map, int faceIdx)
 {
