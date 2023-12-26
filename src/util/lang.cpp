@@ -92,7 +92,7 @@ void set_localize_lang(std::string lang)
 			{
 				ft = new inih::INIReader(langfile);
 			}
-			catch (std::runtime_error runtime)
+			catch (std::runtime_error & runtime)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, "Language parse from {} fatal error: {}\n", langfile, runtime.what());
 			}

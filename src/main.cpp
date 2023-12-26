@@ -446,6 +446,7 @@ int noclip(CommandLine& cli)
 		delete map;
 		return 0;
 	}
+	delete map;
 	return 1;
 }
 

@@ -91,8 +91,8 @@ inline void print_log(const std::string& format, Args ...args) noexcept
 		{
 			if (s.size())
 			{
-				g_log_buffer.push_back(s + "\n");
-				g_color_buffer.push_back(g_console_colors);
+				g_log_buffer.emplace_back(s + "\n");
+				g_color_buffer.emplace_back(g_console_colors);
 			}
 		}
 	}

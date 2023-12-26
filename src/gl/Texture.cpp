@@ -9,7 +9,6 @@
 
 std::vector<Texture*> dumpTextures;
 
-
 Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char* name, bool rgba)
 {
 	this->wad_name = "";
@@ -18,7 +17,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	this->nearFilter = GL_LINEAR;
 	this->farFilter = GL_LINEAR;
 	this->data = data;
-	this->dataLen = (unsigned int)(width * height) * sizeof(COLOR3);
+	this->dataLen = (unsigned int)(width * height) * (rgba ? sizeof(COLOR4) : sizeof(COLOR3));
 	this->id = 0;
 	this->format = rgba ? GL_RGBA : GL_RGB;
 	snprintf(texName, 64, "%s", name);
@@ -65,8 +64,6 @@ void Texture::upload(bool lightmap)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->nearFilter);
-
-		//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 		if (texName[0] == '{')
 		{

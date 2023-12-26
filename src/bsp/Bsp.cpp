@@ -1946,7 +1946,6 @@ void Bsp::clean_unused_texinfos()
 int Bsp::merge_all_verts(float epsilon)
 {
 	int merged_verts = 0;
-	std::vector<vec3> result_verts;
 
 	for (int i = 0; i < edgeCount; i++)
 	{

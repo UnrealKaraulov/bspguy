@@ -1377,7 +1377,7 @@ void SimpeColorReduce(COLOR3* image, int size)
 	std::vector<COLOR3> colorset;
 	for (unsigned char i = 255; i > 0; i--)
 	{
-		colorset.push_back(COLOR3(i, i, i));
+		colorset.emplace_back(COLOR3(i, i, i));
 	}
 
 	for (int i = 0; i < size; i++)

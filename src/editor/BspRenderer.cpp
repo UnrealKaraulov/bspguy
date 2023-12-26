@@ -473,7 +473,7 @@ void BspRenderer::loadLightmaps()
 	atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
 	atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE,
 		new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
-	memset(atlasTextures[0]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
+	memset(atlasTextures[0]->data, 255, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 	numRenderLightmapInfos = map->faceCount;
 	if (lightmaps)
@@ -538,9 +538,9 @@ void BspRenderer::loadLightmaps()
 				{
 					atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
 					atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
-					memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
-
+					
 					atlasId++;
+					memset(atlasTextures[atlasId]->data, 255, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 					{
@@ -589,7 +589,6 @@ void BspRenderer::loadLightmaps()
 	}
 
 	numLightmapAtlases = atlasTextures.size();
-
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
 	print_log(get_localized_string(LANG_0276), lightmapCount, atlases.size());
 
@@ -2356,7 +2355,6 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			whiteTex->bind(0);
 		}
 
-
 		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
 			if (highlight)
@@ -2374,7 +2372,9 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 					}
 				}
 				if (rgroup.lightmapAtlas[s])
+				{
 					rgroup.lightmapAtlas[s]->bind(s + 1);
+				}
 			}
 			else
 			{
