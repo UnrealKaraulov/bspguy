@@ -2,6 +2,9 @@
 #include "CommandLine.h"
 #ifdef WIN32
 #include <Windows.h>
+#ifdef WIN_XP_86
+#include <shellapi.h>
+#endif
 #endif
 CommandLine::CommandLine(int argc, char* argv[])
 {

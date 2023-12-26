@@ -1,3 +1,5 @@
+
+
 #include "lang.h"
 #include "util.h"
 #include "BspMerger.h"
@@ -103,6 +105,9 @@ bool g_verbose = false;
 
 #ifdef WIN32
 #include <Windows.h>
+#ifdef WIN_XP_86
+#include <shellapi.h>
+#endif
 #else 
 #include <csignal>
 #endif

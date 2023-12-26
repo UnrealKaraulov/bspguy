@@ -77,13 +77,29 @@ jobs:
           mkdir -p build\win64_release
           cp vs-project\Release\bspguy.exe build\win64_release\
           xcopy /I /E /Y "resources\*" "build\win64_release\"
-          Compress-Archive -Path "build\win64_release\*" -DestinationPath "build\newbspguy_win64_release.zip"
-      - name: Publish nightly binaries for windows
+          Compress-Archive -Path "build\win64_release\*" -DestinationPath "build\newbspguy_win7_x64_release.zip"
+      - name: Publish nightly release binaries for windows 7+
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
-            build/newbspguy_win64_release.zip
+            build/newbspguy_win7_x64_release.zip
+      - name: Build app for release WinXP 32bit
+        run: >
+          msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag
+          -property:Configuration=ReleaseXPx86
+      - name: Create Windows release WinXP archive
+        run: |
+          mkdir -p build\win32_release
+          cp vs-project\Release\bspguy.exe build\win32_release\
+          xcopy /I /E /Y "resources\*" "build\win32_release\"
+          Compress-Archive -Path "build\win32_release\*" -DestinationPath "build\newbspguy_winxp_x86_release.zip"
+      - name: Publish nightly release binaries for windows XP 32bit
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+          files: |
+            build/newbspguy_winxp_x86_release.zip
       - name: Build app for debug
         run: >
           msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag
@@ -93,10 +109,10 @@ jobs:
           mkdir -p build\win64_debug
           cp vs-project\Release\bspguy_debug.exe build\win64_debug\
           xcopy /I /E /Y "resources\*" "build\win64_debug\"
-          Compress-Archive -Path "build\win64_debug\*" -DestinationPath "build\newbspguy_win64_dbg.zip"
-      - name: Publish nightly debug binaries for windows
+          Compress-Archive -Path "build\win64_debug\*" -DestinationPath "build\newbspguy_win7_x64_dbg.zip"
+      - name: Publish nightly debug binaries for windows 7+
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
-            build/newbspguy_win64_dbg.zip
+            build/newbspguy_win7_x64_dbg.zip

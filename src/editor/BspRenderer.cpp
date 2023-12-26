@@ -13,11 +13,6 @@
 #include "Command.h"
 #include <execution>
 
-#ifdef WIN32
-#include <Windows.h>
-#endif
-
-
 BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
 {
 	this->map = _map;

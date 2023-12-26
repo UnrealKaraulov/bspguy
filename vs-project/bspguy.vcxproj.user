@@ -13,4 +13,8 @@
     <LocalDebuggerCommandArguments>"d:\SteamLibrary\steamapps\common\Half-Life\valve\models\barney.mdl"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">
+    <LocalDebuggerCommandArguments>"d:\SteamLibrary\steamapps\common\Half-Life\valve\models\barney.mdl"</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>
