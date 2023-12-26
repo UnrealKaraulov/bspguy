@@ -457,7 +457,7 @@ void BspRenderer::loadLightmaps()
 	atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
 	atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE,
 		new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
-	memset(atlasTextures[0]->data, 255, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
+	memset(atlasTextures[0]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 	numRenderLightmapInfos = map->faceCount;
 	if (lightmaps)
@@ -524,7 +524,7 @@ void BspRenderer::loadLightmaps()
 					atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
 					atlasId++;
-					memset(atlasTextures[atlasId]->data, 255, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
+					memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 					{
