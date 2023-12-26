@@ -80,7 +80,6 @@ public:
 
 	void upload(bool hideErrors = true);
 	void deleteBuffer();
-	void setShader(ShaderProgram* program, bool hideErrors = false);
 
 	void drawRange(int primitive, int start, int end, bool hideErrors = true);
 	void draw(int primitive);

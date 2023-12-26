@@ -6277,6 +6277,7 @@ void Gui::drawSettings()
 			bool transparentNodes = g_render_flags & RENDER_TRANSPARENT;
 			bool renderModels = g_render_flags & RENDER_MODELS;
 			bool renderAnimatedModels = g_render_flags & RENDER_MODELS_ANIMATED;
+			bool renderSelectedAtTop = g_render_flags & RENDER_SELECTED_AT_TOP;
 
 			ImGui::Text(get_localized_string(LANG_0779).c_str());
 
@@ -6329,9 +6330,15 @@ void Gui::drawSettings()
 			{
 				g_render_flags ^= RENDER_MODELS;
 			}
+
 			if (ImGui::Checkbox(get_localized_string(LANG_0789).c_str(), &renderAnimatedModels))
 			{
 				g_render_flags ^= RENDER_MODELS_ANIMATED;
+			}
+
+			if (ImGui::Checkbox("Selected at top", &renderSelectedAtTop))
+			{
+				g_render_flags ^= RENDER_SELECTED_AT_TOP;
 			}
 
 			if (ImGui::Checkbox(get_localized_string(LANG_0790).c_str(), &renderWorldClipnodes))

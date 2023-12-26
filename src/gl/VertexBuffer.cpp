@@ -135,24 +135,6 @@ void VertexBuffer::addAttribute(int type, const char* varName) {
 	elementSize += attribute.size;
 }
 
-void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
-	shaderProgram = program;
-	attributesBound = false;
-
-	for (int i = 0; i < attribs.size(); i++)
-	{
-		if (strlen(attribs[i].varName) > 0) {
-			attribs[i].handle = -1;
-		}
-	}
-
-	bindAttributes(hideErrors && !g_verbose);
-	if (vboId != (GLuint)-1) {
-		deleteBuffer();
-		upload();
-	}
-}
-
 void VertexBuffer::bindAttributes(bool hideErrors) {
 	if (attributesBound || !shaderProgram)
 		return;
