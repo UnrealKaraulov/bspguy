@@ -3729,7 +3729,7 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 		pickInfo.SetSelectedEnt(-1);
 	}
 
-	
+
 
 	if (add)
 	{
@@ -3812,7 +3812,7 @@ void Renderer::updateEnts()
 	}
 }
 
-bool  Renderer::isEntTransparent(const char* classname)
+bool Renderer::isEntTransparent(const char* classname)
 {
 	if (!classname)
 		return false;
@@ -3822,4 +3822,42 @@ bool  Renderer::isEntTransparent(const char* classname)
 			return true;
 	}
 	return false;
+}
+
+// now it temporary used for something
+Texture* Renderer::giveMeTexture(const std::string& texname)
+{
+	if (!texname.size())
+	{
+		return missingTex;
+	}
+
+	if (glExteralTextures.find(texname) != glExteralTextures.end())
+	{
+		return glExteralTextures[texname];
+	}
+
+	for (auto& render : mapRenderers)
+	{
+		for (auto& wad : render->wads)
+		{
+			if (wad->hasTexture(texname))
+			{
+				WADTEX* wadTex = wad->readTexture(texname);
+				if (wadTex)
+				{
+					COLOR3* imageData = ConvertWadTexToRGB(wadTex);
+					if (imageData)
+					{
+						Texture* tmpTex = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, texname);
+						glExteralTextures[texname] = tmpTex;
+						delete wadTex;
+						return tmpTex;
+					}
+					delete wadTex;
+				}
+			}
+		}
+	}
+	return missingTex;
 }

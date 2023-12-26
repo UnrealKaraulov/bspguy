@@ -984,7 +984,6 @@ void Gui::drawBspContexMenu()
 			ImGui::EndPopup();
 		}
 	}
-
 }
 
 bool ExportWad(Bsp* map)
@@ -3185,6 +3184,7 @@ void Gui::drawMenuBar()
 	{
 		if (ImGui::BeginMenuBar())
 		{
+			Bsp* selectedMap = app->getSelectedMap();
 			ImGui::TextUnformatted(fmt::format("Origin [{:^5},{:^5},{:^5}]", floatRound(cameraOrigin.x), floatRound(cameraOrigin.y), floatRound(cameraOrigin.z)).c_str());
 
 			vec3 hlAngles = cameraAngles;
@@ -3194,9 +3194,14 @@ void Gui::drawMenuBar()
 
 			ImGui::TextUnformatted(fmt::format("Angles [{:^4},{:^4},{:^4}]", floatRound(hlAngles.x), floatRound(hlAngles.y), floatRound(hlAngles.z)).c_str());
 
-			ImGui::TextUnformatted(fmt::format("Click [{:^5},{:^5},{:^5}]", floatRound(app->debugVec0.x), floatRound(app->debugVec0.y), floatRound(app->debugVec0.z)).c_str());
-
-
+			if (selectedMap)
+			{
+				BspRenderer* rend = selectedMap->getBspRender();
+				if (rend)
+				{
+					ImGui::TextUnformatted(fmt::format("Click [{:^5},{:^5},{:^5}]", floatRound(rend->intersectVec.x), floatRound(rend->intersectVec.y), floatRound(rend->intersectVec.z)).c_str());
+				}
+			}
 			ImGui::EndMenuBar();
 		}
 		ImGui::End();
@@ -3736,7 +3741,7 @@ void Gui::drawDebugWidget()
 
 		if (map && renderer && ImGui::CollapsingHeader(get_localized_string(LANG_1101).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGui::Text(get_localized_string(LANG_0635).c_str(), app->debugVec0.x, app->debugVec0.y, app->debugVec0.z);
+			ImGui::Text(get_localized_string(LANG_0635).c_str(), renderer->intersectVec.x, renderer->intersectVec.y, renderer->intersectVec.z);
 			ImGui::Text(get_localized_string(LANG_0636).c_str(), app->debugVec1.x, app->debugVec1.y, app->debugVec1.z);
 			ImGui::Text(get_localized_string(LANG_0637).c_str(), app->debugVec2.x, app->debugVec2.y, app->debugVec2.z);
 			ImGui::Text(get_localized_string(LANG_0638).c_str(), app->debugVec3.x, app->debugVec3.y, app->debugVec3.z);
@@ -3770,9 +3775,10 @@ void Gui::drawDebugWidget()
 			{
 				for (auto& ent : map->ents)
 				{
-					if (ent->hasKey("classname") && ent->keyvalues["classname"] == "infodecal")
+					if (ent->hasKey("classname") && ent->keyvalues["classname"] == "infodecal"
+						&& ent->hasKey("texture"))
 					{
-						map->decalShoot(ent->getOrigin(), "Hello world");
+						map->decalShoot(ent->getOrigin(), ent->keyvalues["texture"]);
 					}
 				}
 			}
@@ -6957,7 +6963,6 @@ void Gui::drawLimits()
 			{
 				if (ImGui::BeginTabItem(get_localized_string(LANG_0836).c_str()))
 				{
-
 					if (!loadedStats)
 					{
 						stats.clear();
@@ -8202,7 +8207,7 @@ void Gui::drawLightMapTool()
 						currentlightMap[i] = new Texture(size[0], size[1], new unsigned char[lightmapSz], "LIGHTMAP");
 						int offset = face.nLightmapOffset + i * lightmapSz;
 						memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
-						currentlightMap[i]->upload(true);
+						currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
 						lightmaps++;
 						//print_log(get_localized_string(LANG_0418),i,offset);
 					}
@@ -8300,7 +8305,7 @@ void Gui::drawLightMapTool()
 					{
 						lighdata[offset] = COLOR3((unsigned char)(colourPatch[0] * 255.f),
 							(unsigned char)(colourPatch[1] * 255.f), (unsigned char)(colourPatch[2] * 255.f));
-						currentlightMap[i]->upload(true);
+						currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
 					}
 				}
 			}

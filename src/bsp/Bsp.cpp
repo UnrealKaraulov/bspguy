@@ -7681,45 +7681,31 @@ void Bsp::setBspRender(BspRenderer* rnd)
 	renderer = rnd;
 }
 
-void Bsp::decalShoot(vec3 pos, const char* texname)
+void Bsp::decalShoot(vec3 pos, const std::string& texname)
 {
 	if (!renderer || !renderer->faceMaths)
 		return;
-	WADTEX* texture = NULL;
-	for (auto& wad : renderer->wads)
-	{
-		if (wad->hasTexture(texname))
-		{
-			texture = wad->readTexture(texname);
-			break;
-		}
-	}
 
-	/*if (!texture)
-		return;*/
+	Texture* tex = g_app->giveMeTexture(texname);
+	if (!tex->uploaded)
+		tex->upload(Texture::TYPE_DECAL);
 
 	int bestMath = -1;
-	float bestDir = 1.01f;
+	float bestDist = 30.01f;
 
 	for (int faceIdx = 0; faceIdx < faceCount; faceIdx++)
 	{
 		FaceMath& face = renderer->faceMaths[faceIdx];
-		if (renderer->pickFaceMath(pos + (face.normal * 0.01f), face.normal * -0.01f, face, bestDir))
+		if (renderer->pickFaceMath(pos + (face.normal * 0.01f), face.normal * -0.01f, face, bestDist))
 		{
 			bestMath = faceIdx;
 		}
 	}
 
-	if (bestMath > 0)
-	{
-		int modelidx = get_model_from_face(bestMath);
-		print_log(get_localized_string(LANG_0218), modelidx, bestMath, bestDir);
-		std::vector<vec3> worldVerts;
-	}
+	int modelidx = get_model_from_face(bestMath);
+	print_log(get_localized_string(LANG_0218), modelidx, bestMath, renderer->intersectVec.toKeyvalueString());
 
-	if (texture)
-		delete texture;
-
+	// 
 }
 
 

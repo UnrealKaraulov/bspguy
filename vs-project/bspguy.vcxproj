@@ -501,10 +501,8 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\cfg\language.ini">
-      <FileType>Text</FileType>
-    </None>
-    <None Include="..\cfg\language_ru.ini" />
+    <None Include="..\resources\languages\language.ini" />
+    <None Include="..\resources\languages\language_ru.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

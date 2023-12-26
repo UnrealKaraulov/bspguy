@@ -237,8 +237,6 @@ public:
 	RenderClipnodes* renderClipnodes = NULL;
 	FaceMath* faceMaths = NULL;
 
-	// textures loaded in a separate thread
-	Texture** glTexturesSwap;
 
 	size_t numLightmapAtlases;
 
@@ -251,6 +249,9 @@ public:
 
 
 	Texture** glTextures = NULL;
+	// textures loaded in a separate thread
+	Texture** glTexturesSwap;
+
 	Texture** glLightmapTextures = NULL;
 	std::future<void> texturesFuture;
 
@@ -307,6 +308,8 @@ public:
 
 	vec3 renderCameraOrigin;
 	vec3 renderCameraAngles;
+	
+	vec3 intersectVec;
 private:
 
 	struct nodeBuffStr

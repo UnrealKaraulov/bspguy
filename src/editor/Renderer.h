@@ -85,7 +85,6 @@ public:
 	std::vector<BspRenderer*> mapRenderers;
 
 	vec3 debugPoint;
-	vec3 debugVec0;
 	vec3 debugVec1;
 	vec3 debugVec2;
 	vec3 debugVec3;
@@ -309,4 +308,7 @@ public:
 	void goToFace(Bsp* map, int faceIdx);
 	void ungrabEnt();
 	void loadFgds();
+
+	std::map<std::string, Texture *> glExteralTextures;
+	Texture* giveMeTexture(const std::string& texname);
 };

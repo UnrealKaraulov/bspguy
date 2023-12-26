@@ -9,7 +9,7 @@
 
 std::vector<Texture*> dumpTextures;
 
-Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char* name, bool rgba)
+Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba)
 {
 	this->wad_name = "";
 	this->width = _width;
@@ -20,11 +20,15 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	this->dataLen = (unsigned int)(width * height) * (rgba ? sizeof(COLOR4) : sizeof(COLOR3));
 	this->id = 0;
 	this->format = rgba ? GL_RGBA : GL_RGB;
-	snprintf(texName, 64, "%s", name);
+	this->texName = name;
+	this->uploaded = false;
+
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0970),name,width,height);
+
 	this->transparentMode = IsTextureTransparent(name) ? 1 : 0;
-	if (name && name[0] == '{')
+
+	if (name.size() && name[0] == '{')
 	{
 		this->transparentMode = 2;
 	}
@@ -41,7 +45,7 @@ Texture::~Texture()
 	dumpTextures.erase(std::remove(dumpTextures.begin(), dumpTextures.end(), this), dumpTextures.end());
 }
 
-void Texture::upload(bool lightmap)
+void Texture::upload(int type)
 {
 	if (uploaded)
 	{
@@ -51,40 +55,47 @@ void Texture::upload(bool lightmap)
 	glBindTexture(GL_TEXTURE_2D, id); // Binds this texture handle so we can load the data into it
 
 	// Set up filters and wrap mode
-	if (lightmap)
+	if (type == TYPE_LIGHTMAP)
 	{
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	}
-	else
+	else if (type == TYPE_TEXTURE)
 	{
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->nearFilter);
+	}
+	else if (type == TYPE_DECAL)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->nearFilter);
+	}
 
-		if (texName[0] == '{')
+	if (texName[0] == '{')
+	{
+		if (format == GL_RGB)
 		{
-			if (format == GL_RGB)
+			format = GL_RGBA;
+			COLOR3* rgbData = (COLOR3*)data;
+			int pixelCount = width * height;
+			COLOR4* rgbaData = new COLOR4[pixelCount];
+			for (int i = 0; i < pixelCount; i++)
 			{
-				format = GL_RGBA;
-				COLOR3* rgbData = (COLOR3 *)data;
-				int pixelCount = width * height;
-				COLOR4* rgbaData = new COLOR4[pixelCount];
-				for (int i = 0; i < pixelCount; i++)
+				rgbaData[i] = rgbData[i];
+				if (rgbaData[i].r == 0 && rgbaData[i].g == 0 && rgbaData[i].b == 255)
 				{
-					rgbaData[i] = rgbData[i];
-					if (rgbaData[i].r == 0 && rgbaData[i].g == 0 && rgbaData[i].b == 255)
-					{
-						rgbaData[i] = COLOR4(0, 0, 0, 0);
-					}
+					rgbaData[i] = COLOR4(0, 0, 0, 0);
 				}
-				delete [] data;
-				data = (unsigned char*)rgbaData;
-				dataLen = (unsigned int)(width * height) * sizeof(COLOR4);
 			}
+			delete[] data;
+			data = (unsigned char*)rgbaData;
+			dataLen = (unsigned int)(width * height) * sizeof(COLOR4);
 		}
 	}
 
@@ -103,13 +114,13 @@ void Texture::bind(GLuint texnum)
 	glBindTexture(GL_TEXTURE_2D, id);
 }
 
-bool IsTextureTransparent(const char* texname)
+bool IsTextureTransparent(const std::string & texname)
 {
-	if (!texname)
+	if (!texname.size())
 		return false;
 	for (auto const& s : g_settings.transparentTextures)
 	{
-		if (strcasecmp(s.c_str(), texname) == 0)
+		if (s == texname)
 			return true;
 	}
 	return false;

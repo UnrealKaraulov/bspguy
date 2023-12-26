@@ -264,7 +264,7 @@ public:
 
 	int get_ent_from_model(int modelIdx);
 
-	void decalShoot(vec3 pos, const char* texname);
+	void decalShoot(vec3 pos, const std::string & texname);
 
 	std::vector<STRUCTUSAGE*> get_sorted_model_infos(int sortMode);
 

@@ -10,15 +10,22 @@ public:
 	int nearFilter;
 	int farFilter;
 	unsigned int format; // format of the data
-	char texName[64];
+	std::string texName;
 	std::string wad_name;
 	int transparentMode;
 
-	Texture(GLsizei width, GLsizei height, unsigned char* data, const char* name, bool rgba = false);
+	enum TEXTURE_TYPE : int
+	{
+		TYPE_TEXTURE,
+		TYPE_LIGHTMAP,
+		TYPE_DECAL
+	};
+
+	Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba = false);
 	~Texture();
 
 	// upload the texture with the specified settings
-	void upload(bool lightmap = false);
+	void upload(int type = TYPE_TEXTURE);
 
 	void setWadName(const std::string& s) {
 		wad_name = s;
@@ -33,4 +40,4 @@ public:
 	bool uploaded = false;
 };
 extern std::vector<Texture*> dumpTextures;
-bool IsTextureTransparent(const char* texname);
+bool IsTextureTransparent(const std::string& texname);

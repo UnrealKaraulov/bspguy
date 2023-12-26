@@ -325,10 +325,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\cfg\language.ini">
+    <None Include="..\resources\languages\language_ru.ini">
       <Filter>Langs</Filter>
     </None>
-    <None Include="..\cfg\language_ru.ini">
+    <None Include="..\resources\languages\language.ini">
       <Filter>Langs</Filter>
     </None>
   </ItemGroup>

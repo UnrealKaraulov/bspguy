@@ -25,6 +25,8 @@ BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
 	this->renderModels = NULL;
 	this->renderEnts = NULL;
 	this->renderClipnodes = NULL;
+	
+	intersectVec = vec3();
 
 	renderCameraOrigin = renderCameraAngles = vec3();
 	renderCameraAngles.z = 90.0f;
@@ -2801,7 +2803,7 @@ bool BspRenderer::pickFaceMath(const vec3& start, const vec3& dir, FaceMath& fac
 	}
 
 	bestDist = t;
-	g_app->debugVec0 = intersection;
+	intersectVec = intersection;
 
 	return true;
 }
