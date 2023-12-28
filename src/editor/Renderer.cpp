@@ -153,10 +153,7 @@ Renderer::Renderer()
 	loadSettings();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_FALSE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
 	window = glfwCreateWindow(g_settings.windowWidth, g_settings.windowHeight, "bspguy", NULL, NULL);
 
@@ -809,6 +806,12 @@ void Renderer::loadSettings()
 	g_verbose = g_settings.verboseLogs;
 	zFar = g_settings.zfar;
 	fov = g_settings.fov;
+
+	if (zFar < 1000.0f)
+		zFar = 1000.0f;
+	if (fov < 40.0f)
+		fov = 40.0f;
+
 	g_render_flags = g_settings.render_flags;
 	gui->fontSize = g_settings.fontSize;
 	rotationSpeed = g_settings.rotSpeed;

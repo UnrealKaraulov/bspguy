@@ -26,8 +26,7 @@ BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
 	this->renderEnts = NULL;
 	this->renderClipnodes = NULL;
 
-	lightEnableFlags[0] = true;
-	lightEnableFlags[1] = lightEnableFlags[2] = lightEnableFlags[3] = false;
+	lightEnableFlags[0] = lightEnableFlags[1] = lightEnableFlags[2] = lightEnableFlags[3] = true;
 
 	intersectVec = vec3();
 
@@ -562,6 +561,7 @@ void BspRenderer::loadLightmaps()
 						}
 					}
 				}
+
 			}
 
 		}
@@ -1054,13 +1054,13 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		memcpy(renderGroups[i].wireframeVerts, &renderGroupWireframeVerts[i][0], renderGroups[i].wireframeVertCount * sizeof(cVert));
 
 		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
-		tmpBuf->addAttribute(POS_3F, "vPosition");
 		tmpBuf->addAttribute(TEX_2F, "vTex");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
 		tmpBuf->addAttribute(4, GL_FLOAT, 0, "vColor");
+		tmpBuf->addAttribute(POS_3F, "vPosition");
 		tmpBuf->setData(renderGroups[i].verts, renderGroups[i].vertCount);
 
 		renderGroups[i].wireframeBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, renderGroups[i].wireframeVerts, renderGroups[i].wireframeVertCount, GL_LINES);
@@ -2349,14 +2349,20 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			}
 			else if (lightmapsUploaded && lightmapsGenerated && (g_render_flags & RENDER_LIGHTMAPS))
 			{
+				
 				if (rgroup.lightmapAtlas[s] && lightEnableFlags[s])
 				{
 					rgroup.lightmapAtlas[s]->bind(s + 1);
+					if (s > 0 && !map->lightdata)
+					{
+						blackTex->bind(s + 1);
+					}
 				}
 				else
 				{
 					blackTex->bind(s + 1);
 				}
+				
 			}
 			else
 			{

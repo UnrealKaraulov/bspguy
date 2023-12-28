@@ -9,9 +9,9 @@
 
 struct tVert
 {
-	vec3 pos;
 	// texture coordinates
 	float u, v;
+	vec3 pos;
 
 	tVert() = default;
 	tVert(float x, float y, float z, float u, float v) : u(u), v(v), pos(x, y, z)
@@ -24,15 +24,14 @@ struct tVert
 
 struct modelVert
 {
-	vec3 pos;
 	// texture coordinates
 	float u, v;
+	vec3 pos;
 };
 
 
 struct lightmapVert
 {
-	vec3 pos;
 	// texture coordinates
 	float u, v;
 	// lightmap texture coordinates
@@ -40,6 +39,7 @@ struct lightmapVert
 	float luv[MAX_LIGHTMAPS][3];
 	// color
 	float r, g, b, a;
+	vec3 pos;
 };
 
 struct cVert

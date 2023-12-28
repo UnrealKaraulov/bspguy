@@ -180,7 +180,7 @@ public:
 	Bsp* map;
 	PointEntRenderer* pointEntRenderer;
 	vec3 mapOffset;
-	bool lightEnableFlags[4] = { true,false,false,false };
+	bool lightEnableFlags[4] = { true,true,true,true };
 	std::vector<Wad*> wads;
 	bool texturesLoaded = false;
 	bool needReloadDebugTextures = false;
