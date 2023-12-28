@@ -11,8 +11,8 @@ namespace Shaders
 		"uniform vec4 colorMult;\n"
 
 		// vertex variables
-		"attribute vec3 vPosition;\n"
 		"attribute vec4 vColor;\n"
+		"attribute vec3 vPosition;\n"
 
 		// fragment variables
 		"varying vec4 fColor;\n"

@@ -1404,7 +1404,7 @@ bool FindPathInAssets(Bsp* map, const std::string & filename, std::string& outpa
 	tracesearch = tracesearch && g_settings.verboseLogs;
 
 	std::ostringstream outTrace;
-
+	// First search path directly
 	if (tracesearch)
 	{
 		outTrace << "-------------START PATH TRACING-------------\n";
@@ -1444,6 +1444,65 @@ bool FindPathInAssets(Bsp* map, const std::string & filename, std::string& outpa
 		return true;
 	}
 
+	// Next search path in fgd directories
+	for (auto const& dir : g_settings.fgdPaths)
+	{
+		if (dir.enabled)
+		{
+			std::string fixedfilename = filename;
+			fixupPath(fixedfilename, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
+			std::string dirpath = dir.path;
+			for (int i = 0; i < 3; i++)
+			{
+				fixupPath(dirpath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+				dirpath = stripFileName(fs::path(dirpath).string());
+				fixupPath(dirpath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+
+				if (tracesearch)
+				{
+					outTrace << "Search paths [" << fPathId++ << "] : [" << (dirpath + fixedfilename) << "]\n";
+				}
+				if (fileExists(dirpath + fixedfilename))
+				{
+					outpath = dirpath + fixedfilename;
+					return true;
+				}
+
+				if (tracesearch)
+				{
+					outTrace << "Search paths [" << fPathId++ << "] : [" << (dirpath + basename(fixedfilename)) << "]\n";
+				}
+				if (fileExists(dirpath + basename(fixedfilename)))
+				{
+					outpath = dirpath + basename(fixedfilename);
+					return true;
+				}
+
+				if (tracesearch)
+				{
+					outTrace << "Search paths [" << fPathId++ << "] : [" << ("./" + dirpath + fixedfilename) << "]\n";
+				}
+				if (fileExists("./" + dirpath + fixedfilename))
+				{
+					outpath = "./" + dirpath + fixedfilename;
+					return true;
+				}
+
+				if (tracesearch)
+				{
+					outTrace << "Search paths [" << fPathId++ << "] : [" << (g_game_dir + dirpath + fixedfilename) << "]\n";
+				}
+				if (fileExists(g_game_dir + dirpath + fixedfilename))
+				{
+					outpath = g_game_dir + dirpath + fixedfilename;
+					return true;
+				}
+
+			}
+		}
+	}
+
+	// Next search path in assets directories
 	for (auto const& dir : g_settings.resPaths)
 	{
 		if (dir.enabled)
@@ -1490,6 +1549,7 @@ bool FindPathInAssets(Bsp* map, const std::string & filename, std::string& outpa
 		}
 	}
 
+	// End, search files in map directory relative
 	if (map)
 	{
 		if (tracesearch)
@@ -1683,7 +1743,7 @@ void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 std::string GetExecutableDirInternal(std::string arg_0_dir)
 {
 	std::string retdir = arg_0_dir;
-	retdir = fs::path(retdir).parent_path().string();
+	retdir = stripFileName(retdir);
 	fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
 	{
@@ -1691,7 +1751,7 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 	}
 	else
 	{
-		retdir = std::filesystem::canonical(arg_0_dir).parent_path().string();
+		retdir = stripFileName(std::filesystem::canonical(arg_0_dir).string());
 		fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 		if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
 		{
@@ -1700,9 +1760,9 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 #ifdef WIN32
 		char path[MAX_PATH];
 		GetModuleFileName(NULL, path, MAX_PATH);
-		retdir = std::filesystem::canonical(path).parent_path().string();
+		retdir = stripFileName(std::filesystem::canonical(path).string());
 #else
-		retdir = std::filesystem::canonical("/proc/self/exe").parent_path().string();
+		retdir = stripFileName(std::filesystem::canonical("/proc/self/exe").string());
 		if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
 		{
 			return retdir;

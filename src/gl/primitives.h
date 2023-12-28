@@ -44,8 +44,8 @@ struct lightmapVert
 
 struct cVert
 {
-	vec3 pos;
 	COLOR4 c;
+	vec3 pos;
 
 	cVert() = default;
 	cVert(float x, float y, float z, COLOR4 c) : c(c), pos(x, y, z)

@@ -1101,7 +1101,7 @@ void Gui::drawMenuBar()
 					app->updateEnts();
 					ImportWad(map, app, res.string());
 					app->reloadBspModels();
-					g_settings.lastdir = res.parent_path().string();
+					g_settings.lastdir = stripFileName(res.string());
 				}
 				ifd::FileDialog::Instance().Close();
 			}
@@ -1163,7 +1163,7 @@ void Gui::drawMenuBar()
 				{
 					app->addMap(new Bsp(res.string()));
 				}
-				g_settings.lastdir = res.parent_path().string();
+				g_settings.lastdir = stripFileName(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -5774,8 +5774,8 @@ void Gui::drawSettings()
 			if (ifd::FileDialog::Instance().HasResult())
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				g_settings.gamedir = res.parent_path().string();
-				g_settings.lastdir = res.parent_path().string();
+				g_settings.gamedir = stripFileName(res.string());
+				g_settings.lastdir = stripFileName(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -5785,8 +5785,8 @@ void Gui::drawSettings()
 			if (ifd::FileDialog::Instance().HasResult())
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				g_settings.workingdir = res.parent_path().string();
-				g_settings.lastdir = res.parent_path().string();
+				g_settings.workingdir = stripFileName(res.string());
+				g_settings.lastdir = stripFileName(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -5798,7 +5798,7 @@ void Gui::drawSettings()
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				g_settings.fgdPaths[fgdSelected].path = res.string();
 				g_settings.fgdPaths[fgdSelected].enabled = true;
-				g_settings.lastdir = res.parent_path().string();
+				g_settings.lastdir = stripFileName(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -5810,7 +5810,7 @@ void Gui::drawSettings()
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				g_settings.resPaths[resSelected].path = res.string();
 				g_settings.resPaths[resSelected].enabled = true;
-				g_settings.lastdir = res.parent_path().string();
+				g_settings.lastdir = stripFileName(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -6730,7 +6730,7 @@ void Gui::drawImportMapWidget()
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				mapPath = res.string();
-				g_settings.lastdir = res.parent_path().string();
+				g_settings.lastdir = stripFileName(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
