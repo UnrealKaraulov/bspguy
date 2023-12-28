@@ -139,6 +139,8 @@ enum MODEL_SORT_MODES
 	SORT_MODES
 };
 
+/* main */
+
 struct BSPLUMP
 {
 	int nOffset; // File offset to data
@@ -149,7 +151,6 @@ struct BSPLUMP
 	}
 };
 
-
 struct BSPHEADER
 {
 	int nVersion;           // Must be 30 for a valid HL BSP file
@@ -158,23 +159,6 @@ struct BSPHEADER
 	{
 		nVersion = 0;
 	}
-};
-
-struct BSPHEADER_EX
-{
-	int	id;			// must be little endian XASH
-	int	nVersion;
-	BSPLUMP	lump[EXTRA_LUMPS];
-	BSPHEADER_EX()
-	{
-		id = 0;
-		nVersion = 0;
-	}
-};
-
-struct LumpState
-{
-	std::vector<unsigned char> lumps[HEADER_LUMPS];
 };
 
 struct BSPPLANE
@@ -199,14 +183,6 @@ struct BSPPLANE
 	}
 };
 
-struct CSGPLANE
-{
-	double normal[3];
-	double origin[3];
-	double dist;
-	int nType;
-};
-
 struct BSPTEXTUREINFO
 {
 	vec3 vS;
@@ -217,16 +193,104 @@ struct BSPTEXTUREINFO
 	int nFlags;
 };
 
-bool operator < (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
-bool operator > (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
-bool operator ==(const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
-
 
 struct BSPMIPTEX
 {
 	char szName[MAXTEXTURENAME];  // Name of texture
 	int nWidth, nHeight;		  // Extends of the texture
 	int nOffsets[MIPLEVELS];	  // Offsets to texture mipmaps, relative to the start of this structure
+};
+
+
+struct BSPFACE32
+{
+	int iPlane;          // Plane the face is parallel to
+	int nPlaneSide;      // Set if different normals orientation
+	int iFirstEdge;      // Index of the first surfedge
+	int nEdges;          // Number of consecutive surfedges
+	int iTextureInfo;    // Index of the texture info structure
+	unsigned char nStyles[MAX_LIGHTMAPS];       // Specify lighting styles
+	int nLightmapOffset; // Offsets into the raw lightmap data
+};
+
+
+struct BSPLEAF32
+{
+	int	nContents;
+	int	nVisOffset;
+	float nMins[3];
+	float nMaxs[3];
+	int	iFirstMarkSurface;
+	int nMarkSurfaces;
+	unsigned char nAmbientLevels[MAX_AMBIENTS];
+
+	bool isEmpty();
+};
+
+struct BSPEDGE32
+{
+	int iVertex[2]; // Indices into vertex array
+
+	BSPEDGE32();
+	BSPEDGE32(unsigned int v1, unsigned int v2);
+};
+
+struct BSPMODEL
+{
+	vec3 nMins;
+	vec3 nMaxs;
+	vec3 vOrigin;                  // Coordinates to move the // coordinate system
+	int iHeadnodes[MAX_MAP_HULLS]; // Index into nodes array
+	int nVisLeafs;                 // ???
+	int iFirstFace, nFaces;        // Index and count into faces
+};
+
+struct BSPNODE32
+{
+	int	iPlane;
+	int	iChildren[2];		// negative numbers are -(leafs+1), not nodes
+	float nMins[3];			// for sphere culling
+	float nMaxs[3];
+	int	iFirstFace;
+	int	nFaces;			// counting both sides
+};
+
+struct BSPCLIPNODE32
+{
+	int iPlane;       // Index into planes
+	int iChildren[2]; // negative numbers are contents
+};
+
+/* other */
+
+bool operator < (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
+bool operator > (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
+bool operator ==(const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
+
+
+struct CSGPLANE
+{
+	double normal[3];
+	double origin[3];
+	double dist;
+	int nType;
+};
+
+struct BSPHEADER_EX
+{
+	int	id;			// must be little endian XASH
+	int	nVersion;
+	BSPLUMP	lump[EXTRA_LUMPS];
+	BSPHEADER_EX()
+	{
+		id = 0;
+		nVersion = 0;
+	}
+};
+
+struct LumpState
+{
+	std::vector<unsigned char> lumps[HEADER_LUMPS];
 };
 
 struct BSPFACE16
@@ -240,17 +304,6 @@ struct BSPFACE16
 	int nLightmapOffset; // Offsets into the raw lightmap data
 };
 
-struct BSPFACE32
-{
-	int iPlane;          // Plane the face is parallel to
-	int nPlaneSide;      // Set if different normals orientation
-	int iFirstEdge;      // Index of the first surfedge
-	int nEdges;          // Number of consecutive surfedges
-	int iTextureInfo;    // Index of the texture info structure
-	unsigned char nStyles[MAX_LIGHTMAPS];       // Specify lighting styles
-	int nLightmapOffset; // Offsets into the raw lightmap data
-};
-
 struct BSPLEAF16
 {
 	int nContents;                         // Contents enumeration
@@ -259,19 +312,6 @@ struct BSPLEAF16
 	unsigned short iFirstMarkSurface;
 	unsigned short nMarkSurfaces;	// Index and count into marksurfaces array
 	unsigned char nAmbientLevels[MAX_AMBIENTS];                 // Ambient sound levels
-
-	bool isEmpty();
-};
-
-struct BSPLEAF32
-{
-	int	nContents;
-	int	nVisOffset;
-	float nMins[3];
-	float nMaxs[3];
-	int	iFirstMarkSurface;
-	int nMarkSurfaces;
-	unsigned char nAmbientLevels[MAX_AMBIENTS];
 
 	bool isEmpty();
 };
@@ -298,40 +338,12 @@ struct BSPEDGE16
 	BSPEDGE16(unsigned short v1, unsigned short v2);
 };
 
-struct BSPEDGE32
-{
-	int iVertex[2]; // Indices into vertex array
-
-	BSPEDGE32();
-	BSPEDGE32(unsigned int v1, unsigned int v2);
-};
-
-struct BSPMODEL
-{
-	vec3 nMins;
-	vec3 nMaxs;
-	vec3 vOrigin;                  // Coordinates to move the // coordinate system
-	int iHeadnodes[MAX_MAP_HULLS]; // Index into nodes array
-	int nVisLeafs;                 // ???
-	int iFirstFace, nFaces;        // Index and count into faces
-};
-
 struct BSPNODE16
 {
 	int iPlane;            // Index into Planes lump
 	short iChildren[2];       // If > 0, then indices into Nodes // otherwise bitwise inverse indices into Leafs
 	short nMins[3], nMaxs[3]; // Defines bounding box
 	unsigned short firstFace, nFaces; // Index and count into Faces
-};
-
-struct BSPNODE32
-{
-	int	iPlane;
-	int	iChildren[2];		// negative numbers are -(leafs+1), not nodes
-	float nMins[3];			// for sphere culling
-	float nMaxs[3];
-	int	firstFace;
-	int	nFaces;			// counting both sides
 };
 
 struct BSPNODE32A
@@ -350,11 +362,6 @@ struct BSPCLIPNODE16
 	short iChildren[2]; // negative numbers are contents
 };
 
-struct BSPCLIPNODE32
-{
-	int iPlane;       // Index into planes
-	int iChildren[2]; // negative numbers are contents
-};
 
 /*
  * application types (not part of the BSP)

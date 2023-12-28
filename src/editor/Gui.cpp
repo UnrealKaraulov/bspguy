@@ -894,6 +894,9 @@ void Gui::drawBspContexMenu()
 						map->getBspRender()->preRenderEnts();
 						map->update_lump_pointers();
 						map->update_ent_lump();
+
+
+						map->getBspRender()->pushModelUndoState("MERGE MODEL [DEBUG]", EDIT_MODEL_LUMPS);
 					}
 				}
 				if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading))
@@ -8701,6 +8704,55 @@ void Gui::drawFaceEditorWidget()
 					updatedFaceVec = true;
 				}
 			}
+
+			ImVec4 errorColor = { 1.0, 0.0, 0.0, 1.0 };
+			ImGui::PushStyleColor(ImGuiCol_Text, errorColor);
+			if (ImGui::Button("REMOVE"))
+			{
+				map->remove_face(app->pickInfo.selectedFaces[0], false);
+
+				map->getBspRender()->loadLightmaps();
+				map->getBspRender()->calcFaceMaths();
+				map->getBspRender()->preRenderFaces();
+				map->getBspRender()->preRenderEnts();
+
+				map->update_lump_pointers();
+				map->update_ent_lump();
+
+
+				map->getBspRender()->pushModelUndoState("REMOVE FACE", EDIT_MODEL_LUMPS);
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Face now totally removed from map!");
+				ImGui::EndTooltip();
+			}
+			ImGui::SameLine();
+
+			if (ImGui::Button("REMOVE PVS"))
+			{
+				map->remove_face(app->pickInfo.selectedFaces[0], true);
+
+				map->getBspRender()->loadLightmaps();
+				map->getBspRender()->calcFaceMaths();
+				map->getBspRender()->preRenderFaces();
+				map->getBspRender()->preRenderEnts();
+
+				map->update_lump_pointers();
+				map->update_ent_lump();
+
+
+				map->getBspRender()->pushModelUndoState("REMOVE FACE FROM PVS", EDIT_MODEL_LUMPS);
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Face will be removed from leaves and now only invisibled!");
+				ImGui::EndTooltip();
+			}
+			ImGui::PopStyleColor();
+
 		}
 
 		if (app->pickInfo.selectedFaces.size() > 1)

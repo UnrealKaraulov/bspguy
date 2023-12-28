@@ -1054,13 +1054,13 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		memcpy(renderGroups[i].wireframeVerts, &renderGroupWireframeVerts[i][0], renderGroups[i].wireframeVertCount * sizeof(cVert));
 
 		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
+		tmpBuf->addAttribute(POS_3F, "vPosition");
 		tmpBuf->addAttribute(TEX_2F, "vTex");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
 		tmpBuf->addAttribute(4, GL_FLOAT, 0, "vColor");
-		tmpBuf->addAttribute(POS_3F, "vPosition");
 		tmpBuf->setData(renderGroups[i].verts, renderGroups[i].vertCount);
 
 		renderGroups[i].wireframeBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, renderGroups[i].wireframeVerts, renderGroups[i].wireframeVertCount, GL_LINES);

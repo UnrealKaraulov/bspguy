@@ -2114,7 +2114,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	{
 		nodes[i].iPlane = remap.planes[nodes[i].iPlane];
 		if (nodes[i].nFaces > 0)
-			nodes[i].firstFace = remap.faces[nodes[i].firstFace];
+			nodes[i].iFirstFace = remap.faces[nodes[i].iFirstFace];
 		for (int k = 0; k < 2; k++)
 		{
 			if (nodes[i].iChildren[k] >= 0)
@@ -2882,7 +2882,7 @@ void Bsp::write(const std::string& path)
 			freenodes16[n].iChildren[1] = (short)nodes[n].iChildren[1];
 			freenodes16[n].iPlane = nodes[n].iPlane;
 
-			freenodes16[n].firstFace = (unsigned short)nodes[n].firstFace;
+			freenodes16[n].firstFace = (unsigned short)nodes[n].iFirstFace;
 			freenodes16[n].nFaces = (unsigned short)nodes[n].nFaces;
 			for (int m = 0; m < 3; m++)
 			{
@@ -2902,7 +2902,7 @@ void Bsp::write(const std::string& path)
 			freenodes32a[n].iChildren[1] = nodes[n].iChildren[1];
 			freenodes32a[n].iPlane = nodes[n].iPlane;
 
-			freenodes32a[n].firstFace = nodes[n].firstFace;
+			freenodes32a[n].firstFace = nodes[n].iFirstFace;
 			freenodes32a[n].nFaces = nodes[n].nFaces;
 			for (int m = 0; m < 3; m++)
 			{
@@ -3385,7 +3385,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 					for (int n = 0; n < nodeCount; n++)
 					{
-						tmpnodes[n].firstFace = nodes16[n].firstFace;
+						tmpnodes[n].iFirstFace = nodes16[n].firstFace;
 						tmpnodes[n].iChildren[0] = nodes16[n].iChildren[0];
 						tmpnodes[n].iChildren[1] = nodes16[n].iChildren[1];
 						tmpnodes[n].iPlane = nodes16[n].iPlane;
@@ -3426,7 +3426,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 				for (int n = 0; n < nodeCount; n++)
 				{
-					tmpnodes[n].firstFace = nodes16[n].firstFace;
+					tmpnodes[n].iFirstFace = nodes16[n].firstFace;
 					tmpnodes[n].iChildren[0] = nodes16[n].iChildren[0];
 					tmpnodes[n].iChildren[1] = nodes16[n].iChildren[1];
 					tmpnodes[n].iPlane = nodes16[n].iPlane;
@@ -4090,7 +4090,7 @@ bool Bsp::validate()
 	}
 	for (int i = 0; i < leafCount; i++)
 	{
-		if (leaves[i].nMarkSurfaces > 0 && leaves[i].iFirstMarkSurface >= marksurfCount)
+		if (leaves[i].nMarkSurfaces > 0 && leaves[i].iFirstMarkSurface + leaves[i].nMarkSurfaces > marksurfCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0117), i, leaves[i].iFirstMarkSurface, marksurfCount);
 			isValid = false;
@@ -4125,9 +4125,9 @@ bool Bsp::validate()
 	}
 	for (int i = 0; i < nodeCount; i++)
 	{
-		if (nodes[i].nFaces > 0 && nodes[i].firstFace >= faceCount)
+		if (nodes[i].nFaces > 0 && nodes[i].iFirstFace >= faceCount)
 		{
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0120), i, nodes[i].firstFace, faceCount);
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0120), i, nodes[i].iFirstFace, faceCount);
 			isValid = false;
 		}
 		if (nodes[i].iPlane >= planeCount)
@@ -4738,7 +4738,7 @@ void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 
 	for (int i = 0; i < node.nFaces; i++)
 	{
-		mark_face_structures(node.firstFace + i, usage);
+		mark_face_structures(node.iFirstFace + i, usage);
 	}
 
 	for (int i = 0; i < 2; i++)
@@ -4844,7 +4844,7 @@ void Bsp::remap_node_structures(int iNode, STRUCTREMAP* remap)
 
 	for (int i = 0; i < node.nFaces; i++)
 	{
-		remap_face_structures(node.firstFace + i, remap);
+		remap_face_structures(node.iFirstFace + i, remap);
 	}
 
 	for (int i = 0; i < 2; i++)
@@ -5796,7 +5796,7 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 		{
 			BSPNODE32& node = newNodes[nodeCount + k];
 
-			node.firstFace = (startFace + k); // face required for decals
+			node.iFirstFace = (startFace + k); // face required for decals
 			node.nFaces = 1;
 			node.iPlane = startPlane + k;
 			// node mins/maxs don't matter for submodels. Leave them at 0.
@@ -5979,7 +5979,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 		{
 			BSPNODE32& node = newNodes[nodeCount + k];
 
-			node.firstFace = (startFace + k); // face required for decals
+			node.iFirstFace = (startFace + k); // face required for decals
 			node.nFaces = 1;
 			node.iPlane = startPlane + k;
 			// node mins/maxs don't matter for submodels. Leave them at 0.
@@ -6320,7 +6320,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 	for (size_t i = 0; i < newNodes.size(); i++)
 	{
 		BSPNODE32& node = newNodes[i];
-		node.firstFace = remap.faces[node.firstFace];
+		node.iFirstFace = remap.faces[node.iFirstFace];
 		node.iPlane = remap.planes[node.iPlane];
 
 		for (int k = 0; k < 2; k++)
@@ -6486,6 +6486,121 @@ int Bsp::duplicate_model(int modelIdx)
 	return newModelIdx;
 }
 
+bool Bsp::remove_face(int faceIdx, bool onlyleafs)
+{
+	// Check if face is valid
+	if (faceIdx < 0 || faceIdx >= faceCount)
+	{
+		return false;
+	}
+
+	int leafFaceTarget = -1;
+
+	if (onlyleafs)
+	{
+		leafFaceTarget = faceIdx;
+	}
+	else
+	{
+		print_log("Remove face with id:{}\n", faceIdx);
+		std::vector<BSPFACE32> all_faces;
+		for (int f = 0; f < faceCount; f++)
+		{
+			if (f != faceIdx)
+			{
+				all_faces.push_back(faces[f]);
+			}
+			else
+			{
+				// Shift face count in models
+				for (int m = 0; m < modelCount; m++)
+				{
+					if (models[m].nFaces == 0)
+						continue;
+					if (faceIdx >= models[m].iFirstFace && faceIdx < models[m].iFirstFace + models[m].nFaces)
+					{
+						print_log("Remove face from {} model\n", m);
+						models[m].nFaces--;
+					}
+					else if (models[m].iFirstFace != 0 && models[m].iFirstFace > faceIdx)
+					{
+						models[m].iFirstFace--;
+					}
+				}
+
+				// Shift face count in nodes
+				for (int n = 0; n < nodeCount; n++)
+				{
+					if (nodes[n].nFaces == 0)
+						continue;
+					if (faceIdx >= nodes[n].iFirstFace && faceIdx < nodes[n].iFirstFace + nodes[n].nFaces)
+					{
+						print_log("Remove face from {} node\n", n);
+						nodes[n].nFaces--;
+					}
+					else if (nodes[n].iFirstFace != 0 && nodes[n].iFirstFace > faceIdx)
+					{
+						nodes[n].iFirstFace--;
+					}
+				}
+
+				//Shift face count in marksurfs
+				for (int s = 0; s < marksurfCount; s++)
+				{
+					if (marksurfs[s] == 0)
+						continue;
+
+					if (faceIdx == marksurfs[s])
+					{
+						print_log("Remove face from {} surface\n", s);
+						marksurfs[s] = leafFaceTarget;
+					}
+					else if (marksurfs[s] != 0 && marksurfs[s] > faceIdx)
+					{
+						marksurfs[s]--;
+					}
+				}
+			}
+		}
+
+		// Update faces array
+		unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
+		memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
+		replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
+	}
+
+	std::vector<int> all_mark_surfaces;
+	for (int s = 0; s < marksurfCount; s++)
+	{
+		if (marksurfs[s] != leafFaceTarget)
+		{
+			all_mark_surfaces.push_back(marksurfs[s]);
+		}
+		else
+		{
+			for (int m = 0; m < leafCount; m++)
+			{
+				if (leaves[m].nMarkSurfaces == 0)
+					continue;
+				if (s >= leaves[m].iFirstMarkSurface && s < leaves[m].iFirstMarkSurface + leaves[m].nMarkSurfaces)
+				{
+					print_log("Remove face {} from {} leaf\n", faceIdx, m);
+					leaves[m].nMarkSurfaces--;
+				}
+				else if (leaves[m].iFirstMarkSurface != 0 && leaves[m].iFirstMarkSurface > s)
+				{
+					leaves[m].iFirstMarkSurface--;
+				}
+			}
+		}
+	}
+
+	unsigned char *newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
+	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
+	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
+	return true;
+}
+
 int Bsp::merge_two_models(int src_model, int dst_model)
 {
 	if (models[dst_model].iFirstFace > models[src_model].iFirstFace)
@@ -6517,9 +6632,9 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 
 	for (int m = 0; m < nodeCount; m++)
 	{
-		if (nodes[m].firstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
+		if (nodes[m].iFirstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
 		{
-			nodes[m].firstFace += newfaces;
+			nodes[m].iFirstFace += newfaces;
 		}
 	}
 

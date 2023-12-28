@@ -684,8 +684,8 @@ void StudioModel::RefreshMeshList(int body)
 		for (int j = 0; j < m_pmodel->nummesh; j++)
 		{
 			auto tmpBuf = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->modelShader, 0, GL_TRIANGLES);
-			tmpBuf->addAttribute(TEX_2F, "vTex");
 			tmpBuf->addAttribute(POS_3F, "vPosition");
+			tmpBuf->addAttribute(TEX_2F, "vTex");
 		}
 	}
 

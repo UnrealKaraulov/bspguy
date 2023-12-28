@@ -1566,9 +1566,9 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 				}
 			}
 		}
-		if (node.nFaces && node.firstFace >= thisWorldFaceCount)
+		if (node.nFaces && node.iFirstFace >= thisWorldFaceCount)
 		{
-			node.firstFace += otherFaceCount;
+			node.iFirstFace += otherFaceCount;
 		}
 
 		mergedNodes.push_back(node);
@@ -1593,7 +1593,7 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 		node.iPlane = planeRemap[node.iPlane];
 		if (node.nFaces)
 		{
-			node.firstFace += thisWorldFaceCount;
+			node.iFirstFace += thisWorldFaceCount;
 		}
 
 		mergedNodes.push_back(node);
