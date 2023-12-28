@@ -2694,6 +2694,70 @@ void Gui::drawMenuBar()
 				}
 				ImGui::EndMenu();
 			}
+
+			if (ImGui::MenuItem("Delete cull faces"))
+			{
+				int leafIdx = 0;
+
+				BSPLEAF32& leaf = map->leaves[leafIdx];
+				int thisLeafCount = map->leafCount;
+
+				int oldVisRowSize = ((thisLeafCount + 63) & ~63) >> 3;
+
+				unsigned char* visData = new unsigned char[oldVisRowSize];
+				memset(visData, 0xFF, oldVisRowSize);
+				//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
+				DecompressVis(map->visdata + leaf.nVisOffset, visData, oldVisRowSize, map->leafCount, map->visDataLength - leaf.nVisOffset);
+
+				bool FoundAnyFace = true;
+
+				int cullfaces = 0;
+
+				for (int l = 0; l < map->leafCount - 1 && !FoundAnyFace; l++)
+				{
+					if (l == leafIdx || CHECKVISBIT(visData, l))
+					{
+						auto faceList = map->getLeafFaces(l + 1);
+						for (const auto& idx : faceList)
+						{
+							cullfaces++;
+						}
+					}
+				}
+
+				g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", cullfaces);
+
+
+
+				while (FoundAnyFace)
+				{
+					FoundAnyFace = false;
+					for (int l = 0; l < map->leafCount - 1 && !FoundAnyFace; l++)
+					{
+						if (l == leafIdx || CHECKVISBIT(visData, l))
+						{
+							auto faceList = map->getLeafFaces(l + 1);
+							for (const auto& idx : faceList)
+							{
+								map->remove_face(idx);
+								g_progress.tick();
+								FoundAnyFace = true;
+								break;
+							}
+						}
+					}
+				}
+				delete[] visData;
+
+				map->getBspRender()->loadLightmaps();
+				map->getBspRender()->calcFaceMaths();
+				map->getBspRender()->preRenderFaces();
+				map->getBspRender()->preRenderEnts();
+
+				map->update_lump_pointers();
+				map->update_ent_lump();
+			}
+
 			ImGui::Separator();
 
 			bool hasAnyCollision = anyHullValid[1] || anyHullValid[2] || anyHullValid[3];
