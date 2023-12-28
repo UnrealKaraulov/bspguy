@@ -8889,7 +8889,7 @@ void Gui::drawFaceEditorWidget()
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Face now totally removed from map!");
+				ImGui::TextUnformatted("Selected faces now totally removed from map!");
 				ImGui::EndTooltip();
 			}
 			ImGui::SameLine();
@@ -8912,7 +8912,7 @@ void Gui::drawFaceEditorWidget()
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Face will be removed from leaves and make this face only invisibled!");
+				ImGui::TextUnformatted("Selected faces will be removed from leaves and make this faces only invisibled!");
 				ImGui::EndTooltip();
 			}
 			ImGui::PopStyleColor();

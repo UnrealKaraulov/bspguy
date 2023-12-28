@@ -9,9 +9,9 @@
 
 struct tVert
 {
+	vec3 pos;
 	// texture coordinates
 	float u, v;
-	vec3 pos;
 
 	tVert() = default;
 	tVert(float x, float y, float z, float u, float v) : u(u), v(v), pos(x, y, z)
@@ -24,9 +24,9 @@ struct tVert
 
 struct modelVert
 {
+	vec3 pos;
 	// texture coordinates
 	float u, v;
-	vec3 pos;
 };
 
 
