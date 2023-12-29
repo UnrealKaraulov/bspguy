@@ -2709,7 +2709,7 @@ void Gui::drawMenuBar()
 					unsigned char* visData = new unsigned char[oldVisRowSize];
 					memset(visData, 0xFF, oldVisRowSize);
 					//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
-						DecompressVis(map->visdata + leaf.nVisOffset, visData, oldVisRowSize, map->leafCount, map->visDataLength - leaf.nVisOffset);
+					DecompressVis(map->visdata + leaf.nVisOffset, visData, oldVisRowSize, map->leafCount, map->visDataLength - leaf.nVisOffset);
 
 					bool FoundAnyFace = true;
 
@@ -2772,7 +2772,7 @@ void Gui::drawMenuBar()
 
 				if (leafIdx > 0)
 				{
-					if (ImGui::MenuItem(fmt::format("Delete from {} leaf",leafIdx).c_str()))
+					if (ImGui::MenuItem(fmt::format("Delete from {} leaf", leafIdx).c_str()))
 					{
 						BSPLEAF32& leaf = map->leaves[leafIdx];
 						int thisLeafCount = map->leafCount;
@@ -2831,7 +2831,7 @@ void Gui::drawMenuBar()
 						map->update_ent_lump();
 
 
-						map->getBspRender()->pushModelUndoState(fmt::format("REMOVE FACES FROM {} leaf",leafIdx), EDIT_MODEL_LUMPS);
+						map->getBspRender()->pushModelUndoState(fmt::format("REMOVE FACES FROM {} leaf", leafIdx), EDIT_MODEL_LUMPS);
 					}
 				}
 				ImGui::EndMenu();
@@ -8304,7 +8304,7 @@ void Gui::drawLightMapTool()
 	static Texture* currentlightMap[MAX_LIGHTMAPS] = { NULL };
 	static float windowWidth = 500.0f;
 	static float windowHeight = 600.0f;
-	static int lightmaps = 0;
+	static int lightmap_count = 0;
 	static bool needPickColor = false;
 	const char* light_names[] =
 	{
@@ -8334,16 +8334,24 @@ void Gui::drawLightMapTool()
 			ImGui::TextDisabled(get_localized_string(LANG_0863).c_str());
 		}
 		Bsp* map = app->getSelectedMap();
-		if (map && app->pickInfo.selectedFaces.size())
+		if (map)
 		{
 			BspRenderer* renderer = map->getBspRender();
-			int faceIdx = app->pickInfo.selectedFaces[0];
-			BSPFACE32& face = map->faces[faceIdx];
-			int size[2];
-			GetFaceLightmapSize(map, faceIdx, size);
-			if (showLightmapEditorUpdate)
+			int faceIdx = app->pickInfo.selectedFaces.size() ? app->pickInfo.selectedFaces[0] : -1;
+			BSPFACE32* face = NULL;
+			int size[2]{};
+			if (faceIdx >= 0)
 			{
-				lightmaps = 0;
+				face = &map->faces[faceIdx];
+				GetFaceLightmapSize(map, faceIdx, size);
+			}
+			else
+			{
+				lightmap_count = 0;
+			}
+			if (showLightmapEditorUpdate && face)
+			{
+				lightmap_count = 0;
 
 				for (int i = 0; i < MAX_LIGHTMAPS; i++)
 				{
@@ -8353,26 +8361,26 @@ void Gui::drawLightMapTool()
 				}
 				for (int i = 0; i < MAX_LIGHTMAPS; i++)
 				{
-					if (face.nStyles[i] == 255)
+					if (face->nStyles[i] == 255)
 						continue;
 					int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 					currentlightMap[i] = new Texture(size[0], size[1], new unsigned char[lightmapSz], "LIGHTMAP");
-					int offset = face.nLightmapOffset + i * lightmapSz;
+					int offset = face->nLightmapOffset + i * lightmapSz;
 					light_offsets[i] = offset;
-					if (!map->lightdata || offset + lightmapSz > map->lightDataLength )
-						memset(currentlightMap[i]->data, 255, lightmapSz); 
+					if (!map->lightdata || offset + lightmapSz > map->lightDataLength)
+						memset(currentlightMap[i]->data, 255, lightmapSz);
 					else
 						memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
 					currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
-					lightmaps++;
+					lightmap_count++;
 					//print_log(get_localized_string(LANG_0418),i,offset);
 				}
 
-				windowWidth = lightmaps > 1 ? 500.f : 290.f;
+				windowWidth = lightmap_count > 1 ? 500.f : 290.f;
 				showLightmapEditorUpdate = false;
 			}
 			ImVec2 imgSize = ImVec2(200, 200);
-			for (int i = 0; i < lightmaps; i++)
+			for (int i = 0; i < lightmap_count; i++)
 			{
 				if (i == 0)
 				{
@@ -8385,9 +8393,7 @@ void Gui::drawLightMapTool()
 					ImGui::SameLine();
 					ImGui::TextDisabled(light_names[2]);
 					ImGui::Separator();
-					ImGui::Dummy(ImVec2(50, 5.0f));
-					ImGui::SameLine();
-					ImGui::TextDisabled(fmt::format("Light offest:{}", light_offsets[i]).c_str());
+					ImGui::TextDisabled(fmt::format("Offest:{}", light_offsets[i]).c_str());
 				}
 
 				if (i == 2)
@@ -8401,9 +8407,7 @@ void Gui::drawLightMapTool()
 					ImGui::SameLine();
 					ImGui::TextDisabled(light_names[4]);
 					ImGui::Separator();
-					ImGui::Dummy(ImVec2(50, 5.0f));
-					ImGui::SameLine();
-					ImGui::TextDisabled(fmt::format("Light offest:{}", light_offsets[i]).c_str());
+					ImGui::TextDisabled(fmt::format("Offest:{}", light_offsets[i]).c_str());
 				}
 
 				if (i == 1 || i > 2)
@@ -8472,16 +8476,19 @@ void Gui::drawLightMapTool()
 					}
 				}
 			}
-			ImGui::Separator();
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0419)), size[0], size[1]).c_str());
-			ImGui::Separator();
-			ColorPicker3(imgui_io, colourPatch);
-			ImGui::SetNextItemWidth(100.f);
-			if (ImGui::Button(get_localized_string(LANG_0864).c_str(), ImVec2(120, 0)))
+			if (face)
 			{
-				needPickColor = true;
+				ImGui::Separator();
+				ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0419)), size[0], size[1]).c_str());
+				ImGui::Separator();
+				ColorPicker3(imgui_io, colourPatch);
+				ImGui::SetNextItemWidth(100.f);
+				if (ImGui::Button(get_localized_string(LANG_0864).c_str(), ImVec2(120, 0)))
+				{
+					needPickColor = true;
+				}
+				ImGui::Separator();
 			}
-			ImGui::Separator();
 			ImGui::SetNextItemWidth(100.f);
 			ImGui::Checkbox(light_names[1], &renderer->lightEnableFlags[0]);
 			ImGui::SameLine();
@@ -8492,45 +8499,49 @@ void Gui::drawLightMapTool()
 			ImGui::SameLine();
 			ImGui::Checkbox(light_names[4], &renderer->lightEnableFlags[3]);
 			ImGui::Separator();
-			if (ImGui::Button(get_localized_string(LANG_1126).c_str(), ImVec2(120, 0)))
+
+			if (face)
 			{
-				for (int i = 0; i < MAX_LIGHTMAPS; i++)
+				if (ImGui::Button(get_localized_string(LANG_1126).c_str(), ImVec2(120, 0)))
 				{
-					if (face.nStyles[i] == 255 || !currentlightMap[i])
-						continue;
-					int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
-					int offset = face.nLightmapOffset + i * lightmapSz;
-					memcpy(map->lightdata + offset, currentlightMap[i]->data, lightmapSz);
+					for (int i = 0; i < MAX_LIGHTMAPS; i++)
+					{
+						if (face->nStyles[i] == 255 || !currentlightMap[i])
+							continue;
+						int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
+						int offset = face->nLightmapOffset + i * lightmapSz;
+						memcpy(map->lightdata + offset, currentlightMap[i]->data, lightmapSz);
+					}
+					renderer->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
+					map->resize_all_lightmaps(true);
 				}
-				renderer->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
-				map->resize_all_lightmaps(true);
-			}
-			ImGui::SameLine();
+				ImGui::SameLine();
 
-			if (ImGui::Button(get_localized_string(LANG_1127).c_str(), ImVec2(120, 0)))
-			{
-				showLightmapEditorUpdate = true;
+				if (ImGui::Button(get_localized_string(LANG_1127).c_str(), ImVec2(120, 0)))
+				{
+					showLightmapEditorUpdate = true;
+				}
+
+				ImGui::Separator();
+				if (ImGui::Button(get_localized_string(LANG_1128).c_str(), ImVec2(120, 0)))
+				{
+					print_log(get_localized_string(LANG_0420));
+					createDir(g_working_dir);
+					ExportLightmap(*face, faceIdx, map);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(get_localized_string(LANG_1129).c_str(), ImVec2(120, 0)))
+				{
+					print_log(get_localized_string(LANG_0421));
+					ImportLightmap(*face, faceIdx, map);
+					showLightmapEditorUpdate = true;
+					renderer->reloadLightmaps();
+				}
+				ImGui::Separator();
 			}
 
-			ImGui::Separator();
-			if (ImGui::Button(get_localized_string(LANG_1128).c_str(), ImVec2(120, 0)))
-			{
-				print_log(get_localized_string(LANG_0420));
-				createDir(g_working_dir);
-				ExportLightmap(face, faceIdx, map);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button(get_localized_string(LANG_1129).c_str(), ImVec2(120, 0)))
-			{
-				print_log(get_localized_string(LANG_0421));
-				ImportLightmap(face, faceIdx, map);
-				showLightmapEditorUpdate = true;
-				renderer->reloadLightmaps();
-			}
-			ImGui::Separator();
-
-			ImGui::Text(get_localized_string(LANG_0866).c_str());
-			ImGui::Separator();
+			//ImGui::Text(get_localized_string(LANG_0866).c_str());
+			//ImGui::Separator();
 			if (ImGui::Button(get_localized_string(LANG_0867).c_str(), ImVec2(125, 0)))
 			{
 				print_log(get_localized_string(LANG_1064));
@@ -8868,56 +8879,65 @@ void Gui::drawFaceEditorWidget()
 					updatedFaceVec = true;
 				}
 			}
-
-			ImVec4 errorColor = { 1.0, 0.0, 0.0, 1.0 };
-			ImGui::PushStyleColor(ImGuiCol_Text, errorColor);
-			if (ImGui::Button("REMOVE"))
-			{
-				map->remove_face(app->pickInfo.selectedFaces[0], false);
-
-				map->getBspRender()->loadLightmaps();
-				map->getBspRender()->calcFaceMaths();
-				map->getBspRender()->preRenderFaces();
-				map->getBspRender()->preRenderEnts();
-
-				map->update_lump_pointers();
-				map->update_ent_lump();
-
-
-				map->getBspRender()->pushModelUndoState("REMOVE FACE", EDIT_MODEL_LUMPS);
-			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Selected faces now totally removed from map!");
-				ImGui::EndTooltip();
-			}
-			ImGui::SameLine();
-
-			if (ImGui::Button("REMOVE PVS"))
-			{
-				map->remove_face(app->pickInfo.selectedFaces[0], true);
-
-				map->getBspRender()->loadLightmaps();
-				map->getBspRender()->calcFaceMaths();
-				map->getBspRender()->preRenderFaces();
-				map->getBspRender()->preRenderEnts();
-
-				map->update_lump_pointers();
-				map->update_ent_lump();
-
-
-				map->getBspRender()->pushModelUndoState("REMOVE FACE FROM PVS", EDIT_MODEL_LUMPS);
-			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Selected faces will be removed from leaves and make this faces only invisibled!");
-				ImGui::EndTooltip();
-			}
-			ImGui::PopStyleColor();
-
 		}
+
+
+		ImVec4 errorColor = { 1.0, 0.0, 0.0, 1.0 };
+		ImGui::PushStyleColor(ImGuiCol_Text, errorColor);
+		if (ImGui::Button("DELETE"))
+		{
+			auto selected_faces = app->pickInfo.selectedFaces;
+			while (selected_faces.size())
+			{
+				map->remove_face(selected_faces[selected_faces.size() - 1], false);
+				selected_faces.pop_back();
+			}
+
+			map->getBspRender()->loadLightmaps();
+			map->getBspRender()->calcFaceMaths();
+			map->getBspRender()->preRenderFaces();
+			map->getBspRender()->preRenderEnts();
+
+			map->update_lump_pointers();
+			map->update_ent_lump();
+
+			map->getBspRender()->pushModelUndoState("DELETE FACES", EDIT_MODEL_LUMPS);
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Selected faces now totally removed from map!");
+			ImGui::EndTooltip();
+		}
+		ImGui::SameLine();
+
+		if (ImGui::Button("REMOVE PVS"))
+		{
+			auto selected_faces = app->pickInfo.selectedFaces;
+			while (selected_faces.size())
+			{
+				map->remove_face(selected_faces[selected_faces.size() - 1], true);
+				selected_faces.pop_back();
+			}
+
+			map->getBspRender()->loadLightmaps();
+			map->getBspRender()->calcFaceMaths();
+			map->getBspRender()->preRenderFaces();
+			map->getBspRender()->preRenderEnts();
+
+			map->update_lump_pointers();
+			map->update_ent_lump();
+
+			map->getBspRender()->pushModelUndoState("REMOVE FACES FROM PVS", EDIT_MODEL_LUMPS);
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Selected faces will be removed from leaves and make this faces only invisibled!");
+			ImGui::EndTooltip();
+		}
+		ImGui::PopStyleColor();
+
 
 		if (app->pickInfo.selectedFaces.size() > 1)
 		{

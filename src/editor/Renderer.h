@@ -238,6 +238,8 @@ public:
 	bool canControl;
 	bool oldControl;
 
+	double facePickTime = -1.0;
+
 	int debugInt = 0;
 	int debugIntMax = 0;
 	int debugNode = 0;
