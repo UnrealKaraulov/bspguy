@@ -2720,16 +2720,11 @@ void Gui::drawMenuBar()
 						if (l == leafIdx || CHECKVISBIT(visData, l))
 						{
 							auto faceList = map->getLeafFaces(l + 1);
-							for (const auto& idx : faceList)
-							{
-								cullfaces++;
-							}
+							cullfaces += faceList.size();
 						}
 					}
-
+					STRUCTCOUNT count_1(map);
 					g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", cullfaces);
-
-
 
 					while (FoundAnyFace)
 					{
@@ -2739,17 +2734,19 @@ void Gui::drawMenuBar()
 							if (l == leafIdx || CHECKVISBIT(visData, l))
 							{
 								auto faceList = map->getLeafFaces(l + 1);
-								for (const auto& idx : faceList)
+								if (faceList.size())
 								{
-									map->remove_face(idx);
+									map->remove_face(faceList[faceList.size()-1]);
 									g_progress.tick();
 									FoundAnyFace = true;
-									break;
 								}
 							}
 						}
 					}
 					delete[] visData;
+					STRUCTCOUNT count_2(map);
+					count_1.sub(count_2);
+					count_1.print_delete_stats(1);
 
 					map->getBspRender()->loadLightmaps();
 					map->getBspRender()->calcFaceMaths();
@@ -2787,19 +2784,15 @@ void Gui::drawMenuBar()
 						bool FoundAnyFace = true;
 
 						int cullfaces = 0;
-
 						for (int l = 0; l < map->leafCount - 1; l++)
 						{
 							if (l == leafIdx || CHECKVISBIT(visData, l))
 							{
 								auto faceList = map->getLeafFaces(l + 1);
-								for (const auto& idx : faceList)
-								{
-									cullfaces++;
-								}
+								cullfaces += faceList.size();
 							}
 						}
-
+						STRUCTCOUNT count_1(map);
 						g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", cullfaces);
 
 						while (FoundAnyFace)
@@ -2810,17 +2803,19 @@ void Gui::drawMenuBar()
 								if (l == leafIdx || CHECKVISBIT(visData, l))
 								{
 									auto faceList = map->getLeafFaces(l + 1);
-									for (const auto& idx : faceList)
+									if (faceList.size())
 									{
-										map->remove_face(idx);
+										map->remove_face(faceList[faceList.size() - 1]);
 										g_progress.tick();
 										FoundAnyFace = true;
-										break;
 									}
 								}
 							}
 						}
 						delete[] visData;
+						STRUCTCOUNT count_2(map);
+						count_1.sub(count_2);
+						count_1.print_delete_stats(1);
 
 						map->getBspRender()->loadLightmaps();
 						map->getBspRender()->calcFaceMaths();
@@ -5227,8 +5222,6 @@ void Gui::drawGOTOWidget()
 
 	if (ImGui::Begin(get_localized_string(LANG_0676).c_str(), &showGOTOWidget, 0))
 	{
-		if (entid == -1)
-			entid = g_app->pickInfo.GetSelectedEnt();
 		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
 		float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.33f;
@@ -5294,6 +5287,7 @@ void Gui::drawGOTOWidget()
 			ImGui::PopItemWidth();
 			if (ImGui::Button("Go to##2"))
 			{
+				app->pickMode = PICK_OBJECT;
 				if (modelid >= 0 && modelid < map->modelCount)
 				{
 					for (size_t i = 0; i < map->ents.size(); i++)
@@ -5306,8 +5300,9 @@ void Gui::drawGOTOWidget()
 						}
 					}
 				}
-				else if (faceid > 0 && faceid < map->faceCount)
+				else if (faceid >= 0 && faceid < map->faceCount)
 				{
+					app->pickMode = PICK_FACE;
 					app->goToFace(map, faceid);
 					int modelIdx = map->get_model_from_face(faceid);
 					if (modelIdx >= 0)

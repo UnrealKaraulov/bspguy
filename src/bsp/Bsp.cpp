@@ -6502,7 +6502,7 @@ bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 	}
 	else
 	{
-		print_log("Remove face with id:{}\n", faceIdx);
+		//print_log("Remove face with id:{}\n", faceIdx);
 		std::vector<BSPFACE32> all_faces;
 		for (int f = 0; f < faceCount; f++)
 		{
@@ -6519,7 +6519,7 @@ bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 						continue;
 					if (faceIdx >= models[m].iFirstFace && faceIdx < models[m].iFirstFace + models[m].nFaces)
 					{
-						print_log("Remove face from {} model\n", m);
+						//print_log("Remove face from {} model\n", m);
 						models[m].nFaces--;
 					}
 					else if (models[m].iFirstFace != 0 && models[m].iFirstFace > faceIdx)
@@ -6535,7 +6535,7 @@ bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 						continue;
 					if (faceIdx >= nodes[n].iFirstFace && faceIdx < nodes[n].iFirstFace + nodes[n].nFaces)
 					{
-						print_log("Remove face from {} node\n", n);
+						//print_log("Remove face from {} node\n", n);
 						nodes[n].nFaces--;
 					}
 					else if (nodes[n].iFirstFace != 0 && nodes[n].iFirstFace > faceIdx)
@@ -6552,7 +6552,7 @@ bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 
 					if (faceIdx == marksurfs[s])
 					{
-						print_log("Remove face from {} surface\n", s);
+						//print_log("Remove face from {} surface\n", s);
 						marksurfs[s] = leafFaceTarget;
 					}
 					else if (marksurfs[s] != 0 && marksurfs[s] > faceIdx)
@@ -6565,7 +6565,8 @@ bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 
 		// Update faces array
 		unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
-		memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
+		if (sizeof(BSPFACE32) * all_faces.size() > 0)
+			memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 		replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 	}
 
@@ -6584,7 +6585,7 @@ bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 					continue;
 				if (s >= leaves[m].iFirstMarkSurface && s < leaves[m].iFirstMarkSurface + leaves[m].nMarkSurfaces)
 				{
-					print_log("Remove face {} from {} leaf\n", faceIdx, m);
+					//print_log("Remove face {} from {} leaf\n", faceIdx, m);
 					leaves[m].nMarkSurfaces--;
 				}
 				else if (leaves[m].iFirstMarkSurface != 0 && leaves[m].iFirstMarkSurface > s)
@@ -6595,7 +6596,7 @@ bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 		}
 	}
 
-	unsigned char *newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
+	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
 	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
 	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
 	return true;
@@ -7847,7 +7848,7 @@ void Bsp::hideEnts(bool hide)
 
 std::vector<int> Bsp::getLeafFaces(BSPLEAF32& leaf)
 {
-	std::vector<int> retFaces;
+	std::vector<int> retFaces{};
 	for (int i = 0; i < leaf.nMarkSurfaces; i++)
 	{
 		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
@@ -7857,7 +7858,7 @@ std::vector<int> Bsp::getLeafFaces(BSPLEAF32& leaf)
 
 std::vector<int> Bsp::getLeafFaces(int leafIdx)
 {
-	std::vector<int> retFaces;
+	std::vector<int> retFaces{};
 	if (leafIdx < 0)
 		return retFaces;
 
