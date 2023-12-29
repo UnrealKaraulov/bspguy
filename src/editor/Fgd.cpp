@@ -215,6 +215,21 @@ bool Fgd::parse()
 			if (bracketNestLevel)
 			{
 				print_log(get_localized_string(LANG_0301), lineNum, name);
+
+				if (fgdClass->isSprite &&
+					!fgdClass->iconSprite.size() && !fgdClass->sprite.size())
+				{
+					for (auto& kv : fgdClass->keyvalues)
+					{
+						if (kv.name == "model" && kv.defaultValue.size())
+						{
+							fgdClass->sprite = kv.defaultValue;
+							fixupPath(fgdClass->sprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+							break;
+						}
+					}
+				}
+
 				classes.push_back(fgdClass);
 				fgdClass = new FgdClass();
 				bracketNestLevel = 0;
@@ -233,6 +248,19 @@ bool Fgd::parse()
 			bracketNestLevel--;
 			if (bracketNestLevel == 0)
 			{
+				if (fgdClass->isSprite &&
+					!fgdClass->iconSprite.size() && !fgdClass->sprite.size())
+				{
+					for (auto& kv : fgdClass->keyvalues)
+					{
+						if (kv.name == "model" && kv.defaultValue.size())
+						{
+							fgdClass->sprite = kv.defaultValue;
+							fixupPath(fgdClass->sprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+							break;
+						}
+					}
+				}
 				classes.push_back(fgdClass);
 				fgdClass = new FgdClass(); //memory leak
 			}
@@ -240,6 +268,19 @@ bool Fgd::parse()
 
 		if (bracketNestLevel == 0 && (line.rfind('[') != std::string::npos && std::regex_search(line, brackEnd)))
 		{
+			if (fgdClass->isSprite &&
+				!fgdClass->iconSprite.size() && !fgdClass->sprite.size())
+			{
+				for (auto& kv : fgdClass->keyvalues)
+				{
+					if (kv.name == "model" && kv.defaultValue.size())
+					{
+						fgdClass->sprite = kv.defaultValue;
+						fixupPath(fgdClass->sprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+						break;
+					}
+				}
+			}
 			classes.push_back(fgdClass);
 			fgdClass = new FgdClass(); //memory leak
 			continue;
@@ -390,12 +431,16 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		else if (lpart.starts_with("iconsprite("))
 		{
 			fgdClass.iconSprite = getValueInParens(typeParts[i]);
-			fixupPath(fgdClass.iconSprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+			fgdClass.isSprite = true;
+			if (fgdClass.iconSprite.size())
+				fixupPath(fgdClass.iconSprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 		}
 		else if (lpart.starts_with("sprite("))
 		{
 			fgdClass.sprite = getValueInParens(typeParts[i]);
 			fgdClass.isSprite = true;
+			if (fgdClass.sprite.size())
+				fixupPath(fgdClass.sprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 		}
 		else if (lpart.starts_with("decal("))
 		{

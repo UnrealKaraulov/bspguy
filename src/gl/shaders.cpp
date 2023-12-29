@@ -35,37 +35,6 @@ namespace Shaders
 		"	gl_FragColor = vec4(pow(fColor.rgb, vec3(1.0/gamma)), fColor.a);\n"
 		"}\n";
 
-
-	const char* g_shader_tVert_vertex =
-		// object variables
-		"uniform mat4 modelViewProjection;\n"
-
-		// vertex variables
-		"attribute vec3 vPosition;\n"
-		"attribute vec2 vTex;\n"
-
-		// fragment variables
-		"varying vec2 fTex;\n"
-
-		"void main()\n"
-		"{\n"
-		"	gl_Position = modelViewProjection * vec4(vPosition, 1);\n"
-		"	fTex = vTex;\n"
-		"}\n";
-
-
-	const char* g_shader_tVert_fragment =
-		"varying vec2 fTex;\n"
-
-		"uniform sampler2D sTex;\n"
-
-		"void main()\n"
-		"{\n"
-		"	gl_FragColor = texture2D(sTex, fTex);\n"
-		"	if(gl_FragColor.a <= 0.05)\n"
-		"		discard;\n"
-		"}\n";
-
 	const char* g_shader_model_vertex =
 		// object variables
 		"uniform mat4 modelViewProjection;\n"

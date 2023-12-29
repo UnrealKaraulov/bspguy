@@ -4518,6 +4518,13 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 				ImGui::PopStyleColor();
 				if (keyvalue.fullDescription.size())
 					ImGui::TextUnformatted(keyvalue.fullDescription.c_str());
+				ImGui::PushStyleColor(ImGuiCol_Text, { 0.9f,0.4f,0.2f,1.0f });
+				ImGui::TextUnformatted(keyvalue.name.c_str());
+				ImGui::SameLine();
+				ImGui::TextUnformatted(" = ");
+				ImGui::SameLine();
+				ImGui::TextUnformatted(keyvalue.defaultValue.c_str());
+				ImGui::PopStyleColor();
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
@@ -4618,6 +4625,14 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 								ImGui::PushStyleColor(ImGuiCol_Text, { 0.9f,0.4f,0.2f,1.0f });
 								ImGui::TextUnformatted(choice.fullDescription.c_str());
 								ImGui::PopStyleColor();
+								if (choice.sdefvalue.size())
+								{
+									ImGui::TextUnformatted(choice.name.c_str());
+									ImGui::SameLine();
+									ImGui::TextUnformatted(" = ");
+									ImGui::SameLine();
+									ImGui::TextUnformatted(choice.sdefvalue.c_str());
+								}
 								ImGui::PopTextWrapPos();
 								ImGui::EndTooltip();
 							}

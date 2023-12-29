@@ -10,7 +10,6 @@ extern std::string g_startup_dir;
 extern int g_render_flags;
 
 class Renderer;
-
 extern Renderer* g_app;
 
 enum RenderFlags

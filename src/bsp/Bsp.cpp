@@ -1171,7 +1171,6 @@ int Bsp::get_new_lightmaps_data_size()
 {
 	int tmpLightDataSz = 0;
 	for (int i = 0; i < faceCount; i++) {
-		BSPFACE32& face = faces[i];
 		int size[2];
 		GetFaceLightmapSize(this, i, size);
 		tmpLightDataSz += ((size[0] * size[1] * sizeof(COLOR3)) * lightmap_count(i));

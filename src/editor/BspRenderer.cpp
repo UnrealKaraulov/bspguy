@@ -1466,6 +1466,8 @@ void BspRenderer::preRenderEnts()
 	{
 		refreshEnt(i);
 	}
+
+	pointEntRenderer->genPointEntCubes();
 }
 
 void BspRenderer::refreshPointEnt(int entIdx)
@@ -2521,12 +2523,12 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();
-
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 				{
 					renderEnts[i].mdl->mdl_cube->selectBuffer->drawFull();
 					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 				}
+				renderEnts[i].pointEntCube->axesBuffer->drawFull();
 				renderEnts[i].pointEntCube->selectBuffer->drawFull();
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 			}
@@ -2570,8 +2572,15 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 					renderEnts[i].mdl->mdl_cube->selectBuffer->drawFull();
 					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 				}
-				renderEnts[i].pointEntCube->buffer->drawFull();
 
+				renderEnts[i].pointEntCube->axesBuffer->drawFull();
+
+				if (renderEnts[i].pointEntCube->Textured)
+				{
+					g_app->modelShader->bind();
+					missingTex->bind(0);
+				}
+				renderEnts[i].pointEntCube->cubeBuffer->drawFull();
 			}
 		}
 	}

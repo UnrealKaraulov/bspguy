@@ -100,18 +100,17 @@ struct cQuad
 // Textured 3D Cube
 struct tCube
 {
-	tQuad left, right;
-	tQuad top, bottom;
-	tQuad front, back;
+	tVert vecs[24];
 
+	tCube() = default;
 	tCube(vec3 mins, vec3 maxs);
 };
 
 // Colored 3D Cube
 struct cCube
 {
-	cQuad left, right;
 	cQuad top, bottom;
+	cQuad left, right;
 	cQuad front, back;
 
 	cCube() = default;
@@ -122,13 +121,10 @@ struct cCube
 };
 
 // Colored 3D Cube with axes
-struct cCubeAxes
+struct cCubeAxes : cCube
 {
-	cCube model;
-	cCube axes;
-
 	cCubeAxes() = default;
-	cCubeAxes(vec3 mins, vec3 maxs, COLOR4 c);
+	cCubeAxes(vec3 mins, vec3 maxs);
 };
 
 

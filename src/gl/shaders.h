@@ -8,7 +8,4 @@ namespace Shaders
 
 	extern const char* g_shader_cVert_vertex;
 	extern const char* g_shader_cVert_fragment;
-
-	extern const char* g_shader_tVert_vertex;
-	extern const char* g_shader_tVert_fragment;
 }

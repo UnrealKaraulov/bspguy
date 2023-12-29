@@ -272,7 +272,7 @@ Renderer::Renderer()
 
 	g_progress.simpleMode = true;
 
-	pointEntRenderer = new PointEntRenderer(NULL, colorShader);
+	pointEntRenderer = new PointEntRenderer(NULL);
 
 	reloading = true;
 	fgdFuture = std::async(std::launch::async, &Renderer::loadFgds, this);
@@ -856,7 +856,7 @@ void Renderer::loadFgds()
 		}
 	}
 
-	swapPointEntRenderer = new PointEntRenderer(mergedFgd, colorShader);
+	swapPointEntRenderer = new PointEntRenderer(mergedFgd);
 }
 
 void Renderer::drawModelVerts()

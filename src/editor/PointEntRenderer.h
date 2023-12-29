@@ -9,9 +9,12 @@ struct EntCube
 	vec3 maxs;
 	COLOR4 color;
 
-	VertexBuffer* buffer;
+	VertexBuffer* axesBuffer;
+	VertexBuffer* cubeBuffer;
 	VertexBuffer* selectBuffer; // red coloring for selected ents
 	VertexBuffer* wireframeBuffer; // yellow outline for selected ents
+
+	bool Textured;
 };
 
 class PointEntRenderer
@@ -19,16 +22,17 @@ class PointEntRenderer
 public:
 	Fgd* fgd;
 
-	PointEntRenderer(Fgd* fgd, ShaderProgram* colorShader);
+	PointEntRenderer(Fgd* fgd);
 	~PointEntRenderer();
 
 	EntCube* getEntCube(Entity* ent);
 
-	ShaderProgram* colorShader;
 	std::map<std::string, EntCube*> cubeMap;
 	std::vector<EntCube*> entCubes;
 
 	void genPointEntCubes();
 	EntCube* getCubeMatchingProps(EntCube* entCube);
 	void genCubeBuffers(EntCube* entCube);
+private:
+	bool defaultCubeGen = false;
 };
