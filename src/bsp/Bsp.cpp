@@ -65,8 +65,8 @@ void Bsp::init_empty_bsp()
 	ents.push_back(ent);
 
 	create_leaf(CONTENTS_EMPTY);
-	update_lump_pointers();
 	update_ent_lump();
+	update_lump_pointers();
 	/*/
 		float size = 64;
 		COLOR3* imageData = new COLOR3[64 * 64];
@@ -1120,7 +1120,7 @@ void Bsp::save_undo_lightmaps(bool logged)
 {
 	if (logged)
 	{
-		g_progress.update("Undo lightmaps", faceCount);
+		g_progress.update(fmt::format("Undo lightmaps ({})", faceCount).c_str(), faceCount);
 	}
 	if (undo_lightmaps != NULL)
 	{
@@ -1130,6 +1130,7 @@ void Bsp::save_undo_lightmaps(bool logged)
 			{
 				delete[] undo_lightmaps[i].luxelFlags;
 			}
+			undo_lightmaps[i].luxelFlags = NULL;
 		}
 
 		delete[] undo_lightmaps;
@@ -1142,10 +1143,7 @@ void Bsp::save_undo_lightmaps(bool logged)
 		int size[2];
 		GetFaceLightmapSize(this, i, size);
 
-		int lightmapSz = size[0] * size[1];
-		int lightmapCount = lightmap_count(i);
-		undo_lightmaps[i].layers = lightmapCount;
-		lightmapSz *= lightmapCount;
+		undo_lightmaps[i].layers = lightmap_count(i);
 
 		undo_lightmaps[i].width = size[0];
 		undo_lightmaps[i].height = size[1];
@@ -1173,9 +1171,10 @@ int Bsp::get_new_lightmaps_data_size()
 {
 	int tmpLightDataSz = 0;
 	for (int i = 0; i < faceCount; i++) {
+		BSPFACE32& face = faces[i];
 		int size[2];
 		GetFaceLightmapSize(this, i, size);
-		tmpLightDataSz += size[0] * size[1] * sizeof(COLOR3) * lightmap_count(i);
+		tmpLightDataSz += ((size[0] * size[1] * sizeof(COLOR3)) * lightmap_count(i));
 	}
 	return tmpLightDataSz;
 }
@@ -1192,8 +1191,6 @@ void Bsp::resize_all_lightmaps(bool logged)
 		COLOR3* newLightmapsBytes = new COLOR3[newLightmapsSize];
 		memset(newLightmapsBytes, 255, newLightmapsSize * sizeof(COLOR3));
 
-		int newLightdataSzBytes = newLightmapsSize * sizeof(COLOR3);
-
 		int lightmapOffset = 0;
 
 		for (int i = 0; i < faceCount; i++) {
@@ -1204,6 +1201,9 @@ void Bsp::resize_all_lightmaps(bool logged)
 			if (lightmap_count(i) == 0)
 				continue;
 
+			if (face.nLightmapOffset < 0)
+				continue;
+
 			int size[2];
 			GetFaceLightmapSize(this, i, size);
 
@@ -1212,27 +1212,26 @@ void Bsp::resize_all_lightmaps(bool logged)
 			newLight.height = size[1];
 			newLight.layers = lightmap_count(i);
 
-			LIGHTMAP& oldLight = newLight;
+			LIGHTMAP oldLight = newLight;
 			if (i < undo_lightmaps_count)
 			{
 				oldLight = undo_lightmaps[i];
 			}
 
-			bool lightmapResized = oldLight.width != newLight.width || oldLight.height != newLight.height;
-
 			int oldLayerSz = (oldLight.width * oldLight.height) * sizeof(COLOR3);
-			int newLayerSz = (newLight.width * newLight.height) * sizeof(COLOR3);
 			int oldSz = oldLayerSz * oldLight.layers;
+
+			int newLayerSz = (newLight.width * newLight.height) * sizeof(COLOR3);
 			int newSz = newLayerSz * newLight.layers;
 
-			if (!lightmapResized)
-				lightmapResized = oldLayerSz != newLayerSz;
+			bool lightmapResized = oldLayerSz != newLayerSz || oldLight.width != newLight.width
+				|| oldLight.height != newLight.height;
 
 			if (!lightmapResized)
 			{
-				if (lightmapOffset + oldSz > newLightdataSzBytes)
+				if (lightmapOffset + oldSz > newLightmapsSize)
 				{
-					print_log(PRINT_RED | PRINT_INTENSITY, fmt::format("ERROR! New lightmapdata overflowed at {} face {}/{}\n", i, lightmapOffset + oldSz, newLightdataSzBytes));
+					print_log(PRINT_RED | PRINT_INTENSITY, fmt::format("ERROR! New lightmapdata overflowed at {} face {}/{}[1]\n", i, lightmapOffset + oldSz, newLightmapsSize));
 					face.nLightmapOffset = 0;
 					for (int s = 0; s < MAX_LIGHTMAPS; s++)
 					{
@@ -1259,9 +1258,9 @@ void Bsp::resize_all_lightmaps(bool logged)
 			}
 			else
 			{
-				if (lightmapOffset + newSz > newLightdataSzBytes)
+				if (lightmapOffset + newSz > newLightmapsSize)
 				{
-					print_log(PRINT_RED | PRINT_INTENSITY, fmt::format("ERROR! New lightmapdata overflowed at {} face {}/{}\n", i, lightmapOffset + oldSz, newLightdataSzBytes));
+					print_log(PRINT_RED | PRINT_INTENSITY, fmt::format("ERROR! New lightmapdata overflowed at {} face {}/{}[2]\n", i, lightmapOffset + oldSz, newLightmapsSize));
 					face.nLightmapOffset = 0;
 					for (int s = 0; s < MAX_LIGHTMAPS; s++)
 					{
@@ -1274,11 +1273,21 @@ void Bsp::resize_all_lightmaps(bool logged)
 					newLight.luxelFlags = new unsigned char[newLight.width * newLight.height];
 					get_lightmap_luxelflags(this, i, newLight.luxelFlags);
 
+					//for (int layer = 0; layer < newLight.layers; layer++)
+					//{
+					//	int srcOffset = face.nLightmapOffset + oldLayerSz * (layer < oldLight.layers ? layer : std::min(layer,oldLight.layers-1));
+					//	int dstOffset = lightmapOffset + newLayerSz * layer;
+					//	std::vector<COLOR3> scaledImage;
+					//	scaleImage((COLOR3*)&lightdata[srcOffset], scaledImage, oldLight.width, oldLight.height, newLight.width, newLight.height);
+					//	memcpy((unsigned char*)newLightmapsBytes + dstOffset, &scaledImage[0], newLayerSz);
+					//}
+
+					//
 					int srcOffsetX, srcOffsetY;
 					get_lightmap_shift(oldLight, newLight, srcOffsetX, srcOffsetY);
 
 					for (int layer = 0; layer < newLight.layers; layer++) {
-						int srcOffset = (face.nLightmapOffset + oldLayerSz * std::min(layer, oldLight.layers - 1)) / sizeof(COLOR3);
+						int srcOffset = (face.nLightmapOffset + oldLayerSz * (layer < oldLight.layers ? layer : std::min(layer,oldLight.layers-1))) / sizeof(COLOR3);
 						int dstOffset = (lightmapOffset + newLayerSz * layer) / sizeof(COLOR3);
 
 						int startX = newLight.width > oldLight.width ? -1 : 0;
@@ -7849,6 +7858,7 @@ void Bsp::hideEnts(bool hide)
 std::vector<int> Bsp::getLeafFaces(BSPLEAF32& leaf)
 {
 	std::vector<int> retFaces{};
+	retFaces.reserve(leaf.nMarkSurfaces);
 	for (int i = 0; i < leaf.nMarkSurfaces; i++)
 	{
 		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
@@ -7863,6 +7873,7 @@ std::vector<int> Bsp::getLeafFaces(int leafIdx)
 		return retFaces;
 
 	BSPLEAF32& leaf = leaves[leafIdx];
+	retFaces.reserve(leaf.nMarkSurfaces);
 	for (int i = 0; i < leaf.nMarkSurfaces; i++)
 	{
 		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
@@ -7873,6 +7884,7 @@ std::vector<int> Bsp::getLeafFaces(int leafIdx)
 std::vector<int> Bsp::getFaceLeafs(int faceIdx)
 {
 	std::vector<int> retLeafes;
+	retLeafes.reserve(leafCount);
 
 	for (int l = 1; l < leafCount; l++)
 	{

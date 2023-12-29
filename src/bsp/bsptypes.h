@@ -218,8 +218,8 @@ struct BSPLEAF32
 {
 	int	nContents;
 	int	nVisOffset;
-	float nMins[3];
-	float nMaxs[3];
+	vec3 nMins;
+	vec3 nMaxs;
 	int	iFirstMarkSurface;
 	int nMarkSurfaces;
 	unsigned char nAmbientLevels[MAX_AMBIENTS];
@@ -249,8 +249,8 @@ struct BSPNODE32
 {
 	int	iPlane;
 	int	iChildren[2];		// negative numbers are -(leafs+1), not nodes
-	float nMins[3];			// for sphere culling
-	float nMaxs[3];
+	vec3 nMins;			// for sphere culling
+	vec3 nMaxs;
 	int	iFirstFace;
 	int	nFaces;			// counting both sides
 };

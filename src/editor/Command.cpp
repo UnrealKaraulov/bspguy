@@ -315,13 +315,13 @@ void DuplicateBspModelCommand::undo()
 
 	map->replace_lumps(oldLumps);
 
-	map->update_ent_lump();
 
 
 	Entity* ent = map->ents[entIdx];
 	ent->setOrAddKeyvalue("model", "*" + std::to_string(oldModelIdx));
 
 
+	map->update_ent_lump();
 	renderer->loadLightmaps();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();

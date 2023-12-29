@@ -892,8 +892,8 @@ void Gui::drawBspContexMenu()
 						map->getBspRender()->calcFaceMaths();
 						map->getBspRender()->preRenderFaces();
 						map->getBspRender()->preRenderEnts();
-						map->update_lump_pointers();
 						map->update_ent_lump();
+						map->update_lump_pointers();
 
 
 						map->getBspRender()->pushModelUndoState("MERGE MODEL [DEBUG]", EDIT_MODEL_LUMPS);
@@ -2695,6 +2695,85 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
+			if (DebugKeyPressed && ImGui::MenuItem("MAKE SOMETHING BAD"))
+			{
+				for (int i = 0; i < map->vertCount; i++)
+				{
+					map->verts[i] = map->verts[i].round(10.0f);
+				}
+				map->resize_all_lightmaps();
+
+				map->getBspRender()->loadLightmaps();
+				map->getBspRender()->calcFaceMaths();
+				map->getBspRender()->preRenderFaces();
+				map->getBspRender()->preRenderEnts();
+
+				map->update_ent_lump();
+				map->update_lump_pointers();
+			}
+
+
+			if (ImGui::BeginMenu("Scale map (WIP)", map))
+			{
+				for (float scale_val = 0.25f; scale_val <= 2.0f; scale_val += 0.25f)
+				{
+					if (ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
+					{
+						for (int i = 0; i < map->modelCount; i++)
+						{
+							map->models[i].nMaxs *= scale_val;
+							map->models[i].nMins *= scale_val;
+
+							vec3 neworigin = map->models[i].vOrigin * scale_val;
+							map->models[i].vOrigin = neworigin;
+						}
+						for (int i = 0; i < map->vertCount; i++)
+						{
+							map->verts[i] *= scale_val;
+						}
+						for (int i = 0; i < map->texinfoCount; i++)
+						{
+							map->texinfos[i].vS /= scale_val;
+							map->texinfos[i].vT /= scale_val;
+						}
+						for (int i = 0; i < map->ents.size(); i++)
+						{
+							vec3 neworigin = map->ents[i]->origin * scale_val;
+							neworigin.z += abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
+							map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
+						}
+						for (int i = 0; i < map->nodeCount; i++)
+						{
+							map->nodes[i].nMaxs *= scale_val;
+							map->nodes[i].nMins *= scale_val;
+						}
+						for (int i = 0; i < map->leafCount; i++)
+						{
+							map->leaves[i].nMaxs *= scale_val;
+							map->leaves[i].nMins *= scale_val;
+						}
+						for (int i = 0; i < map->planeCount; i++)
+						{
+							map->planes[i].update(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
+						}
+
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->resize_all_lightmaps();
+
+						map->getBspRender()->loadLightmaps();
+						map->getBspRender()->calcFaceMaths();
+						map->getBspRender()->preRenderFaces();
+						map->getBspRender()->preRenderEnts();
+						map->getBspRender()->reloadClipnodes();
+
+						map->getBspRender()->pushModelUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
+					}
+				}
+				ImGui::EndMenu();
+			}
+
 			if (ImGui::BeginMenu("Delete cull faces", map))
 			{
 				int leafIdx = 0;
@@ -2736,7 +2815,7 @@ void Gui::drawMenuBar()
 								auto faceList = map->getLeafFaces(l + 1);
 								if (faceList.size())
 								{
-									map->remove_face(faceList[faceList.size()-1]);
+									map->remove_face(faceList[faceList.size() - 1]);
 									g_progress.tick();
 									FoundAnyFace = true;
 								}
@@ -2753,9 +2832,8 @@ void Gui::drawMenuBar()
 					map->getBspRender()->preRenderFaces();
 					map->getBspRender()->preRenderEnts();
 
-					map->update_lump_pointers();
 					map->update_ent_lump();
-
+					map->update_lump_pointers();
 
 					map->getBspRender()->pushModelUndoState("REMOVE FACES FROM SOLID(0 leaf)", EDIT_MODEL_LUMPS);
 
@@ -2822,8 +2900,8 @@ void Gui::drawMenuBar()
 						map->getBspRender()->preRenderFaces();
 						map->getBspRender()->preRenderEnts();
 
-						map->update_lump_pointers();
 						map->update_ent_lump();
+						map->update_lump_pointers();
 
 
 						map->getBspRender()->pushModelUndoState(fmt::format("REMOVE FACES FROM {} leaf", leafIdx), EDIT_MODEL_LUMPS);
@@ -8893,8 +8971,8 @@ void Gui::drawFaceEditorWidget()
 			map->getBspRender()->preRenderFaces();
 			map->getBspRender()->preRenderEnts();
 
-			map->update_lump_pointers();
 			map->update_ent_lump();
+			map->update_lump_pointers();
 
 			map->getBspRender()->pushModelUndoState("DELETE FACES", EDIT_MODEL_LUMPS);
 		}
@@ -8920,8 +8998,8 @@ void Gui::drawFaceEditorWidget()
 			map->getBspRender()->preRenderFaces();
 			map->getBspRender()->preRenderEnts();
 
-			map->update_lump_pointers();
 			map->update_ent_lump();
+			map->update_lump_pointers();
 
 			map->getBspRender()->pushModelUndoState("REMOVE FACES FROM PVS", EDIT_MODEL_LUMPS);
 		}

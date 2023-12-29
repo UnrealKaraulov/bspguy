@@ -437,14 +437,10 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 
 bool CHECKBITFROMBYTES(unsigned char* bytes, int bitid)
 {
-	int byteid = 0;
-	while (bitid >= 8)
-	{
-		byteid++;
-		bitid -= 8;
-	}
+	int byteid = bitid / 8;
+	int bitOffset = bitid % 8;
 
-	return bytes[byteid] & (1 << bitid);
+	return bytes[byteid] & (1 << bitOffset);
 }
 
 void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* dest, unsigned int dest_length)
