@@ -22,6 +22,7 @@ set(SOURCE_FILES
 	src/bsp/Entity.h				src/bsp/Entity.cpp
 	src/bsp/Keyvalue.h				src/bsp/Keyvalue.cpp
 	src/bsp/Wad.h					src/bsp/Wad.cpp
+	src/bsp/Sprite.h				src/bsp/Sprite.cpp
 	src/bsp/remap.h					src/bsp/remap.cpp
 
 	# Math and stuff

@@ -1,5 +1,3 @@
-
-
 #include "lang.h"
 #include "util.h"
 #include "BspMerger.h"
@@ -12,6 +10,8 @@
 #include "Settings.h"
 #include "winding.h"
 #include "fmt/format.h"
+
+#include "Sprite.h"
 
 // super todo:
 // gui scale not accurate and mostly broken
@@ -944,6 +944,8 @@ int main(int argc, char* argv[])
 		g_settings.load();
 
 		mat4x4_saveIdentity();
+
+		//TestSprite();
 
 		CommandLine cli(argc, argv);
 

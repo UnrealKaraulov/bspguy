@@ -136,6 +136,9 @@
     <ClCompile Include=".\..\src\util\lang.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\bsp\Sprite.cpp">
+      <Filter>Source Files\bsp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -257,6 +260,9 @@
     </ClInclude>
     <ClInclude Include=".\..\src\util\lang.h">
       <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\bsp\Sprite.h">
+      <Filter>Header Files\bsp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

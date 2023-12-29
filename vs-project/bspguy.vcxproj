@@ -408,8 +408,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\bsp\Sprite.cpp" />
     <ClCompile Include=".\..\src\main.cpp" />
     <ClCompile Include=".\..\src\util\lang.cpp" />
+    <ClInclude Include="..\src\bsp\Sprite.h" />
     <ClInclude Include=".\..\src\util\lang.h" />
     <ClInclude Include=".\..\src\util\lang_defs.h" />
     <ClInclude Include=".\..\src\util\ini.h" />
