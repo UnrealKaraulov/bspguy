@@ -7443,8 +7443,6 @@ void Gui::drawEntityReport()
 			static std::vector<bool> selectedItems;
 			static bool selectAllItems = false;
 
-			const ImGuiKeyChord expected_key_mod_flags = imgui_io->KeyMods;
-
 			float footerHeight = ImGui::GetFrameHeightWithSpacing() * 5.f + 16.f;
 			ImGui::BeginChild(get_localized_string(LANG_0848).c_str(), ImVec2(0.f, -footerHeight));
 
@@ -7634,14 +7632,17 @@ void Gui::drawEntityReport()
 						isHovered = ImGui::IsItemHovered() && needhover;
 					}
 					bool isForceOpen = (isHovered && g_app->oldRightMouse == GLFW_RELEASE && g_app->curRightMouse == GLFW_PRESS);
+					bool isShiftPressed = g_app->pressed[GLFW_KEY_LEFT_SHIFT] || g_app->pressed[GLFW_KEY_RIGHT_SHIFT];
+					bool isCtrlPressed = g_app->pressed[GLFW_KEY_LEFT_CONTROL] || g_app->pressed[GLFW_KEY_RIGHT_CONTROL];
 
 					if (isSelectableSelected || isForceOpen)
 					{
 						if (isForceOpen)
 						{
 							needhover = false;
+							ImGui::OpenPopup(get_localized_string(LANG_1178).c_str());
 						}
-						if (expected_key_mod_flags & ImGuiModFlags_Ctrl)
+						if (isCtrlPressed)
 						{
 							selectedItems[i] = !selectedItems[i];
 							lastSelect = i;
@@ -7654,7 +7655,7 @@ void Gui::drawEntityReport()
 								}
 							}
 						}
-						else if (expected_key_mod_flags & ImGuiModFlags_Shift)
+						else if (isShiftPressed)
 						{
 							if (lastSelect >= 0)
 							{
@@ -7680,23 +7681,21 @@ void Gui::drawEntityReport()
 						}
 						else
 						{
-							for (int k = 0; k < selectedItems.size(); k++)
-								selectedItems[k] = false;
-							if (i < 0)
-								i = 0;
+							if (!selectedItems[i] || !isForceOpen)
+							{
+								for (int k = 0; k < selectedItems.size(); k++)
+									selectedItems[k] = false;
+								if (i < 0)
+									i = 0;
+								app->pickInfo.selectedEnts.clear();
+								app->selectEnt(map, visibleEnts[i], true);
+							}
 							selectedItems[i] = true;
 							lastSelect = i;
-							app->pickInfo.selectedEnts.clear();
-							app->selectEnt(map, visibleEnts[i], true);
 							if (ImGui::IsMouseDoubleClicked(0) || app->pressed[GLFW_KEY_SPACE])
 							{
 								app->goToEnt(map, visibleEnts[i]);
 							}
-						}
-						if (isForceOpen)
-						{
-							needhover = false;
-							ImGui::OpenPopup(get_localized_string(LANG_1178).c_str());
 						}
 					}
 					if (isHovered)
