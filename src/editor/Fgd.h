@@ -143,18 +143,4 @@ private:
 
 	void createEntGroups();
 	void setSpawnflagNames();
-
-	// true if value begins a group of strings separated by spaces
-	bool stringGroupStarts(const std::string& s);
-
-	// true if any closing paren or quote is found
-	bool stringGroupEnds(const std::string& s);
-
-	// get the value inside a prefixed set of parens
-	std::string getValueInParens(std::string s);
-
-	// groups strings separated by spaces but enclosed in quotes/parens
-	std::vector<std::string> groupParts(std::vector<std::string>& ungrouped);
-
-	std::string getValueInQuotes(std::string s);
 };

@@ -1466,8 +1466,6 @@ void BspRenderer::preRenderEnts()
 	{
 		refreshEnt(i);
 	}
-
-	pointEntRenderer->genPointEntCubes();
 }
 
 void BspRenderer::refreshPointEnt(int entIdx)

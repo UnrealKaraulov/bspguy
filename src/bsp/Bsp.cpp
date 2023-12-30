@@ -7257,7 +7257,7 @@ bool Bsp::isModelHasFaceIdx(const BSPMODEL& bspmdl, int faceid)
 	return true;
 }
 
-void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int iscale)
+void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int iscale, bool lightmapmode)
 {
 	if (!createDir(path))
 	{

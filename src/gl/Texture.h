@@ -21,7 +21,7 @@ public:
 		TYPE_DECAL
 	};
 
-	Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba = false);
+	Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba = false, bool owndata = true);
 	~Texture();
 
 	// upload the texture with the specified settings
@@ -38,6 +38,8 @@ public:
 	size_t dataLen;
 
 	bool uploaded = false;
+
+	bool owndata = true;
 };
 extern std::vector<Texture*> dumpTextures;
 bool IsTextureTransparent(const std::string& texname);

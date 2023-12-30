@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 #include "Wad.h"
+#include "Texture.h"
 
 #pragma pack(push, 1)
 
@@ -50,6 +51,7 @@ struct SpriteImage
 	std::vector<COLOR3> image;
 	std::vector<unsigned char> raw_image;
 	float interval;
+	Texture* texture;
 };
 
 struct SpriteGroup
@@ -61,6 +63,8 @@ struct SpriteGroup
 class Sprite {
 public:
 	Sprite(const std::string& filename);
+	~Sprite();
+	std::string name;
 	SPRITE_HEADER header;
 	short colors;
 	std::vector<COLOR3> palette;

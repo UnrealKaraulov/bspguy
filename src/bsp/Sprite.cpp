@@ -3,8 +3,31 @@
 #include "util.h"
 #include "lodepng.h"
 
+Sprite::~Sprite()
+{
+	for (auto& g : sprite_groups)
+	{
+		for (auto& s : g.sprites)
+		{
+			if (s.texture)
+			{
+				delete s.texture;
+			}
+		}
+		g.sprites.clear();
+	}
+	sprite_groups.clear();
+}
+
 Sprite::Sprite(const std::string& filename)
 {
+	if (!filename.size())
+	{
+		return;
+	}
+	
+	this->name = stripExt(basename(filename));
+
 	std::ifstream spr(filename, std::ios::binary);
 	if (!spr) {
 		print_log(PRINT_RED, "Failed to open file {}\n", filename);
@@ -30,25 +53,27 @@ Sprite::Sprite(const std::string& filename)
 	palette.resize(colors);
 	spr.read(reinterpret_cast<char*>(palette.data()), colors * sizeof(COLOR3));
 
-	SpriteImage tmpSpriteImage{};
 	sprite_groups.resize(header.numframes);
 
 	for (int i = 0; i < header.numframes; ++i) {
-		int frametype;
-		spr.read(reinterpret_cast<char*>(&frametype), sizeof(int));
+		int is_group;
+		spr.read(reinterpret_cast<char*>(&is_group), sizeof(int));
 
-		if (frametype == 0) {
+		if (is_group == 0) {
+			SpriteImage tmpSpriteImage{};
 			spr.read(reinterpret_cast<char*>(&tmpSpriteImage.frameinfo), sizeof(dspriteframe_t));
 			int frame_size = tmpSpriteImage.frameinfo.width * tmpSpriteImage.frameinfo.height;
-			std::vector<COLOR3> sprite;
 			tmpSpriteImage.raw_image.resize(frame_size);
 			spr.read(reinterpret_cast<char*>(tmpSpriteImage.raw_image.data()), frame_size);
+
+			tmpSpriteImage.image.reserve(frame_size);
 			for (int s = 0; s < frame_size; s++)
 			{
-				sprite.push_back(palette[tmpSpriteImage.raw_image[s]]);
+				tmpSpriteImage.image.push_back(palette[tmpSpriteImage.raw_image[s]]);
 			}
-			tmpSpriteImage.image = sprite;
 			sprite_groups[i].totalinterval = tmpSpriteImage.interval = 0.1f;
+			tmpSpriteImage.texture = new Texture(tmpSpriteImage.frameinfo.width,
+				tmpSpriteImage.frameinfo.height, (unsigned char*)&tmpSpriteImage.image[0], fmt::format("{}_g{}_f{}", name, i, 1),false,false);
 			sprite_groups[i].sprites.push_back(tmpSpriteImage);
 			continue;
 		}
@@ -66,14 +91,17 @@ Sprite::Sprite(const std::string& filename)
 		for (int j = 0; j < group_frames; ++j) {
 			spr.read(reinterpret_cast<char*>(&sprite_groups[i].sprites[j].frameinfo), sizeof(dspriteframe_t));
 			int frame_size = sprite_groups[i].sprites[j].frameinfo.width * sprite_groups[i].sprites[j].frameinfo.height;
-			std::vector<COLOR3> sprite;
 			sprite_groups[i].sprites[j].raw_image.resize(frame_size);
 			spr.read(reinterpret_cast<char*>(sprite_groups[i].sprites[j].raw_image.data()), frame_size);
+
+			sprite_groups[i].sprites[j].image.reserve(frame_size);
 			for (int s = 0; s < frame_size; s++)
 			{
-				sprite.push_back(palette[sprite_groups[i].sprites[j].raw_image[s]]);
+				sprite_groups[i].sprites[j].image.push_back(palette[sprite_groups[i].sprites[j].raw_image[s]]);
 			}
-			sprite_groups[i].sprites[j].image = sprite;
+
+			sprite_groups[i].sprites[j].texture = new Texture(sprite_groups[i].sprites[j].frameinfo.width,
+				sprite_groups[i].sprites[j].frameinfo.height, (unsigned char*)&sprite_groups[i].sprites[j].image[0], fmt::format("{}_g{}_f{}", name, i, j), false, false);
 		}
 	}
 }

@@ -9,8 +9,9 @@
 
 std::vector<Texture*> dumpTextures;
 
-Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba)
+Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba, bool _owndata)
 {
+	this->owndata = _owndata;
 	this->wad_name = "";
 	this->width = _width;
 	this->height = _height;
@@ -24,7 +25,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std
 	this->uploaded = false;
 
 	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0970),name,width,height);
+		print_log(get_localized_string(LANG_0970), name, width, height);
 
 	this->transparentMode = IsTextureTransparent(name) ? 1 : 0;
 
@@ -40,7 +41,9 @@ Texture::~Texture()
 	this->wad_name = "";
 	if (uploaded)
 		glDeleteTextures(1, &id);
-	delete[] data;
+
+	if (this->owndata)
+		delete[] data;
 
 	dumpTextures.erase(std::remove(dumpTextures.begin(), dumpTextures.end(), this), dumpTextures.end());
 }
@@ -103,7 +106,7 @@ void Texture::upload(int type)
 	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 
 	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0971),texName,width,height);
+		print_log(get_localized_string(LANG_0971), texName, width, height);
 
 	uploaded = true;
 }
@@ -114,7 +117,7 @@ void Texture::bind(GLuint texnum)
 	glBindTexture(GL_TEXTURE_2D, id);
 }
 
-bool IsTextureTransparent(const std::string & texname)
+bool IsTextureTransparent(const std::string& texname)
 {
 	if (!texname.size())
 		return false;

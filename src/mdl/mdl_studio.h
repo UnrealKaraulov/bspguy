@@ -170,14 +170,6 @@ typedef struct
 	vec3				bbmax;
 } mstudiobbox_t;
 
-#if !defined( CACHE_USER ) && !defined( QUAKEDEF_H )
-#define CACHE_USER
-typedef struct cache_user_s
-{
-	void* data;
-} cache_user_t;
-#endif
-
 //
 // demand loaded sequence groups
 //
@@ -333,16 +325,6 @@ typedef struct
 	int					normindex;		// normal vec3
 } mstudiomesh_t;
 
-// triangles
-#if 0
-typedef struct
-{
-	short				vertindex;		// index into vertex array
-	short				normindex;		// index into normal array
-	short				s, t;			// s,t position on skin
-} mstudiotrivert_t;
-#endif
-
 typedef struct mstudioevent_s
 {
 	int 				frame;
@@ -351,6 +333,7 @@ typedef struct mstudioevent_s
 	char				options[MAXEVENTSTRING];
 } mstudioevent_t;
 #pragma pack(pop)
+
 struct StudioMesh
 {
 	VertexBuffer* buffer;
@@ -414,7 +397,6 @@ public:
 	vec4 m_adj;				// FIX: non persistant, make static
 	std::vector<Texture*> mdl_textures;
 	std::vector<std::vector<StudioMesh>> mdl_mesh_groups;
-	Texture* whiteTex;
 
 	std::string filename;
 
@@ -431,9 +413,6 @@ public:
 		g_lambert = 1.0f;
 		mdl_textures = std::vector<Texture*>();
 		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
-		whiteTex = new Texture(1, 1, new unsigned char[] {255, 255, 255},"white");
-		whiteTex->setWadName("default");
-		whiteTex->upload();
 		m_sequence = m_bodynum = m_skinnum = 0;
 		m_frame = 0.0f;
 		m_mouth = 0;
@@ -498,8 +477,6 @@ public:
 			mdl_cube = NULL;
 		}
 
-		if (whiteTex)
-			delete whiteTex;
 		if (m_pstudiohdr)
 			delete[] m_pstudiohdr;
 

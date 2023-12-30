@@ -293,7 +293,7 @@ public:
 	void setBspRender(BspRenderer* rnd);
 
 
-	void ExportToObjWIP(const std::string& path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1);
+	void ExportToObjWIP(const std::string& path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1, bool lightmap_mode = false);
 
 	void ExportToMapWIP(const std::string& path);
 

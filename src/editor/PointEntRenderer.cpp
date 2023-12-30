@@ -71,10 +71,6 @@ void PointEntRenderer::genPointEntCubes()
 			if (!matchingCube)
 			{
 				cube->Textured = fgdClass->isSprite;
-			/*	if (cube->Textured)
-				{
-					print_log(PRINT_RED, " YEEES TEXTURED entcube {}!\n", fgdClass->name);
-				}*/
 				genCubeBuffers(cube);
 				entCubes.push_back(cube);
 				cubeMap[fgdClass->name] = cube;
@@ -99,7 +95,8 @@ EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube)
 	{
 		if (entCubes[i]->mins == entCube->mins
 			&& entCubes[i]->maxs == entCube->maxs
-			&& entCubes[i]->color == entCube->color)
+			&& entCubes[i]->color == entCube->color
+			&& entCubes[i]->Textured == entCube->Textured)
 		{
 			return entCubes[i];
 		}

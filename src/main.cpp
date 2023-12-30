@@ -752,7 +752,7 @@ void print_help(const std::string& command)
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
 			"exportobj - Export bsp geometry to obj [WIP].\n\n"
 
-			"Usage:   bspguy exportobj <mapname>\n"
+			"Usage:   bspguy exportobj -scale \"-16\" <mapname>\n"
 			"Example: bspguy exportobj c1a0.bsp\n"
 		);
 	}
@@ -961,6 +961,11 @@ int main(int argc, char* argv[])
 
 		if (cli.command == "exportobj")
 		{
+			int scale = 1;
+			if (cli.hasOption("-scale"))
+			{
+				scale = std::atoi(getValueInQuotes(cli.getOption("-scale")).c_str());
+			}
 			Bsp* tmpBsp = new Bsp(cli.bspfile);
 			tmpBsp->ExportToObjWIP(cli.bspfile);
 			delete tmpBsp;
