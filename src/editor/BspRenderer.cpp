@@ -1741,21 +1741,80 @@ void BspRenderer::refreshEnt(int entIdx)
 
 				std::string lowerpath = toLowerCase(fgdClass->sprite);
 				std::string newModelPath;
-				if (lowerpath.ends_with(".spr"))
+				if (lowerpath.ends_with(".mdl"))
 				{
 					if (FindPathInAssets(map, fgdClass->sprite, newModelPath))
 					{
-						renderEnts[entIdx].spr = AddNewSpriteToRender(newModelPath);
+						renderEnts[entIdx].mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
+						renderEnts[entIdx].mdl->UpdateModelMeshList();
 					}
 					else
 					{
 						FindPathInAssets(map, fgdClass->sprite, newModelPath, true);
-						renderEnts[entIdx].spr = NULL;
+						renderEnts[entIdx].mdl = NULL;
 					}
 				}
 				else
 				{
-					renderEnts[entIdx].spr = NULL;
+					renderEnts[entIdx].mdl = NULL;
+					if (lowerpath.ends_with(".spr"))
+					{
+						if (FindPathInAssets(map, fgdClass->sprite, newModelPath))
+						{
+							renderEnts[entIdx].spr = AddNewSpriteToRender(newModelPath);
+						}
+						else
+						{
+							FindPathInAssets(map, fgdClass->sprite, newModelPath, true);
+							renderEnts[entIdx].spr = NULL;
+						}
+					}
+					else
+					{
+						renderEnts[entIdx].spr = NULL;
+					}
+				}
+			}
+			else
+			{
+				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+				if (fgdClass && !fgdClass->model.empty())
+				{
+					std::string lowerpath = toLowerCase(fgdClass->model);
+					std::string newModelPath;
+					if (lowerpath.ends_with(".mdl"))
+					{
+						if (FindPathInAssets(map, fgdClass->model, newModelPath))
+						{
+							renderEnts[entIdx].mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
+							renderEnts[entIdx].mdl->UpdateModelMeshList();
+						}
+						else
+						{
+							FindPathInAssets(map, fgdClass->model, newModelPath, true);
+							renderEnts[entIdx].mdl = NULL;
+						}
+					}
+					else
+					{
+						renderEnts[entIdx].mdl = NULL;
+						if (lowerpath.ends_with(".spr"))
+						{
+							if (FindPathInAssets(map, fgdClass->model, newModelPath))
+							{
+								renderEnts[entIdx].spr = AddNewSpriteToRender(newModelPath);
+							}
+							else
+							{
+								FindPathInAssets(map, fgdClass->model, newModelPath, true);
+								renderEnts[entIdx].spr = NULL;
+							}
+						}
+						else
+						{
+							renderEnts[entIdx].spr = NULL;
+						}
+					}
 				}
 			}
 		}
