@@ -6997,7 +6997,7 @@ void Gui::drawImportMapWidget()
 
 					Bsp* bspModel = new Bsp(mapPath);
 
-					BspRenderer* mapRenderer = new BspRenderer(bspModel, app->pointEntRenderer);
+					BspRenderer* mapRenderer = new BspRenderer(bspModel);
 
 					std::vector<BSPPLANE> newPlanes;
 					std::vector<vec3> newVerts;

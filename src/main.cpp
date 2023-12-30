@@ -140,6 +140,7 @@ bool start_viewer(const char* map)
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 #endif
 
+	TestSprite();
 	renderer.renderLoop();
 	return true;
 }
@@ -945,7 +946,6 @@ int main(int argc, char* argv[])
 
 		mat4x4_saveIdentity();
 
-		//TestSprite();
 
 		CommandLine cli(argc, argv);
 

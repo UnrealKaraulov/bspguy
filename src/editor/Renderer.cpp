@@ -666,7 +666,6 @@ void Renderer::renderLoop()
 			postLoadFgds();
 			for (int i = 0; i < mapRenderers.size(); i++)
 			{
-				mapRenderers[i]->pointEntRenderer = pointEntRenderer;
 				mapRenderers[i]->preRenderEnts();
 				if (reloadingGameDir)
 				{
@@ -717,14 +716,6 @@ void Renderer::postLoadFgds()
 	pointEntRenderer = swapPointEntRenderer;
 	if (pointEntRenderer)
 		fgd = pointEntRenderer->fgd;
-	for (int i = 0; i < mapRenderers.size(); i++)
-	{
-		if (mapRenderers[i])
-		{
-			mapRenderers[i]->pointEntRenderer = pointEntRenderer;
-		}
-	}
-
 	swapPointEntRenderer = NULL;
 }
 
@@ -2201,7 +2192,7 @@ void Renderer::reloadBspModels()
 							tmpBsp->parentMap = bsprend->map;
 							if (tmpBsp->bsp_valid)
 							{
-								BspRenderer* mapRenderer = new BspRenderer(tmpBsp, pointEntRenderer);
+								BspRenderer* mapRenderer = new BspRenderer(tmpBsp);
 								mapRenderers.push_back(mapRenderer);
 							}
 						}
@@ -2239,7 +2230,7 @@ void Renderer::addMap(Bsp* map)
 		*/
 	}
 
-	BspRenderer* mapRenderer = new BspRenderer(map, pointEntRenderer);
+	BspRenderer* mapRenderer = new BspRenderer(map);
 
 	mapRenderers.push_back(mapRenderer);
 

@@ -192,7 +192,7 @@ Bsp::Bsp(std::string fpath)
 			is_mdl_model = true;
 			if (fileExists(fpath))
 			{
-				mdl = AddNewModelToRender(fpath.c_str());
+				mdl = AddNewModelToRender(fpath);
 			}
 			init_empty_bsp();
 			return;

@@ -1,6 +1,7 @@
 #include "lang.h"
 #include <string.h>
 #include <algorithm>
+#include <execution>
 #include "BspRenderer.h"
 #include "VertexBuffer.h"
 #include "primitives.h"
@@ -11,13 +12,13 @@
 #include "Renderer.h"
 #include "Clipper.h"
 #include "Command.h"
-#include <execution>
 
-BspRenderer::BspRenderer(Bsp* _map, PointEntRenderer* _pointEntRenderer)
+#include "Sprite.h"
+
+BspRenderer::BspRenderer(Bsp* _map)
 {
 	this->map = _map;
 	this->map->setBspRender(this);
-	this->pointEntRenderer = _pointEntRenderer;
 	this->lightmaps = NULL;
 	this->glTexturesSwap = NULL;
 	this->glTextures = NULL;
@@ -1567,7 +1568,7 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 
 void BspRenderer::refreshEnt(int entIdx)
 {
-	if (entIdx < 0 || !pointEntRenderer)
+	if (entIdx < 0 || !g_app->pointEntRenderer)
 		return;
 	int skin = -1;
 	int sequence = -1;
@@ -1581,7 +1582,7 @@ void BspRenderer::refreshEnt(int entIdx)
 	renderEnts[entIdx].offset = vec3();
 	renderEnts[entIdx].angles = vec3();
 	renderEnts[entIdx].needAngles = false;
-	renderEnts[entIdx].pointEntCube = pointEntRenderer->getEntCube(ent);
+	renderEnts[entIdx].pointEntCube = g_app->pointEntRenderer->getEntCube(ent);
 	renderEnts[entIdx].hide = ent->hide;
 	bool setAngles = false;
 
@@ -1673,7 +1674,7 @@ void BspRenderer::refreshEnt(int entIdx)
 
 	if (!ent->isBspModel())
 	{
-		if (ent->hasKey("model") || g_app->fgd)
+		if (ent->hasKey("model"))
 		{
 			std::string modelpath = std::string();
 
@@ -1700,22 +1701,65 @@ void BspRenderer::refreshEnt(int entIdx)
 				{
 					if (FindPathInAssets(map, modelpath, newModelPath))
 					{
-						renderEnts[entIdx].mdl = AddNewModelToRender(newModelPath.c_str(), body + sequence * 100 + skin * 1000);
+						renderEnts[entIdx].mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
 						renderEnts[entIdx].mdl->UpdateModelMeshList();
 					}
 					else
 					{
-						if (modelpath.size())
-							FindPathInAssets(map, modelpath, newModelPath, true);
+						FindPathInAssets(map, modelpath, newModelPath, true);
 						renderEnts[entIdx].mdl = NULL;
 					}
 				}
 				else
 				{
 					renderEnts[entIdx].mdl = NULL;
+					if (lowerpath.ends_with(".spr"))
+					{
+						if (FindPathInAssets(map, modelpath, newModelPath))
+						{
+							renderEnts[entIdx].spr = AddNewSpriteToRender(newModelPath);
+						}
+						else
+						{
+							FindPathInAssets(map, modelpath, newModelPath, true);
+							renderEnts[entIdx].spr = NULL;
+						}
+					}
+					else
+					{
+						renderEnts[entIdx].spr = NULL;
+					}
 				}
 			}
 		}
+		else if (g_app->fgd)
+		{
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+			if (fgdClass && fgdClass->isSprite && fgdClass->sprite.size())
+			{
+				renderEnts[entIdx].spr = NULL;
+
+				std::string lowerpath = toLowerCase(fgdClass->sprite);
+				std::string newModelPath;
+				if (lowerpath.ends_with(".spr"))
+				{
+					if (FindPathInAssets(map, fgdClass->sprite, newModelPath))
+					{
+						renderEnts[entIdx].spr = AddNewSpriteToRender(newModelPath);
+					}
+					else
+					{
+						FindPathInAssets(map, fgdClass->sprite, newModelPath, true);
+						renderEnts[entIdx].spr = NULL;
+					}
+				}
+				else
+				{
+					renderEnts[entIdx].spr = NULL;
+				}
+			}
+		}
+
 	}
 
 	if (skin != -1)
@@ -2493,22 +2537,30 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 		{
 			if (g_render_flags & RENDER_SELECTED_AT_TOP)
 				glDepthFunc(GL_ALWAYS);
-			if ((g_render_flags & RENDER_MODELS) && renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
+			if ((g_render_flags & RENDER_MODELS) && ((renderEnts[i].spr && renderEnts[i].spr->sprite_groups.size())
+				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
 				g_app->modelShader->bind();
 				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->modelShader->updateMatrixes();
 
-				renderEnts[i].mdl->DrawModel();
-
+				if (renderEnts[i].mdl)
+				{
+					renderEnts[i].mdl->DrawModel();
+				}
+				else
+				{
+					renderEnts[i].spr->sprite_groups[0].sprites[0].texture->bind(0);
+					renderEnts[i].spr->sprite_groups[0].sprites[0].spriteCube->cubeBuffer->drawFull();
+				}
 
 				g_app->colorShader->bind();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();
 
-				if (renderEnts[i].mdl->mdl_cube)
+				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 				{
 					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 				}
@@ -2535,21 +2587,32 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 		}
 		else
 		{
-			if ((g_render_flags & RENDER_MODELS) && renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
+			if ((g_render_flags & RENDER_MODELS) && ((renderEnts[i].spr && renderEnts[i].spr->sprite_groups.size())
+				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
 				g_app->modelShader->bind();
 				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->modelShader->updateMatrixes();
 
-				renderEnts[i].mdl->DrawModel();
+
+				if (renderEnts[i].mdl)
+				{
+					renderEnts[i].mdl->DrawModel();
+				}
+				else
+				{
+					renderEnts[i].spr->sprite_groups[0].sprites[0].texture->bind(0);
+					renderEnts[i].spr->sprite_groups[0].sprites[0].spriteCube->cubeBuffer->drawFull();
+				}
+
 
 				g_app->colorShader->bind();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();
 
-				if (renderEnts[i].mdl->mdl_cube)
+				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 				{
 					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 				}

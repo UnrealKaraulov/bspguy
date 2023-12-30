@@ -7,6 +7,7 @@
 #include <array>
 #include "Wad.h"
 #include "Texture.h"
+#include "PointEntRenderer.h"
 
 #pragma pack(push, 1)
 
@@ -44,6 +45,8 @@ struct dspriteframe_t {
 	int width;
 	int height;
 };
+#pragma pack(pop)
+
 
 struct SpriteImage
 {
@@ -52,6 +55,7 @@ struct SpriteImage
 	std::vector<unsigned char> raw_image;
 	float interval;
 	Texture* texture;
+	EntCube* spriteCube;
 };
 
 struct SpriteGroup
@@ -71,6 +75,7 @@ public:
 	std::vector<SpriteGroup> sprite_groups;
 };
 
-#pragma pack(pop)
-
 void TestSprite();
+
+extern std::map<int, Sprite*> spr_models;
+Sprite* AddNewSpriteToRender(const std::string & path, unsigned int sum = 0);

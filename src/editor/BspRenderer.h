@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <future>
 #include "mdl_studio.h"
+#include "Sprite.h"
 
 class Command;
 
@@ -59,6 +60,7 @@ struct RenderEnt
 	bool needAngles = false;
 	bool hide = false;
 	StudioModel* mdl;
+	Sprite* spr;
 	std::string mdlFileName;
 	RenderEnt() : modelMatAngles(mat4x4()), modelMatOrigin(mat4x4()), offset(vec3()), angles(vec3())
 	{
@@ -66,6 +68,7 @@ struct RenderEnt
 		pointEntCube = NULL;
 		mdl = NULL;
 		mdlFileName = "";
+		spr = NULL;
 	}
 	~RenderEnt()
 	{
@@ -73,6 +76,7 @@ struct RenderEnt
 		pointEntCube = NULL;
 		mdl = NULL;
 		mdlFileName = "";
+		spr = NULL;
 	}
 };
 
@@ -178,14 +182,13 @@ class BspRenderer
 {
 public:
 	Bsp* map;
-	PointEntRenderer* pointEntRenderer;
 	vec3 mapOffset;
 	bool lightEnableFlags[4] = { true,true,true,true };
 	std::vector<Wad*> wads;
 	bool texturesLoaded = false;
 	bool needReloadDebugTextures = false;
 
-	BspRenderer(Bsp* map, PointEntRenderer* pointEntRenderer);
+	BspRenderer(Bsp* map);
 	~BspRenderer();
 
 	void render(std::vector<int> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull);

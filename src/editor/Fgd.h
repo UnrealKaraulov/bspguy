@@ -59,7 +59,6 @@ struct FgdClass
 	std::string spawnFlagDescriptions[32];
 	std::string model;
 	std::string sprite;
-	std::string iconSprite;
 	bool isModel;
 	bool isSprite;
 	bool isDecal;

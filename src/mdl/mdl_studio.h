@@ -559,4 +559,4 @@ private:
 };
 
 extern std::map<int, StudioModel *> mdl_models;
-StudioModel* AddNewModelToRender(const char * path, unsigned int sum = 0);
+StudioModel* AddNewModelToRender(const std::string& path, unsigned int sum = 0);
