@@ -140,7 +140,7 @@ bool start_viewer(const char* map)
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 #endif
 
-	TestSprite();
+	//TestSprite();
 	renderer.renderLoop();
 	return true;
 }
