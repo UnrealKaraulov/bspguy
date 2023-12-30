@@ -2784,10 +2784,8 @@ void Gui::drawMenuBar()
 					int thisLeafCount = map->leafCount;
 
 					int oldVisRowSize = ((thisLeafCount + 63) & ~63) >> 3;
-
 					unsigned char* visData = new unsigned char[oldVisRowSize];
 					memset(visData, 0xFF, oldVisRowSize);
-					//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
 					DecompressVis(map->visdata + leaf.nVisOffset, visData, oldVisRowSize, map->leafCount, map->visDataLength - leaf.nVisOffset);
 
 					bool FoundAnyFace = true;
@@ -2838,18 +2836,11 @@ void Gui::drawMenuBar()
 					map->getBspRender()->pushModelUndoState("REMOVE FACES FROM SOLID(0 leaf)", EDIT_MODEL_LUMPS);
 
 				}
-				std::vector<int> nodeBranch;
-				vec3 localCamera = cameraOrigin - rend->mapOffset;
-				int childIdx = -1;
-				leafIdx = -1;
-				int headNode = map->models[0].iHeadnodes[0];
-				map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
-
-				if (leafIdx > 0)
+				if (rend->curLeafIdx > 0)
 				{
-					if (ImGui::MenuItem(fmt::format("Delete from {} leaf", leafIdx).c_str()))
+					if (ImGui::MenuItem(fmt::format("Delete from {} leaf", rend->curLeafIdx).c_str()))
 					{
-						BSPLEAF32& leaf = map->leaves[leafIdx];
+						BSPLEAF32& leaf = map->leaves[rend->curLeafIdx];
 						int thisLeafCount = map->leafCount;
 
 						int oldVisRowSize = ((thisLeafCount + 63) & ~63) >> 3;
@@ -2864,7 +2855,7 @@ void Gui::drawMenuBar()
 						int cullfaces = 0;
 						for (int l = 0; l < map->leafCount - 1; l++)
 						{
-							if (l == leafIdx || CHECKVISBIT(visData, l))
+							if (l == rend->curLeafIdx || CHECKVISBIT(visData, l))
 							{
 								auto faceList = map->getLeafFaces(l + 1);
 								cullfaces += faceList.size();
@@ -2878,7 +2869,7 @@ void Gui::drawMenuBar()
 							FoundAnyFace = false;
 							for (int l = 0; l < map->leafCount - 1 && !FoundAnyFace; l++)
 							{
-								if (l == leafIdx || CHECKVISBIT(visData, l))
+								if (l == rend->curLeafIdx || CHECKVISBIT(visData, l))
 								{
 									auto faceList = map->getLeafFaces(l + 1);
 									if (faceList.size())
@@ -2904,7 +2895,7 @@ void Gui::drawMenuBar()
 						map->update_lump_pointers();
 
 
-						map->getBspRender()->pushModelUndoState(fmt::format("REMOVE FACES FROM {} leaf", leafIdx), EDIT_MODEL_LUMPS);
+						map->getBspRender()->pushModelUndoState(fmt::format("REMOVE FACES FROM {} leaf", rend->curLeafIdx), EDIT_MODEL_LUMPS);
 					}
 				}
 				ImGui::EndMenu();
@@ -3420,7 +3411,10 @@ void Gui::drawMenuBar()
 				{
 					ImGui::TextUnformatted(fmt::format("Click [{:^5},{:^5},{:^5}]", floatRound(rend->intersectVec.x), floatRound(rend->intersectVec.y), floatRound(rend->intersectVec.z)).c_str());
 				}
+
+				ImGui::TextUnformatted(fmt::format("Leaf [{}]", rend->curLeafIdx).c_str());
 			}
+
 			ImGui::EndMenuBar();
 		}
 		ImGui::End();
@@ -3865,8 +3859,6 @@ void Gui::drawDebugWidget()
 				}
 				else
 				{
-					vec3 localCamera = cameraOrigin - renderer->mapOffset;
-
 					static ImVec4 hullColors[] = {
 						ImVec4(1, 1, 1, 1),
 						ImVec4(0.3f, 1, 1, 1),
@@ -3880,7 +3872,7 @@ void Gui::drawDebugWidget()
 						int leafIdx;
 						int childIdx = -1;
 						int headNode = map->models[modelIdx].iHeadnodes[i];
-						int contents = map->pointContents(headNode, localCamera, i, nodeBranch, leafIdx, childIdx);
+						int contents = map->pointContents(headNode, renderer->localCameraOrigin, i, nodeBranch, leafIdx, childIdx);
 
 						ImGui::PushStyleColor(ImGuiCol_Text, hullColors[i]);
 						if (ImGui::TreeNode(("HULL " + std::to_string(i)).c_str()))
@@ -4147,17 +4139,11 @@ void Gui::drawDebugWidget()
 
 	if (debugVisMode > 0 && !g_app->reloading && renderer)
 	{
-		vec3 localCamera = cameraOrigin - renderer->mapOffset;
-
-		vec3 renderOffset;
-		vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
-		renderOffset = mapOffset.flip();
-
 		std::vector<int> nodeBranch;
 		int childIdx = -1;
 		int leafIdx = -1;
 		int headNode = map->models[0].iHeadnodes[0];
-		map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
+		map->pointContents(headNode, renderer->localCameraOrigin, 0, nodeBranch, leafIdx, childIdx);
 
 		BSPLEAF32& leaf = map->leaves[leafIdx];
 		int thisLeafCount = map->leafCount;
@@ -8668,7 +8654,8 @@ void Gui::drawFaceEditorWidget()
 {
 	ImGui::SetNextWindowSize(ImVec2(300.f, 570.f), ImGuiCond_FirstUseEver);
 	//ImGui::SetNextWindowSize(ImVec2(400, 600));
-	if (ImGui::Begin(get_localized_string(LANG_0870).c_str(), &showFaceEditWidget))
+	if (ImGui::Begin(fmt::format("{} {}",get_localized_string(LANG_0870),
+		app->pickInfo.selectedFaces.size() != 1 ? std::string() : std::to_string(app->pickInfo.selectedFaces[0])).c_str(), &showFaceEditWidget))
 	{
 		static float scaleX, scaleY, shiftX, shiftY;
 		static std::vector<std::array<int, 2>> lightmapSizes{};
@@ -8980,15 +8967,15 @@ void Gui::drawFaceEditorWidget()
 				selected_faces.pop_back();
 			}
 
-			map->getBspRender()->loadLightmaps();
-			map->getBspRender()->calcFaceMaths();
-			map->getBspRender()->preRenderFaces();
-			map->getBspRender()->preRenderEnts();
+			mapRenderer->loadLightmaps();
+			mapRenderer->calcFaceMaths();
+			mapRenderer->preRenderFaces();
+			mapRenderer->preRenderEnts();
 
 			map->update_ent_lump();
 			map->update_lump_pointers();
 
-			map->getBspRender()->pushModelUndoState("DELETE FACES", EDIT_MODEL_LUMPS);
+			mapRenderer->pushModelUndoState("DELETE FACES", EDIT_MODEL_LUMPS);
 		}
 		if (ImGui::IsItemHovered())
 		{
@@ -9007,22 +8994,70 @@ void Gui::drawFaceEditorWidget()
 				selected_faces.pop_back();
 			}
 
-			map->getBspRender()->loadLightmaps();
-			map->getBspRender()->calcFaceMaths();
-			map->getBspRender()->preRenderFaces();
-			map->getBspRender()->preRenderEnts();
+			mapRenderer->loadLightmaps();
+			mapRenderer->calcFaceMaths();
+			mapRenderer->preRenderFaces();
+			mapRenderer->preRenderEnts();
 
 			map->update_ent_lump();
 			map->update_lump_pointers();
 
-			map->getBspRender()->pushModelUndoState("REMOVE FACES FROM PVS", EDIT_MODEL_LUMPS);
+			mapRenderer->pushModelUndoState("REMOVE FACES FROM PVS", EDIT_MODEL_LUMPS);
 		}
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
-			ImGui::TextUnformatted("Selected faces will be removed from leaves and make this faces only invisibled!");
+			ImGui::TextUnformatted("Selected faces will be removed from leaves and make this faces invisibled!");
 			ImGui::EndTooltip();
 		}
+
+		if (ImGui::Button("MAKE VISIBLED"))
+		{
+			auto selected_faces = app->pickInfo.selectedFaces;
+
+			while (selected_faces.size())
+			{
+				map->leaf_add_face(selected_faces[selected_faces.size() - 1], -1);
+				selected_faces.pop_back();
+			}
+			mapRenderer->calcFaceMaths();
+			mapRenderer->preRenderFaces();
+
+			map->update_lump_pointers();
+
+			mapRenderer->pushModelUndoState("MAKE FACES VISIBLED IN ALL LEAFS", FL_LEAVES | FL_MARKSURFACES);
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Selected faces will be added to all leaves and make those faces visible from anything!");
+			ImGui::EndTooltip();
+		}
+
+		if (ImGui::Button(fmt::format("ADD TO {} LEAF", mapRenderer->curLeafIdx).c_str()))
+		{
+			auto selected_faces = app->pickInfo.selectedFaces;
+			while (selected_faces.size())
+			{
+				map->leaf_add_face(selected_faces[selected_faces.size() - 1], mapRenderer->curLeafIdx);
+				selected_faces.pop_back();
+			}
+
+			mapRenderer->calcFaceMaths();
+			mapRenderer->preRenderFaces();
+
+			map->update_ent_lump();
+			map->update_lump_pointers();
+
+			mapRenderer->pushModelUndoState("MAKE FACES VISIBLED FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Selected faces will be added to current leaf for visibility!");
+			ImGui::EndTooltip();
+		}
+
 		ImGui::PopStyleColor();
 
 

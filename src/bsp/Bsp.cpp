@@ -6494,23 +6494,59 @@ int Bsp::duplicate_model(int modelIdx)
 	return newModelIdx;
 }
 
+bool Bsp::leaf_add_face(int faceIdx, int leafIdx)
+{
+	if (faceIdx < 0 || faceIdx >= faceCount)
+	{
+		return false;
+	}
+	
+	
+	std::vector<int> all_mark_surfaces;
+	int surface_idx = 0;
+	for (int i = 0; i < leafCount; i++)
+	{
+		bool has_face = false;
+		for (int n = 0; n < leaves[i].nMarkSurfaces; n++)
+		{
+			if (marksurfs[leaves[i].iFirstMarkSurface + n] == faceIdx)
+			{
+				has_face = true;
+			}
+			all_mark_surfaces.push_back(marksurfs[leaves[i].iFirstMarkSurface + n]);
+		}
+
+		leaves[i].iFirstMarkSurface = surface_idx;
+
+		if (!has_face && (leafIdx == -1 || leafIdx == i))
+		{
+			leaves[i].nMarkSurfaces += 1;
+			all_mark_surfaces.push_back(faceIdx);
+		}
+		surface_idx += leaves[i].nMarkSurfaces;
+	}
+
+	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
+	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
+	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
+
+	return true;
+}
+
 bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 {
-	// Check if face is valid
 	if (faceIdx < 0 || faceIdx >= faceCount)
 	{
 		return false;
 	}
 
 	int leafFaceTarget = -1;
-
 	if (onlyleafs)
 	{
 		leafFaceTarget = faceIdx;
 	}
 	else
 	{
-		//print_log("Remove face with id:{}\n", faceIdx);
 		std::vector<BSPFACE32> all_faces;
 		for (int f = 0; f < faceCount; f++)
 		{
@@ -6520,7 +6556,6 @@ bool Bsp::remove_face(int faceIdx, bool onlyleafs)
 			}
 			else
 			{
-				// Shift face count in models
 				for (int m = 0; m < modelCount; m++)
 				{
 					if (models[m].nFaces == 0)

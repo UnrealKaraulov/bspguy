@@ -854,7 +854,11 @@ void Renderer::drawModelVerts()
 {
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
-	if (!map || entIdx < 0)
+
+	if (!map ||  entIdx < 0)
+		return;
+	BspRenderer* rend = map->getBspRender();
+	if (!rend)
 		return;
 
 	Entity* ent = map->ents[entIdx];
@@ -867,10 +871,6 @@ void Renderer::drawModelVerts()
 	}
 
 	glClear(GL_DEPTH_BUFFER_BIT);
-
-	vec3 mapOffset = map->getBspRender()->mapOffset;
-	vec3 renderOffset = mapOffset.flip();
-	vec3 localCameraOrigin = cameraOrigin - mapOffset;
 
 	COLOR4 vertDimColor = { 200, 200, 200, 255 };
 	COLOR4 vertHoverColor = { 255, 255, 255, 255 };
@@ -890,7 +890,7 @@ void Renderer::drawModelVerts()
 	for (int i = 0; i < modelVerts.size(); i++)
 	{
 		vec3 ori = modelVerts[i].pos + entOrigin;
-		float s = (ori - localCameraOrigin).length() * vertExtentFactor;
+		float s = (ori - rend->localCameraOrigin).length() * vertExtentFactor;
 		ori = ori.flip();
 
 		if (anyEdgeSelected)
@@ -915,7 +915,7 @@ void Renderer::drawModelVerts()
 	for (int i = 0; i < modelEdges.size(); i++)
 	{
 		vec3 ori = getEdgeControlPoint(modelVerts, modelEdges[i]) + entOrigin;
-		float s = (ori - localCameraOrigin).length() * vertExtentFactor;
+		float s = (ori - rend->localCameraOrigin).length() * vertExtentFactor;
 		ori = ori.flip();
 
 		if (anyVertSelected && !anyEdgeSelected)
@@ -938,7 +938,7 @@ void Renderer::drawModelVerts()
 	}
 
 	matmodel.loadIdentity();
-	matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	matmodel.translate(rend->renderOffset.x, rend->renderOffset.y, rend->renderOffset.z);
 	colorShader->updateMatrixes();
 	modelVertBuff->drawFull();
 }
@@ -951,7 +951,11 @@ void Renderer::drawModelOrigin()
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	Bsp* map = SelectedMap;
-	vec3 mapOffset = map->getBspRender()->mapOffset;
+	if (!map )
+		return;
+	BspRenderer* rend = map->getBspRender();
+	if (!rend)
+		return;
 
 	COLOR4 vertDimColor = { 0, 200, 0, 255 };
 	COLOR4 vertHoverColor = { 128, 255, 128, 255 };
@@ -963,7 +967,7 @@ void Renderer::drawModelOrigin()
 		vertDimColor = { 32, 32, 32, 255 };
 	}
 
-	vec3 ori = transformedOrigin + mapOffset;
+	vec3 ori = transformedOrigin + rend->mapOffset;
 	float s = (ori - cameraOrigin).length() * vertExtentFactor;
 	ori = ori.flip();
 
@@ -1358,7 +1362,7 @@ void Renderer::cameraObjectHovering()
 		modelIdx = map->ents[entIdx]->getBspModelIdx();
 	}
 
-	vec3 mapOffset;
+	vec3 mapOffset{};
 	if (map->getBspRender())
 		mapOffset = map->getBspRender()->mapOffset;
 
@@ -2343,19 +2347,27 @@ void Renderer::updateDragAxes(vec3 delta)
 	Bsp* map = SelectedMap;
 	Entity* ent = NULL;
 	vec3 mapOffset;
+	vec3 localCameraOrigin;
 	int entIdx = pickInfo.GetSelectedEnt();
 
-	if (map && map->getBspRender() && entIdx >= 0)
+	if (map && entIdx >= 0)
 	{
-		ent = map->ents[entIdx];
-		mapOffset = map->getBspRender()->mapOffset;
+		BspRenderer* rend = map->getBspRender();
+		if (rend)
+		{
+			ent = map->ents[entIdx];
+			mapOffset = rend->mapOffset;
+			localCameraOrigin = rend->localCameraOrigin;
+		}
+		else
+		{
+			return;
+		}
 	}
 	else
 	{
 		return;
 	}
-
-	vec3 localCameraOrigin = cameraOrigin - mapOffset;
 
 	vec3 entMin, entMax;
 	// set origin of the axes

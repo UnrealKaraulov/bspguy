@@ -183,6 +183,11 @@ class BspRenderer
 public:
 	Bsp* map;
 	vec3 mapOffset;
+	vec3 renderOffset;
+	vec3 localCameraOrigin;
+
+	int curLeafIdx;
+
 	bool lightEnableFlags[4] = { true,true,true,true };
 	std::vector<Wad*> wads;
 	bool texturesLoaded = false;

@@ -435,14 +435,6 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	return (int)(vismap_p - output);
 }
 
-bool CHECKBITFROMBYTES(unsigned char* bytes, int bitid)
-{
-	int byteid = bitid / 8;
-	int bitOffset = bitid % 8;
-
-	return bytes[byteid] & (1 << bitOffset);
-}
-
 void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* dest, unsigned int dest_length)
 {
 	unsigned char* out = dest;

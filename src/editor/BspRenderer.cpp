@@ -29,7 +29,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 
 	lightEnableFlags[0] = lightEnableFlags[1] = lightEnableFlags[2] = lightEnableFlags[3] = true;
 
-	intersectVec = vec3();
+	intersectVec = mapOffset = renderOffset = localCameraOrigin = vec3();
 
 	renderCameraOrigin = renderCameraAngles = vec3();
 	renderCameraAngles.z = 90.0f;
@@ -1777,7 +1777,7 @@ void BspRenderer::refreshEnt(int entIdx)
 			}
 			else
 			{
-				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+				fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
 				if (fgdClass && !fgdClass->model.empty())
 				{
 					std::string lowerpath = toLowerCase(fgdClass->model);
@@ -2145,6 +2145,10 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 
 void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, int clipnodeHull)
 {
+	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
+	renderOffset = mapOffset.flip();
+	localCameraOrigin = cameraOrigin - mapOffset;
+
 	if (delayEntUndoList.size())
 	{
 		for (const auto& undoEnt : delayEntUndoList)
@@ -2155,12 +2159,19 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 			}
 		}
 		delayEntUndoList.clear();
+	};
+
+
+	static double leafUpdTime = 0.0;
+
+	if (fabs(g_app->curTime - leafUpdTime) > 0.25)
+	{
+		leafUpdTime = g_app->curTime;
+		std::vector<int> nodeBranch;
+		int childIdx = -1;
+		int headNode = map->models[0].iHeadnodes[0];
+		map->pointContents(headNode, localCameraOrigin, 0, nodeBranch, curLeafIdx, childIdx);
 	}
-
-	vec3 renderOffset;
-	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
-	renderOffset = mapOffset.flip();
-
 
 	g_app->colorShader->bind();
 	g_app->colorShader->modelMat->loadIdentity();
@@ -2318,10 +2329,6 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 
 void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly)
 {
-	vec3 renderOffset;
-	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
-	renderOffset = mapOffset.flip();
-
 	int modelIdx = ent ? ent->modelIdx : 0;
 
 	if (modelIdx < 0 || modelIdx >= numRenderModels)
@@ -2577,10 +2584,6 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 
 void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 {
-	vec3 renderOffset;
-	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
-	renderOffset = mapOffset.flip();
-
 	// skip worldspawn
 
 	g_app->modelShader->pushMatrix();
