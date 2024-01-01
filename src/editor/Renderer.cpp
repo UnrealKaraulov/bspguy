@@ -855,7 +855,7 @@ void Renderer::drawModelVerts()
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
 
-	if (!map ||  entIdx < 0)
+	if (!map || entIdx < 0)
 		return;
 	BspRenderer* rend = map->getBspRender();
 	if (!rend)
@@ -951,7 +951,7 @@ void Renderer::drawModelOrigin()
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	Bsp* map = SelectedMap;
-	if (!map )
+	if (!map)
 		return;
 	BspRenderer* rend = map->getBspRender();
 	if (!rend)
@@ -3650,11 +3650,12 @@ void Renderer::deleteEnts()
 	}
 }
 
-void Renderer::deselectObject()
+void Renderer::deselectObject(bool onlyobject)
 {
 	filterNeeded = true;
 	pickInfo.selectedEnts.clear();
-	pickInfo.selectedFaces.clear();
+	if (onlyobject)
+		pickInfo.selectedFaces.clear();
 	isTransformableSolid = false;
 	hoverVert = -1;
 	hoverEdge = -1;

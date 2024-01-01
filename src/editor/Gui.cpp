@@ -3331,7 +3331,8 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem(get_localized_string(LANG_0599).c_str(), "", showLightmapEditorWidget))
 				{
 					showLightmapEditorWidget = !showLightmapEditorWidget;
-					FaceSelectPressed();
+					app->pickMode = PICK_FACE;
+					pickCount++;
 					showLightmapEditorUpdate = true;
 				}
 				if (ImGui::MenuItem(get_localized_string(LANG_0600).c_str(), "", showMergeMapWidget))
@@ -3457,10 +3458,13 @@ void Gui::drawToolbar()
 		ImGui::PushStyleColor(ImGuiCol_Border, app->pickMode == PICK_OBJECT ? dimColor : selectColor);
 		if (ImGui::ImageButton("##pickobj",(void*)(uint64_t)objectIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1)))
 		{
-			app->deselectFaces();
-			app->deselectObject();
-			app->pickMode = PICK_OBJECT;
-			showFaceEditWidget = false;
+			if (app->pickMode != PICK_OBJECT)
+			{
+				app->deselectFaces();
+				app->deselectObject();
+				app->pickMode = PICK_OBJECT;
+				showFaceEditWidget = false;
+			}
 		}
 		ImGui::PopStyleColor(2);
 		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -3476,10 +3480,13 @@ void Gui::drawToolbar()
 		ImGui::SameLine();
 		if (ImGui::ImageButton("##pickface", (ImTextureID)(uint64_t)faceIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1)))
 		{
-			app->deselectFaces();
-			app->deselectObject();
-			FaceSelectPressed();
+			if (app->pickMode == PICK_OBJECT)
+			{
+				app->deselectObject(true);
+				pickCount++;
+			}
 			showFaceEditWidget = true;
+			app->pickMode = PICK_FACE;
 		}
 		ImGui::PopStyleColor(2);
 		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -3494,10 +3501,13 @@ void Gui::drawToolbar()
 		ImGui::SameLine();
 		if (ImGui::ImageButton("##pickleaf", (void*)(uint64_t)leafIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1)))
 		{
-			app->deselectFaces();
-			app->deselectObject();
-			app->pickMode = PICK_FACE_LEAF;
+			if (app->pickMode == PICK_OBJECT)
+			{
+				app->deselectObject(true);
+				pickCount++;
+			}
 			showFaceEditWidget = true;
+			app->pickMode = PICK_FACE_LEAF;
 		}
 		ImGui::PopStyleColor(1);
 		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -3533,7 +3543,7 @@ void Gui::FaceSelectPressed()
 		}
 	}
 
-	if (app->pickMode != PICK_FACE)
+	if (app->pickMode == PICK_OBJECT)
 		app->deselectObject();
 
 	app->pickMode = PICK_FACE;
@@ -8719,7 +8729,7 @@ void Gui::drawFaceEditorWidget()
 		static bool stylesChanged = false;
 
 		Bsp* map = app->getSelectedMap();
-		if (!map || app->pickMode != PICK_FACE || app->pickInfo.selectedFaces.empty())
+		if (!map || app->pickMode == PICK_OBJECT || app->pickInfo.selectedFaces.empty())
 		{
 			ImGui::Text(get_localized_string(LANG_1130).c_str());
 			ImGui::End();
