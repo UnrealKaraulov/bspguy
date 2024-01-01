@@ -3,29 +3,7 @@
 #include <string>
 #include "Wad.h"
 
-tQuad::tQuad(float x, float y, float w, float h)
-{
-	v1 = tVert(x, y, 0.0f, 0.0f, 0.0f);
-	v2 = tVert(x, y + h, 0.0f, 0.0f, 0.0f);
-	v3 = tVert(x + w, y + h, 0.0f, 1.0f, 0.0f);
-
-	v4 = tVert(x, y, 0.0f, 0.0f, 0.0f);
-	v5 = tVert(x + w, y + h, 0.0f, 1.0f, 0.0f);
-	v6 = tVert(x + w, y, 0.0f, 1.0f, 0.0f);
-}
-
-tQuad::tQuad(float x, float y, float w, float h, float uu1, float vv1, float uu2, float vv2)
-{
-	v1 = tVert(x, y, 0.0f, uu1, vv1);
-	v2 = tVert(x, y + h, 0.0f, uu1, vv2);
-	v3 = tVert(x + w, y + h, 0.0f, uu2, vv2);
-
-	v4 = tVert(x, y, 0.0f, uu1, vv1);
-	v5 = tVert(x + w, y + h, 0.0f, uu2, vv2);
-	v6 = tVert(x + w, y, 0.0f, uu2, vv1);
-}
-
-tQuad::tQuad(tVert _v1, tVert _v2, tVert _v3, tVert _v4) : v1(_v1), v2(_v2), v3(_v3), v4(_v4), v5(_v3), v6(_v4)
+tQuad::tQuad(tVert _v1, tVert _v2, tVert _v3, tVert _v4) : v1(_v1), v2(_v2), v3(_v3), v4(_v4)
 {
 	
 }
@@ -56,36 +34,47 @@ void cQuad::setColor(COLOR4 c1, COLOR4 c2, COLOR4 c3, COLOR4 c4)
 
 tCube::tCube(vec3 mins, vec3 maxs)
 {
-	tVert v1, v2, v3, v4;
-	vecs[0] = tVert(mins.x, maxs.y, maxs.z, 0.0f, 1.0f);
-	vecs[1] = tVert(mins.x, maxs.y, mins.z, 0.0f, 0.0f);
-	vecs[2] = tVert(mins.x, mins.y, mins.z, 1.0f, 0.0f);
-	vecs[3] = tVert(mins.x, mins.y, maxs.z, 1.0f, 1.0f);
+	left = {
+	tVert(mins.x, maxs.y, maxs.z, 0.0f, 1.0f),
+	tVert(mins.x, maxs.y, mins.z, 0.0f, 0.0f),
+	tVert(mins.x, mins.y, mins.z, 1.0f, 0.0f),
+	tVert(mins.x, mins.y, maxs.z, 1.0f, 1.0f)
+	};
 
-	vecs[4] = tVert(maxs.x, maxs.y, mins.z, 0.0f, 1.0f);
-	vecs[5] = tVert(maxs.x, maxs.y, maxs.z, 0.0f, 0.0f);
-	vecs[6] = tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f);
-	vecs[7] = tVert(maxs.x, mins.y, mins.z, 1.0f, 1.0f);
+	right = {
+		tVert(maxs.x, maxs.y, mins.z, 0.0f, 1.0f),
+		tVert(maxs.x, maxs.y, maxs.z, 0.0f, 0.0f),
+		tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f),
+		tVert(maxs.x, mins.y, mins.z, 1.0f, 1.0f)
+	};
 
-	vecs[8] = tVert(mins.x, mins.y, mins.z, 0.0f, 1.0f);
-	vecs[9] = tVert(maxs.x, mins.y, mins.z, 0.0f, 0.0f);
-	vecs[10] = tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f);
-	vecs[11] = tVert(mins.x, mins.y, maxs.z, 1.0f, 1.0f);
+	bottom = {
+		tVert(mins.x, mins.y, mins.z, 0.0f, 1.0f),
+		tVert(maxs.x, mins.y, mins.z, 0.0f, 0.0f),
+		tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f),
+		tVert(mins.x, mins.y, maxs.z, 1.0f, 1.0f)
+	};
 
-	vecs[12] = tVert(mins.x, maxs.y, maxs.z, 0.0f, 1.0f);
-	vecs[13] = tVert(maxs.x, maxs.y, maxs.z, 0.0f, 0.0f);
-	vecs[14] = tVert(maxs.x, maxs.y, mins.z, 1.0f, 0.0f);
-	vecs[15] = tVert(mins.x, maxs.y, mins.z, 1.0f, 1.0f);
+	top = {
+		tVert(mins.x, maxs.y, maxs.z, 0.0f, 1.0f),
+		tVert(maxs.x, maxs.y, maxs.z, 0.0f, 0.0f),
+		tVert(maxs.x, maxs.y, mins.z, 1.0f, 0.0f),
+		tVert(mins.x, maxs.y, mins.z, 1.0f, 1.0f)
+	};
 
-	vecs[16] = tVert(mins.x, maxs.y, mins.z, 0.0f, 1.0f);
-	vecs[17] = tVert(maxs.x, maxs.y, mins.z, 0.0f, 0.0f);
-	vecs[18] = tVert(maxs.x, mins.y, mins.z, 1.0f, 0.0f);
-	vecs[19] = tVert(mins.x, mins.y, mins.z, 1.0f, 1.0f);
+	front = {
+		tVert(mins.x, maxs.y, mins.z, 0.0f, 1.0f),
+		tVert(maxs.x, maxs.y, mins.z, 0.0f, 0.0f),
+		tVert(maxs.x, mins.y, mins.z, 1.0f, 0.0f),
+		tVert(mins.x, mins.y, mins.z, 1.0f, 1.0f)
+	};
 
-	vecs[20] = tVert(maxs.x, maxs.y, maxs.z, 0.0f, 1.0f);
-	vecs[21] = tVert(mins.x, maxs.y, maxs.z, 0.0f, 0.0f);
-	vecs[22] = tVert(mins.x, mins.y, maxs.z, 1.0f, 0.0f);
-	vecs[23] = tVert(maxs.x, mins.y, maxs.z, 1.0f, 1.0f);
+	back = {
+		tVert(maxs.x, maxs.y, maxs.z, 0.0f, 1.0f),
+		tVert(mins.x, maxs.y, maxs.z, 0.0f, 0.0f),
+		tVert(mins.x, mins.y, maxs.z, 1.0f, 0.0f),
+		tVert(maxs.x, mins.y, maxs.z, 1.0f, 1.0f)
+	};
 }
 
 cCube::cCube(vec3 mins, vec3 maxs, COLOR4 c)

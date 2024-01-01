@@ -70,7 +70,6 @@ void PointEntRenderer::genPointEntCubes()
 			EntCube* matchingCube = getCubeMatchingProps(cube);
 			if (!matchingCube)
 			{
-				cube->Textured = fgdClass->isSprite;
 				genCubeBuffers(cube);
 				entCubes.push_back(cube);
 				cubeMap[fgdClass->name] = cube;
@@ -126,7 +125,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 	else
 	{
 		tCube* cube = new tCube(min, max);
-		entCube->cubeBuffer = new VertexBuffer(g_app->modelShader, 0, cube, 24, GL_QUADS);
+		entCube->cubeBuffer = new VertexBuffer(g_app->modelShader, 0, cube, 8, GL_QUADS);
 		entCube->cubeBuffer->addAttribute(POS_3F, "vPosition");
 		entCube->cubeBuffer->addAttribute(TEX_2F, "vTex");
 	}

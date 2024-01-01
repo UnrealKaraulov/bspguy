@@ -252,7 +252,8 @@ public:
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);
 	bool leaf_add_face(int faceIdx, int leafIdx);
-	bool remove_face(int faceid, bool onlyleafs = false);
+	bool leaf_del_face(int faceIdx, int leafIdx);
+	bool remove_face(int faceid);
 	int merge_two_models(int src_model, int dst_model);
 
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned

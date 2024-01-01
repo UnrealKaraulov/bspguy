@@ -6500,8 +6500,8 @@ bool Bsp::leaf_add_face(int faceIdx, int leafIdx)
 	{
 		return false;
 	}
-	
-	
+
+
 	std::vector<int> all_mark_surfaces;
 	int surface_idx = 0;
 	for (int i = 0; i < leafCount; i++)
@@ -6533,13 +6533,55 @@ bool Bsp::leaf_add_face(int faceIdx, int leafIdx)
 	return true;
 }
 
-bool Bsp::remove_face(int faceIdx, bool onlyleafs)
+
+bool Bsp::leaf_del_face(int faceIdx, int leafIdx)
 {
 	if (faceIdx < 0 || faceIdx >= faceCount)
 	{
 		return false;
 	}
 
+	std::vector<int> all_mark_surfaces;
+	int surface_idx = 0;
+	for (int i = 0; i < leafCount; i++)
+	{
+		int del_faces = 0;
+		for (int n = 0; n < leaves[i].nMarkSurfaces; n++)
+		{
+			if (marksurfs[leaves[i].iFirstMarkSurface + n] == faceIdx && (leafIdx == -1 || leafIdx == i))
+			{
+				del_faces++;
+			}
+			else
+			{
+				all_mark_surfaces.push_back(marksurfs[leaves[i].iFirstMarkSurface + n]);
+			}
+		}
+
+		leaves[i].iFirstMarkSurface = surface_idx;
+
+		if (del_faces > 0)
+		{
+			leaves[i].nMarkSurfaces -= del_faces;
+		}
+
+		surface_idx += leaves[i].nMarkSurfaces;
+	}
+
+	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
+	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
+	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
+
+	return true;
+}
+
+bool Bsp::remove_face(int faceIdx)
+{
+	if (faceIdx < 0 || faceIdx >= faceCount)
+	{
+		return false;
+	}
+	bool onlyleafs = false;
 	int leafFaceTarget = -1;
 	if (onlyleafs)
 	{

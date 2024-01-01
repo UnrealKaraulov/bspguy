@@ -29,7 +29,7 @@ namespace Shaders
 
 		"void main()\n"
 		"{\n"
-		"	if(fColor.a <= 0.01)\n"
+		"	if(fColor.a <= 0.2)\n"
 		"		discard;\n"
 		"	float gamma = 1.5;\n"
 		"	gl_FragColor = vec4(pow(fColor.rgb, vec3(1.0/gamma)), fColor.a);\n"
@@ -60,7 +60,7 @@ namespace Shaders
 		"void main()\n"
 		"{\n"
 		"	gl_FragColor = texture2D(sTex, fTex);\n"
-		"	if(gl_FragColor.a <= 0.05)\n"
+		"	if(gl_FragColor.a <= 0.2)\n"
 		"		discard;\n"
 		"}\n";
 
@@ -113,7 +113,7 @@ namespace Shaders
 		"void main()\n"
 		"{\n"
 		"	vec4 color = texture2D(sTex, fTex);\n"
-		"	if(color.a <= 0.05)\n"
+		"	if(color.a <= 0.2)\n"
 		"		discard;\n"
 		"	vec4 fcolor = fColor.rgba;\n"
 	/*	"	if (fcolor.g == 5.0)\n"

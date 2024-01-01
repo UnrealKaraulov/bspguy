@@ -499,7 +499,7 @@ void AppSettings::load()
 
 
 #ifdef WIN32
-	// Fix invisibled window header for primary screen.
+	// Fix invisible window header for primary screen.
 	if (g_settings.windowY >= 0 && g_settings.windowY < 30)
 	{
 		g_settings.windowY = 30;

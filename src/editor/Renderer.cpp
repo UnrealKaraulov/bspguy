@@ -1054,7 +1054,7 @@ void Renderer::controls()
 	if (canControl && !blockMoving)
 	{
 		if (anyCtrlPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
-			&& pickMode == PICK_FACE && pickInfo.selectedFaces.size() == 1)
+			&& pickMode != PICK_OBJECT && pickInfo.selectedFaces.size() == 1)
 		{
 			Bsp* map = SelectedMap;
 			if (map)
@@ -1596,7 +1596,7 @@ void Renderer::shortcutControls()
 			deleteEnts();
 		}
 	}
-	else if (pickMode == PICK_FACE)
+	else if (pickMode != PICK_OBJECT)
 	{
 		if (anyCtrlPressed && pressed[GLFW_KEY_C] && !oldPressed[GLFW_KEY_C])
 		{
@@ -1658,7 +1658,7 @@ void Renderer::pickObject()
 
 	pickInfo.bestDist = tmpPickInfo.bestDist;
 
-	if (map != oldmap && pickMode == PICK_FACE)
+	if (map != oldmap && pickMode != PICK_OBJECT)
 	{
 		for (auto& idx : pickInfo.selectedFaces)
 		{
@@ -1679,7 +1679,7 @@ void Renderer::pickObject()
 		ungrabEnt();
 	}
 
-	if (pickMode == PICK_FACE)
+	if (pickMode != PICK_OBJECT)
 	{
 		gui->showLightmapEditorUpdate = true;
 

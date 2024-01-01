@@ -2626,6 +2626,10 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				{
 					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 				}
+				else
+				{
+					renderEnts[i].pointEntCube->axesBuffer->drawFull();
+				}
 
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 			}
@@ -2680,6 +2684,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				}
 				else
 				{
+					renderEnts[i].pointEntCube->axesBuffer->drawFull();
 					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 				}
 			}
@@ -2697,12 +2702,6 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				}
 
 				renderEnts[i].pointEntCube->axesBuffer->drawFull();
-
-				if (renderEnts[i].pointEntCube->Textured)
-				{
-					g_app->modelShader->bind();
-					missingTex->bind(0);
-				}
 				renderEnts[i].pointEntCube->cubeBuffer->drawFull();
 			}
 		}

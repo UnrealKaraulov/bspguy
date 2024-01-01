@@ -72,15 +72,12 @@ struct cTri
 	{}
 };
 
-// Textured 3D Quad
+// Textured 3D GL_Quad
 struct tQuad
 {
-	tVert v1, v2, v3;
-	tVert v4, v5, v6;
+	tVert v1, v2, v3, v4;
 
 	tQuad() = default;
-	tQuad(float x, float y, float w, float h);
-	tQuad(float x, float y, float w, float h, float uu1, float vv1, float uu2, float vv2);
 	tQuad(tVert v1, tVert v2, tVert v3, tVert v4);
 };
 
@@ -100,7 +97,9 @@ struct cQuad
 // Textured 3D Cube
 struct tCube
 {
-	tVert vecs[24];
+	tQuad left, right;
+	tQuad front, back;
+	tQuad top, bottom;
 
 	tCube() = default;
 	tCube(vec3 mins, vec3 maxs);

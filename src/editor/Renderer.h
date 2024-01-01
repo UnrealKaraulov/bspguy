@@ -35,7 +35,8 @@ enum transform_targets
 enum pick_modes
 {
 	PICK_OBJECT,
-	PICK_FACE
+	PICK_FACE,
+	PICK_FACE_LEAF
 };
 
 struct TransformAxes

@@ -83,6 +83,9 @@ void Gui::init()
 	lodepng_decode32_file(&icon_data, &w, &h, "./pictures/face.png");
 	faceIconTexture = new Texture(w, h, icon_data, "faceIcon", true);
 	faceIconTexture->upload();
+	lodepng_decode32_file(&icon_data, &w, &h, "./pictures/leaf.png");
+	leafIconTexture = new Texture(w, h, icon_data, "leafIcon", true);
+	leafIconTexture->upload();
 }
 
 ImVec4 imguiColorFromConsole(unsigned short colors)
@@ -545,7 +548,7 @@ void Gui::drawBspContexMenu()
 		return;
 	}
 
-	if (app->pickMode == PICK_FACE)
+	if (app->pickMode != PICK_OBJECT)
 	{
 		if (ImGui::BeginPopup("face_context"))
 		{
@@ -3431,11 +3434,14 @@ void Gui::drawToolbar()
 	if (ImGui::Begin(get_localized_string(LANG_0606).c_str(), 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
+		style.FrameBorderSize = 1.0f;
 		ImGuiContext& g = *GImGui;
 		ImVec4 dimColor = style.Colors[ImGuiCol_FrameBg];
 		ImVec4 selectColor = style.Colors[ImGuiCol_FrameBgActive];
 		float iconWidth = (fontSize / 22.0f) * 32;
 		ImVec2 iconSize = ImVec2(iconWidth, iconWidth);
+		ImVec2 iconSize_big = ImVec2(iconWidth * 2, iconWidth * 2);
+
 		ImVec4 testColor = ImVec4(1, 0, 0, 1);
 		selectColor.x *= selectColor.w;
 		selectColor.y *= selectColor.w;
@@ -3448,33 +3454,57 @@ void Gui::drawToolbar()
 		dimColor.w = 1;
 
 		ImGui::PushStyleColor(ImGuiCol_Button, app->pickMode == PICK_OBJECT ? selectColor : dimColor);
-		if (ImGui::ImageButton((void*)(uint64_t)objectIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1), 4))
+		ImGui::PushStyleColor(ImGuiCol_Border, app->pickMode == PICK_OBJECT ? dimColor : selectColor);
+		if (ImGui::ImageButton("##pickobj",(void*)(uint64_t)objectIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1)))
 		{
 			app->deselectFaces();
 			app->deselectObject();
 			app->pickMode = PICK_OBJECT;
 			showFaceEditWidget = false;
 		}
-		ImGui::PopStyleColor();
+		ImGui::PopStyleColor(2);
 		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 		{
 			ImGui::BeginTooltip();
+			ImGui::ImageButton("##pickobj_big", (void*)(uint64_t)objectIconTexture->id, iconSize_big, ImVec2(0, 0), ImVec2(1, 1));
 			ImGui::TextUnformatted(get_localized_string(LANG_0607).c_str());
 			ImGui::EndTooltip();
 		}
 
 		ImGui::PushStyleColor(ImGuiCol_Button, app->pickMode == PICK_FACE ? selectColor : dimColor);
+		ImGui::PushStyleColor(ImGuiCol_Border, app->pickMode == PICK_FACE ? dimColor : selectColor );
 		ImGui::SameLine();
-		if (ImGui::ImageButton((void*)(uint64_t)faceIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1), 4))
+		if (ImGui::ImageButton("##pickface", (ImTextureID)(uint64_t)faceIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1)))
 		{
+			app->deselectFaces();
+			app->deselectObject();
 			FaceSelectPressed();
 			showFaceEditWidget = true;
 		}
-		ImGui::PopStyleColor();
+		ImGui::PopStyleColor(2);
 		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 		{
 			ImGui::BeginTooltip();
+			ImGui::ImageButton("##pickface_big", (ImTextureID)(uint64_t)faceIconTexture->id, iconSize_big, ImVec2(0, 0), ImVec2(1, 1));
 			ImGui::TextUnformatted(get_localized_string(LANG_0608).c_str());
+			ImGui::EndTooltip();
+		}
+
+		ImGui::PushStyleColor(ImGuiCol_Button, app->pickMode == PICK_FACE_LEAF ? selectColor : dimColor);
+		ImGui::SameLine();
+		if (ImGui::ImageButton("##pickleaf", (void*)(uint64_t)leafIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1)))
+		{
+			app->deselectFaces();
+			app->deselectObject();
+			app->pickMode = PICK_FACE_LEAF;
+			showFaceEditWidget = true;
+		}
+		ImGui::PopStyleColor(1);
+		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+		{
+			ImGui::BeginTooltip();
+			ImGui::ImageButton("##pickleaf_big", (void*)(uint64_t)leafIconTexture->id, iconSize_big, ImVec2(0, 0), ImVec2(1, 1));
+			ImGui::TextUnformatted(get_localized_string("FACE_LEAF_MODE").c_str());
 			ImGui::EndTooltip();
 		}
 	}
@@ -3483,7 +3513,7 @@ void Gui::drawToolbar()
 
 void Gui::FaceSelectPressed()
 {
-	if (app->pickInfo.GetSelectedEnt() >= 0 && app->pickMode == PICK_FACE)
+	if (app->pickInfo.GetSelectedEnt() >= 0 && app->pickMode != PICK_OBJECT)
 	{
 		Bsp* map = app->getSelectedMap();
 		if (map)
@@ -3683,7 +3713,7 @@ void Gui::drawDebugWidget()
 
 	int debugVisMode = 0;
 
-	if (ImGui::Begin(get_localized_string(LANG_0624).c_str(), &showDebugWidget))
+	if (ImGui::Begin(fmt::format("{}###DEBUG_WIDGET",get_localized_string(LANG_0624)).c_str(), &showDebugWidget))
 	{
 		if (ImGui::CollapsingHeader(get_localized_string(LANG_0625).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -4194,7 +4224,7 @@ void Gui::drawTextureBrowser()
 	ImGui::SetNextWindowSize(ImVec2(610.f, 610.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
-	if (ImGui::Begin(get_localized_string(LANG_0651).c_str(), &showTextureBrowser, 0))
+	if (ImGui::Begin(fmt::format("{}###TEXTURE_BROWSER",get_localized_string(LANG_0651)).c_str(), &showTextureBrowser, 0))
 	{
 		// Список встроенных в карту текстур, с возможностью Удалить/Экспортировать/Импортировать/Переименовать
 		// Список встроенных в карту WAD текстур, с возможностью Удалить/
@@ -4259,7 +4289,7 @@ void Gui::drawKeyvalueEditor()
 	ImGui::SetNextWindowSize(ImVec2(610.f, 610.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
-	if (ImGui::Begin(get_localized_string(LANG_1103).c_str(), &showKeyvalueWidget, 0))
+	if (ImGui::Begin(fmt::format("{}###KEYVALUE_WIDGET",get_localized_string(LANG_1103)).c_str(), &showKeyvalueWidget, 0))
 	{
 		int entIdx = app->pickInfo.GetSelectedEnt();
 
@@ -5283,7 +5313,7 @@ void Gui::drawMDLWidget()
 	ImGui::SetNextWindowSize(ImVec2(410.f, 200.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(410.f, 330.f), ImVec2(410.f, 330.f));
 	bool showMdlWidget = map && map->is_mdl_model;
-	if (ImGui::Begin(get_localized_string("LANG_MDL_WIDGET").c_str(), &showMdlWidget))
+	if (ImGui::Begin(fmt::format("{}###MDL_WIDGET",get_localized_string("LANG_MDL_WIDGET")).c_str(), &showMdlWidget))
 	{
 
 	}
@@ -5299,7 +5329,7 @@ void Gui::drawGOTOWidget()
 	float angles_y = 0.0f;
 	static int modelid = -1, faceid = -1, entid = -1;
 
-	if (ImGui::Begin(get_localized_string(LANG_0676).c_str(), &showGOTOWidget, 0))
+	if (ImGui::Begin(fmt::format("{}###GOTO_WIDGET",get_localized_string(LANG_0676)).c_str(), &showGOTOWidget, 0))
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
@@ -5443,7 +5473,7 @@ void Gui::drawTransformWidget()
 	static int lastVertPickCount = -1;
 	static bool oldSnappingEnabled = app->gridSnappingEnabled;
 
-	if (ImGui::Begin(get_localized_string(LANG_0688).c_str(), &showTransformWidget, 0))
+	if (ImGui::Begin(fmt::format("{}###TRANSFORM_WIDGET",get_localized_string(LANG_0688)).c_str(), &showTransformWidget, 0))
 	{
 		if (!ent)
 		{
@@ -5835,7 +5865,7 @@ void Gui::drawLog()
 
 	ImGui::SetNextWindowSize(ImVec2(750.f, 300.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
-	if (!ImGui::Begin(get_localized_string(LANG_1164).c_str(), &showLogWidget))
+	if (!ImGui::Begin(fmt::format("{}###LOG_WIDGET",get_localized_string(LANG_1164)).c_str(), &showLogWidget))
 	{
 		ImGui::End();
 		return;
@@ -5928,7 +5958,7 @@ void Gui::drawSettings()
 	bool apply_settings_pressed = false;
 	static std::string langForSelect = g_settings.selected_lang;
 
-	if (ImGui::Begin(get_localized_string(LANG_1114).c_str(), &showSettingsWidget))
+	if (ImGui::Begin(fmt::format("{}###SETTING_WIDGET",get_localized_string(LANG_1114)).c_str(), &showSettingsWidget))
 	{
 		ImGuiContext& g = *GImGui;
 		const int settings_tabs = 7;
@@ -6700,9 +6730,8 @@ void Gui::drawSettings()
 void Gui::drawHelp()
 {
 	ImGui::SetNextWindowSize(ImVec2(600.f, 400.f), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin(get_localized_string(LANG_1117).c_str(), &showHelpWidget))
+	if (ImGui::Begin(fmt::format("{}###HELP_WIDGET",get_localized_string(LANG_1117)).c_str(), &showHelpWidget))
 	{
-
 		if (ImGui::BeginTabBar(get_localized_string(LANG_1118).c_str()))
 		{
 			if (ImGui::BeginTabItem(get_localized_string(LANG_0801).c_str()))
@@ -6763,7 +6792,7 @@ void Gui::drawHelp()
 void Gui::drawAbout()
 {
 	ImGui::SetNextWindowSize(ImVec2(550.f, 140.f), ImGuiCond_FirstUseEver);
-	if (ImGui::Begin(get_localized_string(LANG_1119).c_str(), &showAboutWidget))
+	if (ImGui::Begin(fmt::format("{}###ABOUT_WIDGET",get_localized_string(LANG_1119)).c_str(), &showAboutWidget))
 	{
 		ImGui::InputText(get_localized_string(LANG_0822).c_str(), &g_version_string, ImGuiInputTextFlags_ReadOnly);
 
@@ -6798,7 +6827,7 @@ void Gui::drawMergeWindow()
 		inPaths.push_back(std::string(""));
 	}
 
-	if (ImGui::Begin(get_localized_string(LANG_0825).c_str(), &showMergeMapWidget))
+	if (ImGui::Begin(fmt::format("{}###MERGE_WIDGET",get_localized_string(LANG_0825)).c_str(), &showMergeMapWidget))
 	{
 		for (size_t i = 0; i < inPaths.size(); i++)
 		{
@@ -6939,7 +6968,7 @@ void Gui::drawImportMapWidget()
 		title = "Create func_breakable with bsp model path";
 	}
 
-	if (ImGui::Begin(title, &showImportMapWidget))
+	if (ImGui::Begin(fmt::format("{}###IMPORT_WIDGET",title).c_str(), &showImportMapWidget))
 	{
 		if (ifd::FileDialog::Instance().IsDone("BspOpenDialog"))
 		{
@@ -7170,9 +7199,8 @@ void Gui::drawLimits()
 	Bsp* map = app->getSelectedMap();
 	std::string title = map ? "Limits - " + map->bsp_name : "Limits";
 
-	if (ImGui::Begin((title + "###limits").c_str(), &showLimitsWidget))
+	if (ImGui::Begin(fmt::format("{}###LIMITS_WIDGET",title).c_str(), &showLimitsWidget))
 	{
-
 		if (!map)
 		{
 			ImGui::Text(get_localized_string(LANG_1123).c_str());
@@ -7408,7 +7436,7 @@ void Gui::drawEntityReport()
 
 	std::string title = map ? "Entity Report - " + map->bsp_name : "Entity Report";
 
-	if (ImGui::Begin((title + "###entreport").c_str(), &showEntityReport))
+	if (ImGui::Begin(fmt::format("{}###ENTITY_WIDGET",title).c_str(), &showEntityReport))
 	{
 		if (!map)
 		{
@@ -8400,7 +8428,7 @@ void Gui::drawLightMapTool()
 	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(windowWidth, windowHeight), ImVec2(windowWidth, -1.0f));
 
-	if (ImGui::Begin(get_localized_string(LANG_0599).c_str(), &showLightmapEditorWidget))
+	if (ImGui::Begin(fmt::format("{}###LIGHTMAP_WIDGET",get_localized_string(LANG_0599)).c_str(), &showLightmapEditorWidget))
 	{
 		if (needPickColor)
 		{
@@ -8654,7 +8682,7 @@ void Gui::drawFaceEditorWidget()
 {
 	ImGui::SetNextWindowSize(ImVec2(300.f, 570.f), ImGuiCond_FirstUseEver);
 	//ImGui::SetNextWindowSize(ImVec2(400, 600));
-	if (ImGui::Begin(fmt::format("{} {}",get_localized_string(LANG_0870),
+	if (ImGui::Begin(fmt::format("{} {}###FACE_EDITOR_WIDGET",get_localized_string(LANG_0870),
 		app->pickInfo.selectedFaces.size() != 1 ? std::string() : std::to_string(app->pickInfo.selectedFaces[0])).c_str(), &showFaceEditWidget))
 	{
 		static float scaleX, scaleY, shiftX, shiftY;
@@ -8705,7 +8733,7 @@ void Gui::drawFaceEditorWidget()
 			return;
 		}
 
-		if (lastPickCount != pickCount && app->pickMode == PICK_FACE)
+		if (lastPickCount != pickCount && app->pickMode != PICK_OBJECT)
 		{
 			edgeVerts.clear();
 			if (app->pickInfo.selectedFaces.size())
@@ -8963,14 +8991,12 @@ void Gui::drawFaceEditorWidget()
 			auto selected_faces = app->pickInfo.selectedFaces;
 			while (selected_faces.size())
 			{
-				map->remove_face(selected_faces[selected_faces.size() - 1], false);
+				map->leaf_del_face(selected_faces[selected_faces.size() - 1], -1);
 				selected_faces.pop_back();
 			}
 
-			mapRenderer->loadLightmaps();
 			mapRenderer->calcFaceMaths();
 			mapRenderer->preRenderFaces();
-			mapRenderer->preRenderEnts();
 
 			map->update_ent_lump();
 			map->update_lump_pointers();
@@ -8990,14 +9016,12 @@ void Gui::drawFaceEditorWidget()
 			auto selected_faces = app->pickInfo.selectedFaces;
 			while (selected_faces.size())
 			{
-				map->remove_face(selected_faces[selected_faces.size() - 1], true);
+				map->leaf_del_face(selected_faces[selected_faces.size() - 1], -1);
 				selected_faces.pop_back();
 			}
 
-			mapRenderer->loadLightmaps();
 			mapRenderer->calcFaceMaths();
 			mapRenderer->preRenderFaces();
-			mapRenderer->preRenderEnts();
 
 			map->update_ent_lump();
 			map->update_lump_pointers();
@@ -9007,11 +9031,11 @@ void Gui::drawFaceEditorWidget()
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
-			ImGui::TextUnformatted("Selected faces will be removed from leaves and make this faces invisibled!");
+			ImGui::TextUnformatted("Selected faces will be removed from leaves and make this faces invisible!");
 			ImGui::EndTooltip();
 		}
 
-		if (ImGui::Button("MAKE VISIBLED"))
+		if (ImGui::Button("MAKE VISIBLE ANYWHERE"))
 		{
 			auto selected_faces = app->pickInfo.selectedFaces;
 
@@ -9025,12 +9049,37 @@ void Gui::drawFaceEditorWidget()
 
 			map->update_lump_pointers();
 
-			mapRenderer->pushModelUndoState("MAKE FACES VISIBLED IN ALL LEAFS", FL_LEAVES | FL_MARKSURFACES);
+			mapRenderer->pushModelUndoState("MAKE FACES VISIBLE IN ALL LEAFS", FL_LEAVES | FL_MARKSURFACES);
 		}
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
 			ImGui::TextUnformatted("Selected faces will be added to all leaves and make those faces visible from anything!");
+			ImGui::EndTooltip();
+		}
+
+		if (ImGui::Button(fmt::format("DEL FROM {} LEAF", mapRenderer->curLeafIdx).c_str()))
+		{
+			auto selected_faces = app->pickInfo.selectedFaces;
+
+			while (selected_faces.size())
+			{
+				map->leaf_del_face(selected_faces[selected_faces.size() - 1], mapRenderer->curLeafIdx); 
+				selected_faces.pop_back();
+			}
+
+			mapRenderer->calcFaceMaths();
+			mapRenderer->preRenderFaces();
+
+			map->update_ent_lump();
+			map->update_lump_pointers();
+
+			mapRenderer->pushModelUndoState("MAKE FACES INVISIBLE FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Selected faces will be removed from current leaf for invisibility!");
 			ImGui::EndTooltip();
 		}
 
@@ -9049,7 +9098,7 @@ void Gui::drawFaceEditorWidget()
 			map->update_ent_lump();
 			map->update_lump_pointers();
 
-			mapRenderer->pushModelUndoState("MAKE FACES VISIBLED FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
+			mapRenderer->pushModelUndoState("MAKE FACES VISIBLE FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
 		}
 		if (ImGui::IsItemHovered())
 		{
@@ -9339,7 +9388,7 @@ void Gui::drawFaceEditorWidget()
 		pasteTextureNow = false;
 
 		ImVec2 imgSize = ImVec2(inputWidth * 2 - 2, inputWidth * 2 - 2);
-		if (ImGui::ImageButton(textureId, imgSize, ImVec2(0, 0), ImVec2(1, 1), 1))
+		if (ImGui::ImageButton("##show_texbrowser",textureId, imgSize, ImVec2(0, 0), ImVec2(1, 1)))
 		{
 			showTextureBrowser = true;
 		}

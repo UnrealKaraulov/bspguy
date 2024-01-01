@@ -51,8 +51,8 @@ struct dspriteframe_t {
 struct SpriteImage
 {
 	dspriteframe_t frameinfo;
-	std::vector<COLOR3> image;
-	std::vector<unsigned char> raw_image;
+	std::vector<COLOR4> image;
+	COLOR3 last_color;
 	float interval;
 	Texture* texture;
 	EntCube* spriteCube;
@@ -62,6 +62,7 @@ struct SpriteGroup
 {
 	std::vector<SpriteImage> sprites;
 	float totalinterval;
+	float currentinterval;
 };
 
 class Sprite {

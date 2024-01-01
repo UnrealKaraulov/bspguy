@@ -91,26 +91,47 @@ Sprite::Sprite(const std::string& filename)
 			spr.read(reinterpret_cast<char*>(&tmpSpriteImage.frameinfo), sizeof(dspriteframe_t));
 
 			int frame_size = tmpSpriteImage.frameinfo.width * tmpSpriteImage.frameinfo.height;
-			tmpSpriteImage.raw_image.resize(frame_size);
 
-			spr.read(reinterpret_cast<char*>(tmpSpriteImage.raw_image.data()), frame_size);
+			std::vector<unsigned char> raw_image;
+			raw_image.resize(frame_size);
+
+			spr.read(reinterpret_cast<char*>(raw_image.data()), frame_size);
 
 			tmpSpriteImage.image.resize(frame_size);
+
+			tmpSpriteImage.last_color = palette[colors - 1];
+
 			for (int s = 0; s < frame_size; s++)
 			{
-				tmpSpriteImage.image[s] = palette[tmpSpriteImage.raw_image[s]];
+				if (header.texFormat == SPR_ALPHTEST && raw_image[s] == colors - 1)
+				{
+					tmpSpriteImage.image[s] = COLOR4(0, 0, 0, 0);
+				}
+				else if(header.texFormat == SPR_ADDITIVE && palette[raw_image[s]] == COLOR3(0, 0, 0))
+				{
+					tmpSpriteImage.image[s] = COLOR4(0, 0, 0, 0);
+				}
+				else if (header.texFormat == SPR_INDEXALPHA)
+				{
+					tmpSpriteImage.image[s] = tmpSpriteImage.last_color;
+					tmpSpriteImage.image[s].a = raw_image[s];
+				}
+				else
+				{
+					tmpSpriteImage.image[s] = palette[raw_image[s]];
+				}
 			}
 
 			tmpSpriteImage.spriteCube = new EntCube();
-			tmpSpriteImage.spriteCube->mins = { -4.0f, 0.0f, 0.0f };
-			tmpSpriteImage.spriteCube->maxs = { 4.0f, tmpSpriteImage.frameinfo.width * 1.0f, tmpSpriteImage.frameinfo.height * 1.0f };
+			tmpSpriteImage.spriteCube->mins = { -1.0f, 0.0f, 0.0f };
+			tmpSpriteImage.spriteCube->maxs = { 1.0f, tmpSpriteImage.frameinfo.width * 1.0f, tmpSpriteImage.frameinfo.height * 1.0f };
 			tmpSpriteImage.spriteCube->mins += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
 			tmpSpriteImage.spriteCube->maxs += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
 			tmpSpriteImage.spriteCube->Textured = true;
 			g_app->pointEntRenderer->genCubeBuffers(tmpSpriteImage.spriteCube);
 
 			tmpSpriteImage.texture = new Texture(tmpSpriteImage.frameinfo.width,
-				tmpSpriteImage.frameinfo.height, (unsigned char*)&tmpSpriteImage.image[0], fmt::format("{}_g{}_f{}", name, i, j), false, false);
+				tmpSpriteImage.frameinfo.height, (unsigned char*)&tmpSpriteImage.image[0], fmt::format("{}_g{}_f{}", name, i, j),true, false);
 			tmpSpriteImage.texture->upload(Texture::TEXTURE_TYPE::TYPE_DECAL);
 		}
 	}
