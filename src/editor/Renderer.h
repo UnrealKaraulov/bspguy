@@ -180,6 +180,7 @@ public:
 	int transformMode = TRANSFORM_MODE_MOVE;
 	int transformTarget = TRANSFORM_OBJECT;
 	int pickMode = PICK_OBJECT;
+	int last_face_idx = 0;
 	bool blockMoving = false;
 	bool showDragAxes = true;
 	bool pickClickHeld = true; // true if the mouse button is still held after picking an object

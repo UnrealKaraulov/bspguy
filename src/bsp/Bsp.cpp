@@ -6577,18 +6577,21 @@ bool Bsp::leaf_del_face(int faceIdx, int leafIdx)
 
 bool Bsp::remove_face(int faceIdx)
 {
+	// Check if face is valid
 	if (faceIdx < 0 || faceIdx >= faceCount)
 	{
 		return false;
 	}
-	bool onlyleafs = false;
+
 	int leafFaceTarget = -1;
+	bool onlyleafs = false;
 	if (onlyleafs)
 	{
 		leafFaceTarget = faceIdx;
 	}
 	else
 	{
+		print_log("Remove face with id:{}\n", faceIdx);
 		std::vector<BSPFACE32> all_faces;
 		for (int f = 0; f < faceCount; f++)
 		{
@@ -6598,13 +6601,14 @@ bool Bsp::remove_face(int faceIdx)
 			}
 			else
 			{
+				// Shift face count in models
 				for (int m = 0; m < modelCount; m++)
 				{
 					if (models[m].nFaces == 0)
 						continue;
 					if (faceIdx >= models[m].iFirstFace && faceIdx < models[m].iFirstFace + models[m].nFaces)
 					{
-						//print_log("Remove face from {} model\n", m);
+						print_log("Remove face from {} model\n", m);
 						models[m].nFaces--;
 					}
 					else if (models[m].iFirstFace != 0 && models[m].iFirstFace > faceIdx)
@@ -6620,7 +6624,7 @@ bool Bsp::remove_face(int faceIdx)
 						continue;
 					if (faceIdx >= nodes[n].iFirstFace && faceIdx < nodes[n].iFirstFace + nodes[n].nFaces)
 					{
-						//print_log("Remove face from {} node\n", n);
+						print_log("Remove face from {} node\n", n);
 						nodes[n].nFaces--;
 					}
 					else if (nodes[n].iFirstFace != 0 && nodes[n].iFirstFace > faceIdx)
@@ -6637,7 +6641,7 @@ bool Bsp::remove_face(int faceIdx)
 
 					if (faceIdx == marksurfs[s])
 					{
-						//print_log("Remove face from {} surface\n", s);
+						print_log("Remove face from {} surface\n", s);
 						marksurfs[s] = leafFaceTarget;
 					}
 					else if (marksurfs[s] != 0 && marksurfs[s] > faceIdx)
@@ -6650,8 +6654,7 @@ bool Bsp::remove_face(int faceIdx)
 
 		// Update faces array
 		unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
-		if (sizeof(BSPFACE32) * all_faces.size() > 0)
-			memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
+		memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 		replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 	}
 
@@ -6670,7 +6673,7 @@ bool Bsp::remove_face(int faceIdx)
 					continue;
 				if (s >= leaves[m].iFirstMarkSurface && s < leaves[m].iFirstMarkSurface + leaves[m].nMarkSurfaces)
 				{
-					//print_log("Remove face {} from {} leaf\n", faceIdx, m);
+					print_log("Remove face {} from {} leaf\n", faceIdx, m);
 					leaves[m].nMarkSurfaces--;
 				}
 				else if (leaves[m].iFirstMarkSurface != 0 && leaves[m].iFirstMarkSurface > s)

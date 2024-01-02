@@ -120,7 +120,6 @@ private:
 	void drawBspContexMenu();
 	void drawMenuBar();
 	void drawToolbar();
-	void FaceSelectPressed();
 	void drawFpsOverlay();
 	void drawStatusMessage();
 	void drawDebugWidget();

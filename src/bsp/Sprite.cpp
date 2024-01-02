@@ -26,31 +26,111 @@ Sprite::~Sprite()
 	sprite_groups.clear();
 }
 
+void Sprite::DrawSprite()
+{
+	animate_frame();
+	sprite_groups[current_group].sprites
+		[sprite_groups[current_group].current_spr].texture->bind(0);
+	sprite_groups[current_group].sprites
+		[sprite_groups[current_group].current_spr].spriteCube->cubeBuffer->drawFull();
+}
+
+void Sprite::DrawBBox()
+{
+	sprite_groups[current_group].sprites
+		[sprite_groups[current_group].current_spr].spriteCube->wireframeBuffer->drawFull();
+}
+
+void Sprite::DrawAxes()
+{
+	sprite_groups[current_group].sprites
+		[sprite_groups[current_group].current_spr].spriteCube->axesBuffer->drawFull();
+}
+
+void Sprite::animate_frame()
+{
+	sprite_groups[current_group].currentinterval += fabs(g_app->curTime - anim_time);
+	if (sprite_groups[current_group]
+		.sprites[sprite_groups[current_group].current_spr].interval >
+		sprite_groups[current_group].currentinterval)
+	{
+		sprite_groups[current_group].currentinterval = 0.0f;
+		sprite_groups[current_group].current_spr++;
+		if (sprite_groups[current_group].current_spr >=
+			sprite_groups[current_group].sprites.size())
+		{
+			sprite_groups[current_group].current_spr = 0;
+			current_group++;
+			if (current_group > sprite_groups.size())
+			{
+				current_group = 0;
+			}
+		}
+	}
+	anim_time = g_app->curTime;
+}
+
+void Sprite::set_missing_sprite()
+{
+	sprite_groups.resize(1);
+	sprite_groups[0].currentinterval = 0.1;
+	sprite_groups[0].totalinterval = 0.1;
+	sprite_groups[0].sprites.resize(1);
+	sprite_groups[0].sprites[0].image.resize(64 * 64);
+	memset(sprite_groups[0].sprites[0].image.data(), 255, 64 * 64 * sizeof(COLOR4));
+	sprite_groups[0].currentinterval = 0.0f;
+	sprite_groups[0].current_spr = 0;
+
+	SpriteImage& tmpSpriteImage = sprite_groups[0].sprites[0];
+
+	tmpSpriteImage.frameinfo.width = 64;
+	tmpSpriteImage.frameinfo.height = 64;
+	tmpSpriteImage.frameinfo.origin[0] = -32;
+	tmpSpriteImage.frameinfo.origin[1] = 32;
+
+	tmpSpriteImage.spriteCube = new EntCube();
+	tmpSpriteImage.spriteCube->mins = { -5.0f, 0.0f, 0.0f };
+	tmpSpriteImage.spriteCube->maxs = { 5.0f, tmpSpriteImage.frameinfo.width * 1.0f, tmpSpriteImage.frameinfo.height * 1.0f };
+	tmpSpriteImage.spriteCube->mins += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
+	tmpSpriteImage.spriteCube->maxs += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
+	tmpSpriteImage.spriteCube->Textured = true;
+
+	g_app->pointEntRenderer->genCubeBuffers(tmpSpriteImage.spriteCube);
+
+	tmpSpriteImage.texture = new Texture(tmpSpriteImage.frameinfo.width,
+		tmpSpriteImage.frameinfo.height, (unsigned char*)&tmpSpriteImage.image[0], "MISSING_SPRTE", true, false);
+
+	tmpSpriteImage.texture->upload(Texture::TEXTURE_TYPE::TYPE_DECAL);
+}
+
 Sprite::Sprite(const std::string& filename)
 {
 	if (!filename.size())
 	{
 		return;
 	}
-
 	this->name = stripExt(basename(filename));
+	this->current_group = 0;
 
 	std::ifstream spr(filename, std::ios::binary);
 	if (!spr) {
 		print_log(PRINT_RED, "Failed to open file {}\n", filename);
+		set_missing_sprite();
 		return;
 	}
 
 	int id, version;
 	spr.read(reinterpret_cast<char*>(&id), sizeof(id));
-	if (id != 'PSDI')
+	if (id != 'PSDI' || !spr)
 	{
 		print_log(PRINT_RED, "Not a sprite {}\n", filename);
+		set_missing_sprite();
 		return;
 	}
 	spr.read(reinterpret_cast<char*>(&version), sizeof(version));
-	if (version != 2) {
+	if (version != 2 || !spr) {
 		print_log(PRINT_RED, "Wrong version {}\n", filename);
+		set_missing_sprite();
 		return;
 	}
 	spr.seekg(0);
@@ -61,6 +141,14 @@ Sprite::Sprite(const std::string& filename)
 	spr.read(reinterpret_cast<char*>(palette.data()), colors * sizeof(COLOR3));
 
 	sprite_groups.resize(header.numframes);
+	if (!spr)
+	{
+		print_log(PRINT_RED, "Bad read {}\n", filename);
+		set_missing_sprite();
+		return;
+	}
+
+	bool is_valid = false;
 
 	for (int i = 0; i < header.numframes; ++i)
 	{
@@ -68,6 +156,8 @@ Sprite::Sprite(const std::string& filename)
 		spr.read(reinterpret_cast<char*>(&is_group), sizeof(int));
 
 		int group_frames = 1;
+		sprite_groups[i].currentinterval = 0.0f;
+		sprite_groups[i].current_spr = 0;
 
 		if (is_group != 0) {
 			spr.read(reinterpret_cast<char*>(&group_frames), sizeof(int));
@@ -107,7 +197,7 @@ Sprite::Sprite(const std::string& filename)
 				{
 					tmpSpriteImage.image[s] = COLOR4(0, 0, 0, 0);
 				}
-				else if(header.texFormat == SPR_ADDITIVE && palette[raw_image[s]] == COLOR3(0, 0, 0))
+				else if (header.texFormat == SPR_ADDITIVE && palette[raw_image[s]] == COLOR3(0, 0, 0))
 				{
 					tmpSpriteImage.image[s] = COLOR4(0, 0, 0, 0);
 				}
@@ -123,17 +213,25 @@ Sprite::Sprite(const std::string& filename)
 			}
 
 			tmpSpriteImage.spriteCube = new EntCube();
-			tmpSpriteImage.spriteCube->mins = { -1.0f, 0.0f, 0.0f };
-			tmpSpriteImage.spriteCube->maxs = { 1.0f, tmpSpriteImage.frameinfo.width * 1.0f, tmpSpriteImage.frameinfo.height * 1.0f };
+			tmpSpriteImage.spriteCube->mins = { -5.0f, 0.0f, 0.0f };
+			tmpSpriteImage.spriteCube->maxs = { 5.0f, tmpSpriteImage.frameinfo.width * 1.0f, tmpSpriteImage.frameinfo.height * 1.0f };
 			tmpSpriteImage.spriteCube->mins += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
 			tmpSpriteImage.spriteCube->maxs += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
 			tmpSpriteImage.spriteCube->Textured = true;
+
 			g_app->pointEntRenderer->genCubeBuffers(tmpSpriteImage.spriteCube);
 
 			tmpSpriteImage.texture = new Texture(tmpSpriteImage.frameinfo.width,
-				tmpSpriteImage.frameinfo.height, (unsigned char*)&tmpSpriteImage.image[0], fmt::format("{}_g{}_f{}", name, i, j),true, false);
+				tmpSpriteImage.frameinfo.height, (unsigned char*)&tmpSpriteImage.image[0], fmt::format("{}_g{}_f{}", name, i, j), true, false);
 			tmpSpriteImage.texture->upload(Texture::TEXTURE_TYPE::TYPE_DECAL);
+
+			is_valid = true;
 		}
+	}
+
+	if (!is_valid)
+	{
+		set_missing_sprite();
 	}
 }
 
@@ -141,7 +239,7 @@ Sprite::Sprite(const std::string& filename)
 std::map<int, Sprite*> spr_models;
 
 
-Sprite* AddNewSpriteToRender(const std::string & path, unsigned int sum)
+Sprite* AddNewSpriteToRender(const std::string& path, unsigned int sum)
 {
 	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), path.size(), sum);
 
@@ -161,7 +259,7 @@ Sprite* AddNewSpriteToRender(const std::string & path, unsigned int sum)
 
 void TestSprite()
 {
-	Sprite * tmpSprite = AddNewSpriteToRender("d:\\SteamLibrary\\steamapps\\common\\Half-Life\\cstrike\\sprites\\pistol_smoke1.spr");
+	Sprite* tmpSprite = AddNewSpriteToRender("d:\\SteamLibrary\\steamapps\\common\\Half-Life\\cstrike\\sprites\\pistol_smoke1.spr");
 	int fileid = 0;
 	int groupid = 0;
 	for (auto& g : tmpSprite->sprite_groups)

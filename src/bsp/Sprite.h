@@ -56,11 +56,14 @@ struct SpriteImage
 	float interval;
 	Texture* texture;
 	EntCube* spriteCube;
+	vec3 mins;
+	vec3 maxs;
 };
 
 struct SpriteGroup
 {
 	std::vector<SpriteImage> sprites;
+	size_t current_spr;
 	float totalinterval;
 	float currentinterval;
 };
@@ -74,6 +77,15 @@ public:
 	short colors;
 	std::vector<COLOR3> palette;
 	std::vector<SpriteGroup> sprite_groups;
+
+	void DrawSprite();
+	void DrawBBox();
+	void DrawAxes();
+private:
+	void set_missing_sprite();
+	void animate_frame();
+	size_t current_group;
+	double anim_time;
 };
 
 void TestSprite();

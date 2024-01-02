@@ -507,7 +507,7 @@ public:
 		}
 	}
 
-	void DrawModel(int mesh = -1);
+	void DrawMDL(int mesh = -1);
 
 	void Init(std::string modelname);
 	void RefreshMeshList(int body);

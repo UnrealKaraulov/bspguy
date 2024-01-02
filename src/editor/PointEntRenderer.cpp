@@ -124,7 +124,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 	}
 	else
 	{
-		tCube* cube = new tCube(min, max);
+		tCube* cube = new tCube({ -1.0,min.y,min.z }, { 1.0,max.y, max.z });
 		entCube->cubeBuffer = new VertexBuffer(g_app->modelShader, 0, cube, 8, GL_QUADS);
 		entCube->cubeBuffer->addAttribute(POS_3F, "vPosition");
 		entCube->cubeBuffer->addAttribute(TEX_2F, "vTex");

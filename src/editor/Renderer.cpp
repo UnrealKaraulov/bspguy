@@ -506,7 +506,7 @@ void Renderer::renderLoop()
 				modelShader->bind();
 				modelShader->modelMat->loadIdentity();
 				modelShader->updateMatrixes();
-				SelectedMap->mdl->DrawModel();
+				SelectedMap->mdl->DrawMDL();
 				continue;
 			}
 
@@ -1156,6 +1156,11 @@ void Renderer::cameraPickingControls()
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
 
+	if (curLeftMouse == GLFW_RELEASE && oldLeftMouse == GLFW_RELEASE)
+	{
+		last_face_idx = -1;
+	}
+
 	if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS || (curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
 	{
 		bool transforming = transformAxisControls();
@@ -1681,6 +1686,7 @@ void Renderer::pickObject()
 
 	if (pickMode != PICK_OBJECT)
 	{
+
 		gui->showLightmapEditorUpdate = true;
 
 		if (!anyCtrlPressed)
@@ -1695,11 +1701,25 @@ void Renderer::pickObject()
 		{
 			facePickTime = curTime;
 		}
+
 		if (tmpPickInfo.selectedFaces.size() > 0)
 		{
-			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], true);
-			pickInfo.selectedFaces.push_back(tmpPickInfo.selectedFaces[0]);
-			pickCount++;
+			if (tmpPickInfo.selectedFaces[0] != last_face_idx)
+			{
+				last_face_idx = -1;
+				if (std::find(pickInfo.selectedFaces.begin(), pickInfo.selectedFaces.end(), tmpPickInfo.selectedFaces[0]) == pickInfo.selectedFaces.end())
+				{
+					map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], true);
+					pickInfo.selectedFaces.push_back(tmpPickInfo.selectedFaces[0]);
+				}
+				else if (curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE)
+				{
+					last_face_idx = tmpPickInfo.selectedFaces[0];
+					map->getBspRender()->highlightFace(last_face_idx, false);
+					pickInfo.selectedFaces.erase(std::find(pickInfo.selectedFaces.begin(), pickInfo.selectedFaces.end(), tmpPickInfo.selectedFaces[0]));
+				}
+				pickCount++;
+			}
 		}
 	}
 	else if (hoverAxis == -1)/*if (pickMode == PICK_OBJECT)*/

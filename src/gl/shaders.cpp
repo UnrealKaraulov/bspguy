@@ -31,7 +31,7 @@ namespace Shaders
 		"{\n"
 		"	if(fColor.a <= 0.2)\n"
 		"		discard;\n"
-		"	float gamma = 1.5;\n"
+		"	float gamma = 1.6;\n"
 		"	gl_FragColor = vec4(pow(fColor.rgb, vec3(1.0/gamma)), fColor.a);\n"
 		"}\n";
 
@@ -138,7 +138,7 @@ namespace Shaders
 		"	lightmap += texture2D(sLightmapTex2, fLightmapTex2.xy).rgb * fLightmapTex2.z;\n"
 		"	lightmap += texture2D(sLightmapTex3, fLightmapTex3.xy).rgb * fLightmapTex3.z;\n"
 		"	color.rgb = color.rgb * lightmap * fcolor.rgb; \n"
-		"	float gamma = 1.5;\n"
+		"	float gamma = 1.6;\n"
 		"	gl_FragColor = vec4(pow(color.rgb, vec3(1.0/gamma)), color.a * fcolor.a );\n"
 		"}\n";
 }

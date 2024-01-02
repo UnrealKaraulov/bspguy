@@ -975,7 +975,7 @@ void StudioModel::GetModelMeshes(int& bodies, int& subbodies, int& skins, int& m
 
 }
 
-void StudioModel::DrawModel(int meshnum)
+void StudioModel::DrawMDL(int meshnum)
 {
 	if (frametime < 0.0f)
 		frametime = g_app->curTime;

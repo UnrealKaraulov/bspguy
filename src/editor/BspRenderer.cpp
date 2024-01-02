@@ -2599,7 +2599,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 		{
 			if (g_render_flags & RENDER_SELECTED_AT_TOP)
 				glDepthFunc(GL_ALWAYS);
-			if ((g_render_flags & RENDER_MODELS) && ((renderEnts[i].spr && renderEnts[i].spr->sprite_groups.size())
+			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
 				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
 				g_app->modelShader->bind();
@@ -2609,12 +2609,11 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 				if (renderEnts[i].mdl)
 				{
-					renderEnts[i].mdl->DrawModel();
+					renderEnts[i].mdl->DrawMDL();
 				}
 				else
 				{
-					renderEnts[i].spr->sprite_groups[0].sprites[0].texture->bind(0);
-					renderEnts[i].spr->sprite_groups[0].sprites[0].spriteCube->cubeBuffer->drawFull();
+					renderEnts[i].spr->DrawSprite();
 				}
 
 				g_app->colorShader->bind();
@@ -2628,7 +2627,8 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 				}
 				else
 				{
-					renderEnts[i].pointEntCube->axesBuffer->drawFull();
+					renderEnts[i].spr->DrawAxes();
+					renderEnts[i].spr->DrawBBox();
 				}
 
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
@@ -2653,7 +2653,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 		}
 		else
 		{
-			if ((g_render_flags & RENDER_MODELS) && ((renderEnts[i].spr && renderEnts[i].spr->sprite_groups.size())
+			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
 				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
 				g_app->modelShader->bind();
@@ -2664,12 +2664,11 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 				if (renderEnts[i].mdl)
 				{
-					renderEnts[i].mdl->DrawModel();
+					renderEnts[i].mdl->DrawMDL();
 				}
 				else
 				{
-					renderEnts[i].spr->sprite_groups[0].sprites[0].texture->bind(0);
-					renderEnts[i].spr->sprite_groups[0].sprites[0].spriteCube->cubeBuffer->drawFull();
+					renderEnts[i].spr->DrawSprite();
 				}
 
 
@@ -2680,12 +2679,11 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 				{
-					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+					//renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 				}
 				else
 				{
-					renderEnts[i].pointEntCube->axesBuffer->drawFull();
-					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+					renderEnts[i].spr->DrawAxes();
 				}
 			}
 			else
@@ -2773,8 +2771,8 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			if (g_render_flags & RENDER_MODELS && renderEnts[i].mdl)
 			{
 				//renderEnts[i].mdl->ExtractBBox(mins, maxs);
-				mins += renderEnts[i].offset + renderEnts[i].mdl->mins;
-				maxs += renderEnts[i].offset + renderEnts[i].mdl->maxs;
+				mins = renderEnts[i].offset + renderEnts[i].mdl->mins;
+				maxs = renderEnts[i].offset + renderEnts[i].mdl->maxs;
 
 				if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
 				{
@@ -2785,6 +2783,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 						foundBetterPick = true;
 					}
 				}
+
 			}
 			mins = renderEnts[i].offset + renderEnts[i].pointEntCube->mins;
 			maxs = renderEnts[i].offset + renderEnts[i].pointEntCube->maxs;
@@ -2796,7 +2795,25 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 					*tmpMap = map;
 					foundBetterPick = true;
 				}
-			};
+			}
+			if (g_render_flags & RENDER_MODELS && renderEnts[i].spr)
+			{
+				std::vector<vec3> tmpvecs;
+				tmpvecs.push_back(mins);
+				tmpvecs.push_back(maxs);
+				tmpvecs.push_back(renderEnts[i].spr->sprite_groups[0].sprites[0].mins);
+				tmpvecs.push_back(renderEnts[i].spr->sprite_groups[0].sprites[0].maxs);
+				getBoundingBox(tmpvecs, mins, maxs);
+				if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
+				{
+					if (!*tmpMap || *tmpMap == map)
+					{
+						tempPickInfo.SetSelectedEnt(i);
+						*tmpMap = map;
+						foundBetterPick = true;
+					}
+				}
+			}
 		}
 	}
 
