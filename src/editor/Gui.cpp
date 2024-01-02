@@ -9572,6 +9572,8 @@ void Gui::drawFaceEditorWidget()
 			}
 			clipper.End();
 
+
+			ImGui::EndChild();
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.0, 0.0, 1.0, 1.0 });
 
 			if (ImGui::Button("Mark all visible"))
@@ -9631,8 +9633,6 @@ void Gui::drawFaceEditorWidget()
 
 				delete[] compressed;
 			}
-
-			ImGui::EndChild();
 		}
 	}
 	ImGui::End();
