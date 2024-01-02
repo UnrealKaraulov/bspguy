@@ -50,9 +50,8 @@ void Sprite::DrawAxes()
 void Sprite::animate_frame()
 {
 	sprite_groups[current_group].currentinterval += fabs(g_app->curTime - anim_time);
-	if (sprite_groups[current_group]
-		.sprites[sprite_groups[current_group].current_spr].interval >
-		sprite_groups[current_group].currentinterval)
+	if (sprite_groups[current_group].currentinterval > sprite_groups[current_group]
+		.sprites[sprite_groups[current_group].current_spr].interval)
 	{
 		sprite_groups[current_group].currentinterval = 0.0f;
 		sprite_groups[current_group].current_spr++;
@@ -61,7 +60,7 @@ void Sprite::animate_frame()
 		{
 			sprite_groups[current_group].current_spr = 0;
 			current_group++;
-			if (current_group > sprite_groups.size())
+			if (current_group >= sprite_groups.size())
 			{
 				current_group = 0;
 			}
@@ -73,8 +72,8 @@ void Sprite::animate_frame()
 void Sprite::set_missing_sprite()
 {
 	sprite_groups.resize(1);
-	sprite_groups[0].currentinterval = 0.1;
-	sprite_groups[0].totalinterval = 0.1;
+	sprite_groups[0].currentinterval = 0.1f;
+	sprite_groups[0].totalinterval = 0.1f;
 	sprite_groups[0].sprites.resize(1);
 	sprite_groups[0].sprites[0].image.resize(64 * 64);
 	memset(sprite_groups[0].sprites[0].image.data(), 255, 64 * 64 * sizeof(COLOR4));

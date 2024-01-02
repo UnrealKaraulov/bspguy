@@ -2459,7 +2459,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			}
 			else if (lightmapsUploaded && lightmapsGenerated && (g_render_flags & RENDER_LIGHTMAPS))
 			{
-				
+
 				if (rgroup.lightmapAtlas[s] && lightEnableFlags[s])
 				{
 					rgroup.lightmapAtlas[s]->bind(s + 1);
@@ -2472,7 +2472,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 				{
 					blackTex->bind(s + 1);
 				}
-				
+
 			}
 			else
 			{
@@ -2785,6 +2785,22 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 				}
 
 			}
+			if (g_render_flags & RENDER_MODELS && renderEnts[i].spr)
+			{
+				mins = renderEnts[i].offset + renderEnts[i].spr->sprite_groups[renderEnts[i].spr->current_group].
+					sprites[renderEnts[i].spr->sprite_groups[renderEnts[i].spr->current_group].current_spr].spriteCube->mins;
+				maxs = renderEnts[i].offset + renderEnts[i].spr->sprite_groups[renderEnts[i].spr->current_group].
+					sprites[renderEnts[i].spr->sprite_groups[renderEnts[i].spr->current_group].current_spr].spriteCube->maxs;
+				if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
+				{
+					if (!*tmpMap || *tmpMap == map)
+					{
+						tempPickInfo.SetSelectedEnt(i);
+						*tmpMap = map;
+						foundBetterPick = true;
+					}
+				}
+			}
 			mins = renderEnts[i].offset + renderEnts[i].pointEntCube->mins;
 			maxs = renderEnts[i].offset + renderEnts[i].pointEntCube->maxs;
 			if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
@@ -2794,24 +2810,6 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 					tempPickInfo.SetSelectedEnt(i);
 					*tmpMap = map;
 					foundBetterPick = true;
-				}
-			}
-			if (g_render_flags & RENDER_MODELS && renderEnts[i].spr)
-			{
-				std::vector<vec3> tmpvecs;
-				tmpvecs.push_back(mins);
-				tmpvecs.push_back(maxs);
-				tmpvecs.push_back(renderEnts[i].spr->sprite_groups[0].sprites[0].mins);
-				tmpvecs.push_back(renderEnts[i].spr->sprite_groups[0].sprites[0].maxs);
-				getBoundingBox(tmpvecs, mins, maxs);
-				if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
-				{
-					if (!*tmpMap || *tmpMap == map)
-					{
-						tempPickInfo.SetSelectedEnt(i);
-						*tmpMap = map;
-						foundBetterPick = true;
-					}
 				}
 			}
 		}
