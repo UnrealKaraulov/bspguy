@@ -14,7 +14,7 @@ Command::Command(std::string _desc, int _mapIdx)
 
 Bsp* Command::getBsp()
 {
-	if (mapIdx < 0 || mapIdx >= g_app->mapRenderers.size())
+	if (mapIdx < 0 || mapIdx >= (int)g_app->mapRenderers.size())
 	{
 		return NULL;
 	}
@@ -24,7 +24,7 @@ Bsp* Command::getBsp()
 
 BspRenderer* Command::getBspRenderer()
 {
-	if (mapIdx < 0 || mapIdx >= g_app->mapRenderers.size())
+	if (mapIdx < 0 || mapIdx >= (int)g_app->mapRenderers.size())
 	{
 		return NULL;
 	}
@@ -71,7 +71,7 @@ Entity* EditEntityCommand::getEnt()
 {
 	Bsp* map = getBsp();
 
-	if (!map || entIdx < 0 || entIdx >= map->ents.size())
+	if (!map || entIdx < 0 || entIdx >= (int)map->ents.size())
 	{
 		return NULL;
 	}

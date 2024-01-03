@@ -117,14 +117,14 @@ public:
 
 	bool readInfo();
 
-	bool hasTexture(int dirIndex);
+	bool hasTexture(size_t dirIndex);
 	bool hasTexture(const std::string& name);
 
 	bool write(const std::string& filename, std::vector<WADTEX*> textures);
 	bool write(WADTEX** textures, size_t numTex);
 	bool write(std::vector<WADTEX*> textures);
 
-	WADTEX* readTexture(int dirIndex, int* texturetype = NULL);
+	WADTEX* readTexture(size_t dirIndex, int* texturetype = NULL);
 	WADTEX* readTexture(const std::string& texname, int* texturetype = NULL);
 };
 
@@ -133,6 +133,9 @@ COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette = NULL);
 COLOR3* ConvertMipTexToRGB(BSPMIPTEX* wadTex, COLOR3* palette = NULL);
 COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette = NULL);
 COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette = NULL);
+
+COLOR3 GetMipTexAplhaColor(BSPMIPTEX* wadTex, COLOR3* palette = NULL);
+COLOR3 GetWadTexAplhaColor(WADTEX* wadTex, COLOR3* palette = NULL);
 
 const unsigned char quakeDefaultPalette[768] =
 {

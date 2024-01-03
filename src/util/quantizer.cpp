@@ -159,13 +159,13 @@ COLOR3 Quantizer::GetNearestColorFast(COLOR3 c, COLOR3* pal)
 }
 
 
-void Quantizer::FloydSteinbergDither(COLOR3* image, unsigned int width, unsigned int height, unsigned int* target)
+void Quantizer::FloydSteinbergDither(COLOR3* image, int width, int height, unsigned int* target)
 {
-	for (unsigned int y = 0; y < height; y++)
+	for (int y = 0; y < height; y++)
 	{
 		if (y % 2 == 1)
 		{
-			for (unsigned int x = 0; x < width; x++)
+			for (int x = 0; x < width; x++)
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
@@ -249,13 +249,13 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, unsigned int width, unsigned
 	}
 }
 
-void Quantizer::FloydSteinbergDither256(COLOR3* image, unsigned int width, unsigned int height, unsigned char* target)
+void Quantizer::FloydSteinbergDither256(COLOR3* image, int width, int height, unsigned char* target)
 {
-	for (unsigned int y = 0; y < height; y++)
+	for (int y = 0; y < height; y++)
 	{
 		if (y % 2 == 1)
 		{
-			for (unsigned int x = 0; x < width; x++)
+			for (int x = 0; x < width; x++)
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
@@ -562,14 +562,14 @@ void Quantizer::ApplyColorTable(COLOR3* image, unsigned int size)
 	}
 }
 
-void Quantizer::ApplyColorTableDither(COLOR3* image, unsigned int width, unsigned int height)
+void Quantizer::ApplyColorTableDither(COLOR3* image, int width, int height)
 {
 	if (!m_pPalette)
 		ProcessImage(image, width * height);
 
 	unsigned int* tmpcolorarray = new unsigned int[width * height];
 	FloydSteinbergDither((COLOR3*)image, width, height, tmpcolorarray);
-	for (unsigned int i = 0; i < width * height; i++)
+	for (int i = 0; i < width * height; i++)
 	{
 		image[i] = m_pPalette[tmpcolorarray[i]];
 	}

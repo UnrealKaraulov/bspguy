@@ -52,7 +52,7 @@ struct AppSettings
 	int windowY;
 	int maximized;
 	int undoLevels;
-	int settings_tab;
+	size_t settings_tab;
 	int render_flags;
 
 	float fov;

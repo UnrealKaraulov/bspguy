@@ -101,7 +101,7 @@ void Bsp::selectModelEnt()
 {
 	if (!is_bsp_model || ents.empty())
 		return;
-	for (int i = 0; i < g_app->mapRenderers.size(); i++)
+	for (size_t i = 0; i < g_app->mapRenderers.size(); i++)
 	{
 		BspRenderer* mapRender = g_app->mapRenderers[i];
 		if (!mapRender)
@@ -112,11 +112,11 @@ void Bsp::selectModelEnt()
 			g_app->clearSelection();
 			g_app->selectMap(map);
 			vec3 worldOrigin = map->ents[0]->getOrigin();
-			for (int n = 1; n < map->ents.size(); n++)
+			for (size_t n = 1; n < map->ents.size(); n++)
 			{
 				if (map->ents[n]->hasKey("model") && (map->ents[n]->getOrigin() + worldOrigin) == ents[0]->getOrigin())
 				{
-					g_app->pickInfo.SetSelectedEnt(n);
+					g_app->pickInfo.SetSelectedEnt((int)n);
 					return;
 				}
 			}
@@ -320,7 +320,7 @@ Bsp::~Bsp()
 	}
 	delete[] lumps;
 
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		delete ents[i];
 	}
@@ -463,7 +463,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 
 	// TODO: model center doesn't have to be inside all planes, even for convex objects(?)
 	vec3 modelCenter = model.nMins + (model.nMaxs - model.nMins) * 0.5f;
-	for (int i = 0; i < nodePlaneIndexes.size(); i++)
+	for (size_t i = 0; i < nodePlaneIndexes.size(); i++)
 	{
 		nodePlanes.push_back(planes[nodePlaneIndexes[i]]);
 		BSPPLANE& plane = nodePlanes[i];
@@ -484,9 +484,9 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 	}
 
 	// coplanar test
-	for (int i = 0; i < nodePlanes.size(); i++)
+	for (size_t i = 0; i < nodePlanes.size(); i++)
 	{
-		for (int k = 0; k < nodePlanes.size(); k++)
+		for (size_t k = 0; k < nodePlanes.size(); k++)
 		{
 			if (i == k)
 				continue;
@@ -499,7 +499,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 	}
 
 	// convex test
-	for (int k = 0; k < nodePlanes.size(); k++)
+	for (size_t k = 0; k < nodePlanes.size(); k++)
 	{
 		if (!vertsAllOnOneSide(nodeVerts, nodePlanes[k]))
 		{
@@ -507,7 +507,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 		}
 	}
 
-	for (int k = 0; k < nodeVerts.size(); k++)
+	for (size_t k = 0; k < nodeVerts.size(); k++)
 	{
 		vec3 v = nodeVerts[k];
 
@@ -516,7 +516,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 		hullVert.ptr = NULL;
 		hullVert.selected = false;
 
-		for (int i = 0; i < nodePlanes.size(); i++)
+		for (size_t i = 0; i < nodePlanes.size(); i++)
 		{
 			BSPPLANE& p = nodePlanes[i];
 			if (abs(dotProduct(v, p.vNormal) - p.fDist) < ON_EPSILON)
@@ -792,9 +792,9 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 	std::map<int, std::vector<vec3>> planeVerts;
 	std::vector<vec3> allVertPos;
 
-	for (int i = 0; i < hullVerts.size(); i++)
+	for (size_t i = 0; i < hullVerts.size(); i++)
 	{
-		for (int k = 0; k < hullVerts[i].iPlanes.size(); k++)
+		for (size_t k = 0; k < hullVerts[i].iPlanes.size(); k++)
 		{
 			int iPlane = hullVerts[i].iPlanes[k];
 			if (!affectedPlanes.count(hullVerts[i].iPlanes[k]))
@@ -920,7 +920,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 	if (movingWorld)
 	{
-		for (int i = 1; i < ents.size(); i++)
+		for (size_t i = 1; i < ents.size(); i++)
 		{ // don't move the world entity
 			if (logged)
 				g_progress.tick();
@@ -1286,7 +1286,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 					get_lightmap_shift(oldLight, newLight, srcOffsetX, srcOffsetY);
 
 					for (int layer = 0; layer < newLight.layers; layer++) {
-						int srcOffset = (face.nLightmapOffset + oldLayerSz * (layer < oldLight.layers ? layer : std::min(layer,oldLight.layers-1))) / sizeof(COLOR3);
+						int srcOffset = (face.nLightmapOffset + oldLayerSz * (layer < oldLight.layers ? layer : std::min(layer, oldLight.layers - 1))) / sizeof(COLOR3);
 						int dstOffset = (lightmapOffset + newLayerSz * layer) / sizeof(COLOR3);
 
 						int startX = newLight.width > oldLight.width ? -1 : 0;
@@ -2249,7 +2249,7 @@ void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 	if (tex_type == 0)
 	{
 		bool updatewads = false;
-		for (int i = 0; i < targetMap->ents.size(); i++)
+		for (size_t i = 0; i < targetMap->ents.size(); i++)
 		{
 			if (targetMap->ents[i]->isWorldSpawn())
 			{
@@ -2266,7 +2266,7 @@ void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 	}
 	else
 	{
-		for (int i = 0; i < targetMap->ents.size(); i++)
+		for (size_t i = 0; i < targetMap->ents.size(); i++)
 		{
 			targetMap->ents[i]->removeKeyvalue("wad");
 		}
@@ -2295,7 +2295,7 @@ bool Bsp::has_hull2_ents()
 		// osprey, nihilanth, and tentacle are huge but are basically nonsolid (no brush collision or triggers)
 	};
 
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		std::string cname = ents[i]->keyvalues["classname"];
 		//std::string tname = ents[i]->keyvalues["targetname"];
@@ -2380,7 +2380,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		bool needsPlayerHulls = false; // HULL 1 + HULL 3
 		bool needsMonsterHulls = false; // All HULLs
 		bool needsVisibleHull = false; // HULL 0
-		for (int k = 0; k < usageEnts.size(); k++)
+		for (size_t k = 0; k < usageEnts.size(); k++)
 		{
 			std::string cname = usageEnts[k]->keyvalues["classname"];
 			std::string tname = usageEnts[k]->keyvalues["targetname"];
@@ -2577,7 +2577,7 @@ bool Bsp::is_invisible_solid(Entity* ent)
 		"renderfx"
 	};
 
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		std::string cname = ents[i]->keyvalues["classname"];
 
@@ -2709,7 +2709,7 @@ void Bsp::update_ent_lump(bool stripNodes)
 {
 	std::stringstream ent_data = std::stringstream();
 
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		if (stripNodes)
 		{
@@ -2725,7 +2725,7 @@ void Bsp::update_ent_lump(bool stripNodes)
 
 		ent_data << "{\n";
 
-		for (int k = 0; k < ents[i]->keyOrder.size(); k++)
+		for (size_t k = 0; k < ents[i]->keyOrder.size(); k++)
 		{
 			std::string key = ents[i]->keyOrder[k];
 			if (ents[i]->hasKey(key))
@@ -2754,7 +2754,7 @@ void Bsp::update_ent_lump(bool stripNodes)
 
 vec3 Bsp::get_model_center(int modelIdx)
 {
-	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL))
+	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / (int)sizeof(BSPMODEL))
 	{
 		print_log(get_localized_string(LANG_0072), modelIdx);
 		return vec3();
@@ -2861,10 +2861,10 @@ void Bsp::write(const std::string& path)
 		{
 			if (is_broken_clipnodes)
 			{
-				freeClipnodes16[n].iChildren[0] =
-					(unsigned short)clipnodes[n].iChildren[0] > clipnodeCount ? 65536 - (unsigned short)clipnodes[n].iChildren[0] : clipnodes[n].iChildren[0];
-				freeClipnodes16[n].iChildren[1] =
-					(unsigned short)clipnodes[n].iChildren[1] > clipnodeCount ? 65536 - (unsigned short)clipnodes[n].iChildren[0] : clipnodes[n].iChildren[1];
+				freeClipnodes16[n].iChildren[0] = (short)(
+					(unsigned short)clipnodes[n].iChildren[0] > clipnodeCount ? 65536 - (unsigned short)clipnodes[n].iChildren[0] : clipnodes[n].iChildren[0]);
+				freeClipnodes16[n].iChildren[1] = (short)(
+					(unsigned short)clipnodes[n].iChildren[1] > clipnodeCount ? 65536 - (unsigned short)clipnodes[n].iChildren[0] : clipnodes[n].iChildren[1]);
 			}
 			else
 			{
@@ -3808,7 +3808,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 void Bsp::load_ents()
 {
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 		delete ents[i];
 	ents.clear();
 
@@ -3881,7 +3881,7 @@ void Bsp::load_ents()
 		if (lastBracket == 0 && ent) // currently defining an entity
 		{
 			Keyvalues k(line);
-			for (int i = 0; i < k.keys.size(); i++)
+			for (size_t i = 0; i < k.keys.size(); i++)
 			{
 				ent->addKeyvalue(k.keys[i], k.values[i], true);
 			}
@@ -3909,7 +3909,7 @@ void Bsp::load_ents()
 		if (ents[0]->keyvalues["classname"] != "worldspawn")
 		{
 			print_log(get_localized_string(LANG_0106));
-			for (int i = 1; i < ents.size(); i++)
+			for (size_t i = 1; i < ents.size(); i++)
 			{
 				if (ents[i]->keyvalues["classname"] == "worldspawn")
 				{
@@ -3979,7 +3979,7 @@ void Bsp::print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bo
 {
 	std::string classname = modelInfo->modelIdx == 0 ? "worldspawn" : "???";
 	std::string targetname = modelInfo->modelIdx == 0 ? "" : "???";
-	for (int k = 0; k < ents.size(); k++)
+	for (size_t k = 0; k < ents.size(); k++)
 	{
 		if (ents[k]->getBspModelIdx() == modelInfo->modelIdx)
 		{
@@ -4173,7 +4173,7 @@ bool Bsp::validate()
 			}
 		}
 	}
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		if (ents[i]->getBspModelIdxForce() > 0 && ents[i]->getBspModelIdxForce() >= modelCount)
 		{
@@ -4453,7 +4453,7 @@ void Bsp::print_clipnode_tree(int iNode, int depth)
 
 void Bsp::print_model_hull(int modelIdx, int hull_number)
 {
-	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL))
+	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / (int)sizeof(BSPMODEL))
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1024), modelIdx);
 		return;
@@ -4478,7 +4478,7 @@ void Bsp::print_model_hull(int modelIdx, int hull_number)
 
 std::string Bsp::get_model_usage(int modelIdx)
 {
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		if (ents[i]->getBspModelIdx() == modelIdx)
 		{
@@ -4491,7 +4491,7 @@ std::string Bsp::get_model_usage(int modelIdx)
 std::vector<Entity*> Bsp::get_model_ents(int modelIdx)
 {
 	std::vector<Entity*> uses;
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		if (ents[i]->getBspModelIdx() == modelIdx)
 		{
@@ -4501,10 +4501,10 @@ std::vector<Entity*> Bsp::get_model_ents(int modelIdx)
 	return uses;
 }
 
-std::vector<int> Bsp::get_model_ents_ids(int modelIdx)
+std::vector<size_t> Bsp::get_model_ents_ids(int modelIdx)
 {
-	std::vector<int> uses;
-	for (int i = 0; i < ents.size(); i++)
+	std::vector<size_t> uses;
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		if (ents[i]->getBspModelIdxForce() == modelIdx)
 		{
@@ -5012,7 +5012,7 @@ void Bsp::delete_model(int modelIdx)
 	replace_lump(LUMP_MODELS, newModels, newSize);
 
 	// update model index references
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		int entModel = ents[i]->getBspModelIdx();
 		if (entModel == modelIdx)
@@ -5911,7 +5911,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 			auto& tmpFace = solid.faces[i];
 			for (unsigned int k = 0; k < tmpFace.verts.size(); k++)
 			{
-				newSurfedges[startSurfedge + idx++] = vertToSurfedge[tmpFace.verts[k]];
+				newSurfedges[startSurfedge + idx++] = (int)vertToSurfedge[(int)tmpFace.verts[k]];
 			}
 		}
 
@@ -5983,16 +5983,16 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 		BSPNODE32* newNodes = new BSPNODE32[nodeCount + solid.faces.size() + 1]{};
 		memcpy(newNodes, nodes, nodeCount * sizeof(BSPNODE32));
 
-		for (int k = 0; k < solid.faces.size(); k++)
+		for (size_t k = 0; k < solid.faces.size(); k++)
 		{
 			BSPNODE32& node = newNodes[nodeCount + k];
 
-			node.iFirstFace = (startFace + k); // face required for decals
+			node.iFirstFace = (int)(startFace + k); // face required for decals
 			node.nFaces = 1;
-			node.iPlane = startPlane + k;
+			node.iPlane = (int)(startPlane + k);
 			// node mins/maxs don't matter for submodels. Leave them at 0.
 
-			int insideContents = k == solid.faces.size() - 1 ? ~sharedSolidLeaf : (nodeCount + k + 1);
+			int insideContents = solid.faces.size() && k == solid.faces.size() - 1 ? ~sharedSolidLeaf : (int)(nodeCount + k + 1);
 			int outsideContents = ~anyEmptyLeaf;
 
 			// can't have negative normals on planes so children are swapped instead
@@ -6020,7 +6020,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 
 	targetModel->nMaxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	targetModel->nMins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	for (int i = 0; i < solid.hullVerts.size(); i++)
+	for (size_t i = 0; i < solid.hullVerts.size(); i++)
 	{
 		vec3 v = verts[startVert + i];
 		expandBoundingBox(v, targetModel->nMins, targetModel->nMaxs);
@@ -6250,7 +6250,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 	// copy src map textures for adding to new
 	std::set<int> usedmips;
 
-	for (unsigned int i = 0; i < this->texinfoCount; i++)
+	for (int i = 0; i < this->texinfoCount; i++)
 	{
 		BSPTEXTUREINFO& texinfo = this->texinfos[i];
 		if (texinfo.iMiptex >= 0 && texinfo.iMiptex < this->textureCount && !usedmips.count(texinfo.iMiptex))
@@ -6909,18 +6909,18 @@ int Bsp::get_ent_from_model(int modelIdx)
 	if (modelIdx < 0)
 		return -1;
 
-	for (int i = 0; i < ents.size(); i++)
+	for (size_t i = 0; i < ents.size(); i++)
 	{
 		if (ents[i]->getBspModelIdx() == modelIdx)
-			return i;
+			return (int)i;
 	}
 
 	if (modelIdx == 0)
 	{
-		for (int i = 0; i < ents.size(); i++)
+		for (size_t i = 0; i < ents.size(); i++)
 		{
 			if (ents[i]->isWorldSpawn())
-				return i;
+				return (int)i;
 		}
 	}
 
@@ -6942,7 +6942,7 @@ int Bsp::get_model_from_face(int faceIdx)
 
 bool Bsp::is_worldspawn_ent(int entIdx)
 {
-	if (entIdx < 0 || entIdx >= ents.size())
+	if (entIdx < 0 || entIdx >= (int)ents.size())
 		return true;
 	if (ents[entIdx]->hasKey("classname") && ents[entIdx]->keyvalues["classname"] == "worldspawn"
 		&& ents[entIdx]->getBspModelIdx() <= 0)
@@ -7406,7 +7406,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 			if (texOffset >= 0)
 				tex = *((BSPMIPTEX*)(textures + texOffset));
 
-			std::vector<int> entIds = get_model_ents_ids(mdlid);
+			std::vector<size_t> entIds = get_model_ents_ids(mdlid);
 
 			if (entIds.empty())
 			{
@@ -7414,7 +7414,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 			}
 
 			materialid.clear();
-			for (int m = 0; m < matnames.size(); m++)
+			for (size_t m = 0; m < matnames.size(); m++)
 			{
 				if (matnames[m] == tex.szName)
 					materialid = tex.szName;
@@ -7467,10 +7467,10 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 				else
 				{
 					bool foundInWad = false;
-					for (int r = 0; r < g_app->mapRenderers.size() && !foundInWad; r++)
+					for (size_t r = 0; r < g_app->mapRenderers.size() && !foundInWad; r++)
 					{
 						Renderer* rend = g_app;
-						for (int k = 0; k < rend->mapRenderers[r]->wads.size(); k++)
+						for (size_t k = 0; k < rend->mapRenderers[r]->wads.size(); k++)
 						{
 							if (rend->mapRenderers[r]->wads[k]->hasTexture(tex.szName))
 							{
@@ -7502,9 +7502,9 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 			}
 
 
-			for (int e = 0; e < entIds.size(); e++)
+			for (size_t e = 0; e < entIds.size(); e++)
 			{
-				int tmpentid = entIds[e];
+				size_t tmpentid = entIds[e];
 				Entity* ent = ents[tmpentid];
 				vec3 origin_offset = ent->getOrigin().flip();
 
@@ -7866,7 +7866,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 BspRenderer* Bsp::getBspRender()
 {
 	if (!renderer)
-		for (int i = 0; i < g_app->mapRenderers.size(); i++)
+		for (size_t i = 0; i < g_app->mapRenderers.size(); i++)
 			if (g_app->mapRenderers[i]->map == this)
 				renderer = g_app->mapRenderers[i];
 	return renderer;
@@ -7874,9 +7874,9 @@ BspRenderer* Bsp::getBspRender()
 
 int Bsp::getBspRenderId()
 {
-	for (int i = 0; i < g_app->mapRenderers.size(); i++)
+	for (size_t i = 0; i < g_app->mapRenderers.size(); i++)
 		if (g_app->mapRenderers[i]->map == this)
-			return i;
+			return (int)i;
 	return -1;
 }
 
@@ -7926,10 +7926,7 @@ void Bsp::hideEnts(bool hide)
 	{
 		for (auto& i : g_app->pickInfo.selectedEnts)
 		{
-			if (i >= 0)
-			{
-				ents[i]->hide = true;
-			}
+			ents[i]->hide = true;
 		}
 	}
 }
@@ -8013,7 +8010,7 @@ int Bsp::getBspTextureSize(int textureid)
 
 	int iStartOffset = ((int*)textures)[textureid + 1];
 
-	if (iStartOffset < 0 || iStartOffset + sizeof(BSPMIPTEX) > textureDataLength)
+	if (iStartOffset < 0 || iStartOffset + (int)sizeof(BSPMIPTEX) > textureDataLength)
 		return 0;
 
 	BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));

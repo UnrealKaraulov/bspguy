@@ -10,7 +10,7 @@ CMesh Clipper::clip(std::vector<BSPPLANE>& clips)
 {
 	CMesh mesh = createMaxSizeVolume();
 
-	for (int i = 0; i < clips.size(); i++)
+	for (size_t i = 0; i < clips.size(); i++)
 	{
 		BSPPLANE clip = clips[i];
 
@@ -39,7 +39,7 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip)
 	int positive = 0;
 	int negative = 0;
 
-	for (int i = 0; i < mesh.verts.size(); i++)
+	for (size_t i = 0; i < mesh.verts.size(); i++)
 	{
 		CVertex& vert = mesh.verts[i];
 		//if (vert.visible)
@@ -78,7 +78,7 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip)
 
 void Clipper::clipEdges(CMesh& mesh, BSPPLANE& clip)
 {
-	for (int i = 0; i < mesh.edges.size(); i++)
+	for (size_t i = 0; i < mesh.edges.size(); i++)
 	{
 		CEdge& edge = mesh.edges[i];
 		CVertex& v0 = mesh.verts[edge.verts[0]];
@@ -95,9 +95,9 @@ void Clipper::clipEdges(CMesh& mesh, BSPPLANE& clip)
 				for (int k = 0; k < 2; k++)
 				{
 					CFace& face = mesh.faces[edge.faces[k]];
-					for (int e = 0; e < face.edges.size(); e++)
+					for (size_t e = 0; e < face.edges.size(); e++)
 					{
-						if (face.edges[e] == i)
+						if (face.edges[e] == (int)i)
 						{
 							face.edges.erase(face.edges.begin() + e);
 							break;
@@ -148,7 +148,7 @@ void Clipper::clipFaces(CMesh& mesh, BSPPLANE& clip)
 
 		if (face.visible)
 		{
-			for (int e = 0; e < face.edges.size(); e++)
+			for (size_t e = 0; e < face.edges.size(); e++)
 			{
 				CEdge& edge = mesh.edges[face.edges[e]];
 				mesh.verts[edge.verts[0]].occurs = 0;
@@ -174,7 +174,7 @@ void Clipper::clipFaces(CMesh& mesh, BSPPLANE& clip)
 bool Clipper::getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final)
 {
 // count the number of occurrences of each vertex in the polyline
-	for (int i = 0; i < face.edges.size(); i++)
+	for (size_t i = 0; i < face.edges.size(); i++)
 	{
 		CEdge& edge = mesh.edges[face.edges[i]];
 		mesh.verts[edge.verts[0]].occurs++;
@@ -185,7 +185,7 @@ bool Clipper::getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final)
 	start = -1;
 	final = -1;
 
-	for (int i = 0; i < face.edges.size(); i++)
+	for (size_t i = 0; i < face.edges.size(); i++)
 	{
 		CEdge& edge = mesh.edges[face.edges[i]];
 		int i0 = edge.verts[0];

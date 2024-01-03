@@ -218,7 +218,7 @@ vec3 getNormalFromVerts(std::vector<vec3>& verts);
 std::vector<vec2> localizeVerts(std::vector<vec3>& verts);
 
 // Returns CCW sorted indexes into the verts, as viewed on the plane the verts define
-std::vector<int> getSortedPlanarVertOrder(std::vector<vec3>& verts);
+std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts);
 
 std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts);
 

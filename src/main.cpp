@@ -167,7 +167,7 @@ int test()
 	memset(&removed, 0, sizeof(removed));
 
 	g_verbose = true;
-	for (int i = 0; i < maps.size(); i++)
+	for (size_t i = 0; i < maps.size(); i++)
 	{
 		if (!maps[i]->bsp_valid)
 		{
@@ -215,7 +215,7 @@ int merge_maps(CommandLine& cli)
 
 	std::vector<Bsp*> maps;
 
-	for (int i = 0; i < input_maps.size(); i++)
+	for (size_t i = 0; i < input_maps.size(); i++)
 	{
 		if (!fileExists(input_maps[i]))
 		{
@@ -231,7 +231,7 @@ int merge_maps(CommandLine& cli)
 		maps.push_back(map);
 	}
 
-	for (int i = 0; i < maps.size(); i++)
+	for (size_t i = 0; i < maps.size(); i++)
 	{
 		print_log(get_localized_string(LANG_0004), maps[i]->bsp_name);
 
@@ -268,7 +268,7 @@ int merge_maps(CommandLine& cli)
 	print_log("\n");
 	result->print_info(false, 0, 0);
 
-	for (int i = 0; i < maps.size(); i++)
+	for (size_t i = 0; i < maps.size(); i++)
 	{
 		delete maps[i];
 	}

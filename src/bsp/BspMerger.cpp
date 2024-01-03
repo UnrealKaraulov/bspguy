@@ -18,11 +18,11 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 	print_log(get_localized_string(LANG_0220));
 
-	for (int z = 0; z < blocks.size(); z++)
+	for (size_t z = 0; z < blocks.size(); z++)
 	{
-		for (int y = 0; y < blocks[z].size(); y++)
+		for (size_t y = 0; y < blocks[z].size(); y++)
 		{
-			for (int x = 0; x < blocks[z][y].size(); x++)
+			for (size_t x = 0; x < blocks[z][y].size(); x++)
 			{
 				MAPBLOCK& block = blocks[z][y][x];
 
@@ -36,7 +36,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 				if (!noripent)
 				{
 					// tag ents with the map they belong to
-					for (int i = 0; i < block.map->ents.size(); i++)
+					for (size_t i = 0; i < block.map->ents.size(); i++)
 					{
 						block.map->ents[i]->addKeyvalue("$s_bspguy_map_source", toLowerCase(block.map->bsp_name));
 					}
@@ -51,18 +51,18 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 	// TODO: Don't merge linearly. Merge gradually bigger chunks to minimize BSP tree depth.
 	//       Not worth it until more than 27 maps are merged together (merge cube bigger than 3x3x3)
 
-	print_log(get_localized_string(LANG_0221),maps.size());
+	print_log(get_localized_string(LANG_0221), maps.size());
 
 
 	// merge maps along X axis to form rows of maps
 	int rowId = 0;
-	int mergeCount = 1;
-	for (int z = 0; z < blocks.size(); z++)
+	size_t mergeCount = 1;
+	for (size_t z = 0; z < blocks.size(); z++)
 	{
-		for (int y = 0; y < blocks[z].size(); y++)
+		for (size_t y = 0; y < blocks[z].size(); y++)
 		{
 			MAPBLOCK& rowStart = blocks[z][y][0];
-			for (int x = 0; x < blocks[z][y].size(); x++)
+			for (size_t x = 0; x < blocks[z][y].size(); x++)
 			{
 				MAPBLOCK& block = blocks[z][y][x];
 
@@ -79,10 +79,10 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 	// merge the rows along the Y axis to form layers of maps
 	int colId = 0;
-	for (int z = 0; z < blocks.size(); z++)
+	for (size_t z = 0; z < blocks.size(); z++)
 	{
 		MAPBLOCK& colStart = blocks[z][0][0];
-		for (int y = 0; y < blocks[z].size(); y++)
+		for (size_t y = 0; y < blocks[z].size(); y++)
 		{
 			MAPBLOCK& block = blocks[z][y][0];
 
@@ -98,7 +98,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 	// merge the layers to form a cube of maps
 	MAPBLOCK& layerStart = blocks[0][0][0];
-	for (int z = 0; z < blocks.size(); z++)
+	for (size_t z = 0; z < blocks.size(); z++)
 	{
 		MAPBLOCK& block = blocks[z][0][0];
 
@@ -114,9 +114,9 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 	if (!noripent)
 	{
 		std::vector<MAPBLOCK> flattenedBlocks;
-		for (int z = 0; z < blocks.size(); z++)
-			for (int y = 0; y < blocks[z].size(); y++)
-				for (int x = 0; x < blocks[z][y].size(); x++)
+		for (size_t z = 0; z < blocks.size(); z++)
+			for (size_t y = 0; y < blocks[z].size(); y++)
+				for (size_t x = 0; x < blocks[z][y].size(); x++)
 					flattenedBlocks.push_back(blocks[z][y][x]);
 
 		print_log(get_localized_string(LANG_0223));
@@ -143,7 +143,7 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	std::vector<std::vector<std::vector<MAPBLOCK>>> orderedBlocks;
 
 	vec3 maxDims = vec3();
-	for (int i = 0; i < maps.size(); i++)
+	for (size_t i = 0; i < maps.size(); i++)
 	{
 		MAPBLOCK block;
 		maps[i]->get_bounding_box(block.mins, block.maxs);
@@ -170,9 +170,9 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	}
 
 	bool noOverlap = true;
-	for (int i = 0; i < blocks.size() && noOverlap; i++)
+	for (size_t i = 0; i < blocks.size() && noOverlap; i++)
 	{
-		for (int k = i + i; k < blocks.size(); k++)
+		for (size_t k = i + i; k < blocks.size(); k++)
 		{
 			if (blocks[i].intersects(blocks[k]))
 			{
@@ -211,13 +211,13 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	vec3 mergedMapMin = mergedMapSize * -0.5f;
 	vec3 mergedMapMax = mergedMapMin + mergedMapSize;
 
-	print_log(get_localized_string(LANG_0226),maxDims.x,maxDims.y,maxDims.z);
-	print_log(get_localized_string(LANG_0227),maxMapsPerRow,maxMapsPerCol,maxMapsPerLayer,maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer);
+	print_log(get_localized_string(LANG_0226), maxDims.x, maxDims.y, maxDims.z);
+	print_log(get_localized_string(LANG_0227), maxMapsPerRow, maxMapsPerCol, maxMapsPerLayer, maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer);
 
 	float actualWidth = std::min(idealMapsPerAxis, (float)maps.size());
 	float actualLength = std::min(idealMapsPerAxis, (float)ceil((float)maps.size() / idealMapsPerAxis));
 	float actualHeight = std::min(idealMapsPerAxis, (float)ceil((float)maps.size() / (idealMapsPerAxis * idealMapsPerAxis)));
-	print_log(get_localized_string(LANG_0228),actualWidth,actualLength,actualHeight);
+	print_log(get_localized_string(LANG_0228), actualWidth, actualLength, actualHeight);
 
 	print_log("Merged map bounds: min=({:.0f},{:.0f}, {:.0f})\n"
 		"                   max=({:.0f}, {:.0f},{:.0f})\n",
@@ -225,7 +225,7 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 		mergedMapMax.x, mergedMapMax.y, mergedMapMax.z);
 
 	vec3 targetMins = mergedMapMin;
-	int blockIdx = 0;
+	size_t blockIdx = 0;
 	for (int z = 0; (float)z < idealMapsPerAxis && blockIdx < blocks.size(); z++)
 	{
 		targetMins.y = mergedMapMin.y;
@@ -278,24 +278,22 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 	vec3 changesky_origin = vec3(64.0f, 64.0f, 0.0f);
 	vec3 equip_origin = vec3(64.0f, -64.0f, 0.0f);
 
+	Entity* map_info = new Entity();
+	map_info->addKeyvalue("origin", map_info_origin.toKeyvalueString());
+	map_info->addKeyvalue("targetname", "bspguy_info");
+	map_info->addKeyvalue("$s_noscript", noscript ? "yes" : "no");
+	map_info->addKeyvalue("$s_version", g_version_string);
+	map_info->addKeyvalue("classname", "info_target");
+
+	for (size_t i = 0; i < mapOrder.size(); i++)
 	{
-		Entity* map_info = new Entity();
-		map_info->addKeyvalue("origin", map_info_origin.toKeyvalueString());
-		map_info->addKeyvalue("targetname", "bspguy_info");
-		map_info->addKeyvalue("$s_noscript", noscript ? "yes" : "no");
-		map_info->addKeyvalue("$s_version", g_version_string);
-		map_info->addKeyvalue("classname", "info_target");
-
-		for (int i = 0; i < mapOrder.size(); i++)
-		{
-			map_info->addKeyvalue("$s_map" + std::to_string(i), toLowerCase(mapOrder[i]->bsp_name));
-		}
-
-		mergedMap->ents.push_back(map_info);
-		map_info_origin.z += 10.0f;
+		map_info->addKeyvalue("$s_map" + std::to_string(i), toLowerCase(mapOrder[i]->bsp_name));
 	}
 
-	for (int i = 0; i < sourceMaps.size(); i++)
+	mergedMap->ents.push_back(map_info);
+	map_info_origin.z += 10.0f;
+
+	for (size_t i = 0; i < sourceMaps.size(); i++)
 	{
 		std::string sourceMapName = sourceMaps[i].map->bsp_name;
 		mapsByName[toLowerCase(sourceMapName)] = sourceMaps[i];
@@ -306,7 +304,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 			vec3 map_min = sourceMap.mins + sourceMap.offset;
 			vec3 map_max = sourceMap.maxs + sourceMap.offset;
 
-			Entity* map_info = new Entity();
+			map_info = new Entity();
 			map_info->addKeyvalue("origin", map_info_origin.toKeyvalueString());
 			map_info->addKeyvalue("targetname", "bspguy_info_" + toLowerCase(sourceMapName));
 			map_info->addKeyvalue("$v_min", map_min.toKeyvalueString());
@@ -320,7 +318,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 	std::string startingSky = "desert";
 	std::string startingSkyColor = "0 0 0 0";
-	for (int k = 0; k < mergedMap->ents.size(); k++)
+	for (size_t k = 0; k < mergedMap->ents.size(); k++)
 	{
 		Entity* ent = mergedMap->ents[k];
 		if (ent->keyvalues["classname"] == "worldspawn")
@@ -341,11 +339,11 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 	std::string lastSky = std::move(startingSky);
 	std::string lastSkyColor = std::move(startingSkyColor);
-	for (int i = 1; i < mapOrder.size(); i++)
+	for (size_t i = 1; i < mapOrder.size(); i++)
 	{
 		std::string skyname = "desert";
 		std::string skyColor = "0 0 0 0";
-		for (int k = 0; k < sourceMaps[i].map->ents.size(); k++)
+		for (size_t k = 0; k < sourceMaps[i].map->ents.size(); k++)
 		{
 			Entity* ent = sourceMaps[i].map->ents[k];
 			if (ent->keyvalues["classname"] == "worldspawn")
@@ -391,7 +389,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 	// add dummy equipment logic, to save some copy-paste work.
 	// They'll do nothing until weapons keyvalues are added
 	// TODO: parse CFG files and set equipment automatically
-	for (int i = 0; i < mapOrder.size(); i++)
+	for (size_t i = 0; i < mapOrder.size(); i++)
 	{
 		Entity* equip = new Entity();
 		Entity* relay = new Entity();
@@ -568,7 +566,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 			std::string map = toLowerCase(ent->keyvalues["map"]);
 			bool isMergedMap = false;
-			for (int n = 0; n < sourceMaps.size(); n++)
+			for (size_t n = 0; n < sourceMaps.size(); n++)
 			{
 				if (map == toLowerCase(sourceMaps[n].map->bsp_name))
 				{
@@ -831,10 +829,10 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 	g_progress.clear();
 
-	print_log(get_localized_string(LANG_0232),replaced_changelevels);
-	print_log(get_localized_string(LANG_0233),updated_spawns);
-	print_log(get_localized_string(LANG_0234),updated_monsters);
-	print_log(get_localized_string(LANG_0235),renameCount);
+	print_log(get_localized_string(LANG_0232), replaced_changelevels);
+	print_log(get_localized_string(LANG_0233), updated_spawns);
+	print_log(get_localized_string(LANG_0234), updated_monsters);
+	print_log(get_localized_string(LANG_0235), renameCount);
 
 	mergedMap->update_ent_lump();
 
@@ -850,7 +848,7 @@ int BspMerger::force_unique_ent_names_per_map(Bsp* mergedMap)
 	mapStringToSet mapEntNames;
 	mapStringToSet entsToRename;
 
-	for (int i = 0; i < mergedMap->ents.size(); i++)
+	for (size_t i = 0; i < mergedMap->ents.size(); i++)
 	{
 		Entity* ent = mergedMap->ents[i];
 		std::string tname = ent->keyvalues["targetname"];
@@ -890,7 +888,7 @@ int BspMerger::force_unique_ent_names_per_map(Bsp* mergedMap)
 
 			//print_log << "\nRenaming " << *it2 << " to " << newName << endl;
 
-			for (int i = 0; i < mergedMap->ents.size(); i++)
+			for (size_t i = 0; i < mergedMap->ents.size(); i++)
 			{
 				Entity* ent = mergedMap->ents[i];
 				if (ent->keyvalues["$s_bspguy_map_source"] != it->first)
@@ -941,7 +939,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 		{
 			if (!modelMerge)
 			{
-				print_log(get_localized_string(LANG_0237),g_lump_names[i]);
+				print_log(get_localized_string(LANG_0237), g_lump_names[i]);
 				mapA.bsp_header.lump[i].nLength = mapB.bsp_header.lump[i].nLength;
 				mapA.lumps[i] = new unsigned char[mapB.bsp_header.lump[i].nLength];
 				memcpy(mapA.lumps[i], mapB.lumps[i], mapB.bsp_header.lump[i].nLength);
@@ -956,7 +954,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 		}
 		else if (!mapB.lumps[i])
 		{
-			print_log(get_localized_string(LANG_0238),g_lump_names[i]);
+			print_log(get_localized_string(LANG_0238), g_lump_names[i]);
 		}
 		else
 		{
@@ -1023,7 +1021,7 @@ BSPPLANE BspMerger::separate_plane(Bsp& mapA, Bsp& mapB)
 	vec3 bmin = otherWorld.nMins;
 	vec3 bmax = otherWorld.nMaxs;
 
-	return getSeparatePlane(amin,amax,bmin,bmax);
+	return getSeparatePlane(amin, amax, bmin, bmax);
 }
 
 void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
@@ -1032,7 +1030,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 
 	// update model indexes since this map's models will be appended after the other map's models
 	size_t otherModelCount = (mapB.bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL)) - 1;
-	for (int i = 0; i < mapA.ents.size(); i++)
+	for (size_t i = 0; i < mapA.ents.size(); i++)
 	{
 		if (!mapA.ents[i]->hasKey("model") || mapA.ents[i]->keyvalues["model"][0] != '*')
 		{
@@ -1051,7 +1049,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-	for (int i = 0; i < mapB.ents.size(); i++)
+	for (size_t i = 0; i < mapB.ents.size(); i++)
 	{
 		if (mapB.ents[i]->keyvalues["classname"] == "worldspawn")
 		{
@@ -1060,13 +1058,13 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 			std::vector<std::string> otherWads = splitString(otherWorldspawn->keyvalues["wad"], ";");
 
 			// strip paths from wad names
-			for (int j = 0; j < otherWads.size(); j++)
+			for (size_t j = 0; j < otherWads.size(); j++)
 			{
 				otherWads[j] = basename(otherWads[j]);
 			}
 
 			Entity* worldspawn = NULL;
-			for (int k = 0; k < mapA.ents.size(); k++)
+			for (size_t k = 0; k < mapA.ents.size(); k++)
 			{
 				if (mapA.ents[k]->keyvalues["classname"] == "worldspawn")
 				{
@@ -1082,13 +1080,13 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 			std::vector<std::string> thisWads = splitString(worldspawn->keyvalues["wad"], ";");
 
 			// strip paths from wad names
-			for (int j = 0; j < thisWads.size(); j++)
+			for (size_t j = 0; j < thisWads.size(); j++)
 			{
 				thisWads[j] = basename(thisWads[j]);
 			}
 
 			// add unique wads to this map
-			for (int j = 0; j < otherWads.size(); j++)
+			for (size_t j = 0; j < otherWads.size(); j++)
 			{
 				if (std::find(thisWads.begin(), thisWads.end(), otherWads[j]) == thisWads.end())
 				{
@@ -1097,7 +1095,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 			}
 
 			worldspawn->keyvalues["wad"].clear();
-			for (int j = 0; j < thisWads.size(); j++)
+			for (size_t j = 0; j < thisWads.size(); j++)
 			{
 				worldspawn->keyvalues["wad"] += thisWads[j] + ";";
 			}
@@ -1165,7 +1163,7 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB)
 	size_t newLen = mergedPlanes.size() * sizeof(BSPPLANE);
 	size_t duplicates = (mapA.planeCount + mapB.planeCount) - mergedPlanes.size();
 
-	print_log(get_localized_string(LANG_0240),duplicates);
+	print_log(get_localized_string(LANG_0240), duplicates);
 
 	unsigned char* newPlanes = new unsigned char[newLen];
 	memcpy(newPlanes, &mergedPlanes[0], newLen);
@@ -1276,7 +1274,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 	delete[] mipTexOffsets;
 
 
-	print_log(get_localized_string(LANG_0241),duplicates);
+	print_log(get_localized_string(LANG_0241), duplicates);
 
 	mapA.replace_lump(LUMP_TEXTURES, newTextureData, newLen);
 }
@@ -1346,7 +1344,7 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB)
 	unsigned char* newTexinfoData = new unsigned char[newLen];
 	memcpy(newTexinfoData, &mergedInfo[0], newLen);
 
-	print_log(get_localized_string(LANG_0242),duplicates);
+	print_log(get_localized_string(LANG_0242), duplicates);
 
 	mapA.replace_lump(LUMP_TEXINFO, newTexinfoData, newLen);
 }
@@ -1762,7 +1760,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 
 	// decompress other map's world-leaf vis data (skip empty first leaf, which now only the first map should have)
 	unsigned char* decompressedOtherVis = decompressedVis + thisWorldLeafCount * newVisRowSize;
-	decompress_vis_lump(&mapB,allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
+	decompress_vis_lump(&mapB, allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
 		otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_VISIBILITY].nLength, mapB.visDataLength);
 
 	// shift mapB's world leaves after mapA's world leaves
@@ -1785,7 +1783,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 
 	mapA.replace_lump(LUMP_VISIBILITY, compressedVisResize, newVisLen);
 
-	print_log(get_localized_string(LANG_0244),oldLen,newVisLen);
+	print_log(get_localized_string(LANG_0244), oldLen, newVisLen);
 
 	delete[] decompressedVis;
 	delete[] compressedVis;

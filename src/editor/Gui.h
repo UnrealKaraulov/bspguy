@@ -17,7 +17,7 @@ struct ModelInfo
 	std::string model;
 	std::string val;
 	std::string usage;
-	int entIdx;
+	size_t entIdx;
 };
 
 struct StatInfo
@@ -83,7 +83,7 @@ private:
 	bool showGOTOWidget = false;
 	bool showTextureBrowser = false;
 	bool reloadSettings = true;
-	int settingsTab = 0;
+	size_t settingsTab = 0;
 	bool openSavedTabs = false;
 
 	ImFont* defaultFont;

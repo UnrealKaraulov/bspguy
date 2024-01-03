@@ -638,57 +638,57 @@ void AppSettings::save(std::string path)
 	file << "lastdir=" << g_settings.lastdir << std::endl;
 	file << "language=" << g_settings.selected_lang << std::endl;
 
-	for (int i = 0; i < fgdPaths.size(); i++)
+	for (size_t i = 0; i < fgdPaths.size(); i++)
 	{
 		file << "fgd=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].path << std::endl;
 	}
 
-	for (int i = 0; i < resPaths.size(); i++)
+	for (size_t i = 0; i < resPaths.size(); i++)
 	{
 		file << "res=" << (g_settings.resPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.resPaths[i].path << std::endl;
 	}
 
-	for (int i = 0; i < conditionalPointEntTriggers.size(); i++)
+	for (size_t i = 0; i < conditionalPointEntTriggers.size(); i++)
 	{
 		file << "optimizer_cond_ents=" << conditionalPointEntTriggers[i] << std::endl;
 	}
 
-	for (int i = 0; i < entsThatNeverNeedAnyHulls.size(); i++)
+	for (size_t i = 0; i < entsThatNeverNeedAnyHulls.size(); i++)
 	{
 		file << "optimizer_no_hulls_ents=" << entsThatNeverNeedAnyHulls[i] << std::endl;
 	}
 
-	for (int i = 0; i < entsThatNeverNeedCollision.size(); i++)
+	for (size_t i = 0; i < entsThatNeverNeedCollision.size(); i++)
 	{
 		file << "optimizer_no_collision_ents=" << entsThatNeverNeedCollision[i] << std::endl;
 	}
 
-	for (int i = 0; i < passableEnts.size(); i++)
+	for (size_t i = 0; i < passableEnts.size(); i++)
 	{
 		file << "optimizer_passable_ents=" << passableEnts[i] << std::endl;
 	}
 
-	for (int i = 0; i < playerOnlyTriggers.size(); i++)
+	for (size_t i = 0; i < playerOnlyTriggers.size(); i++)
 	{
 		file << "optimizer_player_hull_ents=" << playerOnlyTriggers[i] << std::endl;
 	}
 
-	for (int i = 0; i < monsterOnlyTriggers.size(); i++)
+	for (size_t i = 0; i < monsterOnlyTriggers.size(); i++)
 	{
 		file << "optimizer_monster_hull_ents=" << monsterOnlyTriggers[i] << std::endl;
 	}
 
-	for (int i = 0; i < entsNegativePitchPrefix.size(); i++)
+	for (size_t i = 0; i < entsNegativePitchPrefix.size(); i++)
 	{
 		file << "negative_pitch_ents=" << entsNegativePitchPrefix[i] << std::endl;
 	}
 
-	for (int i = 0; i < transparentTextures.size(); i++)
+	for (size_t i = 0; i < transparentTextures.size(); i++)
 	{
 		file << "transparent_textures=" << transparentTextures[i] << std::endl;
 	}
 
-	for (int i = 0; i < transparentEntities.size(); i++)
+	for (size_t i = 0; i < transparentEntities.size(); i++)
 	{
 		file << "transparent_entities=" << transparentEntities[i] << std::endl;
 	}

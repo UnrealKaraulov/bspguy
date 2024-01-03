@@ -162,20 +162,22 @@ struct RenderClipnodes
 class PickInfo
 {
 public:
-	std::vector<int> selectedEnts;
-	std::vector<int> selectedFaces;
+	std::vector<size_t> selectedEnts;
+	std::vector<size_t> selectedFaces;
 
 	float bestDist;
 	PickInfo();
 
 	int GetSelectedEnt();
 	void AddSelectedEnt(int entIdx);
-
 	void SetSelectedEnt(int entIdx);
-
 	void DelSelectedEnt(int entIdx);
-
 	bool IsSelectedEnt(int entIdx);
+
+	void AddSelectedEnt(size_t entIdx);
+	void SetSelectedEnt(size_t entIdx);
+	void DelSelectedEnt(size_t entIdx);
+	bool IsSelectedEnt(size_t entIdx);
 };
 
 class BspRenderer
@@ -196,11 +198,11 @@ public:
 	BspRenderer(Bsp* map);
 	~BspRenderer();
 
-	void render(std::vector<int> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull);
+	void render(std::vector<size_t> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull);
 
 	void drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly);
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
-	void drawPointEntities(std::vector<int> highlightEnts);
+	void drawPointEntities(std::vector<size_t> highlightEnts);
 
 	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp** map);
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
@@ -233,6 +235,7 @@ public:
 	bool isFinishedLoading();
 
 	void highlightFace(int faceIdx, bool highlight, COLOR4 color = COLOR4(), bool useColor = false, bool reupload = true);
+	void highlightFace(size_t faceIdx, bool highlight, COLOR4 color = COLOR4(), bool useColor = false, bool reupload = true);
 	void updateFaceUVs(int faceIdx);
 	unsigned int getFaceTextureId(int faceIdx);
 

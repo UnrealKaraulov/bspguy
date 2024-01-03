@@ -281,13 +281,13 @@ void Gui::copyLightmap()
 		return;
 	}
 
-	copiedLightmap.face = app->pickInfo.selectedFaces[0];
+	copiedLightmap.face = (int)app->pickInfo.selectedFaces[0];
 
 	int size[2];
 	GetFaceLightmapSize(map, copiedLightmap.face, size);
 	copiedLightmap.width = size[0];
 	copiedLightmap.height = size[1];
-	copiedLightmap.layers = map->lightmap_count(app->pickInfo.selectedFaces[0]);
+	copiedLightmap.layers = map->lightmap_count((int)app->pickInfo.selectedFaces[0]);
 	copiedLightmap.luxelFlags = new unsigned char[size[0] * size[1]];
 	get_lightmap_luxelflags(map, copiedLightmap.face, copiedLightmap.luxelFlags);
 }
@@ -305,7 +305,7 @@ void Gui::pasteLightmap()
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1150));
 		return;
 	}
-	int faceIdx = app->pickInfo.selectedFaces[0];
+	int faceIdx = (int)app->pickInfo.selectedFaces[0];
 
 	int size[2];
 	GetFaceLightmapSize(map, faceIdx, size);
@@ -370,7 +370,7 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 	tmpMap->models[0].iHeadnodes[0] = tmpMap->models[0].iHeadnodes[1] =
 		tmpMap->models[0].iHeadnodes[2] = tmpMap->models[0].iHeadnodes[3] = CONTENTS_EMPTY;
 
-	for (int i = 1; i < tmpMap->ents.size(); i++)
+	for (size_t i = 1; i < tmpMap->ents.size(); i++)
 	{
 		delete tmpMap->ents[i];
 	}
@@ -614,7 +614,7 @@ void Gui::drawBspContexMenu()
 			{
 				if (g_app->pickInfo.selectedFaces.size())
 				{
-					int modelIdx = map->get_model_from_face(g_app->pickInfo.selectedFaces[0]);
+					int modelIdx = map->get_model_from_face((int)g_app->pickInfo.selectedFaces[0]);
 					if (modelIdx >= 0)
 					{
 						BspRenderer* mapRenderer = map->getBspRender();
@@ -858,18 +858,10 @@ void Gui::drawBspContexMenu()
 				{
 					for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
 					{
-						if (tmpEntIdx < 0)
+						if (map->ents[tmpEntIdx]->getBspModelIdx() <= 0)
 						{
 							allowDuplicate = false;
 							break;
-						}
-						else
-						{
-							if (map->ents[tmpEntIdx]->getBspModelIdx() <= 0)
-							{
-								allowDuplicate = false;
-								break;
-							}
 						}
 					}
 				}
@@ -882,7 +874,7 @@ void Gui::drawBspContexMenu()
 						{
 							if (map->ents[tmpEntIdx]->isBspModel())
 							{
-								DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), tmpEntIdx);
+								DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), (int)tmpEntIdx);
 								map->getBspRender()->pushUndoCommand(command);
 							}
 						}
@@ -928,8 +920,8 @@ void Gui::drawBspContexMenu()
 						app->pickInfo.selectedEnts.size() == 2 &&
 						map->ents[app->pickInfo.selectedEnts[0]]->isBspModel() && map->ents[app->pickInfo.selectedEnts[1]]->isBspModel()))
 					{
-						int ent1 = app->pickInfo.selectedEnts[0];
-						int ent2 = app->pickInfo.selectedEnts[1];
+						size_t ent1 = app->pickInfo.selectedEnts[0];
+						size_t ent2 = app->pickInfo.selectedEnts[1];
 
 						print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
 
@@ -1115,7 +1107,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 			delete[] imageData;
 			delete wadTex;
 		}
-		for (int i = 0; i < app->mapRenderers.size(); i++)
+		for (size_t i = 0; i < app->mapRenderers.size(); i++)
 		{
 			app->mapRenderers[i]->reloadTextures();
 		}
@@ -1142,13 +1134,13 @@ void Gui::drawMenuBar()
 				if (ifd::FileDialog::Instance().HasResult())
 				{
 					std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-					for (int i = 0; i < map->ents.size(); i++)
+					for (size_t i = 0; i < map->ents.size(); i++)
 					{
 						if (map->ents[i]->keyvalues["classname"] == "worldspawn")
 						{
 							std::vector<std::string> wadNames = splitString(map->ents[i]->keyvalues["wad"], ";");
 							std::string newWadNames;
-							for (int k = 0; k < wadNames.size(); k++)
+							for (size_t k = 0; k < wadNames.size(); k++)
 							{
 								if (wadNames[k].find(res.filename().string()) == std::string::npos)
 									newWadNames += wadNames[k] + ";";
@@ -1205,7 +1197,7 @@ void Gui::drawMenuBar()
 								app->SelectedMap->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
 								app->SelectedMap->update_ent_lump();
 								app->updateEnts();
-								map->getBspRender()->reload();
+								app->SelectedMap->getBspRender()->reload();
 							}
 							else
 								delete wad;
@@ -2179,13 +2171,13 @@ void Gui::drawMenuBar()
 
 							createDir(g_working_dir + "wads/" + basename(wad->filename));
 
-							std::vector<int> texturesIds;
-							for (int i = 0; i < wad->dirEntries.size(); i++)
+							std::vector<size_t> texturesIds;
+							for (size_t i = 0; i < wad->dirEntries.size(); i++)
 							{
 								texturesIds.push_back(i);
 							}
 
-							std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](int file)
+							std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](size_t file)
 								{
 									{
 										WADTEX* texture = wad->readTexture(file);
@@ -2304,7 +2296,7 @@ void Gui::drawMenuBar()
 							char* newlump = loadFile(entFilePath, len);
 							map->replace_lump(LUMP_ENTITIES, newlump, len);
 							map->load_ents();
-							for (int i = 0; i < app->mapRenderers.size(); i++)
+							for (size_t i = 0; i < app->mapRenderers.size(); i++)
 							{
 								BspRenderer* mapRender = app->mapRenderers[i];
 								mapRender->reload();
@@ -2533,11 +2525,6 @@ void Gui::drawMenuBar()
 			{
 				for (auto& ent : app->pickInfo.selectedEnts)
 				{
-					if (ent < 0)
-					{
-						nonWorldspawnEntSelected = true;
-						break;
-					}
 					if (map->ents[ent]->hasKey("classname") && map->ents[ent]->keyvalues["classname"] == "worldspawn")
 					{
 						nonWorldspawnEntSelected = true;
@@ -2592,25 +2579,6 @@ void Gui::drawMenuBar()
 
 
 			bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
-			if (allowDuplicate)
-			{
-				for (auto& ent : app->pickInfo.selectedEnts)
-				{
-					if (ent < 0)
-					{
-						allowDuplicate = false;
-						break;
-					}
-					else
-					{
-						if (map->ents[ent]->getBspModelIdx() <= 0)
-						{
-							allowDuplicate = false;
-							break;
-						}
-					}
-				}
-			}
 
 			if (ImGui::MenuItem(get_localized_string("LANG_DUPLICATE_BSP").c_str(), 0, false, !app->isLoading && allowDuplicate))
 			{
@@ -2619,7 +2587,7 @@ void Gui::drawMenuBar()
 				{
 					if (map->ents[tmpEntIdx]->isBspModel())
 					{
-						DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), tmpEntIdx);
+						DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), (int)tmpEntIdx);
 						map->getBspRender()->pushUndoCommand(command);
 					}
 				}
@@ -2795,7 +2763,7 @@ void Gui::drawMenuBar()
 							map->texinfos[i].vS /= scale_val;
 							map->texinfos[i].vT /= scale_val;
 						}
-						for (int i = 0; i < map->ents.size(); i++)
+						for (size_t i = 0; i < map->ents.size(); i++)
 						{
 							vec3 neworigin = map->ents[i]->origin * scale_val;
 							neworigin.z += abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
@@ -2849,7 +2817,7 @@ void Gui::drawMenuBar()
 
 					bool FoundAnyFace = true;
 
-					int cullfaces = 0;
+					size_t cullfaces = 0;
 
 					for (int l = 0; l < map->leafCount - 1; l++)
 					{
@@ -2860,7 +2828,7 @@ void Gui::drawMenuBar()
 						}
 					}
 					STRUCTCOUNT count_1(map);
-					g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", cullfaces);
+					g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)cullfaces);
 
 					while (FoundAnyFace)
 					{
@@ -2912,7 +2880,7 @@ void Gui::drawMenuBar()
 
 						bool FoundAnyFace = true;
 
-						int cullfaces = 0;
+						size_t cullfaces = 0;
 						for (int l = 0; l < map->leafCount - 1; l++)
 						{
 							if (l == rend->curLeafIdx || CHECKVISBIT(visData, l))
@@ -2922,7 +2890,7 @@ void Gui::drawMenuBar()
 							}
 						}
 						STRUCTCOUNT count_1(map);
-						g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", cullfaces);
+						g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)cullfaces);
 
 						while (FoundAnyFace)
 						{
@@ -3741,6 +3709,9 @@ void Gui::drawDebugWidget()
 	static std::map<std::string, std::set<std::string>> mapTexsUsage{};
 	static double lastupdate = 0.0;
 
+	if (!app)
+		return;
+
 	ImGui::SetNextWindowBgAlpha(0.75f);
 
 	ImGui::SetNextWindowSize(ImVec2(300.f, 400.f), ImGuiCond_FirstUseEver);
@@ -3754,7 +3725,7 @@ void Gui::drawDebugWidget()
 
 	if (ImGui::Begin(fmt::format("{}###DEBUG_WIDGET", get_localized_string(LANG_0624)).c_str(), &showDebugWidget))
 	{
-		if (ImGui::CollapsingHeader(get_localized_string(LANG_0625).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+		if (app && ImGui::CollapsingHeader(get_localized_string(LANG_0625).c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0366)), floatRound(cameraOrigin.x), floatRound(cameraOrigin.y), floatRound(cameraOrigin.z)).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0367)), floatRound(cameraAngles.x), floatRound(cameraAngles.y), floatRound(cameraAngles.z)).c_str());
@@ -3774,11 +3745,11 @@ void Gui::drawDebugWidget()
 		{
 			ImGui::Text(fmt::format("Mouse: {} {}", mousePos.x, mousePos.y).c_str());
 			ImGui::Text(fmt::format("Workdir: {}", g_working_dir).c_str());
-			ImGui::Text(fmt::format("Opengl Errors: {} ", app->gl_errors).c_str());
-			if (renderer)
-				ImGui::Text(fmt::format("lmGen: {}.lmUpload: {}.lm: {}.", renderer->lightmapsGenerated, renderer->lightmapsUploaded, renderer->lightmaps != NULL).c_str());
-			if (app && imgui_io)
+			if (imgui_io)
 			{
+				ImGui::Text(fmt::format("Opengl Errors: {} ", app->gl_errors).c_str());
+				if (renderer)
+					ImGui::Text(fmt::format("lmGen: {}.lmUpload: {}.lm: {}.", renderer->lightmapsGenerated, renderer->lightmapsUploaded, renderer->lightmaps != NULL).c_str());
 				ImGui::Text(fmt::format("Mouse left {} right {}", app->curLeftMouse, app->curRightMouse).c_str());
 				std::string keysStr;
 				for (int key = 0; key < GLFW_KEY_LAST; key++) {
@@ -3801,13 +3772,13 @@ void Gui::drawDebugWidget()
 				ImGui::Text(fmt::format("BlockMoving:{}", app->blockMoving).c_str());
 				ImGui::Text(fmt::format("MoveDir: [{}]", app->getMoveDir().toString()).c_str());
 
-				static float movemulttime = app->curTime;
-				static float movemult = (float)(app->curTime - app->oldTime) * app->moveSpeed;
+				static double movemulttime = app->curTime;
+				static double movemult = (app->curTime - app->oldTime) * app->moveSpeed;
 				static vec3 nextOrigin = app->getMoveDir() * (float)(app->curTime - app->oldTime) * app->moveSpeed;
 
 				if (fabs(app->curTime - movemulttime) > 0.5)
 				{
-					movemult = (float)(app->curTime - app->oldTime) * app->moveSpeed;
+					movemult = (app->curTime - app->oldTime) * app->moveSpeed;
 					movemulttime = app->curTime;
 					nextOrigin = app->getMoveDir() * (float)(app->curTime - app->oldTime) * app->moveSpeed;
 				}
@@ -4112,7 +4083,7 @@ void Gui::drawDebugWidget()
 							std::swap(map->models[model1], map->models[model2]);
 
 
-							for (int i = 0; i < map->ents.size(); i++)
+							for (size_t i = 0; i < map->ents.size(); i++)
 							{
 								if (map->ents[i]->getBspModelIdx() == model1)
 								{
@@ -4411,7 +4382,7 @@ void Gui::drawKeyvalueEditor()
 
 					if (ImGui::BeginMenu(group.groupName.c_str()))
 					{
-						for (int k = 0; k < group.classes.size(); k++)
+						for (size_t k = 0; k < group.classes.size(); k++)
 						{
 							if (ImGui::MenuItem(group.classes[k]->name.c_str()))
 							{
@@ -4517,7 +4488,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 		if (sel_ent->hasKey("model"))
 		{
 			bool foundmodel = false;
-			for (int i = 0; i < fgdClass->keyvalues.size(); i++)
+			for (size_t i = 0; i < fgdClass->keyvalues.size(); i++)
 			{
 				KeyvalueDef& keyvalue = fgdClass->keyvalues[i];
 				std::string key = keyvalue.name;
@@ -4537,7 +4508,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 			}
 		}
 
-		for (int i = 0; i < fgdClass->keyvalues.size() && i < 128; i++)
+		for (size_t i = 0; i < fgdClass->keyvalues.size() && i < 128; i++)
 		{
 			KeyvalueDef& keyvalue = fgdClass->keyvalues[i];
 			std::string key = keyvalue.name;
@@ -4590,7 +4561,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 				std::string selectedValue = keyvalue.choices[0].name;
 				int ikey = atoi(value.c_str());
 
-				for (int k = 0; k < keyvalue.choices.size(); k++)
+				for (size_t k = 0; k < keyvalue.choices.size(); k++)
 				{
 					KeyvalueChoice& choice = keyvalue.choices[k];
 
@@ -4603,7 +4574,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 				if (ImGui::BeginCombo(("##comboval" + std::to_string(i)).c_str(), selectedValue.c_str()))
 				{
-					for (int k = 0; k < keyvalue.choices.size(); k++)
+					for (size_t k = 0; k < keyvalue.choices.size(); k++)
 					{
 						KeyvalueChoice& choice = keyvalue.choices[k];
 						bool selected = choice.svalue == value || (value.empty() && choice.svalue == keyvalue.defaultValue);
@@ -4649,7 +4620,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 										{
 											Entity* selected_ent = map->ents[selected_entId];
 											selected_ent->setOrAddKeyvalue(key, choice.svalue);
-											map->getBspRender()->refreshEnt(selected_entId);
+											map->getBspRender()->refreshEnt((int)selected_entId);
 
 											if (needrefreshmodel)
 											{
@@ -4660,7 +4631,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 												}
 											}
 
-											map->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", selected_entId, selected_ent);
+											map->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", (int)selected_entId, selected_ent);
 										}
 									}
 								}
@@ -4782,7 +4753,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 											ent->setOrAddKeyvalue(linputData->key, newVal);
 										}
 
-										render->refreshEnt(selected_entId);
+										render->refreshEnt((int)selected_entId);
 
 										pickCount++;
 										vertPickCount++;
@@ -4795,7 +4766,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 												map2->getBspRender()->refreshModel(ent->getBspModelIdx());
 											}
 										}
-										map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", selected_entId, ent);
+										map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", (int)selected_entId, ent);
 									}
 								}
 							}
@@ -4902,7 +4873,7 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 				else
 					selected_ent->removeKeyvalue("spawnflags");
 
-				map->getBspRender()->pushEntityUndoStateDelay(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", selected_entId, selected_ent);
+				map->getBspRender()->pushEntityUndoStateDelay(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", (int)selected_entId, selected_ent);
 			}
 		}
 		if ((!name.empty() || !description.empty()) && ImGui::IsItemHovered())
@@ -4969,7 +4940,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 	struct InputData
 	{
-		int idx;
+		size_t idx;
 	};
 
 	struct TextChangeCallback
@@ -4994,7 +4965,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 								Entity* selent = map->ents[entId];
 								if (selent->renameKey(key, data->Buf))
 								{
-									render->refreshEnt(entId);
+									render->refreshEnt((int)entId);
 									if (key == "model" || std::string(data->Buf) == "model")
 									{
 										g_app->reloadBspModels();
@@ -5002,7 +4973,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 									}
 
 									g_app->updateEntConnections();
-									map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue", entId, selent);
+									map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue", (int)entId, selent);
 								}
 							}
 						}
@@ -5061,7 +5032,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 									if (selent->hasKey("model") && selent->keyvalues["model"] != data->Buf)
 									{
 										selent->setOrAddKeyvalue(key, data->Buf);
-										render->refreshEnt(entId);
+										render->refreshEnt((int)entId);
 										needreloadmodels = true;
 									}
 								}
@@ -5104,7 +5075,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 								{
 									selent->setOrAddKeyvalue(key, data->Buf);
 								}
-								render->refreshEnt(entId);
+								render->refreshEnt((int)entId);
 								pickCount++;
 								vertPickCount++;
 								g_app->updateEntConnections();
@@ -5117,7 +5088,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 										g_app->updateEntConnections();
 									}
 								}
-								map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue RAW", entId, selent);
+								map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue RAW", (int)entId, selent);
 							}
 						}
 
@@ -5172,7 +5143,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	bool keyDragging = false;
 
 	float startY = 0;
-	for (int i = 0; i < ent->keyOrder.size() && i < MAX_KEYS_PER_ENT; i++)
+	for (size_t i = 0; i < ent->keyOrder.size() && i < MAX_KEYS_PER_ENT; i++)
 	{
 
 		const char* item = dragIds[i];
@@ -5201,7 +5172,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 			if (ImGui::IsItemActive() && !ImGui::IsItemHovered())
 			{
-				int n_next = (int)((ImGui::GetMousePos().y - startY) / (ImGui::GetItemRectSize().y + style.FramePadding.y * 2));
+				size_t n_next = (size_t)((ImGui::GetMousePos().y - startY) / (ImGui::GetItemRectSize().y + style.FramePadding.y * 2));
 				if (n_next >= 0 && n_next < ent->keyOrder.size() && n_next < MAX_KEYS_PER_ENT)
 				{
 					dragIds[i] = dragIds[n_next];
@@ -5411,7 +5382,7 @@ void Gui::drawGOTOWidget()
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-		if (ImGui::Button("Go to"))
+		if (map && ImGui::Button("Go to"))
 		{
 			cameraOrigin = coordinates;
 			map->getBspRender()->renderCameraOrigin = cameraOrigin;
@@ -5466,7 +5437,7 @@ void Gui::drawGOTOWidget()
 					}
 					app->selectFace(map, faceid);
 				}
-				else if (entid > 0 && entid < map->ents.size())
+				else if (entid > 0 && entid < (int)map->ents.size())
 				{
 					app->selectEnt(map, entid);
 					app->goToEnt(map, entid);
@@ -5960,12 +5931,12 @@ void Gui::drawLog()
 	}
 
 	ImGuiListClipper clipper;
-	clipper.Begin(log_buffer_copy.size());
+	clipper.Begin((int)log_buffer_copy.size());
 	while (clipper.Step())
 	{
 		for (int line_no = clipper.DisplayStart; line_no < clipper.DisplayEnd; line_no++)
 		{
-			if (line_no < log_buffer_copy.size())
+			if (line_no < (int)log_buffer_copy.size())
 			{
 				if (line_no > 0 && !log_buffer_copy[line_no - 1].ends_with("\n"))
 				{
@@ -6000,10 +5971,10 @@ void Gui::drawSettings()
 	if (ImGui::Begin(fmt::format("{}###SETTING_WIDGET", get_localized_string(LANG_1114)).c_str(), &showSettingsWidget))
 	{
 		ImGuiContext& g = *GImGui;
-		const int settings_tabs = 7;
+		const size_t settings_tabs = 7;
 
-		static int resSelected = 0;
-		static int fgdSelected = 0;
+		static size_t resSelected = 0;
+		static size_t fgdSelected = 0;
 
 
 		std::string tab_titles[settings_tabs] = {
@@ -6019,7 +5990,7 @@ void Gui::drawSettings()
 		// left
 		ImGui::BeginChild(get_localized_string(LANG_0709).c_str(), ImVec2(150, 0), true);
 
-		for (int i = 0; i < settings_tabs; i++)
+		for (size_t i = 0; i < settings_tabs; i++)
 		{
 			if (ImGui::Selectable(tab_titles[i].c_str(), settingsTab == i))
 				settingsTab = i;
@@ -6246,7 +6217,7 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 1)
 		{
-			for (int i = 0; i < g_settings.fgdPaths.size(); i++)
+			for (size_t i = 0; i < g_settings.fgdPaths.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth * 0.20f);
 				ImGui::Checkbox((std::string("##enablefgd") + std::to_string(i)).c_str(), &g_settings.fgdPaths[i].enabled);
@@ -6292,7 +6263,7 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 2)
 		{
-			for (int i = 0; i < g_settings.resPaths.size(); i++)
+			for (size_t i = 0; i < g_settings.resPaths.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth * 0.20f);
 				ImGui::Checkbox((std::string("##enableres") + std::to_string(i)).c_str(), &g_settings.resPaths[i].enabled);
@@ -6367,7 +6338,7 @@ void Gui::drawSettings()
 			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::Text(get_localized_string(LANG_0749).c_str());
 
-			for (int i = 0; i < g_settings.conditionalPointEntTriggers.size(); i++)
+			for (size_t i = 0; i < g_settings.conditionalPointEntTriggers.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##pointent" + std::to_string(i)).c_str(), &g_settings.conditionalPointEntTriggers[i]);
@@ -6391,7 +6362,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0751).c_str());
 
-			for (int i = 0; i < g_settings.entsThatNeverNeedAnyHulls.size(); i++)
+			for (size_t i = 0; i < g_settings.entsThatNeverNeedAnyHulls.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##entnohull" + std::to_string(i)).c_str(), &g_settings.entsThatNeverNeedAnyHulls[i]);
@@ -6415,7 +6386,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0753).c_str());
 
-			for (int i = 0; i < g_settings.entsThatNeverNeedCollision.size(); i++)
+			for (size_t i = 0; i < g_settings.entsThatNeverNeedCollision.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##entnocoll" + std::to_string(i)).c_str(), &g_settings.entsThatNeverNeedCollision[i]);
@@ -6439,7 +6410,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0755).c_str());
 
-			for (int i = 0; i < g_settings.passableEnts.size(); i++)
+			for (size_t i = 0; i < g_settings.passableEnts.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##entpass" + std::to_string(i)).c_str(), &g_settings.passableEnts[i]);
@@ -6463,7 +6434,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0757).c_str());
 
-			for (int i = 0; i < g_settings.playerOnlyTriggers.size(); i++)
+			for (size_t i = 0; i < g_settings.playerOnlyTriggers.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##entpltrigg" + std::to_string(i)).c_str(), &g_settings.playerOnlyTriggers[i]);
@@ -6487,7 +6458,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0759).c_str());
 
-			for (int i = 0; i < g_settings.monsterOnlyTriggers.size(); i++)
+			for (size_t i = 0; i < g_settings.monsterOnlyTriggers.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##entmonsterrigg" + std::to_string(i)).c_str(), &g_settings.monsterOnlyTriggers[i]);
@@ -6647,7 +6618,7 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox(get_localized_string(LANG_0792).c_str(), &transparentNodes))
 			{
 				g_render_flags ^= RENDER_TRANSPARENT;
-				for (int i = 0; i < app->mapRenderers.size(); i++)
+				for (size_t i = 0; i < app->mapRenderers.size(); i++)
 				{
 					app->mapRenderers[i]->updateClipnodeOpacity(transparentNodes ? 128 : 255);
 				}
@@ -6658,7 +6629,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0793).c_str());
 
-			for (int i = 0; i < g_settings.transparentTextures.size(); i++)
+			for (size_t i = 0; i < g_settings.transparentTextures.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##transTex" + std::to_string(i)).c_str(), &g_settings.transparentTextures[i]);
@@ -6683,7 +6654,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0795).c_str());
 
-			for (int i = 0; i < g_settings.transparentEntities.size(); i++)
+			for (size_t i = 0; i < g_settings.transparentEntities.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##transEnt" + std::to_string(i)).c_str(), &g_settings.transparentEntities[i]);
@@ -6709,7 +6680,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 			ImGui::Text(get_localized_string(LANG_0797).c_str());
 
-			for (int i = 0; i < g_settings.entsNegativePitchPrefix.size(); i++)
+			for (size_t i = 0; i < g_settings.entsNegativePitchPrefix.size(); i++)
 			{
 				ImGui::SetNextItemWidth(pathWidth);
 				ImGui::InputText(("##invPitch" + std::to_string(i)).c_str(), &g_settings.entsNegativePitchPrefix[i]);
@@ -6755,7 +6726,7 @@ void Gui::drawSettings()
 			app->reloading = true;
 			app->loadFgds();
 			app->postLoadFgds();
-			for (int i = 0; i < app->mapRenderers.size(); i++)
+			for (size_t i = 0; i < app->mapRenderers.size(); i++)
 			{
 				BspRenderer* mapRender = app->mapRenderers[i];
 				mapRender->reload();
@@ -6918,7 +6889,7 @@ void Gui::drawMergeWindow()
 			}
 			else
 			{
-				for (int i = 0; i < maps.size(); i++)
+				for (size_t i = 0; i < maps.size(); i++)
 				{
 					print_log(get_localized_string(LANG_1057), maps[i]->bsp_name);
 					if (DeleteUnusedInfo)
@@ -7296,7 +7267,7 @@ void Gui::drawLimits()
 					ImGui::SetColumnWidth(1, midWidth);
 					ImGui::SetColumnWidth(2, otherWidth);
 
-					for (int i = 0; i < stats.size(); i++)
+					for (size_t i = 0; i < stats.size(); i++)
 					{
 						ImGui::TextColored(stats[i].color, stats[i].name.c_str()); ImGui::NextColumn();
 
@@ -7367,7 +7338,7 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 		std::vector<STRUCTUSAGE*> modelInfos = map->get_sorted_model_infos(sortMode);
 
 		limitModels[sortMode].clear();
-		for (int i = 0; i < modelInfos.size(); i++)
+		for (size_t i = 0; i < modelInfos.size(); i++)
 		{
 			int val = 0;
 
@@ -7415,9 +7386,9 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	ImGui::SetColumnWidth(2, valWidth);
 	ImGui::SetColumnWidth(3, usageWidth);
 
-	int selected = app->pickInfo.GetSelectedEnt() >= 0;
+	size_t selected = app->pickInfo.GetSelectedEnt() < 0 ? 0 : app->pickInfo.GetSelectedEnt();
 
-	for (int i = 0; i < limitModels[sortMode].size(); i++)
+	for (size_t i = 0; i < limitModels[sortMode].size(); i++)
 	{
 
 		if (modelInfos[i].val == "0")
@@ -7430,7 +7401,7 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 		if (ImGui::Selectable(cname.c_str(), selected == modelInfos[i].entIdx, flags))
 		{
 			selected = i;
-			int entIdx = modelInfos[i].entIdx;
+			size_t entIdx = modelInfos[i].entIdx;
 			if (entIdx < map->ents.size())
 			{
 				app->pickInfo.SetSelectedEnt(entIdx);
@@ -7438,7 +7409,7 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
-					app->goToEnt(map, entIdx);
+					app->goToEnt(map, (int)entIdx);
 				}
 			}
 		}
@@ -7492,7 +7463,7 @@ void Gui::drawEntityReport()
 			static std::string classFilter = "(none)";
 			static std::string flagsFilter = "(none)";
 			static bool partialMatches = true;
-			static std::vector<int> visibleEnts;
+			static std::vector<size_t> visibleEnts;
 			static std::vector<bool> selectedItems;
 			static bool selectAllItems = false;
 
@@ -7502,12 +7473,12 @@ void Gui::drawEntityReport()
 			if (filterNeeded)
 			{
 				visibleEnts.clear();
-				while (keyFilter.size() < MAX_FILTERS)
+				while (keyFilter.size() < (size_t)MAX_FILTERS)
 					keyFilter.push_back(std::string());
-				while (valueFilter.size() < MAX_FILTERS)
+				while (valueFilter.size() < (size_t)MAX_FILTERS)
 					valueFilter.push_back(std::string());
 
-				for (int i = 1; i < map->ents.size(); i++)
+				for (size_t i = 1; i < map->ents.size(); i++)
 				{
 					Entity* ent = map->ents[i];
 					std::string cname = ent->keyvalues["classname"];
@@ -7546,7 +7517,7 @@ void Gui::drawEntityReport()
 
 							bool foundKey = false;
 							std::string actualKey;
-							for (int c = 0; c < ent->keyOrder.size(); c++)
+							for (size_t c = 0; c < ent->keyOrder.size(); c++)
 							{
 								std::string key = toLowerCase(ent->keyOrder[c]);
 								if (key == searchKey || (partialMatches && key.find(searchKey) != std::string::npos))
@@ -7577,7 +7548,7 @@ void Gui::drawEntityReport()
 						{
 							std::string searchValue = trimSpaces(toLowerCase(valueFilter[k]));
 							bool foundMatch = false;
-							for (int c = 0; c < ent->keyOrder.size(); c++)
+							for (size_t c = 0; c < ent->keyOrder.size(); c++)
 							{
 								std::string val = toLowerCase(ent->keyvalues[ent->keyOrder[c]]);
 								if (val == searchValue || (partialMatches && val.find(searchValue) != std::string::npos))
@@ -7601,14 +7572,14 @@ void Gui::drawEntityReport()
 
 				selectedItems.clear();
 				selectedItems.resize(visibleEnts.size());
-				for (int k = 0; k < selectedItems.size(); k++)
+				for (size_t k = 0; k < selectedItems.size(); k++)
 				{
 					if (selectAllItems)
 					{
 						selectedItems[k] = true;
 						if (!app->pickInfo.IsSelectedEnt(visibleEnts[k]))
 						{
-							app->selectEnt(map, visibleEnts[k], true);
+							app->selectEnt(map, (int)visibleEnts[k], true);
 						}
 					}
 					else
@@ -7634,7 +7605,7 @@ void Gui::drawEntityReport()
 			static bool isHovered = false;
 			while (clipper.Step())
 			{
-				for (int line = clipper.DisplayStart; line < clipper.DisplayEnd && line < visibleEnts.size() && visibleEnts[line] < map->ents.size(); line++)
+				for (int line = clipper.DisplayStart; line < clipper.DisplayEnd && line < (int)visibleEnts.size() && visibleEnts[line] < (int)map->ents.size(); line++)
 				{
 					int i = line;
 					Entity* ent = map->ents[visibleEnts[i]];
@@ -7700,11 +7671,11 @@ void Gui::drawEntityReport()
 							selectedItems[i] = !selectedItems[i];
 							lastSelect = i;
 							app->pickInfo.selectedEnts.clear();
-							for (int k = 0; k < selectedItems.size(); k++)
+							for (size_t k = 0; k < selectedItems.size(); k++)
 							{
 								if (selectedItems[k])
 								{
-									app->selectEnt(map, visibleEnts[k], true);
+									app->selectEnt(map, (int)visibleEnts[k], true);
 								}
 							}
 						}
@@ -7714,7 +7685,7 @@ void Gui::drawEntityReport()
 							{
 								int begin = i > lastSelect ? lastSelect : i;
 								int end = i > lastSelect ? i : lastSelect;
-								for (int k = 0; k < selectedItems.size(); k++)
+								for (size_t k = 0; k < selectedItems.size(); k++)
 									selectedItems[k] = false;
 								for (int k = begin; k < end; k++)
 									selectedItems[k] = true;
@@ -7724,11 +7695,11 @@ void Gui::drawEntityReport()
 
 
 							app->pickInfo.selectedEnts.clear();
-							for (int k = 0; k < selectedItems.size(); k++)
+							for (size_t k = 0; k < selectedItems.size(); k++)
 							{
 								if (selectedItems[k])
 								{
-									app->selectEnt(map, visibleEnts[k], true);
+									app->selectEnt(map, (int)visibleEnts[k], true);
 								}
 							}
 						}
@@ -7736,18 +7707,18 @@ void Gui::drawEntityReport()
 						{
 							if (!selectedItems[i] || !isForceOpen)
 							{
-								for (int k = 0; k < selectedItems.size(); k++)
+								for (size_t k = 0; k < selectedItems.size(); k++)
 									selectedItems[k] = false;
 								if (i < 0)
 									i = 0;
 								app->pickInfo.selectedEnts.clear();
-								app->selectEnt(map, visibleEnts[i], true);
+								app->selectEnt(map, (int)visibleEnts[i], true);
 							}
 							selectedItems[i] = true;
 							lastSelect = i;
 							if (ImGui::IsMouseDoubleClicked(0) || app->pressed[GLFW_KEY_SPACE])
 							{
-								app->goToEnt(map, visibleEnts[i]);
+								app->goToEnt(map, (int)visibleEnts[i]);
 							}
 						}
 					}
@@ -7795,7 +7766,7 @@ void Gui::drawEntityReport()
 					uniqueClasses.clear();
 					usedClasses.push_back("(none)");
 
-					for (int i = 1; i < map->ents.size(); i++)
+					for (size_t i = 1; i < map->ents.size(); i++)
 					{
 						Entity* ent = map->ents[i];
 						std::string cname = ent->keyvalues["classname"];
@@ -7810,7 +7781,7 @@ void Gui::drawEntityReport()
 
 				}
 
-				for (int k = 0; k < usedClasses.size(); k++)
+				for (size_t k = 0; k < usedClasses.size(); k++)
 				{
 					bool selected = usedClasses[k] == classFilter;
 					if (ImGui::Selectable(usedClasses[k].c_str(), selected))
@@ -7841,7 +7812,7 @@ void Gui::drawEntityReport()
 					}
 					else
 					{
-						for (int i = 0; i < app->fgd->existsFlagNames.size(); i++)
+						for (size_t i = 0; i < app->fgd->existsFlagNames.size(); i++)
 						{
 							bool selected = flagsFilter == app->fgd->existsFlagNames[i];
 							if (ImGui::Selectable((app->fgd->existsFlagNames[i] +
@@ -7864,9 +7835,9 @@ void Gui::drawEntityReport()
 			float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.4f;
 			inputWidth -= smallFont->CalcTextSizeA(fontSize, FLT_MAX, FLT_MAX, " = ").x;
 
-			while (keyFilter.size() < MAX_FILTERS)
+			while (keyFilter.size() < (size_t)MAX_FILTERS)
 				keyFilter.push_back(std::string());
-			while (valueFilter.size() < MAX_FILTERS)
+			while (valueFilter.size() < (size_t)MAX_FILTERS)
 				valueFilter.push_back(std::string());
 
 			for (int i = 0; i < MAX_FILTERS; i++)
@@ -8171,7 +8142,7 @@ void DrawImageAtOneBigLightMap(COLOR3* img, int w, int h, int x, int y)
 			int offset = ArrayXYtoId(w, x1, y1);
 			int offset2 = ArrayXYtoId(LMapMaxWidth, x + x1, y + y1);
 
-			while (offset2 >= colordata.size())
+			while (offset2 >= (int)colordata.size())
 			{
 				colordata.emplace_back(COLOR3(0, 0, 255));
 			}
@@ -8194,7 +8165,7 @@ void DrawOneBigLightMapAtImage(COLOR3* img, int w, int h, int x, int y)
 	}
 }
 
-std::vector<int> faces_to_export;
+std::vector<size_t> faces_to_export;
 
 void ImportOneBigLightmapFile(Bsp* map)
 {
@@ -8229,10 +8200,10 @@ void ImportOneBigLightmapFile(Bsp* map)
 			colordata.resize(w2 * h2);
 			memcpy(&colordata[0], image_bytes, w2 * h2 * sizeof(COLOR3));
 			free(image_bytes);
-			for (int faceIdx : faces_to_export)
+			for (size_t faceIdx : faces_to_export)
 			{
 				int size[2];
-				GetFaceLightmapSize(map, faceIdx, size);
+				GetFaceLightmapSize(map, (int)faceIdx, size);
 
 				int sizeX = size[0], sizeY = size[1];
 
@@ -8343,10 +8314,10 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 		bool found_any_lightmap = false;
 
 		//print_log(get_localized_string(LANG_0411),lightId);
-		for (int faceIdx : faces_to_export)
+		for (size_t faceIdx : faces_to_export)
 		{
 			int size[2];
-			GetFaceLightmapSize(map, faceIdx, size);
+			GetFaceLightmapSize(map, (int)faceIdx, size);
 
 			int sizeX = size[0], sizeY = size[1];
 
@@ -8477,7 +8448,7 @@ void Gui::drawLightMapTool()
 		if (map)
 		{
 			BspRenderer* renderer = map->getBspRender();
-			int faceIdx = app->pickInfo.selectedFaces.size() ? app->pickInfo.selectedFaces[0] : -1;
+			int faceIdx = app->pickInfo.selectedFaces.size() ? (int)app->pickInfo.selectedFaces[0] : -1;
 			BSPFACE32* face = NULL;
 			int size[2]{};
 			if (faceIdx >= 0)
@@ -8594,8 +8565,8 @@ void Gui::drawLightMapTool()
 					}
 
 					int offset = ArrayXYtoId(currentlightMap[i]->width, imagex, imagey);
-					if (offset >= currentlightMap[i]->width * currentlightMap[i]->height * sizeof(COLOR3))
-						offset = (currentlightMap[i]->width * currentlightMap[i]->height * sizeof(COLOR3)) - 1;
+					if (offset >= currentlightMap[i]->width * currentlightMap[i]->height * (int)sizeof(COLOR3))
+						offset = (currentlightMap[i]->width * currentlightMap[i]->height * (int)sizeof(COLOR3)) - 1;
 					if (offset < 0)
 						offset = 0;
 
@@ -8780,7 +8751,7 @@ void Gui::drawFaceEditorWidget()
 			edgeVerts.clear();
 			if (app->pickInfo.selectedFaces.size())
 			{
-				int faceIdx = app->pickInfo.selectedFaces[0];
+				int faceIdx = app->pickInfo.selectedFaces.size() ? (int)app->pickInfo.selectedFaces[0] : -1;
 				if (faceIdx >= 0)
 				{
 					BSPFACE32& face = map->faces[faceIdx];
@@ -8840,10 +8811,10 @@ void Gui::drawFaceEditorWidget()
 
 
 					// show default values if not all faces share the same values
-					for (int i = 1; i < app->pickInfo.selectedFaces.size(); i++)
+					for (size_t i = 1; i < app->pickInfo.selectedFaces.size(); i++)
 					{
-						int faceIdx2 = app->pickInfo.selectedFaces[i];
-						GetFaceLightmapSize(map, faceIdx2, lmSize);
+						size_t faceIdx2 = app->pickInfo.selectedFaces[i];
+						GetFaceLightmapSize(map, (int)faceIdx2, lmSize);
 						lightmapSizes.push_back({ lmSize[0],lmSize[1] });
 						BSPFACE32& face2 = map->faces[faceIdx2];
 						BSPTEXTUREINFO& texinfo2 = map->texinfos[face2.iTextureInfo];
@@ -9172,14 +9143,12 @@ void Gui::drawFaceEditorWidget()
 			}
 
 			std::set<int> modelRefreshes;
-			for (int i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+			for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 			{
-				int faceIdx = app->pickInfo.selectedFaces[i];
-				if (faceIdx < 0)
-					continue;
+				size_t faceIdx = app->pickInfo.selectedFaces[i];
 
 				BSPFACE32& face = map->faces[faceIdx];
-				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
+				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo((int)faceIdx);
 
 				if (shiftedX)
 				{
@@ -9222,23 +9191,23 @@ void Gui::drawFaceEditorWidget()
 
 				if ((textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && validTexture)
 				{
-					int modelIdx = map->get_model_from_face(faceIdx);
+					int modelIdx = map->get_model_from_face((int)faceIdx);
 					if (textureChanged)
 						texinfo->iMiptex = newMiptex;
 					if (modelIdx >= 0 && !modelRefreshes.count(modelIdx))
 						modelRefreshes.insert(modelIdx);
 				}
 
-				mapRenderer->updateFaceUVs(faceIdx);
+				mapRenderer->updateFaceUVs((int)faceIdx);
 
 
 				if ((updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || stylesChanged
 					|| pasteTextureNow || updatedTexVec || mergeFaceVec))
 				{
-					for (int n = 0; n < app->pickInfo.selectedFaces.size(); n++)
+					for (size_t n = 0; n < app->pickInfo.selectedFaces.size(); n++)
 					{
 						int lmSize[2];
-						GetFaceLightmapSize(map, app->pickInfo.selectedFaces[n], lmSize);
+						GetFaceLightmapSize(map, (int)app->pickInfo.selectedFaces[n], lmSize);
 						if (lmSize[0] != lightmapSizes[n][0] ||
 							lmSize[1] != lightmapSizes[n][1])
 						{
@@ -9251,7 +9220,7 @@ void Gui::drawFaceEditorWidget()
 
 			if (updatedFaceVec && app->pickInfo.selectedFaces.size() == 1)
 			{
-				int faceIdx = app->pickInfo.selectedFaces[0];
+				int faceIdx = app->pickInfo.selectedFaces.size() ? (int)app->pickInfo.selectedFaces[0] : -1;
 				int vecId = 0;
 				for (int e = map->faces[faceIdx].iFirstEdge; e < map->faces[faceIdx].iFirstEdge + map->faces[faceIdx].nEdges; e++, vecId++)
 				{
@@ -9262,16 +9231,16 @@ void Gui::drawFaceEditorWidget()
 				}
 			}
 
-			if ((textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && app->pickInfo.selectedFaces.size() && app->pickInfo.selectedFaces[0] >= 0)
+			if ((textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && app->pickInfo.selectedFaces.size())
 			{
-				textureId = (void*)(uint64_t)mapRenderer->getFaceTextureId(app->pickInfo.selectedFaces[0]);
+				textureId = (void*)(uint64_t)mapRenderer->getFaceTextureId((int)app->pickInfo.selectedFaces[0]);
 				for (auto it = modelRefreshes.begin(); it != modelRefreshes.end(); it++)
 				{
 					mapRenderer->refreshModel(*it);
 				}
-				for (int i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+				for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 				{
-					mapRenderer->highlightFace(app->pickInfo.selectedFaces[i], true);
+					mapRenderer->highlightFace((int)app->pickInfo.selectedFaces[i], true);
 				}
 			}
 
@@ -9387,7 +9356,7 @@ void Gui::drawFaceEditorWidget()
 				std::sort(selected_faces.begin(), selected_faces.end());
 				while (selected_faces.size())
 				{
-					map->remove_face(selected_faces[selected_faces.size() - 1]);
+					map->remove_face((int)selected_faces[selected_faces.size() - 1]);
 					selected_faces.pop_back();
 				}
 
@@ -9412,7 +9381,7 @@ void Gui::drawFaceEditorWidget()
 				auto selected_faces = app->pickInfo.selectedFaces;
 				while (selected_faces.size())
 				{
-					map->leaf_del_face(selected_faces[selected_faces.size() - 1], -1);
+					map->leaf_del_face((int)selected_faces[selected_faces.size() - 1], -1);
 					selected_faces.pop_back();
 				}
 
@@ -9437,7 +9406,7 @@ void Gui::drawFaceEditorWidget()
 
 				while (selected_faces.size())
 				{
-					map->leaf_add_face(selected_faces[selected_faces.size() - 1], -1);
+					map->leaf_add_face((int)selected_faces[selected_faces.size() - 1], -1);
 					selected_faces.pop_back();
 				}
 				mapRenderer->calcFaceMaths();
@@ -9460,7 +9429,7 @@ void Gui::drawFaceEditorWidget()
 
 				while (selected_faces.size())
 				{
-					map->leaf_del_face(selected_faces[selected_faces.size() - 1], mapRenderer->curLeafIdx);
+					map->leaf_del_face((int)selected_faces[selected_faces.size() - 1], mapRenderer->curLeafIdx);
 					selected_faces.pop_back();
 				}
 
@@ -9484,7 +9453,7 @@ void Gui::drawFaceEditorWidget()
 				auto selected_faces = app->pickInfo.selectedFaces;
 				while (selected_faces.size())
 				{
-					map->leaf_add_face(selected_faces[selected_faces.size() - 1], mapRenderer->curLeafIdx);
+					map->leaf_add_face((int)selected_faces[selected_faces.size() - 1], mapRenderer->curLeafIdx);
 					selected_faces.pop_back();
 				}
 
@@ -9524,7 +9493,7 @@ void Gui::drawFaceEditorWidget()
 
 			ImGui::BeginChild("##leaflist", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 			ImGuiListClipper clipper;
-			clipper.Begin(vis_leafs.size() + invis_leafs.size());
+			clipper.Begin((int)(vis_leafs.size() + invis_leafs.size()));
 			bool vis_print = true;
 
 			bool need_compress = false;
@@ -9533,15 +9502,15 @@ void Gui::drawFaceEditorWidget()
 			{
 				for (int line_no = clipper.DisplayStart; line_no < clipper.DisplayEnd; line_no++)
 				{
-					if (vis_print && line_no >= vis_leafs.size())
+					if (vis_print && line_no >= (int)vis_leafs.size())
 					{
 						vis_print = false;
 					}
 
-					ImGui::PushStyleColor(ImGuiCol_Text, vis_print ? ImVec4{0.0, 0.0, 1.0, 1.0} : ImVec4{ 1.0, 0.0, 0.0, 1.0 });
+					ImGui::PushStyleColor(ImGuiCol_Text, vis_print ? ImVec4{ 0.0, 0.0, 1.0, 1.0 } : ImVec4{ 1.0, 0.0, 0.0, 1.0 });
 					if (vis_print)
 					{
-						if (ImGui::Selectable(std::to_string(vis_leafs[line_no]).c_str(),false,ImGuiSelectableFlags_AllowDoubleClick))
+						if (ImGui::Selectable(std::to_string(vis_leafs[line_no]).c_str(), false, ImGuiSelectableFlags_AllowDoubleClick))
 						{
 							if (ImGui::IsMouseDoubleClicked(0))
 							{
@@ -9699,13 +9668,13 @@ ModelInfo Gui::calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val,
 
 	std::string classname = modelInfo->modelIdx == 0 ? "worldspawn" : "???";
 	std::string targetname = modelInfo->modelIdx == 0 ? "" : "???";
-	for (int k = 0; k < map->ents.size(); k++)
+	for (size_t k = 0; k < map->ents.size(); k++)
 	{
 		if (map->ents[k]->getBspModelIdx() == modelInfo->modelIdx)
 		{
 			targetname = map->ents[k]->keyvalues["targetname"];
 			classname = map->ents[k]->keyvalues["classname"];
-			stat.entIdx = k;
+			stat.entIdx = (int)k;
 		}
 	}
 
@@ -9753,7 +9722,7 @@ void Gui::checkValidHulls()
 	for (int i = 0; i < MAX_MAP_HULLS; i++)
 	{
 		anyHullValid[i] = false;
-		for (int k = 0; k < app->mapRenderers.size() && !anyHullValid[i]; k++)
+		for (size_t k = 0; k < app->mapRenderers.size() && !anyHullValid[i]; k++)
 		{
 			Bsp* map = app->mapRenderers[k]->map;
 
@@ -9778,10 +9747,10 @@ void Gui::checkFaceErrors()
 		return;
 
 
-	for (int i = 0; i < app->pickInfo.selectedFaces.size(); i++)
+	for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 	{
 		int size[2];
-		GetFaceLightmapSize(map, app->pickInfo.selectedFaces[i], size);
+		GetFaceLightmapSize(map, (int)app->pickInfo.selectedFaces[i], size);
 		if ((size[0] > MAX_SURFACE_EXTENT) || (size[1] > MAX_SURFACE_EXTENT) || size[0] < 0 || size[1] < 0)
 		{
 			//print_log(get_localized_string(LANG_0426),size[0],size[1]);

@@ -14,7 +14,7 @@ PointEntRenderer::PointEntRenderer(Fgd* fgd)
 
 PointEntRenderer::~PointEntRenderer()
 {
-	for (int i = 0; i < entCubes.size(); i++)
+	for (size_t i = 0; i < entCubes.size(); i++)
 	{
 		delete entCubes[i]->axesBuffer;
 		delete entCubes[i]->cubeBuffer;
@@ -56,7 +56,7 @@ void PointEntRenderer::genPointEntCubes()
 
 	size_t oldCubes = entCubes.size();
 
-	for (int i = 0; i < fgd->classes.size(); i++)
+	for (size_t i = 0; i < fgd->classes.size(); i++)
 	{
 		FgdClass* fgdClass = fgd->classes[i];
 		if (fgdClass->classType == FGD_CLASS_POINT)
@@ -90,7 +90,7 @@ void PointEntRenderer::genPointEntCubes()
 
 EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube)
 {
-	for (int i = 0; i < entCubes.size(); i++)
+	for (size_t i = 0; i < entCubes.size(); i++)
 	{
 		if (entCubes[i]->mins == entCube->mins
 			&& entCubes[i]->maxs == entCube->maxs

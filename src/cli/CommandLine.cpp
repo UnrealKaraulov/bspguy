@@ -44,7 +44,7 @@ CommandLine::CommandLine(int argc, char* argv[])
 		return;
 	}
 
-	for (int i = 0; i < options.size(); i++)
+	for (size_t i = 0; i < options.size(); i++)
 	{
 		std::string opt = toLowerCase(options[i]);
 
@@ -124,7 +124,7 @@ std::vector<std::string> CommandLine::getOptionList(const std::string& optionNam
 {
 	std::vector<std::string> parts = splitString(optionVals[optionName], ",");
 
-	for (int i = 0; i < parts.size(); i++)
+	for (size_t i = 0; i < parts.size(); i++)
 	{
 		parts[i] = trimSpaces(parts[i]);
 	}

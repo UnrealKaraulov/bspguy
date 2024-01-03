@@ -101,7 +101,7 @@ size_t fileSize(const std::string& filePath)
 	std::ifstream file(filePath, std::ios::binary);
 
 	file.seekg(0, std::ios::end);
-	fsize = file.tellg();
+	fsize = (size_t)file.tellg();
 	file.close();
 
 	return fsize;
@@ -112,7 +112,7 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
 	std::string s = str;
 	std::vector<std::string> split;
 	size_t pos;
-	while ((pos = s.find(delimiter)) != std::string::npos && (maxParts == 0 || split.size() < maxParts - 1)) {
+	while ((pos = s.find(delimiter)) != std::string::npos && (maxParts == 0 || (int)split.size() < maxParts - 1)) {
 		if (pos != 0) {
 			split.push_back(s.substr(0, pos));
 		}
@@ -145,7 +145,7 @@ std::vector<std::string> splitStringIgnoringQuotes(const std::string& str, const
 				return split;
 			}
 			size_t quoteCount = 0;
-			for (int i = 0; i < delimitPos; i++)
+			for (size_t i = 0; i < delimitPos; i++)
 			{
 				quoteCount += s[i] == '"' && (i == 0 || s[i - 1] != '\\');
 			}
@@ -533,7 +533,7 @@ vec2 getCenter(const std::vector<vec2>& verts)
 	vec2 maxs = vec2(-FLT_MAX_COORD, -FLT_MAX_COORD);
 	vec2 mins = vec2(FLT_MAX_COORD, FLT_MAX_COORD);
 
-	for (int i = 0; i < verts.size(); i++)
+	for (size_t i = 0; i < verts.size(); i++)
 	{
 		expandBoundingBox(verts[i], mins, maxs);
 	}
@@ -546,7 +546,7 @@ vec3 getCenter(const std::vector<vec3>& verts)
 	vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 
-	for (int i = 0; i < verts.size(); i++)
+	for (size_t i = 0; i < verts.size(); i++)
 	{
 		expandBoundingBox(verts[i], mins, maxs);
 	}
@@ -559,7 +559,7 @@ vec3 getCenter(const std::vector<cVert>& verts)
 	vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 
-	for (int i = 0; i < verts.size(); i++)
+	for (size_t i = 0; i < verts.size(); i++)
 	{
 		expandBoundingBox(verts[i], mins, maxs);
 	}
@@ -578,7 +578,7 @@ void getBoundingBox(const std::vector<vec3>& verts, vec3& mins, vec3& maxs)
 	maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 
-	for (int i = 0; i < verts.size(); i++)
+	for (size_t i = 0; i < verts.size(); i++)
 	{
 		expandBoundingBox(verts[i], mins, maxs);
 	}
@@ -722,7 +722,7 @@ std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes)
 
 				bool validVertex = true;
 
-				for (int m = 0; m < numPlanes; m++)
+				for (size_t m = 0; m < numPlanes; m++)
 				{
 					BSPPLANE& pm = planes[m];
 					if (m != i && m != j && m != k && dotProduct(v, pm.vNormal) < pm.fDist + EPSILON)
@@ -747,7 +747,7 @@ bool vertsAllOnOneSide(std::vector<vec3>& verts, BSPPLANE& plane)
 {
 	// check that all verts are on one side of the plane.
 	int planeSide = 0;
-	for (int k = 0; k < verts.size(); k++)
+	for (size_t k = 0; k < verts.size(); k++)
 	{
 		float d = dotProduct(verts[k], plane.vNormal) - plane.fDist;
 		if (d < -0.04f)
@@ -778,11 +778,11 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 	int i2 = -1;
 
 	int count = 1;
-	for (int i = 1; i < verts.size() && count < 3; i++)
+	for (size_t i = 1; i < verts.size() && count < 3; i++)
 	{
 		if (verts[i] != verts[i0])
 		{
-			i1 = i;
+			i1 = (int)i;
 			break;
 		}
 		count++;
@@ -794,9 +794,9 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 		return std::vector<vec3>();
 	}
 
-	for (int i = 1; i < verts.size(); i++)
+	for (size_t i = 1; i < verts.size(); i++)
 	{
-		if (i == i1)
+		if ((int)i == i1)
 			continue;
 
 		if (verts[i] != verts[i0] && verts[i] != verts[i1])
@@ -808,7 +808,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 				continue;
 			}
 
-			i2 = i;
+			i2 = (int)i;
 			break;
 		}
 	}
@@ -855,7 +855,7 @@ std::vector<vec2> localizeVerts(std::vector<vec3>& verts)
 	mat4x4 worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
 
 	std::vector<vec2> localVerts(verts.size());
-	for (int e = 0; e < verts.size(); e++)
+	for (size_t e = 0; e < verts.size(); e++)
 	{
 		localVerts[e] = (worldToLocal * vec4(verts[e], 1)).xy();
 	}
@@ -863,20 +863,20 @@ std::vector<vec2> localizeVerts(std::vector<vec3>& verts)
 	return localVerts;
 }
 
-std::vector<int> getSortedPlanarVertOrder(std::vector<vec3>& verts)
+std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 {
 
 	std::vector<vec2> localVerts = localizeVerts(verts);
 	if (localVerts.empty())
 	{
-		return std::vector<int>();
+		return std::vector<size_t>();
 	}
 
 	vec2 center = getCenter(localVerts);
-	std::vector<int> orderedVerts;
-	std::vector<int> remainingVerts;
+	std::vector<size_t> orderedVerts;
+	std::vector<size_t> remainingVerts;
 
-	for (int i = 0; i < localVerts.size(); i++)
+	for (size_t i = 0; i < localVerts.size(); i++)
 	{
 		remainingVerts.push_back(i);
 	}
@@ -919,13 +919,13 @@ std::vector<int> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts)
 {
 	std::vector<vec3> outVerts;
-	std::vector<int> vertOrder = getSortedPlanarVertOrder(verts);
+	std::vector<size_t> vertOrder = getSortedPlanarVertOrder(verts);
 	if (vertOrder.empty())
 	{
 		return outVerts;
 	}
 	outVerts.resize(vertOrder.size());
-	for (int i = 0; i < vertOrder.size(); i++)
+	for (size_t i = 0; i < vertOrder.size(); i++)
 	{
 		outVerts[i] = verts[vertOrder[i]];
 	}
@@ -937,7 +937,7 @@ bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 	// https://stackoverflow.com/a/34689268
 	bool inside = true;
 	float lastd = 0;
-	for (int i = 0; i < poly.size(); i++)
+	for (size_t i = 0; i < poly.size(); i++)
 	{
 		vec2& v1 = poly[i];
 		vec2& v2 = poly[(i + 1) % poly.size()];
@@ -1687,14 +1687,14 @@ void scaleImage(const COLOR4* inputImage, std::vector<COLOR4>& outputImage,
 			COLOR4 bottomRight = inputImage[y2 * inputWidth + x2];
 
 			COLOR4 interpolatedColor;
-			interpolatedColor.r = (1 - xWeight) * ((1 - yWeight) * topLeft.r + yWeight * bottomLeft.r)
-				+ xWeight * ((1 - yWeight) * topRight.r + yWeight * bottomRight.r);
-			interpolatedColor.g = (1 - xWeight) * ((1 - yWeight) * topLeft.g + yWeight * bottomLeft.g)
-				+ xWeight * ((1 - yWeight) * topRight.g + yWeight * bottomRight.g);
-			interpolatedColor.b = (1 - xWeight) * ((1 - yWeight) * topLeft.b + yWeight * bottomLeft.b)
-				+ xWeight * ((1 - yWeight) * topRight.b + yWeight * bottomRight.b);
-			interpolatedColor.a = (1 - xWeight) * ((1 - yWeight) * topLeft.a + yWeight * bottomLeft.a)
-				+ xWeight * ((1 - yWeight) * topRight.a + yWeight * bottomRight.a);
+			interpolatedColor.r = (unsigned char)clamp((1 - xWeight) * ((1 - yWeight) * topLeft.r + yWeight * bottomLeft.r)
+				+ xWeight * ((1 - yWeight) * topRight.r + yWeight * bottomRight.r), 0.0f, 255.0f);
+			interpolatedColor.g = (unsigned char)clamp((1 - xWeight) * ((1 - yWeight) * topLeft.g + yWeight * bottomLeft.g)
+				+ xWeight * ((1 - yWeight) * topRight.g + yWeight * bottomRight.g), 0.0f, 255.0f);
+			interpolatedColor.b = (unsigned char)clamp((1 - xWeight) * ((1 - yWeight) * topLeft.b + yWeight * bottomLeft.b)
+				+ xWeight * ((1 - yWeight) * topRight.b + yWeight * bottomRight.b), 0.0f, 255.0f);
+			interpolatedColor.a = (unsigned char)clamp((1 - xWeight) * ((1 - yWeight) * topLeft.a + yWeight * bottomLeft.a)
+				+ xWeight * ((1 - yWeight) * topRight.a + yWeight * bottomRight.a), 0.0f, 255.0f);
 
 			outputImage[y * outputWidth + x] = interpolatedColor;
 		}
@@ -1869,7 +1869,7 @@ std::vector<std::string> groupParts(std::vector<std::string>& ungrouped)
 {
 	std::vector<std::string> grouped;
 
-	for (int i = 0; i < ungrouped.size(); i++)
+	for (size_t i = 0; i < ungrouped.size(); i++)
 	{
 		if (stringGroupStarts(ungrouped[i]))
 		{

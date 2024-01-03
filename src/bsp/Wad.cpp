@@ -114,7 +114,7 @@ bool Wad::readInfo()
 	{
 		WADDIRENTRY tmpWadEntry = WADDIRENTRY();
 
-		if (offset + sizeof(WADDIRENTRY) > fileLen)
+		if (offset + (int)sizeof(WADDIRENTRY) > fileLen)
 		{
 			print_log(get_localized_string(LANG_0251));
 			return false;
@@ -149,18 +149,18 @@ bool Wad::hasTexture(const std::string& texname)
 	return false;
 }
 
-bool Wad::hasTexture(int dirIndex)
+bool Wad::hasTexture(size_t dirIndex)
 {
-	if (dirIndex < 0 || dirIndex >= dirEntries.size())
+	if (dirIndex >= (int)dirEntries.size())
 	{
 		return false;
 	}
 	return true;
 }
 
-WADTEX* Wad::readTexture(int dirIndex, int* texturetype)
+WADTEX* Wad::readTexture(size_t dirIndex, int* texturetype)
 {
-	if (dirIndex < 0 || dirIndex >= dirEntries.size())
+	if (dirIndex >= (int)dirEntries.size())
 	{
 		print_log(get_localized_string(LANG_0253));
 		return NULL;
@@ -601,7 +601,7 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette)
 
 	for (int k = 0; k < sz; k++)
 	{
-		if (tex->szName[0] == '{' && palette[255] == palette[src[k]])
+		if (tex->szName[0] == '{'  && (255 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
 		{
 			imageData[k] = COLOR4(0, 0, 0, 0);
 		}
@@ -614,4 +614,23 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette)
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0264),tex->szName,tex->nWidth,tex->nHeight);
 	return imageData;
+}
+
+COLOR3 GetMipTexAplhaColor(BSPMIPTEX* tex, COLOR3* palette)
+{
+	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
+	if (palette == NULL)
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+
+	return palette[255];
+}
+
+COLOR3 GetWadTexAplhaColor(WADTEX* wadTex, COLOR3* palette)
+{
+	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
+
+	if (palette == NULL)
+		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+
+	return palette[255];
 }

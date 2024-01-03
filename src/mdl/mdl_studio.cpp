@@ -582,7 +582,7 @@ void StudioModel::UpdateModelMeshList()
 
 	//SetupLighting();
 
-	if (mdl_mesh_groups.size() < m_pstudiohdr->numbodyparts)
+	if (mdl_mesh_groups.size() < (size_t)m_pstudiohdr->numbodyparts)
 		mdl_mesh_groups.resize(m_pstudiohdr->numbodyparts);
 
 	for (i = 0; i < m_pstudiohdr->numbodyparts; i++)
@@ -677,7 +677,7 @@ void StudioModel::RefreshMeshList(int body)
 		}
 	}
 
-	if (mdl_mesh_groups[body].size() < m_pmodel->nummesh)
+	if (mdl_mesh_groups[body].size() < (size_t)m_pmodel->nummesh)
 	{
 		mdl_mesh_groups[body].resize(m_pmodel->nummesh);
 
@@ -698,7 +698,7 @@ void StudioModel::RefreshMeshList(int body)
 		int texidx = ptexture && pskinref ? ptexture[pskinref[pmesh->skinref]].index : 0;
 		if (mdl_textures.size())
 		{
-			if (texidx < mdl_textures.size())
+			if ((size_t)texidx < mdl_textures.size())
 			{
 				mdl_mesh_groups[body][j].texture = mdl_textures[texidx];
 			}
@@ -841,7 +841,7 @@ void StudioModel::RefreshMeshList(int body)
 				}
 			}
 		}
-		if (mdl_mesh_groups[body][j].verts.size() < totalElements)
+		if ((int)mdl_mesh_groups[body][j].verts.size() < totalElements)
 		{
 			mdl_mesh_groups[body][j].verts.resize(totalElements);
 			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], (int)mdl_mesh_groups[body][j].verts.size());
@@ -1013,7 +1013,7 @@ void StudioModel::DrawMDL(int meshnum)
 
 	if (meshnum >= 0)
 	{
-		if (mdl_mesh_groups.size() && meshnum < mdl_mesh_groups[0].size())
+		if (mdl_mesh_groups.size() && (size_t)meshnum < mdl_mesh_groups[0].size())
 		{
 			Texture* validTexture = mdl_mesh_groups[0][meshnum].texture;
 
@@ -1034,9 +1034,9 @@ void StudioModel::DrawMDL(int meshnum)
 	}
 	else
 	{
-		for (int group = 0; group < mdl_mesh_groups.size(); group++)
+		for (size_t group = 0; group < mdl_mesh_groups.size(); group++)
 		{
-			for (int meshid = 0; meshid < mdl_mesh_groups[group].size(); meshid++)
+			for (size_t meshid = 0; meshid < mdl_mesh_groups[group].size(); meshid++)
 			{
 				Texture* validTexture = mdl_mesh_groups[group][meshid].texture;
 
@@ -1330,7 +1330,7 @@ std::map<int, StudioModel*> mdl_models;
 
 StudioModel* AddNewModelToRender(const std::string& path, unsigned int sum)
 {
-	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), path.size(), sum);
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int) path.size(), sum);
 
 	if (mdl_models.find(crc32) != mdl_models.end())
 	{

@@ -91,7 +91,7 @@ void Texture::upload(int type)
 			for (int i = 0; i < pixelCount; i++)
 			{
 				rgbaData[i] = rgbData[i];
-				if (rgbaData[i].r == 0 && rgbaData[i].g == 0 && rgbaData[i].b == 255)
+				if (rgbaData[i].r == 0 && rgbaData[i].g == 0 && rgbaData[i].b > 250)
 				{
 					rgbaData[i] = COLOR4(0, 0, 0, 0);
 				}

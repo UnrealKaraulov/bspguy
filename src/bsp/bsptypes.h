@@ -9,8 +9,6 @@
 #define	SIDESPACE	24
 #define	BOGUS_RANGE	18000
 
-#define BSP_MODEL_BYTES 64 // size of a BSP model in bytes
-
 #define LUMP_ENTITIES      0
 #define LUMP_PLANES        1
 #define LUMP_TEXTURES      2
@@ -452,14 +450,14 @@ struct TransformVert
 };
 struct HullEdge
 {
-	int verts[2]; // index into modelVerts/hullVerts
-	int planes[2]; // index into iPlanes
+	size_t verts[2]; // index into modelVerts/hullVerts
+	size_t planes[2]; // index into iPlanes
 	bool selected;
 };
 
 struct Face
 {
-	std::vector<int> verts; // index into hullVerts
+	std::vector<size_t> verts; // index into hullVerts
 	BSPPLANE plane;
 	int planeSide;
 	int iTextureInfo;

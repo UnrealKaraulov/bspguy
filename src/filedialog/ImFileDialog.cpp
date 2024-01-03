@@ -360,7 +360,7 @@ namespace ifd
 		std::error_code ec;
 		Path = path;
 		IsDirectory = std::filesystem::is_directory(path, ec);
-		Size = std::filesystem::file_size(path, ec);
+		Size = (size_t)std::filesystem::file_size(path, ec);
 
 		struct stat attr;
 		stat(path.string().c_str(), &attr);
@@ -787,7 +787,7 @@ namespace ifd
 
 		SHFILEINFOW fileInfo = { 0 };
 		std::wstring spath = path.wstring();
-		for (int i = 0; i < spath.size(); i++)
+		for (size_t i = 0; i < spath.size(); i++)
 			if (spath[i] == '/')
 				spath[i] = '\\';
 		SHGetFileInfoW(spath.data(), attrs, &fileInfo, sizeof(SHFILEINFO), flags);

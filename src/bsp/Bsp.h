@@ -341,7 +341,7 @@ private:
 
 	std::string get_model_usage(int modelIdx);
 	std::vector<Entity*> get_model_ents(int modelIdx);
-	std::vector<int> get_model_ents_ids(int modelIdx);
+	std::vector<size_t> get_model_ents_ids(int modelIdx);
 
 	void write_csg_polys(int nodeIdx, FILE* fout, int flipPlaneSkip, bool debug);
 

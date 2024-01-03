@@ -24,7 +24,7 @@ Fgd::Fgd(std::string _path)
 
 Fgd::~Fgd()
 {
-	for (int i = 0; i < classes.size(); i++)
+	for (size_t i = 0; i < classes.size(); i++)
 	{
 		delete classes[i];
 	}
@@ -205,7 +205,7 @@ bool Fgd::parse()
 	int bracketNestLevel = 0;
 
 	line.clear();
-	for (int i = 0; i < inputLines.size(); i++)
+	for (size_t i = 0; i < inputLines.size(); i++)
 	{
 		line = inputLines[i];
 		lineNum = inputLineNums[i];
@@ -345,14 +345,14 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 	}
 
 	// parse constructors/properties
-	for (int i = 1; i < typeParts.size(); i++)
+	for (size_t i = 1; i < typeParts.size(); i++)
 	{
 		std::string lpart = toLowerCase(typeParts[i]);
 
 		if (lpart.starts_with("base("))
 		{
 			std::vector<std::string> baseClassList = splitString(getValueInParens(typeParts[i]), ",");
-			for (int k = 0; k < baseClassList.size(); k++)
+			for (size_t k = 0; k < baseClassList.size(); k++)
 			{
 				std::string baseClass = trimSpaces(baseClassList[k]);
 				fgdClass.baseClasses.push_back(baseClass);
@@ -446,7 +446,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		else if (lpart.starts_with("flags("))
 		{
 			std::vector<std::string> flagsList = splitString(getValueInParens(typeParts[i]), ",");
-			for (int k = 0; k < flagsList.size(); k++)
+			for (size_t k = 0; k < flagsList.size(); k++)
 			{
 				std::string flag = trimSpaces(flagsList[k]);
 				if (flag == "Angle")
@@ -601,7 +601,7 @@ void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
 
 void Fgd::processClassInheritance()
 {
-	for (int i = 0; i < classes.size(); i++)
+	for (size_t i = 0; i < classes.size(); i++)
 	{
 		if (classes[i]->classType == FGD_CLASS_BASE)
 			continue;
@@ -628,7 +628,7 @@ void Fgd::processClassInheritance()
 					classes[i]->maxs = allBaseClasses[k]->maxs;
 				}
 				auto tmpBaseClass = allBaseClasses[k];
-				for (int c = 0; c < tmpBaseClass->keyvalues.size(); c++)
+				for (size_t c = 0; c < tmpBaseClass->keyvalues.size(); c++)
 				{
 
 					auto tmpBaseKeys = tmpBaseClass->keyvalues[c];
@@ -639,7 +639,7 @@ void Fgd::processClassInheritance()
 					}
 					if (tmpBaseKeys.iType == FGD_KEY_FLAGS)
 					{
-						for (int f = 0; f < tmpBaseKeys.choices.size(); f++)
+						for (size_t f = 0; f < tmpBaseKeys.choices.size(); f++)
 						{
 							KeyvalueChoice& spawnflagOption = tmpBaseKeys.choices[f];
 							if (addedSpawnflags.find(spawnflagOption.svalue) == addedSpawnflags.end())
@@ -653,7 +653,7 @@ void Fgd::processClassInheritance()
 				//print_log << allBaseClasses[k]->name << " ";
 			}
 
-			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
+			for (size_t c = 0; c < classes[i]->keyvalues.size(); c++)
 			{
 				auto tmpBaseKeys = classes[i]->keyvalues[c];
 				if (addedKeys.find(tmpBaseKeys.name) == addedKeys.end())
@@ -663,7 +663,7 @@ void Fgd::processClassInheritance()
 				}
 				if (tmpBaseKeys.iType == FGD_KEY_FLAGS)
 				{
-					for (int f = 0; f < tmpBaseKeys.choices.size(); f++)
+					for (size_t f = 0; f < tmpBaseKeys.choices.size(); f++)
 					{
 						KeyvalueChoice& spawnflagOption = tmpBaseKeys.choices[f];
 						if (addedSpawnflags.find(spawnflagOption.svalue) == addedSpawnflags.end())
@@ -676,7 +676,7 @@ void Fgd::processClassInheritance()
 			}
 
 			std::vector<KeyvalueChoice> oldchoices;
-			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
+			for (size_t c = 0; c < classes[i]->keyvalues.size(); c++)
 			{
 				if (classes[i]->keyvalues[c].iType == FGD_KEY_FLAGS)
 				{
@@ -687,7 +687,7 @@ void Fgd::processClassInheritance()
 
 			classes[i]->keyvalues = std::move(newKeyvalues);
 
-			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
+			for (size_t c = 0; c < classes[i]->keyvalues.size(); c++)
 			{
 				if (classes[i]->keyvalues[c].iType == FGD_KEY_FLAGS)
 				{
@@ -706,7 +706,7 @@ void Fgd::processClassInheritance()
 				}
 			}
 
-			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
+			for (size_t c = 0; c < classes[i]->keyvalues.size(); c++)
 			{
 				if (classes[i]->keyvalues[c].iType == FGD_KEY_STUDIO)
 				{
@@ -797,7 +797,7 @@ void Fgd::createEntGroups()
 	std::set<std::string> addedPointGroups;
 	std::set<std::string> addedSolidGroups;
 
-	for (int i = 0; i < classes.size(); i++)
+	for (size_t i = 0; i < classes.size(); i++)
 	{
 		if (classes[i]->classType == FGD_CLASS_BASE || classes[i]->name == "worldspawn")
 			continue;
@@ -824,7 +824,7 @@ void Fgd::createEntGroups()
 		}
 
 		bool added = false;
-		for (int k = 0; k < targetGroup.size(); k++)
+		for (size_t k = 0; k < targetGroup.size(); k++)
 		{
 			if (targetGroup[k].groupName == groupName)
 			{
@@ -841,7 +841,7 @@ void Fgd::createEntGroups()
 
 	FgdGroup otherPointEnts;
 	otherPointEnts.groupName = "other";
-	for (int i = 0; i < pointEntGroups.size(); i++)
+	for (size_t i = 0; i < pointEntGroups.size(); i++)
 	{
 		if (pointEntGroups[i].classes.size() <= 1)
 		{
@@ -854,7 +854,7 @@ void Fgd::createEntGroups()
 
 	FgdGroup otherSolidEnts;
 	otherSolidEnts.groupName = "other";
-	for (int i = 0; i < solidEntGroups.size(); i++)
+	for (size_t i = 0; i < solidEntGroups.size(); i++)
 	{
 		if (solidEntGroups[i].classes.size() <= 1)
 		{
@@ -868,16 +868,16 @@ void Fgd::createEntGroups()
 
 void Fgd::setSpawnflagNames()
 {
-	for (int i = 0; i < classes.size(); i++)
+	for (size_t i = 0; i < classes.size(); i++)
 	{
 		if (classes[i]->classType == FGD_CLASS_BASE)
 			continue;
 
-		for (int k = 0; k < classes[i]->keyvalues.size(); k++)
+		for (size_t k = 0; k < classes[i]->keyvalues.size(); k++)
 		{
 			if (classes[i]->keyvalues[k].name == "spawnflags")
 			{
-				for (int c = 0; c < classes[i]->keyvalues[k].choices.size(); c++)
+				for (size_t c = 0; c < classes[i]->keyvalues[k].choices.size(); c++)
 				{
 					KeyvalueChoice& choice = classes[i]->keyvalues[k].choices[c];
 

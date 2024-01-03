@@ -139,7 +139,7 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 	if (attributesBound || !shaderProgram)
 		return;
 
-	for (int i = 0; i < attribs.size(); i++)
+	for (size_t i = 0; i < attribs.size(); i++)
 	{
 		if (attribs[i].handle != -1)
 			continue;
@@ -211,7 +211,7 @@ void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors
 	}
 	{
 		int offset = 0;
-		for (int i = 0; i < attribs.size(); i++)
+		for (size_t i = 0; i < attribs.size(); i++)
 		{
 			VertexAttr& a = attribs[i];
 			void* ptr = offsetPtr + offset;
@@ -238,7 +238,7 @@ void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 
-	for (int i = 0; i < attribs.size(); i++)
+	for (size_t i = 0; i < attribs.size(); i++)
 	{
 		VertexAttr& a = attribs[i];
 		if (a.handle == -1)

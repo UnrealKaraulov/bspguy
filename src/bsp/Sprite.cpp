@@ -240,7 +240,7 @@ std::map<int, Sprite*> spr_models;
 
 Sprite* AddNewSpriteToRender(const std::string& path, unsigned int sum)
 {
-	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), path.size(), sum);
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int) path.size(), sum);
 
 	if (spr_models.find(crc32) != spr_models.end())
 	{

@@ -205,7 +205,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
 
 	// cache ent targets so first selection doesn't lag
-	for (int i = 0; i < map->ents.size(); i++)
+	for (size_t i = 0; i < map->ents.size(); i++)
 	{
 		map->ents[i]->getTargets();
 	}
@@ -218,7 +218,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 
 void BspRenderer::loadTextures()
 {
-	for (int i = 0; i < wads.size(); i++)
+	for (size_t i = 0; i < wads.size(); i++)
 	{
 		delete wads[i];
 	}
@@ -229,13 +229,13 @@ void BspRenderer::loadTextures()
 	bool foundInfoDecals = false;
 	bool foundDecalWad = false;
 
-	for (int i = 0; i < map->ents.size(); i++)
+	for (size_t i = 0; i < map->ents.size(); i++)
 	{
 		if (map->ents[i]->keyvalues["classname"] == "worldspawn")
 		{
 			wadNames = splitString(map->ents[i]->keyvalues["wad"], ";");
 
-			for (int k = 0; k < wadNames.size(); k++)
+			for (size_t k = 0; k < wadNames.size(); k++)
 			{
 				wadNames[k] = basename(wadNames[k]);
 				if (toLowerCase(wadNames[k]) == "decals.wad")
@@ -246,7 +246,7 @@ void BspRenderer::loadTextures()
 			{
 				std::string newWadString = "";
 
-				for (int k = 0; k < wadNames.size(); k++)
+				for (size_t k = 0; k < wadNames.size(); k++)
 				{
 					newWadString += wadNames[k] + ";";
 				}
@@ -273,7 +273,7 @@ void BspRenderer::loadTextures()
 		wadNames.push_back("decals.wad");
 	}
 
-	for (int i = 0; i < wadNames.size(); i++)
+	for (size_t i = 0; i < wadNames.size(); i++)
 	{
 		std::string path = std::string();
 		if (FindPathInAssets(map, wadNames[i], path))
@@ -323,7 +323,7 @@ void BspRenderer::loadTextures()
 		if (tex->nOffsets[0] <= 0)
 		{
 			bool foundInWad = false;
-			for (int k = 0; k < wads.size(); k++)
+			for (size_t k = 0; k < wads.size(); k++)
 			{
 				if (wads[k]->hasTexture(tex->szName))
 				{
@@ -551,7 +551,7 @@ void BspRenderer::loadLightmaps()
 					{
 						int src = y * info.w + x;
 						int dst = (info.y[s] + y) * LIGHTMAP_ATLAS_SIZE + info.x[s] + x;
-						if (face.nLightmapOffset < 0 || texinfo.nFlags & TEX_SPECIAL || offset + src * sizeof(COLOR3) >= map->lightDataLength)
+						if (face.nLightmapOffset < 0 || texinfo.nFlags & TEX_SPECIAL || offset + src * (int)sizeof(COLOR3) >= map->lightDataLength)
 						{
 							// missing lightmap default white
 							lightDst[dst] = { 255,255,255 };
@@ -766,7 +766,7 @@ void BspRenderer::deleteLightmapTextures()
 {
 	if (glLightmapTextures)
 	{
-		for (int i = 0; i < numLightmapAtlases; i++)
+		for (size_t i = 0; i < numLightmapAtlases; i++)
 		{
 			if (glLightmapTextures[i])
 			{
@@ -987,7 +987,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		// add face to a render group (faces that share that same textures and opacity flag)
 		bool isTransparent = opacity < 1.0f || (tex && tex->szName[0] == '{');
 		int groupIdx = -1;
-		for (int k = 0; k < renderGroups.size(); k++)
+		for (size_t k = 0; k < renderGroups.size(); k++)
 		{
 			if (texinfo.iMiptex == -1 || texinfo.iMiptex >= map->textureCount)
 				continue;
@@ -1005,7 +1005,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 				}
 				if (allMatch)
 				{
-					groupIdx = k;
+					groupIdx = (int)k;
 					break;
 				}
 			}
@@ -1222,7 +1222,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, hullIdx);
 	//print_log(get_localized_string(LANG_0281),solidNodes.size(),modelIdx,hullIdx);
 	std::vector<CMesh> meshes;
-	for (int k = 0; k < solidNodes.size(); k++)
+	for (size_t k = 0; k < solidNodes.size(); k++)
 	{
 		meshes.emplace_back(clipper.clip(solidNodes[k].cuts));
 		clipnodeLeafCount++;
@@ -1241,11 +1241,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	std::vector<FaceMath>& tfaceMaths = renderClip.faceMaths[hullIdx];
 	tfaceMaths.clear();
 
-	for (int m = 0; m < meshes.size(); m++)
+	for (size_t m = 0; m < meshes.size(); m++)
 	{
 		CMesh& mesh = meshes[m];
 
-		for (int n = 0; n < mesh.faces.size(); n++)
+		for (size_t n = 0; n < mesh.faces.size(); n++)
 		{
 			if (!mesh.faces[n].visible)
 			{
@@ -1253,7 +1253,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			}
 			std::set<int> uniqueFaceVerts;
 
-			for (int k = 0; k < mesh.faces[n].edges.size(); k++)
+			for (size_t k = 0; k < mesh.faces[n].edges.size(); k++)
 			{
 				for (int v = 0; v < 2; v++)
 				{
@@ -1303,7 +1303,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			vec3 v0 = faceVerts[0];
 			vec3 v1;
 			bool found = false;
-			for (int c = 1; c < faceVerts.size(); c++)
+			for (size_t c = 1; c < faceVerts.size(); c++)
 			{
 				if (faceVerts[c] != v0)
 				{
@@ -1324,20 +1324,20 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
 
 			faceMath.localVerts = std::vector<vec2>(faceVerts.size());
-			for (int k = 0; k < faceVerts.size(); k++)
+			for (size_t k = 0; k < faceVerts.size(); k++)
 			{
 				faceMath.localVerts[k] = (faceMath.worldToLocal * vec4(faceVerts[k], 1)).xy();
 			}
 
 			tfaceMaths.push_back(faceMath);
 			// create the verts for rendering
-			for (int c = 0; c < faceVerts.size(); c++)
+			for (size_t c = 0; c < faceVerts.size(); c++)
 			{
 				faceVerts[c] = faceVerts[c].flip();
 			}
 
 			COLOR4 wireframeColor = { 0, 0, 0, 255 };
-			for (int k = 0; k < faceVerts.size(); k++)
+			for (size_t k = 0; k < faceVerts.size(); k++)
 			{
 				wireframeVerts.emplace_back(cVert(faceVerts[k], wireframeColor));
 				wireframeVerts.emplace_back(cVert(faceVerts[(k + 1) % faceVerts.size()], wireframeColor));
@@ -1353,7 +1353,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			COLOR4 faceColor = color * (dot);
 
 			// convert from TRIANGLE_FAN style verts to TRIANGLES
-			for (int k = 2; k < faceVerts.size(); k++)
+			for (size_t k = 2; k < faceVerts.size(); k++)
 			{
 				allVerts.emplace_back(cVert(faceVerts[0], faceColor));
 				allVerts.emplace_back(cVert(faceVerts[k - 1], faceColor));
@@ -1458,14 +1458,14 @@ void BspRenderer::preRenderEnts()
 
 	numPointEnts = 0;
 
-	for (int i = 1; i < map->ents.size(); i++)
+	for (size_t i = 1; i < map->ents.size(); i++)
 	{
 		numPointEnts += !map->ents[i]->isBspModel();
 	}
 
-	for (int i = 0; i < map->ents.size(); i++)
+	for (size_t i = 0; i < map->ents.size(); i++)
 	{
-		refreshEnt(i);
+		refreshEnt((int)i);
 	}
 }
 
@@ -1482,7 +1482,7 @@ void BspRenderer::refreshPointEnt(int entIdx)
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
 
-		if (i == entIdx)
+		if ((int)i == entIdx)
 		{
 			break;
 		}
@@ -1922,7 +1922,7 @@ void BspRenderer::refreshFace(int faceIdx)
 	faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
 
 	faceMath.localVerts = std::vector<vec2>(allVerts.size());
-	for (int i = 0; i < allVerts.size(); i++)
+	for (size_t i = 0; i < allVerts.size(); i++)
 	{
 		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xy();
 	}
@@ -1940,7 +1940,7 @@ BspRenderer::~BspRenderer()
 		print_log(get_localized_string(LANG_0285));
 	}
 
-	for (int i = 0; i < wads.size(); i++)
+	for (size_t i = 0; i < wads.size(); i++)
 	{
 		delete wads[i];
 	}
@@ -2000,7 +2000,7 @@ void BspRenderer::delayLoadData()
 {
 	if (!lightmapsUploaded && lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
-		for (int i = 0; i < numLightmapAtlases; i++)
+		for (size_t i = 0; i < numLightmapAtlases; i++)
 		{
 			if (glLightmapTextures[i])
 				glLightmapTextures[i]->upload();
@@ -2042,6 +2042,43 @@ void BspRenderer::delayLoadData()
 bool BspRenderer::isFinishedLoading()
 {
 	return lightmapsUploaded && texturesLoaded && clipnodesLoaded;
+}
+
+void BspRenderer::highlightFace(size_t faceIdx, bool highlight, COLOR4 color, bool useColor, bool reupload)
+{
+	RenderFace* rface;
+	RenderGroup* rgroup;
+	if (!getRenderPointers((int)faceIdx, &rface, &rgroup))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1047));
+		return;
+	}
+
+	float r, g, b;
+	r = g = b = 1.0f;
+
+	if (highlight)
+	{
+		r = 0.86f;
+		g = 0.0f;
+		b = 0.0f;
+	}
+
+	if (useColor)
+	{
+		r = color.r / 255.0f;
+		g = color.g / 255.0f;
+		b = color.b / 255.0f;
+	}
+
+	for (int i = 0; i < rface->vertCount; i++)
+	{
+		rgroup->verts[rface->vertOffset + i].r = r;
+		rgroup->verts[rface->vertOffset + i].g = g;
+		rgroup->verts[rface->vertOffset + i].b = b;
+	}
+	if (reupload)
+		rgroup->buffer->upload();
 }
 
 void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool useColor, bool reupload)
@@ -2143,7 +2180,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 	return glTextures[texinfo.iMiptex]->id;
 }
 
-void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, int clipnodeHull)
+void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw, int clipnodeHull)
 {
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
@@ -2153,13 +2190,13 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 	{
 		for (const auto& undoEnt : delayEntUndoList)
 		{
-			if (undoEnt.entIdx >= 0 && undoEnt.entIdx < map->ents.size() && undoEnt.ent == map->ents[undoEnt.entIdx])
+			if (undoEnt.entIdx >= 0 && undoEnt.entIdx < (int)map->ents.size() && undoEnt.ent == map->ents[undoEnt.entIdx])
 			{
 				pushEntityUndoState(undoEnt.description, undoEnt.entIdx);
 			}
 		}
 		delayEntUndoList.clear();
-	};
+	}
 
 
 	static double leafUpdTime = 0.0;
@@ -2298,9 +2335,9 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool modelVertsDraw, in
 
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
-		for (int highlightEnt : highlightEnts)
+		for (size_t highlightEnt : highlightEnts)
 		{
-			if (highlightEnt > 0 && renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+			if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 			{
 				if (renderEnts[highlightEnt].hide)
 					continue;
@@ -2582,7 +2619,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	}
 }
 
-void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
+void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 {
 	// skip worldspawn
 
@@ -2912,7 +2949,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 			oldHullIdxStruct.hullIdx = hullIdx;
 			generateClipnodeBufferForHull(modelIdx, hullIdx);
 		}
-		for (int i = 0; i < renderClipnodes[oldHullIdxStruct.modelIdx].faceMaths[oldHullIdxStruct.hullIdx].size(); i++)
+		for (size_t i = 0; i < renderClipnodes[oldHullIdxStruct.modelIdx].faceMaths[oldHullIdxStruct.hullIdx].size(); i++)
 		{
 			FaceMath& faceMath = renderClipnodes[oldHullIdxStruct.modelIdx].faceMaths[oldHullIdxStruct.hullIdx][i];
 
@@ -3036,7 +3073,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 	bool anythingToUndo = false;
 	if (undoEntityStateMap[entIdx].keyOrder.size() == ent->keyOrder.size())
 	{
-		for (int i = 0; i < undoEntityStateMap[entIdx].keyOrder.size(); i++)
+		for (size_t i = 0; i < undoEntityStateMap[entIdx].keyOrder.size(); i++)
 		{
 			std::string oldKey = undoEntityStateMap[entIdx].keyOrder[i];
 			std::string newKey = ent->keyOrder[i];
@@ -3081,7 +3118,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 	int entIdx = g_app->pickInfo.GetSelectedEnt();
 	if (entIdx < 0 && g_app->pickInfo.selectedFaces.size())
 	{
-		int modelIdx = map->get_model_from_face(g_app->pickInfo.selectedFaces[0]);
+		int modelIdx = map->get_model_from_face((int)g_app->pickInfo.selectedFaces[0]);
 		entIdx = map->get_ent_from_model(modelIdx);
 	}
 	if (entIdx < 0)
@@ -3142,7 +3179,7 @@ void BspRenderer::pushUndoCommand(Command* cmd)
 	undoHistory.push_back(cmd);
 	clearRedoCommands();
 
-	while (!undoHistory.empty() && undoHistory.size() > g_settings.undoLevels)
+	while (!undoHistory.empty() && undoHistory.size() > (size_t)g_settings.undoLevels)
 	{
 		delete undoHistory[0];
 		undoHistory.erase(undoHistory.begin());
@@ -3195,7 +3232,7 @@ void BspRenderer::redo()
 
 void BspRenderer::clearUndoCommands()
 {
-	for (int i = 0; i < undoHistory.size(); i++)
+	for (size_t i = 0; i < undoHistory.size(); i++)
 	{
 		delete undoHistory[i];
 	}
@@ -3206,7 +3243,7 @@ void BspRenderer::clearUndoCommands()
 
 void BspRenderer::clearRedoCommands()
 {
-	for (int i = 0; i < redoHistory.size(); i++)
+	for (size_t i = 0; i < redoHistory.size(); i++)
 	{
 		delete redoHistory[i];
 	}
@@ -3219,11 +3256,11 @@ void BspRenderer::calcUndoMemoryUsage()
 {
 	undoMemoryUsage = (undoHistory.size() + redoHistory.size()) * sizeof(Command*);
 
-	for (int i = 0; i < undoHistory.size(); i++)
+	for (size_t i = 0; i < undoHistory.size(); i++)
 	{
 		undoMemoryUsage += undoHistory[i]->memoryUsage();
 	}
-	for (int i = 0; i < redoHistory.size(); i++)
+	for (size_t i = 0; i < redoHistory.size(); i++)
 	{
 		undoMemoryUsage += redoHistory[i]->memoryUsage();
 	}
@@ -3245,7 +3282,7 @@ PickInfo::PickInfo()
 int PickInfo::GetSelectedEnt()
 {
 	if (selectedEnts.size())
-		return selectedEnts[0];
+		return (int)selectedEnts[0];
 	return -1;
 }
 
@@ -3272,11 +3309,40 @@ void PickInfo::DelSelectedEnt(int entIdx)
 	if (IsSelectedEnt(entIdx))
 	{
 		pickCount++;
-		selectedEnts.erase(std::find(selectedEnts.begin(), selectedEnts.end(), entIdx));
+		selectedEnts.erase(std::find(selectedEnts.begin(), selectedEnts.end(), (size_t)entIdx));
 	}
 }
 
 bool PickInfo::IsSelectedEnt(int entIdx)
+{
+	return entIdx >= 0 && selectedEnts.size() && std::find(selectedEnts.begin(), selectedEnts.end(), (size_t)entIdx) != selectedEnts.end();
+}
+
+void PickInfo::AddSelectedEnt(size_t entIdx)
+{
+	if (entIdx < 0xFFFFFFu && !IsSelectedEnt(entIdx))
+	{
+		selectedEnts.push_back(entIdx);
+	}
+	pickCount++;
+}
+
+void PickInfo::SetSelectedEnt(size_t entIdx)
+{
+	selectedEnts.clear();
+	AddSelectedEnt(entIdx);
+}
+
+void PickInfo::DelSelectedEnt(size_t entIdx)
+{
+	if (IsSelectedEnt(entIdx))
+	{
+		pickCount++;
+		selectedEnts.erase(std::find(selectedEnts.begin(), selectedEnts.end(), entIdx));
+	}
+}
+
+bool PickInfo::IsSelectedEnt(size_t entIdx)
 {
 	return selectedEnts.size() && std::find(selectedEnts.begin(), selectedEnts.end(), entIdx) != selectedEnts.end();
 }

@@ -196,7 +196,7 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 		dest = output + i * newVisRowSize;
 		if (lastUsedIdx >= 0)
 		{
-			if ((i + 1) * sizeof(BSPLEAF32) >= leafMemSize)
+			if ((i + 1) * (int)sizeof(BSPLEAF32) >= leafMemSize)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0994), i + 1, leafMemSize / sizeof(BSPLEAF32));
 				return;
@@ -502,6 +502,6 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 
 			c--;
 		}
-	} while (out - dest < src_count);
+	} while ((unsigned int)(out - dest) < src_count);
 
 }

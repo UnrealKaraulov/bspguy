@@ -255,7 +255,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -276,6 +276,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <GuardSignedReturns>
       </GuardSignedReturns>
       <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalOptions> /wd4100 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
@@ -337,7 +338,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010000
-;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1</PreprocessorDefinitions>
+;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -358,6 +359,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <GuardSignedReturns>
       </GuardSignedReturns>
       <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalOptions> /wd4100 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>

@@ -95,7 +95,7 @@ void Entity::removeKeyvalue(const std::string key)
 
 bool Entity::renameKey(int idx, const std::string& newName)
 {
-	if (idx < 0 || idx >= keyOrder.size() || newName.empty())
+	if (idx < 0 || idx >= (int)keyOrder.size() || newName.empty())
 	{
 		return false;
 	}
@@ -104,7 +104,7 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	if (keyOrder[idx] == "origin" || newName == "origin")
 		originInited = false;
 
-	for (int i = 0; i < keyOrder.size(); i++)
+	for (size_t i = 0; i < keyOrder.size(); i++)
 	{
 		if (keyOrder[i] == newName)
 		{
@@ -133,7 +133,7 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 	if (oldName.starts_with("render") || newName.starts_with("render"))
 		updateRenderModes();
 	int idx = -1;
-	for (int i = 0; i < keyOrder.size(); i++)
+	for (size_t i = 0; i < keyOrder.size(); i++)
 	{
 		if (keyOrder[i] == newName)
 		{
@@ -141,7 +141,7 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 		}
 		else if (keyOrder[i] == oldName)
 		{
-			idx = i;
+			idx = (int)i;
 		}
 	}
 	if (idx == -1)
@@ -164,7 +164,7 @@ void Entity::clearAllKeyvalues()
 void Entity::clearEmptyKeyvalues()
 {
 	std::vector<std::string> newKeyOrder;
-	for (int i = 0; i < keyOrder.size(); i++)
+	for (size_t i = 0; i < keyOrder.size(); i++)
 	{
 		if (!keyvalues[keyOrder[i]].empty())
 		{
@@ -475,7 +475,7 @@ std::vector<std::string> Entity::getTargets()
 	if (keyvalues["classname"] == "multi_manager")
 	{
 		// multi_manager is a special case where the targets are in the key names
-		for (int i = 0; i < keyOrder.size(); i++)
+		for (size_t i = 0; i < keyOrder.size(); i++)
 		{
 			std::string tname = keyOrder[i];
 			size_t hashPos = tname.find('#');
@@ -492,7 +492,7 @@ std::vector<std::string> Entity::getTargets()
 
 	cachedTargets.clear();
 	cachedTargets.reserve(targets.size());
-	for (int i = 0; i < targets.size(); i++)
+	for (size_t i = 0; i < targets.size(); i++)
 	{
 		cachedTargets.push_back(targets[i]);
 	}
@@ -504,7 +504,7 @@ std::vector<std::string> Entity::getTargets()
 bool Entity::hasTarget(const std::string& checkTarget)
 {
 	std::vector<std::string> targets = getTargets();
-	for (int i = 0; i < targets.size(); i++)
+	for (size_t i = 0; i < targets.size(); i++)
 	{
 		if (targets[i] == checkTarget)
 		{
@@ -529,7 +529,7 @@ void Entity::renameTargetnameValues(const std::string& oldTargetname, const std:
 	if (keyvalues["classname"] == "multi_manager")
 	{
 		// multi_manager is a special case where the targets are in the key names
-		for (int i = 0; i < keyOrder.size(); i++)
+		for (size_t i = 0; i < keyOrder.size(); i++)
 		{
 			std::string tname = keyOrder[i];
 			size_t hashPos = tname.find('#');
@@ -556,11 +556,11 @@ size_t Entity::getMemoryUsage()
 {
 	size_t size = sizeof(Entity);
 
-	for (int i = 0; i < cachedTargets.size(); i++)
+	for (size_t i = 0; i < cachedTargets.size(); i++)
 	{
 		size += cachedTargets[i].size();
 	}
-	for (int i = 0; i < keyOrder.size(); i++)
+	for (size_t i = 0; i < keyOrder.size(); i++)
 	{
 		size += keyOrder[i].size();
 	}

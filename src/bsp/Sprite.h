@@ -62,8 +62,8 @@ struct SpriteGroup
 {
 	std::vector<SpriteImage> sprites;
 	size_t current_spr;
-	float totalinterval;
-	float currentinterval;
+	double totalinterval;
+	double currentinterval;
 };
 
 class Sprite {
