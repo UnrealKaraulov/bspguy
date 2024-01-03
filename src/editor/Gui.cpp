@@ -557,7 +557,7 @@ void Gui::drawBspContexMenu()
 				copyTexture();
 			}
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0440).c_str(), get_localized_string(LANG_0441).c_str(), false, 
+			if (ImGui::MenuItem(get_localized_string(LANG_0440).c_str(), get_localized_string(LANG_0441).c_str(), false,
 				copiedMiptex >= 0 && copiedMiptex < map->textureCount))
 			{
 				pasteTexture();
@@ -2723,12 +2723,44 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (DebugKeyPressed && ImGui::MenuItem("MAKE SOMETHING BAD"))
+			if (ImGui::MenuItem("!PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
 			{
-				for (int i = 0; i < map->vertCount; i++)
+				map->merge_all_verts();
+
+				bool partial_swap = false;
+				for (int i = 0; i < map->edgeCount; i++)
 				{
-					map->verts[i] = map->verts[i].round(10.0f);
+					partial_swap = !partial_swap;
+					if (partial_swap)
+					{
+						std::swap(map->edges[0].iVertex[0], map->edges[0].iVertex[1]);
+					}
+					else
+					{
+						std::swap(map->verts[map->edges[0].iVertex[0]], map->verts[map->edges[0].iVertex[1]]);
+					}
 				}
+
+				for (int m = 0; m < map->modelCount; m++)
+				{
+					BSPMODEL mdl = map->models[m];
+					for (int f = 0; f < mdl.nFaces; f++)
+					{
+						if (mdl.iFirstFace >= 0)
+						{
+							BSPFACE32& face = map->faces[mdl.iFirstFace + f];
+							partial_swap = !partial_swap;
+							if (partial_swap || f == 0 || f + 1 == mdl.nFaces)
+							{
+								for (int e = 0; e < face.nEdges; e++)
+								{
+									map->surfedges[face.iFirstEdge + e] *= -1;
+								}
+							}
+						}
+					}
+				}
+
 				map->resize_all_lightmaps();
 
 				map->getBspRender()->loadLightmaps();
@@ -2738,8 +2770,17 @@ void Gui::drawMenuBar()
 
 				map->update_ent_lump();
 				map->update_lump_pointers();
-			}
 
+				map->is_protected = true;
+
+				map->getBspRender()->pushModelUndoState("PROTECT MAP FROM DECOMPILER", EDIT_MODEL_LUMPS);
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Protect map against decompilers.");
+				ImGui::EndTooltip();
+			}
 
 			if (ImGui::BeginMenu("Scale map (WIP)", map))
 			{
@@ -9349,6 +9390,8 @@ void Gui::drawFaceEditorWidget()
 		{
 			ImVec4 errorColor = { 1.0, 0.0, 0.0, 1.0 };
 			ImGui::PushStyleColor(ImGuiCol_Text, errorColor);
+			ImGui::TextUnformatted("Faces");
+
 			if (ImGui::Button("DELETE"))
 			{
 				auto selected_faces = app->pickInfo.selectedFaces;
@@ -9473,11 +9516,31 @@ void Gui::drawFaceEditorWidget()
 
 			ImGui::PopStyleColor();
 
-			ImGui::TextUnformatted("Leaf list. Red invisible. Blue visible.");
+			ImGui::TextUnformatted("Leaf list.");
 
-			ImGui::Checkbox("Auto update", &auto_update_leaf);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.0, 0.0, 1.0, 1.0 });
+			ImGui::TextUnformatted("Blue is visible.");
+			ImGui::PopStyleColor();
 
-			ImGui::TextUnformatted("Press to change state");
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 1.0, 0.0, 0.0, 1.0 });
+			ImGui::TextUnformatted("Red is invisible.");
+			ImGui::PopStyleColor();
+
+			if (ImGui::Checkbox("Auto update", &auto_update_leaf) && auto_update_leaf)
+			{
+				if (last_leaf >= 0)
+				{
+					leaf_decompress = true;
+				}
+			}
+
+			ImGui::TextUnformatted("Double click for edit");
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Double click for change leaf visibility for current leaf.");
+				ImGui::EndTooltip();
+			}
 
 			if (!auto_update_leaf)
 			{
@@ -9489,8 +9552,11 @@ void Gui::drawFaceEditorWidget()
 					}
 				}
 			}
+			ImGuiStyle& style = ImGui::GetStyle();
+			style.FrameBorderSize = 1.0f;
 
-			ImGui::BeginChild("##leaflist", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+			ImGui::BeginChild("##leaflist", ImVec2(0, 0), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
+
 			ImGuiListClipper clipper;
 			clipper.Begin((int)(vis_leafs.size() + invis_leafs.size()));
 			bool vis_print = true;

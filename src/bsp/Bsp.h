@@ -51,6 +51,8 @@ public:
 	LIGHTMAP* undo_lightmaps;
 	int undo_lightmaps_count;
 
+	bool is_protected;
+
 	bool is_bsp30ext;
 
 	bool is_bsp2;

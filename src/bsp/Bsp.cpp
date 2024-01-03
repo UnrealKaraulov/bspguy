@@ -127,6 +127,7 @@ void Bsp::selectModelEnt()
 
 Bsp::Bsp()
 {
+	is_protected = false;
 	is_bsp_model = false;
 	is_mdl_model = false;
 	mdl = NULL;
@@ -156,6 +157,7 @@ Bsp::Bsp()
 
 Bsp::Bsp(std::string fpath)
 {
+	is_protected = false;
 	is_bsp_model = false;
 	is_mdl_model = false;
 	mdl = NULL;
@@ -3070,7 +3072,8 @@ void Bsp::write(const std::string& path)
 
 			lastmodel->vOrigin.z = 9999.0f;
 
-			delete[] lumps[LUMP_MODELS];
+			if (replacedLump[LUMP_MODELS])
+				delete[] lumps[LUMP_MODELS];
 			lumps[LUMP_MODELS] = tmpNewModelds;
 
 			bsp_header.lump[LUMP_MODELS].nLength = originsize + sizeof(BSPMODEL);
@@ -3094,6 +3097,24 @@ void Bsp::write(const std::string& path)
 			}
 
 			print_log(get_localized_string(LANG_0079), reverse_bits(crc32));
+		}
+	}
+
+	if (is_protected)
+	{
+		if (surfedgeCount > 0)
+		{
+			if (surfedges[surfedgeCount - 1] != 0)
+			{
+				int* newsurfs = new int[surfedgeCount + 1];
+				memset(newsurfs, 0, (surfedgeCount + 1) * sizeof(int));
+				memcpy(newsurfs, surfedges, surfedgeCount * sizeof(int));
+				if (replacedLump[LUMP_SURFEDGES])
+					delete[] lumps[LUMP_SURFEDGES];
+				lumps[LUMP_SURFEDGES] = (unsigned char *)newsurfs;
+				surfedgeCount++;
+				bsp_header.lump[LUMP_SURFEDGES].nLength = (surfedgeCount) * sizeof(int);
+			}
 		}
 	}
 
@@ -7303,6 +7324,17 @@ void Bsp::update_lump_pointers()
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0191));
 	if (visDataLength > (int)MAX_MAP_VISDATA)
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0192));
+
+	if (!is_protected)
+	{
+		if (surfedgeCount > 0)
+		{
+			if (surfedges[surfedgeCount - 1] == 0)
+			{
+				is_protected = true;
+			}
+		}
+	}
 }
 
 void Bsp::replace_lump(int lumpIdx, void* newData, size_t newLength)
