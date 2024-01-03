@@ -2740,16 +2740,16 @@ void Gui::drawMenuBar()
 						std::swap(map->verts[map->edges[0].iVertex[0]], map->verts[map->edges[0].iVertex[1]]);
 					}
 				}
-
+				partial_swap = false;
 				for (int m = 0; m < map->modelCount; m++)
 				{
+					partial_swap = !partial_swap;
 					BSPMODEL mdl = map->models[m];
-					for (int f = 0; f < mdl.nFaces; f++)
+					if (mdl.iFirstFace >= 0 && mdl.nFaces > 0)
 					{
-						if (mdl.iFirstFace >= 0)
+						for (int f = 0; f < mdl.nFaces; f++)
 						{
 							BSPFACE32& face = map->faces[mdl.iFirstFace + f];
-							partial_swap = !partial_swap;
 							if (partial_swap || f == 0 || f + 1 == mdl.nFaces)
 							{
 								for (int e = 0; e < face.nEdges; e++)
@@ -2758,7 +2758,29 @@ void Gui::drawMenuBar()
 								}
 							}
 						}
+
+						if (partial_swap)
+						{
+							std::swap(map->faces[mdl.iFirstFace], map->faces[mdl.iFirstFace + mdl.nFaces - 1]);
+							for (int s = 0; s < map->marksurfCount; s++)
+							{
+								if (map->marksurfs[s] == mdl.iFirstFace)
+								{
+									map->marksurfs[s] = mdl.iFirstFace + mdl.nFaces - 1;
+								}
+								else if (map->marksurfs[s] == mdl.iFirstFace + mdl.nFaces - 1)
+								{
+									map->marksurfs[s] = mdl.iFirstFace;
+								}
+							}
+						}
+
+						/*BSPFACE32* faceStart = &map->faces[mdl.iFirstFace];
+						BSPFACE32* faceEnd = &map->faces[mdl.iFirstFace + mdl.nFaces];
+						std::reverse(faceStart, faceEnd);*/
+						// need also remap surfaces
 					}
+
 				}
 
 				map->resize_all_lightmaps();
