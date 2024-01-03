@@ -484,11 +484,11 @@ void Gui::drawBspContexMenu()
 	if (!map)
 		return;
 
-	int entIdx = app->pickInfo.GetSelectedEnt();
+	auto entIdx = app->pickInfo.GetSelectedEnts();
 
-	if (app->originHovered && entIdx >= 0)
+	if (app->originHovered && entIdx.size())
 	{
-		Entity* ent = map->ents[entIdx];
+		Entity* ent = map->ents[entIdx[0]];
 		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
 		{
 			if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
@@ -557,7 +557,8 @@ void Gui::drawBspContexMenu()
 				copyTexture();
 			}
 
-			if (ImGui::MenuItem(get_localized_string(LANG_0440).c_str(), get_localized_string(LANG_0441).c_str(), false, copiedMiptex >= 0 && copiedMiptex < map->textureCount))
+			if (ImGui::MenuItem(get_localized_string(LANG_0440).c_str(), get_localized_string(LANG_0441).c_str(), false, 
+				copiedMiptex >= 0 && copiedMiptex < map->textureCount))
 			{
 				pasteTexture();
 			}
@@ -641,9 +642,9 @@ void Gui::drawBspContexMenu()
 	}
 	else /*if (app->pickMode == PICK_OBJECT)*/
 	{
-		if (ImGui::BeginPopup(get_localized_string(LANG_1151).c_str()) && entIdx >= 0)
+		if (ImGui::BeginPopup(get_localized_string(LANG_1151).c_str()) && entIdx.size())
 		{
-			Entity* ent = map->ents[entIdx];
+			Entity* ent = map->ents[entIdx[0]];
 			int modelIdx = ent->getBspModelIdx();
 			if (modelIdx < 0 && ent->isWorldSpawn())
 				modelIdx = 0;
@@ -682,11 +683,11 @@ void Gui::drawBspContexMenu()
 					}
 				}
 			}
-			if (map->ents[entIdx]->hide)
+			if (map->ents[entIdx[0]]->hide)
 			{
 				if (ImGui::MenuItem(get_localized_string(LANG_0453).c_str(), get_localized_string(LANG_0454).c_str()))
 				{
-					map->ents[entIdx]->hide = false;
+					map->ents[entIdx[0]]->hide = false;
 					map->getBspRender()->preRenderEnts();
 					app->updateEntConnections();
 				}
@@ -2109,10 +2110,10 @@ void Gui::drawMenuBar()
 				if (ImGui::BeginMenu(get_localized_string(LANG_1076).c_str(), map && !map->is_mdl_model))
 				{
 					int modelIdx = -1;
-
-					if (app->pickInfo.GetSelectedEnt() >= 0)
+					auto pickEnt = app->pickInfo.GetSelectedEnts();
+					if (pickEnt.size())
 					{
-						modelIdx = map->ents[app->pickInfo.GetSelectedEnt()]->getBspModelIdx();
+						modelIdx = map->ents[pickEnt[0]]->getBspModelIdx();
 					}
 					for (int i = 0; i < map->modelCount; i++)
 					{
@@ -2519,15 +2520,15 @@ void Gui::drawMenuBar()
 			bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
 			bool entSelected = app->pickInfo.selectedEnts.size();
 			bool mapSelected = map;
-			bool nonWorldspawnEntSelected = !entSelected;
+			bool nonWorldspawnEntSelected = entSelected;
 
-			if (!nonWorldspawnEntSelected)
+			if (nonWorldspawnEntSelected)
 			{
 				for (auto& ent : app->pickInfo.selectedEnts)
 				{
-					if (map->ents[ent]->hasKey("classname") && map->ents[ent]->keyvalues["classname"] == "worldspawn")
+					if (map->ents[ent]->isWorldSpawn())
 					{
-						nonWorldspawnEntSelected = true;
+						nonWorldspawnEntSelected = false;
 						break;
 					}
 				}
@@ -3440,9 +3441,9 @@ void Gui::drawMenuBar()
 				if (rend)
 				{
 					ImGui::TextUnformatted(fmt::format("Click [{:^5},{:^5},{:^5}]", floatRound(rend->intersectVec.x), floatRound(rend->intersectVec.y), floatRound(rend->intersectVec.z)).c_str());
-				}
 
-				ImGui::TextUnformatted(fmt::format("Leaf [{}]", rend->curLeafIdx).c_str());
+					ImGui::TextUnformatted(fmt::format("Leaf [{}]", rend->curLeafIdx).c_str());
+				}
 			}
 
 			ImGui::EndMenuBar();
@@ -3719,7 +3720,7 @@ void Gui::drawDebugWidget()
 
 	Bsp* map = app->getSelectedMap();
 	BspRenderer* renderer = map ? map->getBspRender() : NULL;
-	int entIdx = app->pickInfo.GetSelectedEnt();
+	auto entIdx = app->pickInfo.GetSelectedEnts();
 
 	int debugVisMode = 0;
 
@@ -3803,14 +3804,14 @@ void Gui::drawDebugWidget()
 				{
 					if (app->pickInfo.selectedEnts.size())
 					{
-						ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0371)), entIdx).c_str());
+						ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0371)), entIdx[0]).c_str());
 					}
 
 					int modelIdx = -1;
 
-					if (entIdx >= 0)
+					if (entIdx.size())
 					{
-						modelIdx = map->ents[entIdx]->getBspModelIdx();
+						modelIdx = map->ents[entIdx[0]]->getBspModelIdx();
 					}
 
 
@@ -3876,9 +3877,9 @@ void Gui::drawDebugWidget()
 		}
 		int modelIdx = -1;
 
-		if (map && entIdx >= 0)
+		if (map && entIdx.size())
 		{
-			modelIdx = map->ents[entIdx]->getBspModelIdx();
+			modelIdx = map->ents[entIdx[0]]->getBspModelIdx();
 		}
 
 		std::string bspTreeTitle = "BSP Tree";
@@ -3889,7 +3890,7 @@ void Gui::drawDebugWidget()
 
 		if (ImGui::CollapsingHeader((bspTreeTitle + "##bsptree").c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (modelIdx < 0 && entIdx >= 0)
+			if (modelIdx < 0 && entIdx.size())
 				modelIdx = 0;
 			if (modelIdx >= 0)
 			{
@@ -4003,7 +4004,7 @@ void Gui::drawDebugWidget()
 			bool isScalingObject = app->transformMode == TRANSFORM_MODE_SCALE && app->transformTarget == TRANSFORM_OBJECT;
 			bool isMovingOrigin = app->transformMode == TRANSFORM_MODE_MOVE && app->transformTarget == TRANSFORM_ORIGIN && app->originSelected;
 			bool isTransformingValid = !(app->modelUsesSharedStructures && app->transformMode != TRANSFORM_MODE_MOVE) && (app->isTransformableSolid || isScalingObject);
-			bool isTransformingWorld = entIdx == 0 && app->transformTarget != TRANSFORM_OBJECT;
+			bool isTransformingWorld = entIdx.empty() && app->transformTarget != TRANSFORM_OBJECT;
 
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0388)), app->isTransformableSolid).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0389)), isScalingObject).c_str());
@@ -4301,17 +4302,17 @@ void Gui::drawKeyvalueEditor()
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
 	if (ImGui::Begin(fmt::format("{}###KEYVALUE_WIDGET", get_localized_string(LANG_1103)).c_str(), &showKeyvalueWidget, 0))
 	{
-		int entIdx = app->pickInfo.GetSelectedEnt();
+		auto entIdx = app->pickInfo.GetSelectedEnts();
 
 
 		Bsp* map = app->getSelectedMap();
-		if (entIdx >= 0 && app->fgd
+		if (entIdx.size() && app->fgd
 			&& !app->isLoading && !app->isModelsReloading && !app->reloading && map)
 		{
 
 			//ImGui::TextUnformatted(fmt::format("ENTS {}. FIRST ENT {}.", g_app->pickInfo.selectedEnts.size(), g_app->pickInfo.selectedEnts.size() ? g_app->pickInfo.selectedEnts[0] : -1).c_str());
 
-			Entity* ent = map->ents[entIdx];
+			Entity* ent = map->ents[entIdx[0]];
 			std::string cname = ent->keyvalues["classname"];
 			FgdClass* fgdClass = app->fgd->getFgdClass(cname, FGD_CLASS_POINT);
 			std::vector<FgdGroup> targetGroup = app->fgd->pointEntGroups;
@@ -4387,8 +4388,8 @@ void Gui::drawKeyvalueEditor()
 							if (ImGui::MenuItem(group.classes[k]->name.c_str()))
 							{
 								ent->setOrAddKeyvalue("classname", group.classes[k]->name);
-								map->getBspRender()->refreshEnt(entIdx);
-								map->getBspRender()->pushEntityUndoStateDelay("Change Class", entIdx, ent);
+								map->getBspRender()->refreshEnt((int)entIdx[0]);
+								map->getBspRender()->pushEntityUndoStateDelay("Change Class", (int)entIdx[0], ent);
 							}
 						}
 
@@ -4411,21 +4412,21 @@ void Gui::drawKeyvalueEditor()
 				if (ImGui::BeginTabItem(get_localized_string(LANG_0658).c_str()))
 				{
 					ImGui::Dummy(ImVec2(0, 10));
-					drawKeyvalueEditor_SmartEditTab(entIdx);
+					drawKeyvalueEditor_SmartEditTab((int)entIdx[0]);
 					ImGui::EndTabItem();
 				}
 
 				if (ImGui::BeginTabItem(get_localized_string(LANG_0659).c_str()))
 				{
 					ImGui::Dummy(ImVec2(0, 10));
-					drawKeyvalueEditor_FlagsTab(entIdx);
+					drawKeyvalueEditor_FlagsTab((int)entIdx[0]);
 					ImGui::EndTabItem();
 				}
 
 				if (ImGui::BeginTabItem(get_localized_string(LANG_0660).c_str()))
 				{
 					ImGui::Dummy(ImVec2(0, 10));
-					drawKeyvalueEditor_RawEditTab(entIdx);
+					drawKeyvalueEditor_RawEditTab((int)entIdx[0]);
 					ImGui::EndTabItem();
 				}
 			}
@@ -4434,7 +4435,7 @@ void Gui::drawKeyvalueEditor()
 		}
 		else
 		{
-			if (entIdx < 0)
+			if (entIdx.empty())
 				ImGui::Text(get_localized_string(LANG_0661).c_str());
 			else
 				ImGui::Text(get_localized_string(LANG_0662).c_str());
@@ -5346,7 +5347,7 @@ void Gui::drawGOTOWidget()
 		float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.33f;
 		if (showGOTOWidget_update)
 		{
-			entid = g_app->pickInfo.GetSelectedEnt();
+			entid = g_app->pickInfo.GetSelectedEnts().size() ? (int)g_app->pickInfo.GetSelectedEnts()[0] : -1;
 			coordinates = cameraOrigin;
 			angles = cameraAngles;
 			angles.normalize_angles();
@@ -5459,13 +5460,13 @@ void Gui::drawTransformWidget()
 {
 	bool transformingEnt = false;
 	Entity* ent = NULL;
-	int entIdx = app->pickInfo.GetSelectedEnt();
+	auto entIdx = app->pickInfo.GetSelectedEnts();
 	Bsp* map = app->getSelectedMap();
 
-	if (map && entIdx >= 0)
+	if (map && entIdx.size())
 	{
-		ent = map->ents[entIdx];
-		transformingEnt = entIdx > 0;
+		ent = map->ents[entIdx[0]];
+		transformingEnt = true;
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(440.f, 380.f), ImGuiCond_FirstUseEver);
@@ -5645,9 +5646,9 @@ void Gui::drawTransformWidget()
 						z = last_fz = fz;
 					}
 				}
-				if (map->getBspRender()->undoEntityStateMap[entIdx].getOrigin() != ent->getOrigin())
+				if (map->getBspRender()->undoEntityStateMap[entIdx[0]].getOrigin() != ent->getOrigin())
 				{
-					map->getBspRender()->pushEntityUndoStateDelay("Move Entity", entIdx, ent);
+					map->getBspRender()->pushEntityUndoStateDelay("Move Entity", (int)entIdx[0], ent);
 				}
 			}
 
@@ -5809,7 +5810,7 @@ void Gui::drawTransformWidget()
 						}
 
 						ent->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
-						map->getBspRender()->refreshEnt(entIdx);
+						map->getBspRender()->refreshEnt((int)entIdx[0]);
 						app->updateEntConnectionPositions();
 					}
 					else if (app->transformTarget == TRANSFORM_ORIGIN)
@@ -7386,11 +7387,10 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	ImGui::SetColumnWidth(2, valWidth);
 	ImGui::SetColumnWidth(3, usageWidth);
 
-	size_t selected = app->pickInfo.GetSelectedEnt() < 0 ? 0 : app->pickInfo.GetSelectedEnt();
+	auto selected = app->pickInfo.GetSelectedEnts();
 
 	for (size_t i = 0; i < limitModels[sortMode].size(); i++)
 	{
-
 		if (modelInfos[i].val == "0")
 		{
 			break;
@@ -7398,9 +7398,8 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 
 		std::string cname = modelInfos[i].classname + "##" + "select" + std::to_string(i);
 		int flags = ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_SpanAllColumns;
-		if (ImGui::Selectable(cname.c_str(), selected == modelInfos[i].entIdx, flags))
+		if (ImGui::Selectable(cname.c_str(), app->pickInfo.IsSelectedEnt(modelInfos[i].entIdx), flags))
 		{
-			selected = i;
 			size_t entIdx = modelInfos[i].entIdx;
 			if (entIdx < map->ents.size())
 			{
@@ -7888,14 +7887,14 @@ void Gui::drawEntityReport()
 
 			if (ImGui::Button(get_localized_string(LANG_0858).c_str()))
 			{
-				app->goToEnt(map, app->pickInfo.GetSelectedEnt());
+				app->goToEnt(map, app->pickInfo.GetSelectedEnts().size() ? (int)app->pickInfo.GetSelectedEnts()[0] : -1);
 			}
 
 			ImGui::SameLine();
 
-			if (ImGui::Button(get_localized_string(LANG_0859).c_str()))
+			if (ImGui::Button(get_localized_string(LANG_0859).c_str()) && app->pickInfo.GetSelectedEnts().size())
 			{
-				startFrom = (app->pickInfo.GetSelectedEnt() - 8) * clipper.ItemsHeight;
+				startFrom = (app->pickInfo.GetSelectedEnts()[0] - 8) * clipper.ItemsHeight;
 				if (startFrom < 0.0f)
 					startFrom = 0.0f;
 			}

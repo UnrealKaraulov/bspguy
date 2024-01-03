@@ -168,7 +168,7 @@ public:
 	float bestDist;
 	PickInfo();
 
-	int GetSelectedEnt();
+	std::vector<size_t> GetSelectedEnts();
 	void AddSelectedEnt(int entIdx);
 	void SetSelectedEnt(int entIdx);
 	void DelSelectedEnt(int entIdx);
@@ -292,7 +292,7 @@ public:
 	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
 	std::vector<Command*> undoHistory;
 	std::vector<Command*> redoHistory;
-	std::map<int, Entity> undoEntityStateMap;
+	std::map<size_t, Entity> undoEntityStateMap;
 	LumpState undoLumpState{};
 
 	struct DelayEntUndo

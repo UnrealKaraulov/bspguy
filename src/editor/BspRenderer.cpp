@@ -211,7 +211,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	}
 
 	undoLumpState = LumpState();
-	undoEntityStateMap = std::map<int, Entity>();
+	undoEntityStateMap = std::map<size_t, Entity>();
 
 	saveLumpState();
 }
@@ -3115,14 +3115,16 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 		return;
 	}
 
-	int entIdx = g_app->pickInfo.GetSelectedEnt();
-	if (entIdx < 0 && g_app->pickInfo.selectedFaces.size())
+	auto entIdx = g_app->pickInfo.GetSelectedEnts();
+	if (!entIdx.size() && g_app->pickInfo.selectedFaces.size())
 	{
 		int modelIdx = map->get_model_from_face((int)g_app->pickInfo.selectedFaces[0]);
-		entIdx = map->get_ent_from_model(modelIdx);
+		entIdx.push_back(map->get_ent_from_model(modelIdx));
 	}
-	if (entIdx < 0)
-		entIdx = 0;
+	if (!entIdx.size())
+	{
+		entIdx.push_back(0);
+	}
 
 	LumpState newLumps = map->duplicate_lumps(targets);
 
@@ -3166,11 +3168,11 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 		}
 	}
 
-	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, entIdx, undoLumpState, newLumps, undoEntityStateMap[entIdx].getOrigin(), targetLumps);
+	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, (int)entIdx[0], undoLumpState, newLumps, undoEntityStateMap[entIdx[0]].getOrigin(), targetLumps);
 	pushUndoCommand(editCommand);
 
 	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
-	saveEntityState(entIdx);
+	saveEntityState((int)entIdx[0]);
 }
 
 void BspRenderer::pushUndoCommand(Command* cmd)
@@ -3279,11 +3281,9 @@ PickInfo::PickInfo()
 	bestDist = 0.0f;
 }
 
-int PickInfo::GetSelectedEnt()
+std::vector<size_t> PickInfo::GetSelectedEnts()
 {
-	if (selectedEnts.size())
-		return (int)selectedEnts[0];
-	return -1;
+	return selectedEnts;
 }
 
 void PickInfo::AddSelectedEnt(int entIdx)

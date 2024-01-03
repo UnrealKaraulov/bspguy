@@ -600,11 +600,7 @@ void EditBspModelCommand::refresh()
 	}
 
 	g_app->gui->refresh();
-
-	if (g_app->pickInfo.GetSelectedEnt() == entIdx)
-	{
-		g_app->updateModelVerts();
-	}
+	g_app->updateModelVerts();
 }
 
 size_t EditBspModelCommand::memoryUsage()
