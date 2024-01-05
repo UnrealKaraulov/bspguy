@@ -290,7 +290,7 @@ public:
 	void moveSelectedVerts(const vec3& delta);
 	bool splitModelFace();
 
-	vec3 snapToGrid(const vec3& pos);
+	vec3 snapToGrid(vec3 pos);
 
 	void grabEnt();
 	void cutEnt();
@@ -309,10 +309,11 @@ public:
 	void selectEnt(Bsp* map, int entIdx, bool add = false);
 	void goToEnt(Bsp* map, int entIdx);
 	void goToCoords(float x, float y, float z);
+	void goToCoords(const vec3& pos);
 	void goToFace(Bsp* map, int faceIdx);
 	void ungrabEnt();
 	void loadFgds();
 
-	std::map<std::string, Texture *> glExteralTextures;
+	std::map<std::string, Texture*> glExteralTextures;
 	Texture* giveMeTexture(const std::string& texname);
 };

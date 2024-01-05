@@ -234,8 +234,7 @@ public:
 	void updateLightmapInfos();
 	bool isFinishedLoading();
 
-	void highlightFace(int faceIdx, bool highlight, COLOR4 color = COLOR4(), bool useColor = false, bool reupload = true);
-	void highlightFace(size_t faceIdx, bool highlight, COLOR4 color = COLOR4(), bool useColor = false, bool reupload = true);
+	void highlightFace(size_t faceIdx, int highlight, bool reupload = true);
 	void updateFaceUVs(int faceIdx);
 	unsigned int getFaceTextureId(int faceIdx);
 

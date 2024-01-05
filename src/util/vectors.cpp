@@ -186,6 +186,14 @@ vec3 vec3::normalize(float length)
 	return vec3(x * d, y * d, z * d);
 }
 
+vec3 vec3::snap(float snapSize)
+{
+	float _x = std::round(x / snapSize) * snapSize;
+	float _y = std::round(y / snapSize) * snapSize;
+	float _z = std::round(z / snapSize) * snapSize;
+
+	return vec3(_x, _y, _z);
+}
 
 float fullnormalizeangle(float angle)
 {
@@ -273,11 +281,6 @@ vec3 vec3::unflip()
 vec3 vec3::unflipUV()
 {
 	return flip();
-}
-vec3 vec3::round(float val)
-{
-	return vec3(roundf(x / val) * val,
-		roundf(y / val) * val, roundf(z / val) * val);
 }
 
 bool operator==(const vec2& v1, const vec2& v2)

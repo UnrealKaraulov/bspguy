@@ -53,6 +53,7 @@ struct vec3
 		}
 	}
 	vec3 normalize(float length = 1.0f);
+	vec3 snap(float snapSize);
 	vec3 normalize_angles();
 	vec3 swap_xz();
 	float length();
@@ -64,7 +65,6 @@ struct vec3
 	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
 	vec3 unflip(); 
 	vec3 unflipUV();
-	vec3 round(float val = 0.01);
 
 	void operator-=(const vec3& v);
 	void operator+=(const vec3& v);

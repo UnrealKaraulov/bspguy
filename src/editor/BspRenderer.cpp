@@ -626,6 +626,11 @@ void BspRenderer::preRenderFaces()
 			model.renderGroups[k].buffer->upload();
 		}
 	}
+
+	for (auto f : g_app->pickInfo.selectedFaces)
+	{
+		highlightFace(f, 1);
+	}
 }
 
 void BspRenderer::genRenderFaces(int& renderModelCount)
@@ -2044,7 +2049,7 @@ bool BspRenderer::isFinishedLoading()
 	return lightmapsUploaded && texturesLoaded && clipnodesLoaded;
 }
 
-void BspRenderer::highlightFace(size_t faceIdx, bool highlight, COLOR4 color, bool useColor, bool reupload)
+void BspRenderer::highlightFace(size_t faceIdx, int highlight, bool reupload)
 {
 	RenderFace* rface;
 	RenderGroup* rgroup;
@@ -2057,55 +2062,25 @@ void BspRenderer::highlightFace(size_t faceIdx, bool highlight, COLOR4 color, bo
 	float r, g, b;
 	r = g = b = 1.0f;
 
-	if (highlight)
+	if (highlight == 1)
 	{
 		r = 0.86f;
 		g = 0.0f;
 		b = 0.0f;
 	}
 
-	if (useColor)
+	if (highlight == 2)
 	{
-		r = color.r / 255.0f;
-		g = color.g / 255.0f;
-		b = color.b / 255.0f;
-	}
-
-	for (int i = 0; i < rface->vertCount; i++)
-	{
-		rgroup->verts[rface->vertOffset + i].r = r;
-		rgroup->verts[rface->vertOffset + i].g = g;
-		rgroup->verts[rface->vertOffset + i].b = b;
-	}
-	if (reupload)
-		rgroup->buffer->upload();
-}
-
-void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool useColor, bool reupload)
-{
-	RenderFace* rface;
-	RenderGroup* rgroup;
-	if (!getRenderPointers(faceIdx, &rface, &rgroup))
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1047));
-		return;
-	}
-
-	float r, g, b;
-	r = g = b = 1.0f;
-
-	if (highlight)
-	{
-		r = 0.86f;
+		r = 0.0f;
 		g = 0.0f;
-		b = 0.0f;
+		b = 0.86f;
 	}
 
-	if (useColor)
+	if (highlight == 3)
 	{
-		r = color.r / 255.0f;
-		g = color.g / 255.0f;
-		b = color.b / 255.0f;
+		r = 0.9f;
+		g = 0.2f;
+		b = 0.2f;
 	}
 
 	for (int i = 0; i < rface->vertCount; i++)

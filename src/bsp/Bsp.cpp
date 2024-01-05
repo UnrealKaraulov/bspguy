@@ -1957,20 +1957,22 @@ int Bsp::merge_all_verts(float epsilon)
 {
 	int merged_verts = 0;
 
-	for (int i = 0; i < edgeCount; i++)
+	for (int v = vertCount - 1; v >= vertCount; v--)
 	{
 		bool found1 = false;
 		bool found2 = false;
-		for (int v = 0; v < vertCount; v++)
+		for (int i = 0; i < edgeCount; i++)
 		{
 			if (!found1 && VectorCompare(verts[edges[i].iVertex[0]], verts[v], epsilon))
 			{
 				edges[i].iVertex[0] = v;
+				merged_verts++;
 				found1 = true;
 			}
 			if (!found2 && VectorCompare(verts[edges[i].iVertex[1]], verts[v], epsilon))
 			{
 				edges[i].iVertex[1] = v;
+				merged_verts++;
 				found2 = true;
 			}
 
@@ -1980,7 +1982,8 @@ int Bsp::merge_all_verts(float epsilon)
 			}
 		}
 	}
-	return merged_verts;
+
+	return abs(merged_verts - vertCount);
 }
 
 STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
@@ -3111,7 +3114,7 @@ void Bsp::write(const std::string& path)
 				memcpy(newsurfs, surfedges, surfedgeCount * sizeof(int));
 				if (replacedLump[LUMP_SURFEDGES])
 					delete[] lumps[LUMP_SURFEDGES];
-				lumps[LUMP_SURFEDGES] = (unsigned char *)newsurfs;
+				lumps[LUMP_SURFEDGES] = (unsigned char*)newsurfs;
 				surfedgeCount++;
 				bsp_header.lump[LUMP_SURFEDGES].nLength = (surfedgeCount) * sizeof(int);
 			}
@@ -4325,7 +4328,7 @@ bool Bsp::validate()
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
 	memset(decompressedVis, 0xFF, decompressedVisSize);
 	decompress_vis_lump(this, leaves, visdata, decompressedVis,
-		models[0].nVisLeafs, leafCount, leafCount, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
+		models[0].nVisLeafs, leafCount - 1, leafCount - 1, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
 	delete[] decompressedVis;
 
 	return isValid;
@@ -6612,7 +6615,6 @@ bool Bsp::remove_face(int faceIdx)
 	}
 	else
 	{
-		print_log("Remove face with id:{}\n", faceIdx);
 		std::vector<BSPFACE32> all_faces;
 		for (int f = 0; f < faceCount; f++)
 		{
@@ -6629,7 +6631,6 @@ bool Bsp::remove_face(int faceIdx)
 						continue;
 					if (faceIdx >= models[m].iFirstFace && faceIdx < models[m].iFirstFace + models[m].nFaces)
 					{
-						print_log("Remove face from {} model\n", m);
 						models[m].nFaces--;
 					}
 					else if (models[m].iFirstFace != 0 && models[m].iFirstFace > faceIdx)
@@ -6645,7 +6646,6 @@ bool Bsp::remove_face(int faceIdx)
 						continue;
 					if (faceIdx >= nodes[n].iFirstFace && faceIdx < nodes[n].iFirstFace + nodes[n].nFaces)
 					{
-						print_log("Remove face from {} node\n", n);
 						nodes[n].nFaces--;
 					}
 					else if (nodes[n].iFirstFace != 0 && nodes[n].iFirstFace > faceIdx)
@@ -6662,7 +6662,6 @@ bool Bsp::remove_face(int faceIdx)
 
 					if (faceIdx == marksurfs[s])
 					{
-						print_log("Remove face from {} surface\n", s);
 						marksurfs[s] = leafFaceTarget;
 					}
 					else if (marksurfs[s] != 0 && marksurfs[s] > faceIdx)
@@ -6694,7 +6693,6 @@ bool Bsp::remove_face(int faceIdx)
 					continue;
 				if (s >= leaves[m].iFirstMarkSurface && s < leaves[m].iFirstMarkSurface + leaves[m].nMarkSurfaces)
 				{
-					print_log("Remove face {} from {} leaf\n", faceIdx, m);
 					leaves[m].nMarkSurfaces--;
 				}
 				else if (leaves[m].iFirstMarkSurface != 0 && leaves[m].iFirstMarkSurface > s)

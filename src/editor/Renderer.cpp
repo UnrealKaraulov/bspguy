@@ -3492,15 +3492,10 @@ vec3 Renderer::getCentroid(std::vector<TransformVert>& hullVerts)
 	return centroid / (float)hullVerts.size();
 }
 
-vec3 Renderer::snapToGrid(const vec3& pos)
+vec3 Renderer::snapToGrid(vec3 pos)
 {
 	float snapSize = (float)pow(2.0f, gridSnapLevel);
-
-	float x = round((pos.x) / snapSize) * snapSize;
-	float y = round((pos.y) / snapSize) * snapSize;
-	float z = round((pos.z) / snapSize) * snapSize;
-
-	return vec3(x, y, z);
+	return pos.snap(snapSize);
 }
 
 void Renderer::grabEnt()
@@ -3792,6 +3787,12 @@ void Renderer::goToCoords(float x, float y, float z)
 	cameraOrigin.x = x;
 	cameraOrigin.y = y;
 	cameraOrigin.z = z;
+}
+void Renderer::goToCoords(const vec3 & pos)
+{
+	cameraOrigin.x = pos.x;
+	cameraOrigin.y = pos.y;
+	cameraOrigin.z = pos.z;
 }
 
 void Renderer::goToEnt(Bsp* map, int entIdx)
