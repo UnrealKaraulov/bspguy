@@ -32,6 +32,8 @@ Texture* blackTex = NULL;
 Texture* blueTex = NULL;
 Texture* missingTex = NULL;
 Texture* missingTex_rgba = NULL;
+Texture* aaatriggerTex_rgba = NULL;
+Texture* skyTex_rgba = NULL;
 Texture* clipTex_rgba = NULL;
 
 std::future<void> Renderer::fgdFuture;
@@ -192,6 +194,14 @@ Renderer::Renderer()
 	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/missing.png");
 	missingTex_rgba = new Texture(w, h, img_dat, "missing", true);
 	missingTex_rgba->upload();
+
+	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
+	aaatriggerTex_rgba = new Texture(w, h, img_dat, "aaatrigger", true);
+	aaatriggerTex_rgba->upload();
+
+	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/sky.png");
+	skyTex_rgba = new Texture(w, h, img_dat, "sky", true);
+	skyTex_rgba->upload();
 
 	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/clip.png");
 	clipTex_rgba = new Texture(w, h, img_dat, "clip", true);
@@ -1069,7 +1079,7 @@ void Renderer::controls()
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					if (texinfo.iMiptex == seltexinfo.iMiptex)
 					{
-						map->getBspRender()->highlightFace(i, true);
+						map->getBspRender()->highlightFace(i, 1);
 						pickInfo.selectedFaces.push_back(i);
 					}
 				}
@@ -1672,12 +1682,12 @@ void Renderer::pickObject()
 	{
 		for (auto& idx : pickInfo.selectedFaces)
 		{
-			map->getBspRender()->highlightFace(idx, false);
+			map->getBspRender()->highlightFace(idx, 0);
 		}
 
 		if (tmpPickInfo.selectedFaces.size() == 1)
 		{
-			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], false);
+			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], 0);
 		}
 		map->selectModelEnt();
 		pickCount++;
@@ -1700,7 +1710,7 @@ void Renderer::pickObject()
 		{
 			for (auto idx : pickInfo.selectedFaces)
 			{
-				map->getBspRender()->highlightFace(idx, false);
+				map->getBspRender()->highlightFace(idx, 0);
 			}
 			pickInfo.selectedFaces.clear();
 		}
@@ -1716,13 +1726,13 @@ void Renderer::pickObject()
 				last_face_idx = -1;
 				if (std::find(pickInfo.selectedFaces.begin(), pickInfo.selectedFaces.end(), tmpPickInfo.selectedFaces[0]) == pickInfo.selectedFaces.end())
 				{
-					map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], true);
+					map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], 1);
 					pickInfo.selectedFaces.push_back(tmpPickInfo.selectedFaces[0]);
 				}
 				else if (curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE)
 				{
 					last_face_idx = (int)tmpPickInfo.selectedFaces[0];
-					map->getBspRender()->highlightFace(last_face_idx, false);
+					map->getBspRender()->highlightFace(last_face_idx, 0);
 					pickInfo.selectedFaces.erase(std::find(pickInfo.selectedFaces.begin(), pickInfo.selectedFaces.end(), tmpPickInfo.selectedFaces[0]));
 				}
 				pickCount++;
@@ -1733,12 +1743,12 @@ void Renderer::pickObject()
 	{
 		for (auto idx : pickInfo.selectedFaces)
 		{
-			map->getBspRender()->highlightFace(idx, false);
+			map->getBspRender()->highlightFace(idx, 0);
 		}
 
 		if (tmpPickInfo.selectedFaces.size() == 1)
 		{
-			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], false);
+			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], 0);
 		}
 
 		pickInfo.selectedFaces.clear();
@@ -3684,14 +3694,14 @@ void Renderer::selectFace(Bsp* map, int face, bool add)
 	{
 		for (auto faceIdx : pickInfo.selectedFaces)
 		{
-			map->getBspRender()->highlightFace(faceIdx, false);
+			map->getBspRender()->highlightFace(faceIdx, 0);
 		}
 		pickInfo.selectedFaces.clear();
 	}
 
 	if (face < map->faceCount && face >= 0)
 	{
-		map->getBspRender()->highlightFace(face, true);
+		map->getBspRender()->highlightFace(face, 1);
 		pickInfo.selectedFaces.push_back(face);
 	}
 }
@@ -3704,7 +3714,7 @@ void Renderer::deselectFaces()
 
 	for (auto faceIdx : pickInfo.selectedFaces)
 	{
-		map->getBspRender()->highlightFace(faceIdx, false);
+		map->getBspRender()->highlightFace(faceIdx, 0);
 	}
 
 	pickInfo.selectedFaces.clear();

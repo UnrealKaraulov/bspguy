@@ -2723,6 +2723,11 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
+			/*if (ImGui::MenuItem("Do something bad", NULL, false, !map->is_protected))
+			{
+				
+			}*/
+
 			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
 			{
 				map->merge_all_verts(1.f);
@@ -9321,7 +9326,7 @@ void Gui::drawFaceEditorWidget()
 						vis_debugger_press = false;
 						mapRenderer->preRenderFaces();
 					}
-					face_leaf_list = map->getFaceLeafs(app->pickInfo.selectedFaces[0]);
+					face_leaf_list = map->getFaceLeafs((int)app->pickInfo.selectedFaces[0]);
 				}
 
 				last_faces = app->pickInfo.selectedFaces;

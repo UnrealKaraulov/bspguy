@@ -311,9 +311,21 @@ void BspRenderer::loadTextures()
 		}
 
 		BSPMIPTEX* tex = ((BSPMIPTEX*)(map->textures + texOffset));
-		if (tex->szName[0] == '\0' || tex->nWidth == 0 || tex->nHeight == 0)
+		if (tex->szName[0] == '\0' || tex->nWidth == 0 || tex->nHeight == 0 || strlen(tex->szName) >= MAXTEXTURENAME)
 		{
 			glTexturesSwap[i] = missingTex;
+			continue;
+		}
+
+		if (strcasecmp(tex->szName, "aaatrigger") == 0)
+		{
+			glTexturesSwap[i] = aaatriggerTex_rgba;
+			continue;
+		}
+
+		if (strcasecmp(tex->szName, "sky") == 0)
+		{
+			glTexturesSwap[i] = skyTex_rgba;
 			continue;
 		}
 
@@ -755,7 +767,9 @@ void BspRenderer::deleteTextures()
 	{
 		for (int i = 0; i < numLoadedTextures; i++)
 		{
-			if (glTextures[i] != missingTex)
+			if (glTextures[i] != missingTex
+				&& glTextures[i] != aaatriggerTex_rgba
+				&& glTextures[i] != skyTex_rgba)
 			{
 				delete glTextures[i];
 				glTextures[i] = missingTex;
@@ -866,7 +880,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		if (isSpecial)
 		{
-			lightmapAtlas[0] = whiteTex;
+			lightmapAtlas[0] = redTex;
 		}
 
 		int entIdx = map->get_ent_from_model(modelIdx);
@@ -884,8 +898,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 				opacity = ent->renderamt / 255.f;
 				if (opacity > 0.8f && isOpacity)
 					opacity = 0.8f;
-				else if (opacity < 0.2f)
-					opacity = 0.2f;
+				else if (opacity < 0.25f)
+					opacity = 0.25f;
 			}
 		}
 
@@ -908,7 +922,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 				verts[e].g = 1.0f;
 			}
 			verts[e].b = 1.0f;
-			verts[e].a = opacity;
+			verts[e].a = 1.0f;
 
 			// texture coords
 			float tw = 1.0f / (float)texWidth;
@@ -2058,27 +2072,26 @@ void BspRenderer::highlightFace(size_t faceIdx, int highlight, bool reupload)
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1047));
 		return;
 	}
-
 	float r, g, b;
 	r = g = b = 1.0f;
 
 	if (highlight == 1)
 	{
-		r = 0.86f;
+		r = rgroup->special ? 2.0f : 0.86f;
 		g = 0.0f;
 		b = 0.0f;
 	}
 
 	if (highlight == 2)
 	{
-		r = 0.0f;
+		r = rgroup->special ? 3.0f : 0.0f;
 		g = 0.0f;
 		b = 0.86f;
 	}
 
 	if (highlight == 3)
 	{
-		r = 0.9f;
+		r = rgroup->special ? 4.0f : 0.0f;
 		g = 0.2f;
 		b = 0.2f;
 	}
@@ -2151,7 +2164,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 	BSPFACE32& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 	if (texinfo.iMiptex < 0 || texinfo.iMiptex >= map->textureCount)
-		return 0;
+		return missingTex->id;
 	return glTextures[texinfo.iMiptex]->id;
 }
 
@@ -2471,7 +2484,6 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			}
 			else if (lightmapsUploaded && lightmapsGenerated && (g_render_flags & RENDER_LIGHTMAPS))
 			{
-
 				if (rgroup.lightmapAtlas[s] && lightEnableFlags[s])
 				{
 					rgroup.lightmapAtlas[s]->bind(s + 1);
