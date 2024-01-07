@@ -9307,9 +9307,9 @@ void Gui::drawFaceEditorWidget()
 			std::sort(invis_leafs.begin(), invis_leafs.end());
 		}
 
-		if (last_leaf >= 0 && last_leaf < map->leafCount && last_leaf != mapRenderer->curLeafIdx && (auto_update_leaf || new_last_leaf))
+		if (last_leaf != mapRenderer->curLeafIdx && (auto_update_leaf || new_last_leaf))
 		{
-			if (!new_last_leaf)
+			if (!new_last_leaf || (last_leaf < 0 && last_leaf >= map->leafCount))
 				last_leaf = mapRenderer->curLeafIdx;
 
 			if (last_leaf >= 0 && auto_update_leaf)
