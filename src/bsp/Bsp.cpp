@@ -4099,9 +4099,14 @@ bool Bsp::validate()
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0113), i, faces[i].iPlane, planeCount);
 			isValid = false;
 		}
-		if (faces[i].nEdges > 0 && faces[i].iFirstEdge >= surfedgeCount)
+		if (faces[i].nEdges < 0 || faces[i].iFirstEdge + faces[i].nEdges > surfedgeCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0114), i, faces[i].iFirstEdge, surfedgeCount);
+			isValid = false;
+		}
+		if (faces[i].nEdges < 3)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string("LANG_BAD_EDGES_NUM"), faces[i].nEdges, i);
 			isValid = false;
 		}
 		if (faces[i].iTextureInfo >= texinfoCount)
