@@ -4070,7 +4070,7 @@ bool Bsp::validate()
 
 	for (int i = 0; i < marksurfCount; i++)
 	{
-		if (marksurfs[i] >= faceCount)
+		if (marksurfs[i] < 0 || marksurfs[i] >= faceCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0110), i, marksurfs[i], faceCount);
 			isValid = false;
@@ -4094,12 +4094,12 @@ bool Bsp::validate()
 	}
 	for (int i = 0; i < faceCount; i++)
 	{
-		if (faces[i].iPlane >= planeCount)
+		if (faces[i].iPlane < 0 || faces[i].iPlane >= planeCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0113), i, faces[i].iPlane, planeCount);
 			isValid = false;
 		}
-		if (faces[i].nEdges < 0 || faces[i].iFirstEdge + faces[i].nEdges > surfedgeCount)
+		if (faces[i].nEdges < 0 || faces[i].iFirstEdge < 0 || faces[i].iFirstEdge + faces[i].nEdges > surfedgeCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0114), i, faces[i].iFirstEdge, surfedgeCount);
 			isValid = false;
@@ -4127,7 +4127,7 @@ bool Bsp::validate()
 	}
 	for (int i = 0; i < leafCount; i++)
 	{
-		if (leaves[i].nMarkSurfaces > 0 && leaves[i].iFirstMarkSurface + leaves[i].nMarkSurfaces > marksurfCount)
+		if (leaves[i].nMarkSurfaces < 0 || leaves[i].iFirstMarkSurface < 0 || leaves[i].iFirstMarkSurface + leaves[i].nMarkSurfaces > marksurfCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0117), i, leaves[i].iFirstMarkSurface, marksurfCount);
 			isValid = false;
@@ -4153,7 +4153,7 @@ bool Bsp::validate()
 	{
 		for (int k = 0; k < 2; k++)
 		{
-			if (edges[i].iVertex[k] >= vertCount)
+			if (edges[i].iVertex[k] < 0 || edges[i].iVertex[k] >= vertCount)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0119), i, edges[i].iVertex[k], vertCount);
 				isValid = false;
@@ -4162,12 +4162,12 @@ bool Bsp::validate()
 	}
 	for (int i = 0; i < nodeCount; i++)
 	{
-		if (nodes[i].nFaces > 0 && nodes[i].iFirstFace >= faceCount)
+		if (nodes[i].nFaces < 0 || nodes[i].iFirstFace < 0 || nodes[i].iFirstFace + nodes[i].nFaces > faceCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0120), i, nodes[i].iFirstFace, faceCount);
 			isValid = false;
 		}
-		if (nodes[i].iPlane >= planeCount)
+		if (nodes[i].iPlane < 0 || nodes[i].iPlane >= planeCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0121), i, nodes[i].iPlane, planeCount);
 			isValid = false;
@@ -4218,7 +4218,7 @@ bool Bsp::validate()
 	{
 		totalVisLeaves += models[i].nVisLeafs;
 		totalFaces += models[i].nFaces;
-		if (models[i].nFaces > 0 && (models[i].iFirstFace < 0 || models[i].iFirstFace >= faceCount))
+		if (models[i].nFaces < 0 || models[i].iFirstFace < 0 || models[i].iFirstFace + models[i].nFaces > faceCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0127), i, models[i].iFirstFace, faceCount);
 			isValid = false;
