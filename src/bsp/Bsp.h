@@ -264,6 +264,8 @@ public:
 	bool is_unique_texinfo(int faceIdx);
 
 	int get_model_from_face(int faceIdx);
+	int get_model_from_leaf(int leafIdx);
+
 
 	bool is_worldspawn_ent(int entIdx);
 
@@ -305,6 +307,7 @@ public:
 	void ExportLightFile();
 	void ImportLightFile();
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
+	bool isModelHasLeafIdx(const BSPMODEL& bspmdl, int leafidx);
 
 	void hideEnts(bool hide = true);
 

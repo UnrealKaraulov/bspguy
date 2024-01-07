@@ -1572,11 +1572,11 @@ void Renderer::moveGrabbedEnt()
 
 void Renderer::shortcutControls()
 {
+	bool anyEnterPressed = (pressed[GLFW_KEY_ENTER] && !oldPressed[GLFW_KEY_ENTER]) ||
+		(pressed[GLFW_KEY_KP_ENTER] && !oldPressed[GLFW_KEY_KP_ENTER]);
+
 	if (pickMode == PICK_OBJECT)
 	{
-		bool anyEnterPressed = (pressed[GLFW_KEY_ENTER] && !oldPressed[GLFW_KEY_ENTER]) ||
-			(pressed[GLFW_KEY_KP_ENTER] && !oldPressed[GLFW_KEY_KP_ENTER]);
-
 		if (pressed[GLFW_KEY_G] == GLFW_PRESS && oldPressed[GLFW_KEY_G] != GLFW_PRESS && anyAltPressed)
 		{
 			if (!movingEnt)
@@ -1598,19 +1598,6 @@ void Renderer::shortcutControls()
 		{
 			pasteEnt(false);
 		}
-		if (anyCtrlPressed && pressed[GLFW_KEY_M] && !oldPressed[GLFW_KEY_M])
-		{
-			gui->showTransformWidget = !gui->showTransformWidget;
-		}
-		if (anyCtrlPressed && pressed[GLFW_KEY_G] && !oldPressed[GLFW_KEY_G])
-		{
-			gui->showGOTOWidget = !gui->showGOTOWidget;
-			gui->showGOTOWidget_update = true;
-		}
-		if (anyAltPressed && anyEnterPressed)
-		{
-			gui->showKeyvalueWidget = !gui->showKeyvalueWidget;
-		}
 		if (pressed[GLFW_KEY_DELETE] && !oldPressed[GLFW_KEY_DELETE])
 		{
 			deleteEnts();
@@ -1626,6 +1613,19 @@ void Renderer::shortcutControls()
 		{
 			gui->pasteTexture();
 		}
+	}
+	if (anyCtrlPressed && pressed[GLFW_KEY_M] && !oldPressed[GLFW_KEY_M])
+	{
+		gui->showTransformWidget = !gui->showTransformWidget;
+	}
+	if (anyCtrlPressed && pressed[GLFW_KEY_G] && !oldPressed[GLFW_KEY_G])
+	{
+		gui->showGOTOWidget = !gui->showGOTOWidget;
+		gui->showGOTOWidget_update = true;
+	}
+	if (anyAltPressed && anyEnterPressed)
+	{
+		gui->showKeyvalueWidget = !gui->showKeyvalueWidget;
 	}
 }
 

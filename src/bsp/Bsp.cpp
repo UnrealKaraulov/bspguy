@@ -6873,6 +6873,8 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 		}
 	}
 
+	// swap leaves?
+
 	models[dst_model].nFaces += newfaces;
 	models[dst_model].nVisLeafs += models[src_model].nVisLeafs; //0
 
@@ -6955,6 +6957,23 @@ int Bsp::get_model_from_face(int faceIdx)
 		{
 			return i;
 		}
+	}
+	return -1;
+}
+
+int Bsp::get_model_from_leaf(int leafIdx)
+{
+	int start_leaf = 0;
+	int end_leaf = 1;
+	for (int i = 0; i < modelCount; i++)
+	{
+		BSPMODEL& model = models[i];
+		end_leaf += model.nVisLeafs;
+		if (leafIdx >= start_leaf && leafIdx < end_leaf)
+		{
+			return i;
+		}
+		start_leaf += model.nVisLeafs;
 	}
 	return -1;
 }
@@ -7363,6 +7382,15 @@ bool Bsp::isModelHasFaceIdx(const BSPMODEL& bspmdl, int faceid)
 	if (faceid < bspmdl.iFirstFace)
 		return false;
 	if (faceid >= bspmdl.iFirstFace + bspmdl.nFaces)
+		return false;
+	return true;
+}
+
+bool Bsp::isModelHasLeafIdx(const BSPMODEL& bspmdl, int leafidx)
+{
+	if (leafidx < 0)
+		return false;
+	if (leafidx >= bspmdl.nVisLeafs)
 		return false;
 	return true;
 }

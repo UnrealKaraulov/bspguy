@@ -2725,7 +2725,7 @@ void Gui::drawMenuBar()
 
 			/*if (ImGui::MenuItem("Do something bad", NULL, false, !map->is_protected))
 			{
-				
+
 			}*/
 
 			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
@@ -5371,9 +5371,9 @@ void Gui::drawGOTOWidget()
 			ImGui::PopItemWidth();
 			if (ImGui::Button("Go to##2"))
 			{
-				app->pickMode = PICK_OBJECT;
 				if (modelid >= 0 && modelid < map->modelCount)
 				{
+					app->pickMode = PICK_OBJECT;
 					for (size_t i = 0; i < map->ents.size(); i++)
 					{
 						if (map->ents[i]->getBspModelIdx() == modelid)
@@ -5404,11 +5404,13 @@ void Gui::drawGOTOWidget()
 				}
 				else if (leafid > 0 && leafid < (int)map->leafCount)
 				{
+					app->pickMode = PICK_FACE;
 					BSPLEAF32& leaf = map->leaves[leafid];
 					app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
 				}
 				else if (entid > 0 && entid < (int)map->ents.size())
 				{
+					app->pickMode = PICK_OBJECT;
 					app->selectEnt(map, entid);
 					app->goToEnt(map, entid);
 				}
@@ -9264,6 +9266,8 @@ void Gui::drawFaceEditorWidget()
 
 
 		static int last_leaf = -1;
+		static bool new_last_leaf = false;
+		static int last_leaf_mdl = 0;
 		static std::vector<int> vis_leafs;
 		static std::vector<int> invis_leafs;
 		static bool leaf_decompress = false;
@@ -9273,7 +9277,7 @@ void Gui::drawFaceEditorWidget()
 		static bool auto_update_leaf = true;
 		static std::vector<size_t> last_faces;
 
-		if (leaf_decompress && last_leaf != -1)
+		if (leaf_decompress && last_leaf != -1 && last_leaf < map->leafCount)
 		{
 			leaf_decompress = false;
 			if (visData)
@@ -9286,7 +9290,7 @@ void Gui::drawFaceEditorWidget()
 			DecompressVis(map->visdata + map->leaves[last_leaf].nVisOffset, visData, rowSize, map->leafCount - 1, map->visDataLength - map->leaves[last_leaf].nVisOffset);
 			vis_leafs.clear();
 			invis_leafs.clear();
-			for (int l = 0; l < map->models[0].nVisLeafs - 1; l++)
+			for (int l = 0; l < map->models[0].nVisLeafs; l++)
 			{
 				if (CHECKVISBIT(visData, l))
 				{
@@ -9302,13 +9306,17 @@ void Gui::drawFaceEditorWidget()
 			std::sort(invis_leafs.begin(), invis_leafs.end());
 		}
 
-		if (last_leaf != mapRenderer->curLeafIdx)
+		if (last_leaf != mapRenderer->curLeafIdx && (auto_update_leaf || new_last_leaf))
 		{
-			last_leaf = mapRenderer->curLeafIdx;
+			if (!new_last_leaf)
+				last_leaf = mapRenderer->curLeafIdx;
+
 			if (last_leaf >= 0 && auto_update_leaf)
 			{
 				leaf_decompress = true;
 			}
+
+			last_leaf_mdl = map->get_model_from_leaf(last_leaf);
 		}
 
 		if (leaf_decompress)
@@ -9317,6 +9325,8 @@ void Gui::drawFaceEditorWidget()
 		}
 		else
 		{
+			ImGuiStyle& style = ImGui::GetStyle();
+
 			if (!app->pickInfo.selectedFaces.empty())
 			{
 				if (last_faces != app->pickInfo.selectedFaces)
@@ -9463,14 +9473,132 @@ void Gui::drawFaceEditorWidget()
 				}
 
 				ImGui::PopStyleColor();
+
+				ImGui::TextUnformatted("Used in leaves:");
+				style.FrameBorderSize = 1.0f;
+
+				ImGui::BeginChild("##faceleaflist", ImVec2(0, 120), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
+
+				ImGuiListClipper leaf_clipper;
+				leaf_clipper.Begin((int)face_leaf_list.size());
+
+				while (leaf_clipper.Step())
+				{
+					for (int line_no = leaf_clipper.DisplayStart; line_no < leaf_clipper.DisplayEnd; line_no++)
+					{
+						if (ImGui::Selectable(std::to_string(face_leaf_list[line_no]).c_str(), false, ImGuiSelectableFlags_AllowDoubleClick))
+						{
+							if (ImGui::IsMouseDoubleClicked(0))
+							{
+
+							}
+						}
+					}
+				}
+
+				ImGui::EndChild();
 			}
 
-			ImGui::TextUnformatted("Used in leaves:");
+			if (ImGui::Checkbox("Auto update", &auto_update_leaf) && auto_update_leaf)
+			{
+				if (last_leaf >= 0)
+				{
+					leaf_decompress = true;
+				}
+			}
 
-			ImGuiStyle& style = ImGui::GetStyle();
-			style.FrameBorderSize = 1.0f;
+			if (!auto_update_leaf)
+			{
+				ImGui::TextUnformatted("Enter leaf number:");
+				int tmp_new_leaf = last_leaf;
+				if (ImGui::InputInt("##inputleaf", &tmp_new_leaf, 1, 1))
+				{
+					if (tmp_new_leaf != last_leaf)
+					{
+						last_leaf = tmp_new_leaf;
+						new_last_leaf = true;
+					}
+				}
+			}
 
-			ImGui::BeginChild("##faceleaflist", ImVec2(0, 120), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
+			//if (!auto_update_leaf)
+			//{
+			//	if (ImGui::Button("Update leaf"))
+			//	{
+			//		if (last_leaf >= 0)
+			//		{
+			//			leaf_decompress = true;
+			//		}
+			//	}
+			//}
+
+			ImGui::TextUnformatted(fmt::format("Leaf list. Leaf:{}", last_leaf).c_str());
+			ImGui::TextUnformatted(fmt::format("Leaf model id:{}", last_leaf_mdl).c_str());
+
+			if (last_leaf >= 0 && last_leaf < map->leafCount)
+				ImGui::TextUnformatted(fmt::format("Vis offset:{}", map->leaves[last_leaf].nVisOffset).c_str());
+
+
+			if (ImGui::Button(get_localized_string(LANG_0645).c_str()))
+			{
+				if (!g_app->reloading && mapRenderer)
+				{
+					vis_debugger_press = true;
+
+					for (int l = 0; l < map->leafCount - 1; l++)
+					{
+						if (l < map->models[0].nVisLeafs)
+						{
+							if (l == last_leaf || CHECKVISBIT(visData, l))
+							{
+							}
+							else
+							{
+								auto faceList = map->getLeafFaces(l + 1);
+								for (const auto& idx : faceList)
+								{
+									mapRenderer->highlightFace(idx, 1);
+								}
+							}
+						}
+						else
+						{
+							auto faceList = map->getLeafFaces(l + 1);
+							for (const auto& idx : faceList)
+							{
+								mapRenderer->highlightFace(idx, 3);
+							}
+						}
+					}
+
+					for (int l = 0; l < map->models[0].nVisLeafs; l++)
+					{
+						if (l == last_leaf || CHECKVISBIT(visData, l))
+						{
+							auto faceList = map->getLeafFaces(l + 1);
+							for (const auto& idx : faceList)
+							{
+								mapRenderer->highlightFace(idx, 2);
+							}
+						}
+					}
+				}
+			}
+
+			if (ImGui::Button(get_localized_string("LANG_SELECT_LEAF_FACES").c_str()))
+			{
+				app->pickInfo.selectedFaces.clear();
+				mapRenderer->preRenderFaces();
+				auto faceList = map->getLeafFaces(last_leaf);
+				for (const auto& idx : faceList)
+				{
+					app->pickInfo.selectedFaces.push_back(idx);
+					mapRenderer->highlightFace(idx, 2);
+				}
+				pickCount++;
+			}
+
+			ImGui::BeginChild("##leaffacelist", ImVec2(0, 120), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
 
 			ImGuiListClipper face_clipper;
 			face_clipper.Begin((int)face_leaf_list.size());
@@ -9491,54 +9619,6 @@ void Gui::drawFaceEditorWidget()
 
 			ImGui::EndChild();
 
-			ImGui::TextUnformatted(fmt::format("Leaf list. Leaf:{}", last_leaf).c_str());
-			if (last_leaf >= 0 && last_leaf < map->leafCount)
-				ImGui::TextUnformatted(fmt::format("Vis offset:{}", map->leaves[last_leaf].nVisOffset).c_str());
-
-
-			if (ImGui::Button(get_localized_string(LANG_0645).c_str()))
-			{
-				if (!g_app->reloading && mapRenderer)
-				{
-					vis_debugger_press = true;
-
-					for (int l = 0; l < map->models[0].nVisLeafs - 1; l++)
-					{
-						if (l == last_leaf || CHECKVISBIT(visData, l))
-						{
-						}
-						else
-						{
-							auto faceList = map->getLeafFaces(l + 1);
-							for (const auto& idx : faceList)
-							{
-								mapRenderer->highlightFace(idx, 1);
-							}
-						}
-					}
-
-					for (int l = map->models[0].nVisLeafs - 1; l < map->leafCount - 1; l++)
-					{
-						auto faceList = map->getLeafFaces(l + 1);
-						for (const auto& idx : faceList)
-						{
-							mapRenderer->highlightFace(idx, 3);
-						}
-					}
-
-					for (int l = 0; l < map->leafCount - 1; l++)
-					{
-						if (l == last_leaf || CHECKVISBIT(visData, l))
-						{
-							auto faceList = map->getLeafFaces(l + 1);
-							for (const auto& idx : faceList)
-							{
-								mapRenderer->highlightFace(idx, 2);
-							}
-						}
-					}
-				}
-			}
 
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.0, 0.0, 1.0, 1.0 });
 			ImGui::TextUnformatted("Blue is visible.");
@@ -9548,13 +9628,6 @@ void Gui::drawFaceEditorWidget()
 			ImGui::TextUnformatted("Red is invisible.");
 			ImGui::PopStyleColor();
 
-			if (ImGui::Checkbox("Auto update", &auto_update_leaf) && auto_update_leaf)
-			{
-				if (last_leaf >= 0)
-				{
-					leaf_decompress = true;
-				}
-			}
 			if (last_leaf == 0)
 				ImGui::BeginDisabled();
 			ImGui::TextUnformatted("Double click for edit");
@@ -9567,16 +9640,6 @@ void Gui::drawFaceEditorWidget()
 			if (last_leaf == 0)
 				ImGui::EndDisabled();
 
-			if (!auto_update_leaf)
-			{
-				if (ImGui::Button("Update leaf"))
-				{
-					if (last_leaf >= 0)
-					{
-						leaf_decompress = true;
-					}
-				}
-			}
 			style.FrameBorderSize = 1.0f;
 
 			ImGui::BeginChild("##leaflist", ImVec2(0, 240), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
@@ -9644,7 +9707,7 @@ void Gui::drawFaceEditorWidget()
 			{
 				invis_leafs.clear();
 				vis_leafs.clear();
-				for (int l = 0; l < map->models[0].nVisLeafs - 1; l++)
+				for (int l = 0; l < map->models[0].nVisLeafs; l++)
 				{
 					vis_leafs.push_back(l + 1);
 				}
@@ -9658,7 +9721,7 @@ void Gui::drawFaceEditorWidget()
 			{
 				invis_leafs.clear();
 				vis_leafs.clear();
-				for (int l = 0; l < map->models[0].nVisLeafs - 1; l++)
+				for (int l = 0; l < map->models[0].nVisLeafs; l++)
 				{
 					invis_leafs.push_back(l + 1);
 				}
@@ -9671,7 +9734,7 @@ void Gui::drawFaceEditorWidget()
 
 			if (ImGui::Button("Mark visible for all"))
 			{
-				for (int l = 0; l < map->models[0].nVisLeafs - 1; l++)
+				for (int l = 0; l < map->models[0].nVisLeafs; l++)
 				{
 
 				}
