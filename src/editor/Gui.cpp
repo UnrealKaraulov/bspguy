@@ -9274,6 +9274,7 @@ void Gui::drawFaceEditorWidget()
 		static unsigned char* visData = NULL;
 		static bool vis_debugger_press = false;
 		static std::vector<int> face_leaf_list;
+		static std::vector<int> leaf_faces;
 		static bool auto_update_leaf = true;
 		static std::vector<size_t> last_faces;
 
@@ -9306,7 +9307,7 @@ void Gui::drawFaceEditorWidget()
 			std::sort(invis_leafs.begin(), invis_leafs.end());
 		}
 
-		if (last_leaf != mapRenderer->curLeafIdx && (auto_update_leaf || new_last_leaf))
+		if (last_leaf >= 0 && last_leaf < map->leafCount && last_leaf != mapRenderer->curLeafIdx && (auto_update_leaf || new_last_leaf))
 		{
 			if (!new_last_leaf)
 				last_leaf = mapRenderer->curLeafIdx;
@@ -9316,6 +9317,7 @@ void Gui::drawFaceEditorWidget()
 				leaf_decompress = true;
 			}
 
+			leaf_faces = map->getLeafFaces(last_leaf);
 			last_leaf_mdl = map->get_model_from_leaf(last_leaf);
 		}
 
@@ -9601,13 +9603,13 @@ void Gui::drawFaceEditorWidget()
 			ImGui::BeginChild("##leaffacelist", ImVec2(0, 120), ImGuiChildFlags_Border, ImGuiWindowFlags_HorizontalScrollbar);
 
 			ImGuiListClipper face_clipper;
-			face_clipper.Begin((int)face_leaf_list.size());
+			face_clipper.Begin((int)leaf_faces.size());
 
 			while (face_clipper.Step())
 			{
 				for (int line_no = face_clipper.DisplayStart; line_no < face_clipper.DisplayEnd; line_no++)
 				{
-					if (ImGui::Selectable(std::to_string(face_leaf_list[line_no]).c_str(), false, ImGuiSelectableFlags_AllowDoubleClick))
+					if (ImGui::Selectable(std::to_string(leaf_faces[line_no]).c_str(), false, ImGuiSelectableFlags_AllowDoubleClick))
 					{
 						if (ImGui::IsMouseDoubleClicked(0))
 						{
