@@ -6612,81 +6612,106 @@ bool Bsp::remove_face(int faceIdx)
 		return false;
 	}
 
-	int leafFaceTarget = -1;
-	bool onlyleafs = false;
-	if (onlyleafs)
+	std::vector<BSPFACE32> all_faces;
+	for (int f = 0; f < faceCount; f++)
 	{
-		leafFaceTarget = faceIdx;
-	}
-	else
-	{
-		std::vector<BSPFACE32> all_faces;
-		for (int f = 0; f < faceCount; f++)
+		if (f != faceIdx)
 		{
-			if (f != faceIdx)
-			{
-				all_faces.push_back(faces[f]);
-			}
-			else
-			{
-				// Shift face count in models
-				for (int m = 0; m < modelCount; m++)
-				{
-					if (models[m].nFaces == 0)
-						continue;
-					if (faceIdx >= models[m].iFirstFace && faceIdx < models[m].iFirstFace + models[m].nFaces)
-					{
-						models[m].nFaces--;
-					}
-					else if (models[m].iFirstFace != 0 && models[m].iFirstFace > faceIdx)
-					{
-						models[m].iFirstFace--;
-					}
-				}
-
-				// Shift face count in nodes
-				for (int n = 0; n < nodeCount; n++)
-				{
-					if (nodes[n].nFaces == 0)
-						continue;
-					if (faceIdx >= nodes[n].iFirstFace && faceIdx < nodes[n].iFirstFace + nodes[n].nFaces)
-					{
-						nodes[n].nFaces--;
-					}
-					else if (nodes[n].iFirstFace != 0 && nodes[n].iFirstFace > faceIdx)
-					{
-						nodes[n].iFirstFace--;
-					}
-				}
-
-				//Shift face count in marksurfs
-				for (int s = 0; s < marksurfCount; s++)
-				{
-					if (marksurfs[s] == 0)
-						continue;
-
-					if (faceIdx == marksurfs[s])
-					{
-						marksurfs[s] = leafFaceTarget;
-					}
-					else if (marksurfs[s] != 0 && marksurfs[s] > faceIdx)
-					{
-						marksurfs[s]--;
-					}
-				}
-			}
+			all_faces.push_back(faces[f]);
 		}
-
-		// Update faces array
-		unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
-		memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
-		replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 	}
+
+	// Update faces array
+	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
+	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
+
+	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
+
+
+	// Shift face count in models
+	for (int m = 0; m < modelCount; m++)
+	{
+		if (models[m].nFaces <= 0 || models[m].iFirstFace < 0)
+		{
+			models[m].iFirstFace = 0;
+			models[m].nFaces = 0;
+			continue;
+		}
+		if (faceIdx >= models[m].iFirstFace + models[m].nFaces)
+		{
+			continue;
+		}
+		else
+		{
+			//print_log("node {}/{} -> ", models[m].iFirstFace, models[m].nFaces);
+			if (faceIdx >= models[m].iFirstFace && faceIdx < models[m].iFirstFace + models[m].nFaces)
+			{
+				models[m].nFaces--;
+			}
+			else 
+			{
+				models[m].iFirstFace--;
+			}
+			//print_log("node {}/{}\n", models[m].iFirstFace, models[m].nFaces);
+		}
+	}
+
+	// Shift face count in nodes
+	for (int n = 0; n < nodeCount; n++)
+	{
+		if (nodes[n].nFaces <= 0 || nodes[n].iFirstFace < 0)
+		{
+			nodes[n].iFirstFace = 0;
+			nodes[n].nFaces = 0;
+			continue;
+		}
+		if (faceIdx >= nodes[n].iFirstFace + nodes[n].nFaces)
+		{
+			continue;
+		}
+		else
+		{
+			//print_log("node {}/{} -> ", nodes[n].iFirstFace, nodes[n].nFaces);
+
+			if (faceIdx >= nodes[n].iFirstFace && faceIdx < nodes[n].iFirstFace + nodes[n].nFaces)
+			{
+				nodes[n].nFaces--;
+			}
+			else 
+			{
+				nodes[n].iFirstFace--;
+			}
+			//print_log("node {}/{}\n", nodes[n].iFirstFace, nodes[n].nFaces);
+		}
+	}
+
+	std::set<int> marksurfs_for_delete;
+
+	//Shift face count in marksurfs
+	for (int s = 0; s < marksurfCount; s++)
+	{
+		if (marksurfs[s] < 0)
+			continue;
+
+		if (faceIdx == marksurfs[s])
+		{
+			marksurfs_for_delete.insert(s);
+		}
+		else if (faceIdx >= marksurfs[s])
+		{
+			continue;
+		}
+		else
+		{
+			marksurfs[s]--;
+		}
+	}
+
 
 	std::vector<int> all_mark_surfaces;
 	for (int s = 0; s < marksurfCount; s++)
 	{
-		if (marksurfs[s] != leafFaceTarget)
+		if (!marksurfs_for_delete.count(s))
 		{
 			all_mark_surfaces.push_back(marksurfs[s]);
 		}
@@ -6694,13 +6719,13 @@ bool Bsp::remove_face(int faceIdx)
 		{
 			for (int m = 0; m < leafCount; m++)
 			{
-				if (leaves[m].nMarkSurfaces == 0)
+				if (leaves[m].nMarkSurfaces <= 0)
 					continue;
 				if (s >= leaves[m].iFirstMarkSurface && s < leaves[m].iFirstMarkSurface + leaves[m].nMarkSurfaces)
 				{
 					leaves[m].nMarkSurfaces--;
 				}
-				else if (leaves[m].iFirstMarkSurface != 0 && leaves[m].iFirstMarkSurface > s)
+				else if (leaves[m].iFirstMarkSurface > s)
 				{
 					leaves[m].iFirstMarkSurface--;
 				}
@@ -6708,7 +6733,7 @@ bool Bsp::remove_face(int faceIdx)
 		}
 	}
 
-	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
+	newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
 	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
 	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
 	return true;

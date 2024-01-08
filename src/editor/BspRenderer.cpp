@@ -865,6 +865,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		float lw = 0;
 		float lh = 0;
+
 		if (lmap)
 		{
 			lw = (float)lmap->w / (float)LIGHTMAP_ATLAS_SIZE;
@@ -924,14 +925,36 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			verts[e].b = 1.0f;
 			verts[e].a = 1.0f;
 
-			// texture coords
+		// texture coords
 			float tw = 1.0f / (float)texWidth;
 			float th = 1.0f / (float)texHeight;
 			float fU = dotProduct(texinfo.vS, vert) + texinfo.shiftS;
 			float fV = dotProduct(texinfo.vT, vert) + texinfo.shiftT;
-			verts[e].u = fU * tw;
-			verts[e].v = fV * th;
+			if (!isSpecial)
+			{
+				verts[e].u = fU * tw;
+				verts[e].v = fV * th;
+			}
+			else
+			{
+				vec3 xv, yv;
+				BSPPLANE& plane = map->planes[face.iPlane];
+				int bestplane = TextureAxisFromPlane(plane, xv, yv);
 
+				vec3 vS = AxisFromTextureAngle(0.0, true, bestplane);
+				vec3 vT = AxisFromTextureAngle(0.0, false, bestplane);
+
+				vS = vS.normalize(1.0f / (1.0f / texinfo.vS.length()));
+				vT = vT.normalize(1.0f / (1.0f / texinfo.vS.length()));
+
+				tw = 1.0f / (float)64;
+				th = 1.0f / (float)64;
+				fU = dotProduct(vS, vert);
+				fV = dotProduct(vT, vert);
+
+				verts[e].u = fU * tw;
+				verts[e].v = fV * th;
+			}
 			// lightmap texture coords
 			if (hasLighting && lmap)
 			{

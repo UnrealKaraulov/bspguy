@@ -2854,38 +2854,31 @@ void Gui::drawMenuBar()
 					memset(visData, 0xFF, rowSize);
 					DecompressVis(map->visdata + leaf.nVisOffset, visData, rowSize, map->leafCount - 1, map->visDataLength - leaf.nVisOffset);
 
-					bool FoundAnyFace = true;
+					std::vector<int> faces_to_remove;
 
-					size_t cullfaces = 0;
-
-					for (int l = 0; l < map->leafCount - 1; l++)
+					for (int l = 0; l < map->models[0].nVisLeafs; l++)
 					{
 						if (l == leafIdx || CHECKVISBIT(visData, l))
 						{
 							auto faceList = map->getLeafFaces(l + 1);
-							cullfaces += faceList.size();
+							faces_to_remove.insert(faces_to_remove.begin(),faceList.begin(), faceList.end());
 						}
 					}
-					STRUCTCOUNT count_1(map);
-					g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)cullfaces);
 
-					while (FoundAnyFace)
+					const auto del_dupl = std::ranges::unique(faces_to_remove);
+					// v now holds {1 2 1 3 4 5 4 x x x}, where 'x' is indeterminate
+					faces_to_remove.erase(del_dupl.begin(), del_dupl.end());
+
+					std::sort(faces_to_remove.begin(), faces_to_remove.end());
+
+					STRUCTCOUNT count_1(map);
+					g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)faces_to_remove.size());
+
+					while (faces_to_remove.size())
 					{
-						FoundAnyFace = false;
-						for (int l = 0; l < map->leafCount - 1 && !FoundAnyFace; l++)
-						{
-							if (l == leafIdx || CHECKVISBIT(visData, l))
-							{
-								auto faceList = map->getLeafFaces(l + 1);
-								std::sort(faceList.begin(), faceList.end());
-								if (faceList.size())
-								{
-									map->remove_face(faceList[faceList.size() - 1]);
-									g_progress.tick();
-									FoundAnyFace = true;
-								}
-							}
-						}
+						map->remove_face(faces_to_remove.size() - 1);
+						faces_to_remove.pop_back();
+						g_progress.tick();
 					}
 					delete[] visData;
 					STRUCTCOUNT count_2(map);
@@ -2914,38 +2907,34 @@ void Gui::drawMenuBar()
 						//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
 						DecompressVis(map->visdata + leaf.nVisOffset, visData, rowSize, map->leafCount - 1, map->visDataLength - leaf.nVisOffset);
 
-						bool FoundAnyFace = true;
 
-						size_t cullfaces = 0;
-						for (int l = 0; l < map->leafCount - 1; l++)
+						std::vector<int> faces_to_remove;
+
+						for (int l = 0; l < map->models[0].nVisLeafs; l++)
 						{
-							if (l == rend->curLeafIdx || CHECKVISBIT(visData, l))
+							if (l == leafIdx || CHECKVISBIT(visData, l))
 							{
 								auto faceList = map->getLeafFaces(l + 1);
-								cullfaces += faceList.size();
+								faces_to_remove.insert(faces_to_remove.begin(), faceList.begin(), faceList.end());
 							}
 						}
-						STRUCTCOUNT count_1(map);
-						g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)cullfaces);
 
-						while (FoundAnyFace)
+						const auto del_dupl = std::ranges::unique(faces_to_remove);
+						// v now holds {1 2 1 3 4 5 4 x x x}, where 'x' is indeterminate
+						faces_to_remove.erase(del_dupl.begin(), del_dupl.end());
+
+						std::sort(faces_to_remove.begin(), faces_to_remove.end());
+
+						STRUCTCOUNT count_1(map);
+						g_progress.update("Remove cull faces.[LEAF CLEAN]", (int)faces_to_remove.size());
+
+						while (faces_to_remove.size())
 						{
-							FoundAnyFace = false;
-							for (int l = 0; l < map->leafCount - 1 && !FoundAnyFace; l++)
-							{
-								if (l == rend->curLeafIdx || CHECKVISBIT(visData, l))
-								{
-									auto faceList = map->getLeafFaces(l + 1);
-									std::sort(faceList.begin(), faceList.end());
-									if (faceList.size())
-									{
-										map->remove_face(faceList[faceList.size() - 1]);
-										g_progress.tick();
-										FoundAnyFace = true;
-									}
-								}
-							}
+							map->remove_face(faces_to_remove.size() - 1);
+							faces_to_remove.pop_back();
+							g_progress.tick();
 						}
+
 						delete[] visData;
 						STRUCTCOUNT count_2(map);
 						count_1.sub(count_2);
@@ -9348,13 +9337,12 @@ void Gui::drawFaceEditorWidget()
 
 				if (ImGui::Button("DELETE"))
 				{
-					auto selected_faces = app->pickInfo.selectedFaces;
-					std::sort(selected_faces.begin(), selected_faces.end());
+					std::sort(app->pickInfo.selectedFaces.begin(), app->pickInfo.selectedFaces.end());
 
-					while (selected_faces.size())
+					while (app->pickInfo.selectedFaces.size())
 					{
-						map->remove_face((int)selected_faces[selected_faces.size() - 1]);
-						selected_faces.pop_back();
+						map->remove_face((int)app->pickInfo.selectedFaces[app->pickInfo.selectedFaces.size() - 1]);
+						app->pickInfo.selectedFaces.pop_back();
 					}
 
 					mapRenderer->loadLightmaps();
@@ -9572,7 +9560,6 @@ void Gui::drawFaceEditorWidget()
 							}
 						}
 					}
-
 					for (int l = 0; l < map->models[0].nVisLeafs; l++)
 					{
 						if (l == last_leaf || CHECKVISBIT(visData, l))

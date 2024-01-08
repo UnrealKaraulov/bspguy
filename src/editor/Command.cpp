@@ -537,9 +537,11 @@ void EditBspModelCommand::execute()
 		return;
 
 	map->replace_lumps(newLumps);
-	map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
-	map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
-
+	if (entIdx >= 0)
+	{
+		map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
+		map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
+	}
 
 
 	refresh();
@@ -552,8 +554,11 @@ void EditBspModelCommand::undo()
 		return;
 
 	map->replace_lumps(oldLumps);
-	map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
-	map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
+	if (entIdx >= 0)
+	{
+		map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
+		map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
+	}
 	refresh();
 
 	BspRenderer* renderer = getBspRenderer();
