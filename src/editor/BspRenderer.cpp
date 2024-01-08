@@ -881,7 +881,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		if (isSpecial)
 		{
-			lightmapAtlas[0] = redTex;
+			lightmapAtlas[0] = whiteTex;
 		}
 
 		int entIdx = map->get_ent_from_model(modelIdx);
