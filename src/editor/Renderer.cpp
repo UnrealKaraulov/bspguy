@@ -33,6 +33,7 @@ Texture* blueTex = NULL;
 Texture* missingTex = NULL;
 Texture* missingTex_rgba = NULL;
 Texture* aaatriggerTex_rgba = NULL;
+Texture* aaatriggerTex = NULL;
 Texture* skyTex_rgba = NULL;
 Texture* clipTex_rgba = NULL;
 
@@ -198,6 +199,10 @@ Renderer::Renderer()
 	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
 	aaatriggerTex_rgba = new Texture(w, h, img_dat, "aaatrigger", true);
 	aaatriggerTex_rgba->upload();
+
+	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
+	aaatriggerTex = new Texture(w, h, img_dat, "aaatrigger");
+	aaatriggerTex->upload();
 
 	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/sky.png");
 	skyTex_rgba = new Texture(w, h, img_dat, "sky", true);

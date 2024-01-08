@@ -474,6 +474,8 @@ int CreateBspModelCommand::getDefaultTextureIdx()
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 			if (tex.szName[0] != '\0' && strcasecmp(tex.szName, "aaatrigger") == 0)
 			{
+				tex.nWidth = aaatriggerTex->width;
+				tex.nHeight = aaatriggerTex->height;
 				print_log(get_localized_string(LANG_0295));
 				return i;
 			}
@@ -488,7 +490,7 @@ int CreateBspModelCommand::addDefaultTexture()
 	Bsp* map = getBsp();
 	if (!map)
 		return -1;
-	int aaatriggerIdx = map->add_texture("aaatrigger", missingTex->data, missingTex->width, missingTex->height);
+	int aaatriggerIdx = map->add_texture("aaatrigger", aaatriggerTex->data, aaatriggerTex->width, aaatriggerTex->height);
 
 	return aaatriggerIdx;
 }

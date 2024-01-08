@@ -64,6 +64,7 @@ extern Texture* blueTex;
 extern Texture* missingTex;
 extern Texture* missingTex_rgba;
 extern Texture* aaatriggerTex_rgba;
+extern Texture* aaatriggerTex;
 extern Texture* skyTex_rgba;
 extern Texture* clipTex_rgba;
 
