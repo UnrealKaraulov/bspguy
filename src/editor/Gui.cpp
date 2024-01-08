@@ -2861,22 +2861,20 @@ void Gui::drawMenuBar()
 						if (l == leafIdx || CHECKVISBIT(visData, l))
 						{
 							auto faceList = map->getLeafFaces(l + 1);
-							faces_to_remove.insert(faces_to_remove.begin(),faceList.begin(), faceList.end());
+							faces_to_remove.insert(faces_to_remove.end(),faceList.begin(), faceList.end());
 						}
 					}
 
-					const auto del_dupl = std::ranges::unique(faces_to_remove);
-					// v now holds {1 2 1 3 4 5 4 x x x}, where 'x' is indeterminate
-					faces_to_remove.erase(del_dupl.begin(), del_dupl.end());
-
 					std::sort(faces_to_remove.begin(), faces_to_remove.end());
+					faces_to_remove.erase(std::unique(faces_to_remove.begin(), faces_to_remove.end()), faces_to_remove.end());
+
 
 					STRUCTCOUNT count_1(map);
 					g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)faces_to_remove.size());
 
 					while (faces_to_remove.size())
 					{
-						map->remove_face(faces_to_remove.size() - 1);
+						map->remove_face(faces_to_remove[faces_to_remove.size() - 1]);
 						faces_to_remove.pop_back();
 						g_progress.tick();
 					}
@@ -2907,7 +2905,6 @@ void Gui::drawMenuBar()
 						//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
 						DecompressVis(map->visdata + leaf.nVisOffset, visData, rowSize, map->leafCount - 1, map->visDataLength - leaf.nVisOffset);
 
-
 						std::vector<int> faces_to_remove;
 
 						for (int l = 0; l < map->models[0].nVisLeafs; l++)
@@ -2915,22 +2912,20 @@ void Gui::drawMenuBar()
 							if (l == leafIdx || CHECKVISBIT(visData, l))
 							{
 								auto faceList = map->getLeafFaces(l + 1);
-								faces_to_remove.insert(faces_to_remove.begin(), faceList.begin(), faceList.end());
+								faces_to_remove.insert(faces_to_remove.end(), faceList.begin(), faceList.end());
 							}
 						}
 
-						const auto del_dupl = std::ranges::unique(faces_to_remove);
-						// v now holds {1 2 1 3 4 5 4 x x x}, where 'x' is indeterminate
-						faces_to_remove.erase(del_dupl.begin(), del_dupl.end());
-
 						std::sort(faces_to_remove.begin(), faces_to_remove.end());
+						faces_to_remove.erase(std::unique(faces_to_remove.begin(), faces_to_remove.end()), faces_to_remove.end());
+
 
 						STRUCTCOUNT count_1(map);
-						g_progress.update("Remove cull faces.[LEAF CLEAN]", (int)faces_to_remove.size());
+						g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)faces_to_remove.size());
 
 						while (faces_to_remove.size())
 						{
-							map->remove_face(faces_to_remove.size() - 1);
+							map->remove_face(faces_to_remove[faces_to_remove.size() - 1]);
 							faces_to_remove.pop_back();
 							g_progress.tick();
 						}
@@ -9560,6 +9555,7 @@ void Gui::drawFaceEditorWidget()
 							}
 						}
 					}
+
 					for (int l = 0; l < map->models[0].nVisLeafs; l++)
 					{
 						if (l == last_leaf || CHECKVISBIT(visData, l))
