@@ -942,7 +942,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 				verts[e].g = 1.0f;
 			}
 			verts[e].b = 1.0f;
-			verts[e].a = 1.0f;
+			verts[e].a = isSky || isTrigger ? 1.0f : opacity;
 
 			// texture coords
 			float tw = 1.0f;
