@@ -871,7 +871,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			lw = (float)lmap->w / (float)LIGHTMAP_ATLAS_SIZE;
 			lh = (float)lmap->h / (float)LIGHTMAP_ATLAS_SIZE;
 		}
-
+		
 		bool isSpecial = texinfo.nFlags & TEX_SPECIAL;
 		bool hasLighting = face.nStyles[0] != 255 && face.nLightmapOffset >= 0 && !isSpecial;
 		for (int s = 0; s < MAX_LIGHTMAPS; s++)
@@ -891,6 +891,25 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		float opacity = isOpacity ? 0.50f : 1.0f;
 
+		bool isSky = false; 
+		bool isTrigger = true;
+
+		if (tex)
+		{
+			isTrigger = strcasecmp(tex->szName, "aaatrigger") == 0
+				|| strcasecmp(tex->szName, "clip") == 0
+				|| strcasecmp(tex->szName, "origin") == 0
+				|| strcasecmp(tex->szName, "translucent") == 0
+				|| strcasecmp(tex->szName, "skip") == 0
+				|| strcasecmp(tex->szName, "hint") == 0
+				|| strcasecmp(tex->szName, "null") == 0
+				|| strcasecmp(tex->szName, "bevel") == 0
+				|| strcasecmp(tex->szName, "noclip") == 0
+				|| strcasecmp(tex->szName, "solidhint") == 0;
+
+			isSky = strcasecmp(tex->szName, "sky") == 0 ||
+				strcasecmp(tex->szName, "skycull") == 0;
+		}
 
 		if (ent)
 		{
@@ -926,10 +945,27 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			verts[e].a = 1.0f;
 
 			// texture coords
-			float tw = 1.0f / (float)(isSpecial ? 64 : texWidth);
-			float th = 1.0f / (float)(isSpecial ? 64 : texHeight);
-			float fU = dotProduct(isSpecial ? texinfo.vS.normalize(1.0f): texinfo.vS, vert) + (texinfo.shiftS);
-			float fV = dotProduct(isSpecial ? texinfo.vT.normalize(1.0f) : texinfo.vT, vert) + (texinfo.shiftT);
+			float tw = 1.0f;
+			float th = 1.0f;
+
+			if (isSky)
+			{
+				tw /= skyTex_rgba->width;
+				th /= skyTex_rgba->height;
+			}
+			else if (isTrigger)
+			{
+				tw /= aaatriggerTex_rgba->width;
+				th /= aaatriggerTex_rgba->height;
+			}
+			else
+			{
+				tw /= texWidth;
+				th /= texHeight;
+			}
+
+			float fU = dotProduct(isSky || isTrigger ? texinfo.vS.normalize(1.0f): texinfo.vS, vert) + (texinfo.shiftS);
+			float fV = dotProduct(isSky || isTrigger ? texinfo.vT.normalize(1.0f) : texinfo.vT, vert) + (texinfo.shiftT);
 			verts[e].u = fU * tw;
 			verts[e].v = fV * th;
 			// lightmap texture coords
