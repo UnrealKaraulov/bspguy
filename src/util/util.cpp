@@ -24,6 +24,8 @@
 
 #include "Bsp.h"
 
+#include <unordered_set>
+
 bool DebugKeyPressed = false;
 ProgressMeter g_progress;
 int g_render_flags;
@@ -1394,7 +1396,7 @@ void SimpeColorReduce(COLOR3* image, int size)
 
 std::set<std::string> traced_path_list;
 
-bool FindPathInAssets(Bsp* map, const std::string & filename, std::string& outpath, bool tracesearch)
+bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpath, bool tracesearch)
 {
 	int fPathId = 1;
 	if (fileExists(filename))
@@ -1402,12 +1404,12 @@ bool FindPathInAssets(Bsp* map, const std::string & filename, std::string& outpa
 		outpath = filename;
 		return true;
 	}
-	
+
 	tracesearch = tracesearch && g_settings.verboseLogs;
 
 	if (traced_path_list.count(filename))
 		tracesearch = false;
-	else 
+	else
 		traced_path_list.insert(filename);
 
 	std::ostringstream outTrace;
@@ -1959,4 +1961,28 @@ std::string getValueInQuotes(std::string s)
 		return s;
 	}
 	return s.substr(find1 + 1, (find2 - find1) - 1);
+}
+
+
+
+std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& points) {
+	std::unordered_set<std::pair<vec3, vec3>, pairHash> uniqueLines;
+	std::vector<cVert> result;
+
+	for (size_t i = 0; i < points.size(); i += 2) {
+		cVert start = points[i];
+		cVert end = points[i + 1];
+
+		std::pair<vec3, vec3> line1(start.pos, end.pos);
+		std::pair<vec3, vec3> line2(end.pos, start.pos);
+
+		if (uniqueLines.count(line1) == 0 && uniqueLines.count(line2) == 0) {
+			uniqueLines.insert(line1);
+			uniqueLines.insert(line2);
+			result.push_back(start);
+			result.push_back(end);
+		}
+	}
+
+	return result;
 }

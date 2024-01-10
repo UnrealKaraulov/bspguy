@@ -157,6 +157,7 @@ Renderer::Renderer()
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 0);
 
 	window = glfwCreateWindow(g_settings.windowWidth, g_settings.windowHeight, "bspguy", NULL, NULL);
 
@@ -188,6 +189,11 @@ Renderer::Renderer()
 	glfwSetWindowFocusCallback(window, window_focus_callback);
 
 	glewInit();
+
+	glHint(GL_FRAGMENT_SHADER_DERIVATIVE_HINT, GL_FASTEST);
+	glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
+	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+	glHint(GL_TEXTURE_COMPRESSION_HINT, GL_FASTEST);
 
 	unsigned char* img_dat = NULL;
 	unsigned int w, h;
@@ -274,7 +280,6 @@ Renderer::Renderer()
 	colorShader->bind();
 	colorShaderMultId = glGetUniformLocation(g_app->colorShader->ID, "colorMult");
 	glUniform4f(colorShaderMultId, 1, 1, 1, 1);
-
 
 	clearSelection();
 

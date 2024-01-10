@@ -29,10 +29,9 @@ namespace Shaders
 
 		"void main()\n"
 		"{\n"
-		"	if(fColor.a <= 0.2)\n"
+		"	if(fColor.a <= 0.1)\n"
 		"		discard;\n"
-		"	float gamma = 1.6;\n"
-		"	gl_FragColor = vec4(pow(fColor.rgb, vec3(1.0/gamma)), fColor.a);\n"
+		"	gl_FragColor = fColor;\n"
 		"}\n";
 
 	const char* g_shader_model_vertex =

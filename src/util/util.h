@@ -295,3 +295,6 @@ std::string getValueInParens(std::string s);
 std::vector<std::string> groupParts(std::vector<std::string>& ungrouped);
 
 std::string getValueInQuotes(std::string s);
+
+
+std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& points);

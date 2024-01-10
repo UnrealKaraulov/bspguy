@@ -114,6 +114,28 @@ struct vec3
 
 };
 
+struct vec3Hash {
+	std::size_t operator()(const vec3(&v)) const {
+		std::size_t seed = 0;
+		std::hash<float> hasher;
+		seed ^= hasher(v[0]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= hasher(v[1]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= hasher(v[2]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		return seed;
+	}
+};
+
+struct pairHash {
+	template <typename T1, typename T2>
+	std::size_t operator()(const std::pair<T1, T2>& p) const {
+		std::size_t seed = 0;
+		vec3Hash hasher;
+		seed ^= hasher(p.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= hasher(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		return seed;
+	}
+}; 
+
 vec3 operator-(vec3 v1, const vec3& v2);
 vec3 operator+(vec3 v1, const vec3& v2);
 vec3 operator*(vec3 v1, const vec3& v2);

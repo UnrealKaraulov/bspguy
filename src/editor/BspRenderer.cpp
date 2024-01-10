@@ -871,7 +871,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			lw = (float)lmap->w / (float)LIGHTMAP_ATLAS_SIZE;
 			lh = (float)lmap->h / (float)LIGHTMAP_ATLAS_SIZE;
 		}
-		
+
 		bool isSpecial = texinfo.nFlags & TEX_SPECIAL;
 		bool hasLighting = face.nStyles[0] != 255 && face.nLightmapOffset >= 0 && !isSpecial;
 		for (int s = 0; s < MAX_LIGHTMAPS; s++)
@@ -891,7 +891,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		float opacity = isOpacity ? 0.50f : 1.0f;
 
-		bool isSky = false; 
+		bool isSky = false;
 		bool isTrigger = true;
 
 		if (tex)
@@ -964,7 +964,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 				th /= texHeight;
 			}
 
-			float fU = dotProduct(isSky || isTrigger ? texinfo.vS.normalize(1.0f): texinfo.vS, vert) + (texinfo.shiftS);
+			float fU = dotProduct(isSky || isTrigger ? texinfo.vS.normalize(1.0f) : texinfo.vS, vert) + (texinfo.shiftS);
 			float fV = dotProduct(isSky || isTrigger ? texinfo.vT.normalize(1.0f) : texinfo.vT, vert) + (texinfo.shiftT);
 			verts[e].u = fU * tw;
 			verts[e].v = fV * th;
@@ -1099,15 +1099,22 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 	renderModel->renderGroups = new RenderGroup[renderGroups.size()];
 	renderModel->groupCount = (int)renderGroups.size();
 
+
 	for (int i = 0; i < renderModel->groupCount; i++)
 	{
 		renderGroups[i].verts = new lightmapVert[renderGroupVerts[i].size() + 1];
 		renderGroups[i].vertCount = (int)renderGroupVerts[i].size();
 		memcpy(renderGroups[i].verts, &renderGroupVerts[i][0], renderGroups[i].vertCount * sizeof(lightmapVert));
 
-		renderGroups[i].wireframeVerts = new cVert[renderGroupWireframeVerts[i].size() + 1];
-		renderGroups[i].wireframeVertCount = (int)renderGroupWireframeVerts[i].size();
-		memcpy(renderGroups[i].wireframeVerts, &renderGroupWireframeVerts[i][0], renderGroups[i].wireframeVertCount * sizeof(cVert));
+		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(renderGroupWireframeVerts[i]);
+
+		if (g_verbose)
+			print_log("Optimize {} renderGroup wireframe from {} to {} GL_LINES\n", i, renderGroupWireframeVerts[i].size(), cleanupWireframe.size());
+
+		renderGroups[i].wireframeVerts = new cVert[cleanupWireframe.size() + 1];
+		renderGroups[i].wireframeVertCount = (int)cleanupWireframe.size();
+
+		memcpy(renderGroups[i].wireframeVerts, &cleanupWireframe[0], renderGroups[i].wireframeVertCount * sizeof(cVert));
 
 		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
 		tmpBuf->addAttribute(TEX_2F, "vTex");
@@ -2337,7 +2344,7 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 
 					if (hightlighted)
 					{
-						glUniform4f(g_app->colorShaderMultId, 1.0f, 0.25f, 0.25f, 1.0f);
+						glUniform4f(g_app->colorShaderMultId, 1.5f, 1.0f, 1.0f, 1.0f);
 					}
 
 					drawModelClipnodes(renderEnts[i].modelIdx, false, clipnodeHull);
