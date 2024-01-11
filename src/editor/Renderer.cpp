@@ -623,12 +623,11 @@ void Renderer::renderLoop()
 		}
 
 
-		bool disableDepth = false;
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
+
 		if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS))
 		{
-			glDepthMask(GL_FALSE);
-			glDepthFunc(GL_ALWAYS);
-			disableDepth = true;
 			matmodel.loadIdentity();
 			colorShader->updateMatrixes();
 			entConnectionPoints->drawFull();
@@ -660,20 +659,14 @@ void Renderer::renderLoop()
 		{
 			if (!movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin))
 			{
-				glDepthMask(GL_FALSE);
-				glDepthFunc(GL_ALWAYS);
-
-				disableDepth = true;
 				drawTransformAxes();
 			}
 		}
 
-		if (disableDepth)
-		{
-			glDepthMask(GL_TRUE);
-			glDepthFunc(GL_LESS);
-		}
-
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+		vec3 forward, right, up;
+		makeVectors(cameraAngles, forward, right, up);
 		if (!hideGui)
 			gui->draw();
 
@@ -2478,16 +2471,15 @@ void Renderer::updateDragAxes(vec3 delta)
 		}
 	}
 
-	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
-
-	float baseScale = (activeAxes.origin - localCameraOrigin).length() * 0.005f;
-	float s = baseScale;
-	float s2 = baseScale * 2;
-	float d = baseScale * 32;
-
 	// create the meshes
 	if (transformMode == TRANSFORM_MODE_SCALE)
 	{
+		float baseScale = (scaleAxes.origin - localCameraOrigin).length() * 0.005f;
+		float s = baseScale;
+		float s2 = baseScale * 2;
+		float d = baseScale * 32;
+
+
 		vec3 axisMins[6] = {
 			vec3(0, -s, -s) + vec3(entMax.x,0,0), // x+
 			vec3(-s, 0, -s) + vec3(0,entMax.y,0), // y+
@@ -2548,9 +2540,31 @@ void Renderer::updateDragAxes(vec3 delta)
 			scaleAxes.mins[i] = grabAxisMins[i];
 			scaleAxes.maxs[i] = grabAxisMaxs[i];
 		}
+
+
+		if (draggingAxis >= 0 && draggingAxis < scaleAxes.numAxes)
+		{
+			scaleAxes.model[draggingAxis].setColor(scaleAxes.hoverColor[draggingAxis]);
+		}
+		else if (hoverAxis >= 0 && hoverAxis < scaleAxes.numAxes)
+		{
+			scaleAxes.model[hoverAxis].setColor(scaleAxes.hoverColor[hoverAxis]);
+		}
+		else if (gui->guiHoverAxis >= 0 && gui->guiHoverAxis < scaleAxes.numAxes)
+		{
+			scaleAxes.model[gui->guiHoverAxis].setColor(scaleAxes.hoverColor[gui->guiHoverAxis]);
+		}
+
+		scaleAxes.origin += mapOffset;
+		scaleAxes.buffer->uploaded = false;
 	}
 	else
 	{
+		float baseScale = (moveAxes.origin - localCameraOrigin).length() * 0.005f;
+		float s = baseScale;
+		float s2 = baseScale * 2;
+		float d = baseScale * 32;
+
 		// flipped for HL coords
 		moveAxes.model[0] = cCube(vec3(0, -s, -s), vec3(d, s, s), moveAxes.dimColor[0]);
 		moveAxes.model[2] = cCube(vec3(-s, 0, -s), vec3(s, d, s), moveAxes.dimColor[2]);
@@ -2561,32 +2575,33 @@ void Renderer::updateDragAxes(vec3 delta)
 		s *= 4;
 		s2 *= 1.5f;
 
-		activeAxes.mins[0] = vec3(0, -s, -s);
-		activeAxes.mins[1] = vec3(-s, 0, -s);
-		activeAxes.mins[2] = vec3(-s, -s, 0);
-		activeAxes.mins[3] = vec3(-s2, -s2, -s2);
+		moveAxes.mins[0] = vec3(0, -s, -s);
+		moveAxes.mins[1] = vec3(-s, 0, -s);
+		moveAxes.mins[2] = vec3(-s, -s, 0);
+		moveAxes.mins[3] = vec3(-s2, -s2, -s2);
 
-		activeAxes.maxs[0] = vec3(d, s, s);
-		activeAxes.maxs[1] = vec3(s, d, s);
-		activeAxes.maxs[2] = vec3(s, s, d);
-		activeAxes.maxs[3] = vec3(s2, s2, s2);
-	}
+		moveAxes.maxs[0] = vec3(d, s, s);
+		moveAxes.maxs[1] = vec3(s, d, s);
+		moveAxes.maxs[2] = vec3(s, s, d);
+		moveAxes.maxs[3] = vec3(s2, s2, s2);
 
 
-	if (draggingAxis >= 0 && draggingAxis < activeAxes.numAxes)
-	{
-		activeAxes.model[draggingAxis].setColor(activeAxes.hoverColor[draggingAxis]);
-	}
-	else if (hoverAxis >= 0 && hoverAxis < activeAxes.numAxes)
-	{
-		activeAxes.model[hoverAxis].setColor(activeAxes.hoverColor[hoverAxis]);
-	}
-	else if (gui->guiHoverAxis >= 0 && gui->guiHoverAxis < activeAxes.numAxes)
-	{
-		activeAxes.model[gui->guiHoverAxis].setColor(activeAxes.hoverColor[gui->guiHoverAxis]);
-	}
+		if (draggingAxis >= 0 && draggingAxis < moveAxes.numAxes)
+		{
+			moveAxes.model[draggingAxis].setColor(moveAxes.hoverColor[draggingAxis]);
+		}
+		else if (hoverAxis >= 0 && hoverAxis < moveAxes.numAxes)
+		{
+			moveAxes.model[hoverAxis].setColor(moveAxes.hoverColor[hoverAxis]);
+		}
+		else if (gui->guiHoverAxis >= 0 && gui->guiHoverAxis < moveAxes.numAxes)
+		{
+			moveAxes.model[gui->guiHoverAxis].setColor(moveAxes.hoverColor[gui->guiHoverAxis]);
+		}
 
-	activeAxes.origin += mapOffset;
+		moveAxes.origin += mapOffset;
+		moveAxes.buffer->uploaded = false;
+	}
 }
 
 vec3 Renderer::getAxisDragPoint(vec3 origin)

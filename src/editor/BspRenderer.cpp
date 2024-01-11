@@ -1532,30 +1532,30 @@ void BspRenderer::preRenderEnts()
 
 void BspRenderer::refreshPointEnt(int entIdx)
 {
-	int skipIdx = 0;
+	//int skipIdx = 0;
 
-	if (entIdx == 0)
-		return;
+	//if (entIdx == 0)
+	//	return;
 
-	// skip worldspawn
-	for (size_t i = 1, sz = map->ents.size(); i < sz; i++)
-	{
-		if (renderEnts[i].modelIdx >= 0)
-			continue;
+	//// skip worldspawn
+	//for (size_t i = 1, sz = map->ents.size(); i < sz; i++)
+	//{
+	//	if (renderEnts[i].modelIdx >= 0)
+	//		continue;
 
-		if ((int)i == entIdx)
-		{
-			break;
-		}
+	//	if ((int)i == entIdx)
+	//	{
+	//		break;
+	//	}
 
-		skipIdx++;
-	}
+	//	skipIdx++;
+	//}
 
-	if (skipIdx >= numPointEnts)
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0284));
-		return;
-	}
+	//if (skipIdx >= numPointEnts)
+	//{
+	//	print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0284));
+	//	return;
+	//}
 }
 
 void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
