@@ -27,54 +27,47 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 {
 	switch (valueType)
 	{
-		case(GL_BYTE):
-		case(GL_UNSIGNED_BYTE):
-			size = numValues;
-			break;
-		case(GL_SHORT):
-		case(GL_UNSIGNED_SHORT):
-			size = numValues * 2;
-			break;
-		case(GL_FLOAT):
-		case(GL_INT):
-		case(GL_UNSIGNED_INT):
-			size = numValues * 4;
-			break;
-		default:
-			print_log(get_localized_string(LANG_0972),valueType);
-			handle = -1;
-			size = 0;
+	case(GL_BYTE):
+	case(GL_UNSIGNED_BYTE):
+		size = numValues;
+		break;
+	case(GL_SHORT):
+	case(GL_UNSIGNED_SHORT):
+		size = numValues * 2;
+		break;
+	case(GL_FLOAT):
+	case(GL_INT):
+	case(GL_UNSIGNED_INT):
+		size = numValues * 4;
+		break;
+	default:
+		print_log(get_localized_string(LANG_0972), valueType);
+		handle = -1;
+		size = 0;
 	}
 }
 
 
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, void * dat, int numVerts, int primitive)
+VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, void* dat, int numVerts, int primitive)
 {
-	attribs = std::vector<VertexAttr>();
-	vboId = (GLuint)-1;
+	this->attribs = std::vector<VertexAttr>();
+	this->numVerts = 0;
+	this->data = NULL;
+	this->vboId = (GLuint)-1;
+	this->vaoId = (GLuint)-1;
+	this->ownData = false;
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	addAttributes(attFlags);
 	setData(dat, numVerts);
 }
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive)
-{
-	attribs = std::vector<VertexAttr>();
-	numVerts = 0;
-	data = NULL;
-	vboId = (GLuint)-1;
-	this->shaderProgram = shaderProgram;
-	this->primitive = primitive;
-	addAttributes(attFlags);
-}
-
 VertexBuffer::~VertexBuffer() {
+	deleteBuffer();
 	if (attribs.size())
 		attribs.clear();
-	deleteBuffer();
-	if (ownData) {
+	if (ownData && data) {
 		delete[] data;
 	}
 	data = NULL;
@@ -95,9 +88,9 @@ void VertexBuffer::addAttributes(int attFlags)
 			else if (i >= VBUF_TEX_START)
 				commonAttr[i].handle = shaderProgram->vtexID;
 			else
-				print_log(get_localized_string(LANG_0973),i);
+				print_log(get_localized_string(LANG_0973), i);
 
-			attribs.push_back(commonAttr[i]);
+			attribs.emplace_back(commonAttr[i]);
 			elementSize += commonAttr[i].size;
 		}
 	}
@@ -106,7 +99,7 @@ void VertexBuffer::addAttributes(int attFlags)
 void VertexBuffer::addAttribute(int numValues, int valueType, int normalized, const char* varName) {
 	VertexAttr attribute(numValues, valueType, -1, normalized, varName);
 
-	attribs.push_back(attribute);
+	attribs.emplace_back(attribute);
 	elementSize += attribute.size;
 }
 
@@ -131,7 +124,7 @@ void VertexBuffer::addAttribute(int type, const char* varName) {
 	attribute.handle = -1;
 	attribute.varName = varName;
 
-	attribs.push_back(attribute);
+	attribs.emplace_back(attribute);
 	elementSize += attribute.size;
 }
 
@@ -147,7 +140,7 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 		attribs[i].handle = glGetAttribLocation(shaderProgram->ID, attribs[i].varName);
 
 		if ((!hideErrors || g_verbose) && attribs[i].handle == -1)
-			print_log(get_localized_string(LANG_0975),attribs[i].varName);
+			print_log(get_localized_string(LANG_0975), attribs[i].varName);
 	}
 
 	attributesBound = true;
@@ -155,96 +148,86 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 
 void VertexBuffer::setData(void* _data, int _numVerts)
 {
-	deleteBuffer();
 	data = (unsigned char*)_data;
 	numVerts = _numVerts;
+	uploaded = false;
 }
 
-void VertexBuffer::upload(bool hideErrors)
+void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 {
-	if (!shaderProgram)
+	if (!shaderProgram || (uploaded && !forceReupload))
 		return;
 
+	uploaded = true;
 	shaderProgram->bind();
+	deleteBuffer();
+
+	glGenVertexArrays(1, &vaoId);
+	glBindVertexArray(vaoId);
+
 	bindAttributes(hideErrors && !g_verbose);
 
-	if (vboId == (GLuint)-1)
-		glGenBuffers(1, &vboId);
+	glGenBuffers(1, &vboId);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vboId);
 	glBufferData(GL_ARRAY_BUFFER, elementSize * numVerts, data, GL_STATIC_DRAW);
 
-	unsigned char * offset = 0;
+	GLuint64 offset = 0;
 	for (const VertexAttr& a : attribs)
 	{
 		if (a.handle == -1)
 			continue;
 
 		glEnableVertexAttribArray(a.handle);
-		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, reinterpret_cast<void*>(offset));
+		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, (const GLvoid*)(offset));
 		if (glGetError() != GL_NO_ERROR)
 		{
 			std::cout << "Error! Name: " << a.varName << std::endl;
 		}
-
 		offset += a.size;
 	}
-
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 void VertexBuffer::deleteBuffer() {
 	if (vboId != (GLuint)-1)
 		glDeleteBuffers(1, &vboId);
+	if (vaoId != (GLuint)-1)
+		glDeleteVertexArrays(1, &vaoId);
 	vboId = (GLuint)-1;
+	vaoId = (GLuint)-1;
 }
 
 void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors)
 {
 	shaderProgram->bind();
-	bindAttributes(hideErrors && !g_verbose);
-
-	char* offsetPtr = (char*)data;
-	if (vboId != (GLuint)-1) {
-		glBindBuffer(GL_ARRAY_BUFFER, vboId);
-		offsetPtr = NULL;
-	}
-	{
-		int offset = 0;
-		for (size_t i = 0; i < attribs.size(); i++)
-		{
-			VertexAttr& a = attribs[i];
-			void* ptr = offsetPtr + offset;
-			offset += a.size;
-			if (a.handle == -1)
-				continue;
-			glEnableVertexAttribArray(a.handle);
-			glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, ptr);
-		}
-	}
+	upload(true, false);
 
 	if (start < 0 || start > numVerts || numVerts == 0)
-		print_log(get_localized_string(LANG_0976),start,numVerts);
+	{
+		if (g_verbose)
+			print_log(get_localized_string(LANG_0976), start, numVerts);
+		return;
+	}
 	else if (end > numVerts || end < 0)
-		print_log(get_localized_string(LANG_0977),end);
+	{
+		if (g_verbose)
+			print_log(get_localized_string(LANG_0977), end);
+		return;
+	}
 	else if (end - start <= 0)
-		print_log(get_localized_string(LANG_0978),start,end);
-	else
 	{
-		glDrawArrays(_primitive, start, end - start);
+		if (g_verbose)
+			print_log(get_localized_string(LANG_0978), start, end);
+		return;
 	}
 
-	if (vboId != (GLuint)-1) {
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	}
-
-	for (size_t i = 0; i < attribs.size(); i++)
-	{
-		VertexAttr& a = attribs[i];
-		if (a.handle == -1)
-			continue;
-		glDisableVertexAttribArray(a.handle);
-	}
+	glBindVertexArray(vaoId);
+	glBindBuffer(GL_ARRAY_BUFFER, vboId);
+	glDrawArrays(_primitive, start, end - start);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 void VertexBuffer::draw(int _primitive)

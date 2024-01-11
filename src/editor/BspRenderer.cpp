@@ -635,7 +635,7 @@ void BspRenderer::preRenderFaces()
 		RenderModel& model = renderModels[i];
 		for (int k = 0; k < model.groupCount; k++)
 		{
-			model.renderGroups[k].buffer->upload();
+			model.renderGroups[k].buffer->uploaded = false;
 		}
 	}
 
@@ -1109,14 +1109,14 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(renderGroupWireframeVerts[i]);
 
 		if (g_verbose)
-			print_log("Optimize {} renderGroup wireframe from {} to {} GL_LINES\n", i, renderGroupWireframeVerts[i].size(), cleanupWireframe.size());
+			print_log("Optimize wireframe {} renderGroup {} model: {} to {} lines.\n", i, modelIdx, renderGroupWireframeVerts[i].size(), cleanupWireframe.size());
 
 		renderGroups[i].wireframeVerts = new cVert[cleanupWireframe.size() + 1];
 		renderGroups[i].wireframeVertCount = (int)cleanupWireframe.size();
 
 		memcpy(renderGroups[i].wireframeVerts, &cleanupWireframe[0], renderGroups[i].wireframeVertCount * sizeof(cVert));
 
-		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
+		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, renderGroups[i].verts, renderGroups[i].vertCount, GL_TRIANGLES);
 		tmpBuf->addAttribute(TEX_2F, "vTex");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
@@ -1124,7 +1124,6 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
 		tmpBuf->addAttribute(4, GL_FLOAT, 0, "vColor");
 		tmpBuf->addAttribute(POS_3F, "vPosition");
-		tmpBuf->setData(renderGroups[i].verts, renderGroups[i].vertCount);
 
 		renderGroups[i].wireframeBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, renderGroups[i].wireframeVerts, renderGroups[i].wireframeVertCount, GL_LINES);
 		//tmpWireBuff->ownData = true;
@@ -1504,7 +1503,7 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 				{
 					vertData[v].c.a = newValue;
 				}
-				renderClipnodes[i].clipnodeBuffer[k]->upload();
+				renderClipnodes[i].clipnodeBuffer[k]->uploaded = false;
 			}
 		}
 	}
@@ -2089,7 +2088,7 @@ void BspRenderer::delayLoadData()
 				{
 					if (clip.clipnodeBuffer[k])
 					{
-						clip.clipnodeBuffer[k]->upload();
+						clip.clipnodeBuffer[k]->uploaded = false;
 					}
 				}
 			}
@@ -2146,7 +2145,7 @@ void BspRenderer::highlightFace(size_t faceIdx, int highlight, bool reupload)
 		rgroup->verts[rface->vertOffset + i].b = b;
 	}
 	if (reupload)
-		rgroup->buffer->upload();
+		rgroup->buffer->uploaded = false;
 }
 
 void BspRenderer::updateFaceUVs(int faceIdx)
@@ -2183,7 +2182,7 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 		}
 	}
 
-	rgroup->buffer->upload();
+	rgroup->buffer->uploaded = false;
 }
 
 bool BspRenderer::getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup)
@@ -2241,12 +2240,10 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 		map->pointContents(headNode, localCameraOrigin, 0, nodeBranch, curLeafIdx, childIdx);
 	}
 
-	g_app->colorShader->bind();
 	g_app->colorShader->modelMat->loadIdentity();
 	g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	g_app->colorShader->updateMatrixes();
 
-	g_app->bspShader->bind();
 	g_app->bspShader->modelMat->loadIdentity();
 	g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	g_app->bspShader->updateMatrixes();
@@ -2278,7 +2275,6 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 					g_app->bspShader->updateMatrixes();
 
 					drawModel(&renderEnts[i], drawTransparentFaces, true, false);
-
 					g_app->bspShader->popMatrix();
 				}
 				if (g_render_flags & RENDER_SELECTED_AT_TOP)
@@ -2294,7 +2290,6 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 					*g_app->bspShader->modelMat = renderEnts[i].modelMatAngles;
 					g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 					g_app->bspShader->updateMatrixes();
-
 					drawModel(&renderEnts[i], drawTransparentFaces, false, false);
 
 					g_app->bspShader->popMatrix();
@@ -2309,14 +2304,11 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 		if ((g_render_flags & RENDER_POINT_ENTS) && pass == 0)
 		{
 			drawPointEntities(highlightEnts);
-			g_app->bspShader->bind();
 		}
 	}
 
 	if (clipnodesLoaded)
 	{
-		g_app->colorShader->bind();
-
 		if (g_render_flags & RENDER_WORLD_CLIPNODES && clipnodeHull != -1)
 		{
 			if (!renderEnts[0].hide)
@@ -2362,8 +2354,6 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 
 	if (highlightEnts.size())
 	{
-		g_app->bspShader->bind();
-
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		for (size_t highlightEnt : highlightEnts)
@@ -2373,9 +2363,11 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 				if (renderEnts[highlightEnt].hide)
 					continue;
 				g_app->bspShader->pushMatrix();
+
 				*g_app->bspShader->modelMat = renderEnts[highlightEnt].modelMatAngles;
 				g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->bspShader->updateMatrixes();
+
 				if (modelVertsDraw)
 				{
 					glDisable(GL_CULL_FACE);
@@ -2435,7 +2427,6 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 					}
 				}
 			}
-			g_app->colorShader->bind();
 			rgroup.wireframeBuffer->drawFull();
 		}
 		return;
@@ -2466,7 +2457,6 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 		if (ent && ent->needAngles)
 		{
-			g_app->colorShader->bind();
 			g_app->colorShader->pushMatrix();
 			*g_app->colorShader->modelMat = ent->modelMatOrigin;
 			g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
@@ -2503,12 +2493,8 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 					}
 				}
 			}
-			g_app->colorShader->bind();
 			rgroup.wireframeBuffer->drawFull();
 		}
-
-
-		g_app->bspShader->bind();
 
 		if (texturesLoaded && g_render_flags & RENDER_TEXTURES)
 		{
@@ -2669,7 +2655,6 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
 				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
-				g_app->modelShader->bind();
 				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->modelShader->updateMatrixes();
@@ -2683,7 +2668,6 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 					renderEnts[i].spr->DrawSprite();
 				}
 
-				g_app->colorShader->bind();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();
@@ -2702,7 +2686,6 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			}
 			else
 			{
-				g_app->colorShader->bind();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();
@@ -2723,7 +2706,6 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
 				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
-				g_app->modelShader->bind();
 				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->modelShader->updateMatrixes();
@@ -2738,8 +2720,6 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 					renderEnts[i].spr->DrawSprite();
 				}
 
-
-				g_app->colorShader->bind();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();
@@ -2755,7 +2735,6 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			}
 			else
 			{
-				g_app->colorShader->bind();
 				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
 				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				g_app->colorShader->updateMatrixes();

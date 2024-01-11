@@ -142,11 +142,10 @@ void ShaderProgram::popMatrix(int matType)
 			{
 				*targets[idx] = stack[stack.size() - 1];
 				stack.pop_back();
+				break;
 			}
 			else
 				print_log(get_localized_string(LANG_0968));
 		}
 	}
-
-	updateMatrixes();
 }

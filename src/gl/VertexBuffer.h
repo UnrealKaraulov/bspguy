@@ -60,17 +60,16 @@ struct VertexAttr
 class VertexBuffer
 {
 public:
-	unsigned char* data = NULL;
+	unsigned char* data;
 	std::vector<VertexAttr> attribs;
 	int elementSize;
 	int numVerts;
 	int primitive;
-	bool ownData = false; // set to true if buffer should delete data on destruction
-	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
+	bool ownData; // set to true if buffer should delete data on destruction
+	ShaderProgram* shaderProgram; // for getting handles to vertex attributes
 
 	// Specify which common attributes to use. They will be located in the
 	// shader program. If passing data, note that data is not copied, but referenced
-	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive = 0);
 	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, void* dat, int numVerts, int primitive = 0);
 	~VertexBuffer();
 
@@ -78,7 +77,7 @@ public:
 	//       Data will be deleted when the buffer is destroyed.
 	void setData(void* data, int numVerts);
 
-	void upload(bool hideErrors = true);
+	void upload(bool hideErrors = true, bool forceReupload = true);
 	void deleteBuffer();
 
 	void drawRange(int primitive, int start, int end, bool hideErrors = true);
@@ -89,10 +88,11 @@ public:
 	void addAttribute(int type, const char* varName);
 	void bindAttributes(bool hideErrors = false); // find handles for all vertex attributes (call from main thread only)
 
+	bool uploaded = false;
 private:
-	GLuint vboId = (GLuint)-1;
+	GLuint vboId;
+	GLuint vaoId;
 	bool attributesBound = false;
-
 	// add attributes according to the attribute flags
 	void addAttributes(int attFlags);
 };

@@ -683,7 +683,7 @@ void StudioModel::RefreshMeshList(int body)
 
 		for (int j = 0; j < m_pmodel->nummesh; j++)
 		{
-			auto tmpBuf = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->modelShader, 0, GL_TRIANGLES);
+			auto tmpBuf = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->modelShader, 0, NULL, 0, GL_TRIANGLES);
 			tmpBuf->addAttribute(POS_3F, "vPosition");
 			tmpBuf->addAttribute(TEX_2F, "vTex");
 		}
@@ -841,6 +841,7 @@ void StudioModel::RefreshMeshList(int body)
 				}
 			}
 		}
+
 		if ((int)mdl_mesh_groups[body][j].verts.size() < totalElements)
 		{
 			mdl_mesh_groups[body][j].verts.resize(totalElements);
@@ -1001,6 +1002,23 @@ void StudioModel::DrawMDL(int meshnum)
 				}
 			}
 			mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
+		}
+
+		if (mdl_mesh_groups.size())
+		{
+			for (auto& body : mdl_mesh_groups)
+			{
+				if (body.size())
+				{
+					for (auto& submesh : body)
+					{
+						if (submesh.buffer)
+						{
+							submesh.buffer->uploaded = false;
+						}
+					}
+				}
+			}
 		}
 
 		AdvanceFrame((1.0f / fps));
@@ -1330,7 +1348,7 @@ std::map<int, StudioModel*> mdl_models;
 
 StudioModel* AddNewModelToRender(const std::string& path, unsigned int sum)
 {
-	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int) path.size(), sum);
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int)path.size(), sum);
 
 	if (mdl_models.find(crc32) != mdl_models.end())
 	{

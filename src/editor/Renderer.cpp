@@ -382,6 +382,15 @@ void Renderer::renderLoop()
 	memset(pressed, 0, sizeof(pressed));
 	memset(oldPressed, 0, sizeof(oldPressed));
 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		oldTime = curTime;
@@ -397,15 +406,6 @@ void Renderer::renderLoop()
 			glClearColor(0.0, 0.0, 0.0, 1.0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LESS);
 
 
 		//Update keyboard / mouse state 
@@ -523,7 +523,6 @@ void Renderer::renderLoop()
 
 			if (SelectedMap->is_mdl_model && SelectedMap->mdl)
 			{
-				modelShader->bind();
 				modelShader->modelMat->loadIdentity();
 				modelShader->updateMatrixes();
 				SelectedMap->mdl->DrawMDL();
@@ -575,8 +574,6 @@ void Renderer::renderLoop()
 			}
 		}
 
-
-		colorShader->bind();
 		if (SelectedMap)
 		{
 			if (debugClipnodes && modelIdx > 0)
@@ -625,10 +622,13 @@ void Renderer::renderLoop()
 			}
 		}
 
-		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_ALWAYS);
+
+		bool disableDepth = false;
 		if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS))
 		{
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_ALWAYS);
+			disableDepth = true;
 			matmodel.loadIdentity();
 			colorShader->updateMatrixes();
 			entConnectionPoints->drawFull();
@@ -660,15 +660,20 @@ void Renderer::renderLoop()
 		{
 			if (!movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin))
 			{
+				glDepthMask(GL_FALSE);
+				glDepthFunc(GL_ALWAYS);
+
+				disableDepth = true;
 				drawTransformAxes();
 			}
 		}
 
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LESS);
+		if (disableDepth)
+		{
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
+		}
 
-		vec3 forward, right, up;
-		makeVectors(cameraAngles, forward, right, up);
 		if (!hideGui)
 			gui->draw();
 
@@ -679,7 +684,6 @@ void Renderer::renderLoop()
 			glfwSwapInterval(g_settings.vsync);
 			vsync = g_settings.vsync;
 		}
-
 
 		if (reloading && fgdFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 		{
@@ -1040,9 +1044,6 @@ void Renderer::drawTransformAxes()
 			vec3 ori = moveAxes.origin;
 			matmodel.translate(ori.x, ori.z, -ori.y);
 			colorShader->updateMatrixes();
-			glDisable(GL_CULL_FACE);
-			glDisable(GL_CULL_FACE);
-			glDisable(GL_CULL_FACE);
 			glDisable(GL_CULL_FACE);
 			moveAxes.buffer->drawFull();
 			glEnable(GL_CULL_FACE);
@@ -3808,7 +3809,7 @@ void Renderer::goToCoords(float x, float y, float z)
 	cameraOrigin.y = y;
 	cameraOrigin.z = z;
 }
-void Renderer::goToCoords(const vec3 & pos)
+void Renderer::goToCoords(const vec3& pos)
 {
 	cameraOrigin.x = pos.x;
 	cameraOrigin.y = pos.y;
