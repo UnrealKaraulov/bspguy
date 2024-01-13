@@ -4,10 +4,12 @@
 #include <string.h>
 
 float m_identity[16] = { 0.0f };
+float m_zero[16] = { 0.0f };
 
 void mat4x4_saveIdentity()
 {
 	memset(m_identity, 0, sizeof(m_identity));
+	memset(m_zero, 0, sizeof(m_identity));
 	m_identity[4 * 0 + 0] = 1.0f;
 	m_identity[4 * 1 + 1] = 1.0f;
 	m_identity[4 * 2 + 2] = 1.0f;
@@ -17,6 +19,11 @@ void mat4x4_saveIdentity()
 void mat4x4::loadIdentity()
 {
 	memcpy(m, m_identity, sizeof(m_identity));
+}
+
+void loadEmptyMat4x4(float * m)
+{
+	memcpy(m, m_zero, sizeof(m_zero));
 }
 
 void glhFrustumf2(float* matrix, float left, float right, float bottom, float top,
@@ -38,7 +45,7 @@ void glhFrustumf2(float* matrix, float left, float right, float bottom, float to
 
 void mat4x4::perspective(float fov, float aspect, float near, float far)
 {
-	memset(m, 0, sizeof(m));
+	loadIdentity();
 	float ymax, xmax;
 	ymax = near * tanf(fov * (PI / 360.0f));
 	xmax = ymax * aspect;
@@ -49,7 +56,7 @@ void mat4x4::perspective(float fov, float aspect, float near, float far)
 // http://en.wikipedia.org/wiki/Orthographic_projection_(geometry)
 void mat4x4::ortho(float left, float right, float bottom, float top, float near, float far)
 {
-	memset(m, 0, sizeof(m));
+	loadIdentity();
 	float w = right - left;
 	float h = top - bottom;
 	float d = far - near;
@@ -279,7 +286,7 @@ mat4x4 mat4x4::transpose()
 mat4x4 mat4x4::invert()
 {
 	mat4x4 out;
-	memset(out.m, 0, sizeof(out.m));
+	loadEmptyMat4x4(out.m);
 
 	float inv[16];
 
@@ -435,7 +442,7 @@ void mat4x4::mult(float mat[16])
 mat4x4 operator*(const mat4x4& m1, const mat4x4& m2)
 {
 	mat4x4 result;
-	memset(result.m, 0, sizeof(result.m));
+	loadEmptyMat4x4(result.m);
 	result.m[0 * 4 + 0] += m1.m[0 * 4 + 0] * m2.m[0 * 4 + 0];
 	result.m[0 * 4 + 0] += m1.m[0 * 4 + 1] * m2.m[1 * 4 + 0];
 	result.m[0 * 4 + 0] += m1.m[0 * 4 + 2] * m2.m[2 * 4 + 0];

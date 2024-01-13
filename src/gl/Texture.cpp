@@ -111,10 +111,16 @@ void Texture::upload(int type)
 	uploaded = true;
 }
 
+Texture* binded_tex[64];
+
 void Texture::bind(GLuint texnum)
 {
-	glActiveTexture(GL_TEXTURE0 + texnum);
-	glBindTexture(GL_TEXTURE_2D, id);
+	if (binded_tex[texnum] != this)
+	{
+		glActiveTexture(GL_TEXTURE0 + texnum);
+		glBindTexture(GL_TEXTURE_2D, id);
+		binded_tex[texnum] = this;
+	}
 }
 
 bool IsTextureTransparent(const std::string& texname)

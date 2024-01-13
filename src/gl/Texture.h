@@ -43,3 +43,4 @@ public:
 };
 extern std::vector<Texture*> dumpTextures;
 bool IsTextureTransparent(const std::string& texname);
+extern Texture* binded_tex[64];
