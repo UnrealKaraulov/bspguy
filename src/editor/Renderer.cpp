@@ -1537,10 +1537,11 @@ void Renderer::cameraContextMenus()
 
 		auto tmpSelectedEnt = tempPick.GetSelectedEnts();
 
-		if (tmpSelectedEnt.empty())
+		if (tmpSelectedEnt.empty() || tmpSelectedEnt[0] == 0)
 		{
 			map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map);
-			tmpSelectedEnt = tempPick.GetSelectedEnts();
+			if (tmpSelectedEnt.size())
+				tmpSelectedEnt = tempPick.GetSelectedEnts();
 		}
 
 		if (tmpSelectedEnt.size() && tmpSelectedEnt == pickInfo.GetSelectedEnts())
@@ -1765,7 +1766,7 @@ void Renderer::pickObject()
 			}
 		}
 	}
-	else if (hoverAxis == -1)/*if (pickMode == PICK_OBJECT)*/
+	else if (pickMode == PICK_OBJECT)
 	{
 		for (auto idx : pickInfo.selectedFaces)
 		{

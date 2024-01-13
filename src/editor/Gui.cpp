@@ -3596,14 +3596,14 @@ void Gui::drawStatusMessage()
 	Bsp* map = app->getSelectedMap();
 	for (auto& i : app->pickInfo.selectedEnts)
 	{
-		if (map && i >= 0 && (map->ents[i]->getBspModelIdx() < 0 || map->ents[i]->isWorldSpawn()))
+		if (map && i > 0 && (map->ents[i]->getBspModelIdx() < 0 || map->ents[i]->isWorldSpawn()))
 		{
 			selectedEntity = true;
 			break;
 		}
 	}
 
-	bool showStatus = (app->invalidSolid && !selectedEntity) || !app->isTransformableSolid || badSurfaceExtents || lightmapTooLarge || app->modelUsesSharedStructures;
+	bool showStatus = (app->invalidSolid && selectedEntity) || (!app->isTransformableSolid && selectedEntity)|| badSurfaceExtents || lightmapTooLarge || app->modelUsesSharedStructures;
 
 	if (showStatus)
 	{

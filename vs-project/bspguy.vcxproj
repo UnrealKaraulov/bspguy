@@ -114,18 +114,20 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;GLEW_STATIC;NOMINMAX;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
       <CompileAsWinRT>
       </CompileAsWinRT>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <GuardSignedReturns>
       </GuardSignedReturns>
-      <ControlFlowGuard>false</ControlFlowGuard>
+      <ControlFlowGuard>
+      </ControlFlowGuard>
       <SDLCheck>true</SDLCheck>
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
-      <OmitFramePointers>true</OmitFramePointers>
+      <OmitFramePointers>false</OmitFramePointers>
       <CallingConvention>Cdecl</CallingConvention>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GLEW_STATIC;</PreprocessorDefinitions>
@@ -252,7 +254,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <Optimization>Custom</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
@@ -277,6 +279,8 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       </GuardSignedReturns>
       <OpenMPSupport>true</OpenMPSupport>
       <AdditionalOptions> /wd4100 %(AdditionalOptions)</AdditionalOptions>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
@@ -330,7 +334,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <Optimization>Custom</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -345,7 +349,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <SDLCheck>false</SDLCheck>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CallingConvention>Cdecl</CallingConvention>
@@ -360,6 +364,8 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       </GuardSignedReturns>
       <OpenMPSupport>true</OpenMPSupport>
       <AdditionalOptions> /wd4100 %(AdditionalOptions)</AdditionalOptions>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>

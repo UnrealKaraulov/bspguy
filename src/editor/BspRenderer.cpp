@@ -2252,6 +2252,7 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 
 	for (int pass = 0; pass < 2; pass++)
 	{
+		g_app->bspShader->bind();
 		bool drawTransparentFaces = pass == 1;
 		if (drawTransparentFaces)
 		{
