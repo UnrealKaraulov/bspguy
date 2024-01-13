@@ -1104,7 +1104,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 	{
 		renderGroups[i].verts = new lightmapVert[renderGroupVerts[i].size() + 1];
 		renderGroups[i].vertCount = (int)renderGroupVerts[i].size();
-		memcpy(renderGroups[i].verts, &renderGroupVerts[i][0], renderGroups[i].vertCount * sizeof(lightmapVert));
+		if (renderGroups[i].vertCount > 0)
+			memcpy(renderGroups[i].verts, &renderGroupVerts[i][0], renderGroups[i].vertCount * sizeof(lightmapVert));
 
 		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(renderGroupWireframeVerts[i]);
 
@@ -1114,7 +1115,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		renderGroups[i].wireframeVerts = new cVert[cleanupWireframe.size() + 1];
 		renderGroups[i].wireframeVertCount = (int)cleanupWireframe.size();
 
-		memcpy(renderGroups[i].wireframeVerts, &cleanupWireframe[0], renderGroups[i].wireframeVertCount * sizeof(cVert));
+		if (renderGroups[i].wireframeVertCount)
+			memcpy(renderGroups[i].wireframeVerts, &cleanupWireframe[0], renderGroups[i].wireframeVertCount * sizeof(cVert));
 
 		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, renderGroups[i].verts, renderGroups[i].vertCount, GL_TRIANGLES);
 		tmpBuf->addAttribute(TEX_2F, "vTex");

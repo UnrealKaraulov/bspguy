@@ -51,6 +51,8 @@ struct TransformAxes
 	int numAxes;
 };
 
+extern int current_fps;
+
 extern vec2 mousePos;
 extern vec3 cameraOrigin;
 extern vec3 cameraAngles;

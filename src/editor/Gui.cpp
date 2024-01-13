@@ -3575,7 +3575,8 @@ void Gui::drawFpsOverlay()
 	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
 	if (ImGui::Begin(get_localized_string(LANG_0609).c_str(), 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
-		ImGui::Text(get_localized_string(LANG_0610).c_str(), imgui_io->Framerate);
+		//ImGui::TextUnformatted(fmt::format("{} FPS", current_fps).c_str());
+		ImGui::TextUnformatted(fmt::format("{:.0f} FPS", imgui_io->Framerate).c_str());
 		if (ImGui::BeginPopupContextWindow())
 		{
 			ImGui::Checkbox(get_localized_string(LANG_0611).c_str(), &g_settings.vsync);

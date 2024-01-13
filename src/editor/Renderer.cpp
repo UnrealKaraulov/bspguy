@@ -16,6 +16,8 @@
 
 Renderer* g_app = NULL;
 
+int current_fps = 0;
+
 vec2 mousePos;
 vec3 cameraOrigin;
 vec3 cameraAngles;
@@ -391,12 +393,27 @@ void Renderer::renderLoop()
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LESS);
 
+	int frame_fps = 0;
+	current_fps = 0;
+
+	double fpsTime = 0.0;
+	double mouseTime = 0.0;
+
+	double xpos = 0.0, ypos = 0.0;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		oldTime = curTime;
 		curTime = glfwGetTime();
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
+
+		frame_fps++;
+
+		if (abs(curTime - fpsTime) >= 0.50)
+		{
+			fpsTime = curTime;
+			current_fps = frame_fps * 2;
+			frame_fps = 0;
+		}
 
 		mousePos = vec2((float)xpos, (float)ypos);
 
@@ -425,12 +442,12 @@ void Renderer::renderLoop()
 		canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
 
 
-		if (curTime - lastTitleTime > 0.5)
+		if (curTime - lastTitleTime > 1.0)
 		{
 			lastTitleTime = curTime;
 			if (SelectedMap)
 			{
-				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + SelectedMap->bsp_path).c_str());
+				glfwSetWindowTitle(window, fmt::format("bspguy - {} FPS {}", std::string("bspguy - ") + SelectedMap->bsp_path, current_fps).c_str());
 			}
 		}
 
@@ -719,7 +736,12 @@ void Renderer::renderLoop()
 		memcpy(oldPressed, pressed, sizeof(pressed));
 
 		glfwSwapBuffers(window);
-		glfwPollEvents();
+		if (abs(curTime - mouseTime) >= 0.016)
+		{
+			mouseTime = curTime;
+			glfwPollEvents();
+			glfwGetCursorPos(window, &xpos, &ypos);
+		}
 	}
 
 	glfwTerminate();
