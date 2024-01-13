@@ -77,6 +77,12 @@ void ShaderProgram::setMatrixes(mat4x4* model, mat4x4* view, mat4x4* proj, mat4x
 
 void ShaderProgram::updateMatrixes()
 {
+	if (g_active_shader_program != ID)
+	{
+		g_active_shader_program = ID;
+		glUseProgram(ID);
+	}
+
 	*modelViewMat = *viewMat * *modelMat;
 	*modelViewProjMat = *projMat * *modelViewMat;
 	*modelViewMat = modelViewMat->transpose();

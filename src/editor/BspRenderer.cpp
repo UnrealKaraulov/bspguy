@@ -2498,6 +2498,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			rgroup.wireframeBuffer->drawFull();
 		}
 
+		g_app->bspShader->bind();
 		if (texturesLoaded && g_render_flags & RENDER_TEXTURES)
 		{
 			rgroup.texture->bind(0);
