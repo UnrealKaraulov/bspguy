@@ -10,11 +10,12 @@ public:
 	hashmap keyvalues;
 	std::vector<std::string> keyOrder;
 
-	int cachedModelIdx = -2; // -2 = not cached
+	int cachedModelIdx; // -2 = not cached
 	std::vector<std::string> cachedTargets;
-	bool targetsCached = false;
-	bool hide = false;
-	Entity(void)
+	bool targetsCached;
+	bool hide;
+
+	Entity()
 	{
 		cachedModelIdx = -2;
 		targetsCached = false;
@@ -24,6 +25,8 @@ public:
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
 		origin = vec3(0.0f, 0.0f, 0.0f);
 		originInited = false;
+		targetsCached = false;
+		hide = false;
 	}
 
 	Entity(const std::string& classname)
@@ -35,6 +38,8 @@ public:
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
 		originInited = false;
+		originInited = false;
+		targetsCached = false;
 		setOrAddKeyvalue("classname", classname);
 	}
 

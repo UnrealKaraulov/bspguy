@@ -2172,11 +2172,8 @@ void Gui::drawMenuBar()
 
 							createDir(g_working_dir + "wads/" + basename(wad->filename));
 
-							std::vector<size_t> texturesIds;
-							for (size_t i = 0; i < wad->dirEntries.size(); i++)
-							{
-								texturesIds.push_back(i);
-							}
+							std::vector<size_t> texturesIds(wad->dirEntries.size());
+							std::iota(texturesIds.begin(), texturesIds.end(), 0);
 
 							std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](size_t file)
 								{

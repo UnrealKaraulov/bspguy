@@ -51,18 +51,17 @@ struct FaceMath
 
 struct RenderEnt
 {
-	mat4x4 modelMatAngles; // model matrix for rendering with angles
-	mat4x4 modelMatOrigin; // model matrix for render origin
+	mat4x4 modelMat4x4; // model matrix for rendering with angles
+	mat4x4 modelMat4x4_calc; // model matrix for rendering with angles
 	vec3 offset; // vertex transformations for picking
 	vec3 angles; // support angles
 	int modelIdx; // -1 = point entity
 	EntCube* pointEntCube;
 	bool needAngles = false;
-	bool hide = false;
 	StudioModel* mdl;
 	Sprite* spr;
 	std::string mdlFileName;
-	RenderEnt() : modelMatAngles(mat4x4()), modelMatOrigin(mat4x4()), offset(vec3()), angles(vec3())
+	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), offset(vec3()), angles(vec3())
 	{
 		modelIdx = 0;
 		pointEntCube = NULL;

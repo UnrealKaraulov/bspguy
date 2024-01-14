@@ -23,10 +23,6 @@ public:
 	unsigned int vcolorID;
 	unsigned int vtexID;
 
-	mat4x4 * projMat;
-	mat4x4 * viewMat;
-	mat4x4 * modelMat;
-
 	// Creates a shader program to replace the fixed-function pipeline
 	ShaderProgram(const char* vshaderSource, const char* fshaderSource);
 	~ShaderProgram(void);
@@ -38,7 +34,7 @@ public:
 
 	void removeShader(int shaderID);
 
-	void setMatrixes(mat4x4* model, mat4x4* view, mat4x4* proj, mat4x4* modelView, mat4x4* modelViewProj);
+	void setMatrixes(mat4x4* modelView, mat4x4* modelViewProj);
 
 	// Find the the modelView and modelViewProjection matrices
 	// used in the shader code, so that we can update them.
@@ -49,6 +45,8 @@ public:
 
 	// upload the model, view, and projection matrices to the shader (or fixed-funcion pipe)
 	void updateMatrixes();
+
+	void updateMatrixes(const mat4x4& viewMat, const mat4x4& viewProjMat);
 
 	// save/restore matrices
 	void pushMatrix(int matType = MAT_MODEL);
@@ -69,3 +67,4 @@ private:
 	void link();
 };
 
+void calcMatrixes(mat4x4& outViewMat, mat4x4& outViewProjMat);

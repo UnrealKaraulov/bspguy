@@ -255,15 +255,15 @@ Renderer::Renderer()
 	glfwSwapBuffers(window);
 
 	bspShader = new ShaderProgram(Shaders::g_shader_multitexture_vertex, Shaders::g_shader_multitexture_fragment);
-	bspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
+	bspShader->setMatrixes(&modelView, &modelViewProjection);
 	bspShader->setMatrixNames(NULL, "modelViewProjection");
 
 	modelShader = new ShaderProgram(Shaders::g_shader_model_vertex, Shaders::g_shader_model_fragment);
-	modelShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
+	modelShader->setMatrixes(&modelView, &modelViewProjection);
 	modelShader->setMatrixNames(NULL, "modelViewProjection");
 
 	colorShader = new ShaderProgram(Shaders::g_shader_cVert_vertex, Shaders::g_shader_cVert_fragment);
-	colorShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
+	colorShader->setMatrixes(&modelView, &modelViewProjection);
 	colorShader->setMatrixNames(NULL, "modelViewProjection");
 	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL);
 
@@ -371,7 +371,7 @@ void Renderer::renderLoop()
 	double lastTitleTime = curTime;
 
 	glfwSwapInterval(0);
-	static bool vsync = g_settings.vsync;
+	static int vsync = -1;
 
 
 	static int tmpPickIdx = -1, tmpVertPickIdx = -1, tmpTransformTarget = -1, tmpModelIdx = -1;
@@ -401,6 +401,11 @@ void Renderer::renderLoop()
 
 	double xpos = 0.0, ypos = 0.0;
 
+	if (SelectedMap && SelectedMap->is_mdl_model)
+		glClearColor(0.25, 0.25, 0.25, 1.0);
+	else
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		oldTime = curTime;
@@ -416,11 +421,6 @@ void Renderer::renderLoop()
 		}
 
 		mousePos = vec2((float)xpos, (float)ypos);
-
-		if (SelectedMap && SelectedMap->is_mdl_model)
-			glClearColor(0.25, 0.25, 0.25, 1.0);
-		else
-			glClearColor(0.0, 0.0, 0.0, 1.0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -540,7 +540,7 @@ void Renderer::renderLoop()
 
 			if (SelectedMap->is_mdl_model && SelectedMap->mdl)
 			{
-				modelShader->modelMat->loadIdentity();
+				matmodel.loadIdentity();
 				modelShader->updateMatrixes();
 				SelectedMap->mdl->DrawMDL();
 				continue;
@@ -689,12 +689,6 @@ void Renderer::renderLoop()
 
 		controls();
 
-		if (vsync != g_settings.vsync)
-		{
-			glfwSwapInterval(g_settings.vsync);
-			vsync = g_settings.vsync;
-		}
-
 		if (reloading && fgdFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 		{
 			postLoadFgds();
@@ -738,6 +732,12 @@ void Renderer::renderLoop()
 		glfwSwapBuffers(window);
 		if (abs(curTime - mouseTime) >= 0.016)
 		{
+			if (vsync != g_settings.vsync ? 1 : 0)
+			{
+				glfwSwapInterval(g_settings.vsync);
+				vsync = g_settings.vsync ? 1 : 0;
+			}
+
 			mouseTime = curTime;
 			glfwPollEvents();
 			glfwGetCursorPos(window, &xpos, &ypos);
@@ -3950,3 +3950,4 @@ Texture* Renderer::giveMeTexture(const std::string& texname)
 	}
 	return missingTex;
 }
+

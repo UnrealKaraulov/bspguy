@@ -1186,11 +1186,9 @@ void BspRenderer::loadClipnodes()
 	for (int i = 0; i < numRenderClipnodes; i++)
 		renderClipnodes[i] = RenderClipnodes();
 
-	std::vector<int> tmpRenderHulls;
-	for (int i = 0; i < MAX_MAP_HULLS; i++)
-	{
-		tmpRenderHulls.push_back(i);
-	}
+	std::vector<int> tmpRenderHulls(MAX_MAP_HULLS);
+	std::iota(tmpRenderHulls.begin(), tmpRenderHulls.end(), 0);
+
 	if (map)
 	{
 		// Using 4x threads instead of very big count
@@ -1564,9 +1562,9 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 {
 	if (!map->ents[entIdx]->hasKey("classname"))
 	{
-		renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
-		renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
-		renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4.rotateY((angles.y * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
 		renderEnts[entIdx].needAngles = false;
 	}
 	else
@@ -1576,9 +1574,9 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		if (entClassName == "func_breakable")
 		{
 			renderEnts[entIdx].angles.y = 0.0f;
-			renderEnts[entIdx].modelMatAngles.rotateY(0.0f);
-			renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
-			renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+			renderEnts[entIdx].modelMat4x4.rotateY(0.0f);
+			renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
+			renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
 		}
 		else if (IsEntNotSupportAngles(entClassName))
 		{
@@ -1589,15 +1587,15 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 			if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
 			{
 				renderEnts[entIdx].angles.z = 0.0f;
-				renderEnts[entIdx].modelMatAngles.rotateY(0.0);
-				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles.rotateX((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4.rotateY(0.0);
+				renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4.rotateX((angles.y * (PI / 180.0f)));
 			}
 			else
 			{
-				renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4.rotateY((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
 			}
 		}
 		else
@@ -1607,18 +1605,18 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 			{
 				if (entClassName.starts_with(prefix))
 				{
-					renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
-					renderEnts[entIdx].modelMatAngles.rotateZ((angles.x * (PI / 180.0f)));
-					renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4.rotateY((angles.y * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4.rotateZ((angles.x * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
 					foundAngles = true;
 					break;
 				}
 			}
 			if (!foundAngles)
 			{
-				renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4.rotateY((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
 			}
 		}
 	}
@@ -1640,18 +1638,15 @@ void BspRenderer::refreshEnt(int entIdx)
 	Entity* ent = map->ents[entIdx];
 	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
 	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
-	renderEnts[entIdx].modelMatAngles.loadIdentity();
-	renderEnts[entIdx].modelMatOrigin.loadIdentity();
+	renderEnts[entIdx].modelMat4x4.loadIdentity();
 	renderEnts[entIdx].offset = vec3();
 	renderEnts[entIdx].angles = vec3();
 	renderEnts[entIdx].needAngles = false;
 	renderEnts[entIdx].pointEntCube = g_app->pointEntRenderer->getEntCube(ent);
-	renderEnts[entIdx].hide = ent->hide;
 	bool setAngles = false;
 
 	vec3 origin = ent->getOrigin();
-	renderEnts[entIdx].modelMatAngles.translate(origin.x, origin.z, -origin.y);
-	renderEnts[entIdx].modelMatOrigin = renderEnts[entIdx].modelMatAngles;
+	renderEnts[entIdx].modelMat4x4.translate(origin.x, origin.z, -origin.y);
 	renderEnts[entIdx].offset = origin;
 
 	for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
@@ -2241,14 +2236,23 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 		int headNode = map->models[0].iHeadnodes[0];
 		map->pointContents(headNode, localCameraOrigin, 0, nodeBranch, curLeafIdx, childIdx);
 	}
+	
 
-	g_app->colorShader->modelMat->loadIdentity();
-	g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	g_app->matmodel.loadIdentity();
+	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	g_app->colorShader->updateMatrixes();
 
-	g_app->bspShader->modelMat->loadIdentity();
-	g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	g_app->matmodel.loadIdentity();
+	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	g_app->bspShader->updateMatrixes();
+
+
+	std::for_each(std::execution::par_unseq, renderEnts, renderEnts + map->ents.size(), [=](RenderEnt & ent)
+		{
+			ent.modelMat4x4_calc = ent.modelMat4x4;
+			ent.modelMat4x4_calc.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+		});
+
 
 	for (int pass = 0; pass < 2; pass++)
 	{
@@ -2259,22 +2263,21 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 			//glDepthMask(GL_FALSE);
 			//glDepthFunc(GL_LESS);
 		}
-		if (!renderEnts[0].hide)
+		if (!map->ents[0]->hide)
 			drawModel(0, drawTransparentFaces, false, false);
 
-		for (int i = 0, sz = (int)map->ents.size(); i < sz; i++)
+		for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
 		{
+			if (map->ents[i]->hide)
+				continue;
 			if (g_app->pickInfo.IsSelectedEnt(i))
 			{
 				if (g_render_flags & RENDER_SELECTED_AT_TOP)
 					glDepthFunc(GL_ALWAYS);
 				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
-					if (renderEnts[i].hide)
-						continue;
 					g_app->bspShader->pushMatrix();
-					*g_app->bspShader->modelMat = renderEnts[i].modelMatAngles;
-					g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 					g_app->bspShader->updateMatrixes();
 
 					drawModel(&renderEnts[i], drawTransparentFaces, true, false);
@@ -2287,11 +2290,8 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 			{
 				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
-					if (renderEnts[i].hide)
-						continue;
 					g_app->bspShader->pushMatrix();
-					*g_app->bspShader->modelMat = renderEnts[i].modelMatAngles;
-					g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 					g_app->bspShader->updateMatrixes();
 					drawModel(&renderEnts[i], drawTransparentFaces, false, false);
 
@@ -2314,7 +2314,7 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 	{
 		if (g_render_flags & RENDER_WORLD_CLIPNODES && clipnodeHull != -1)
 		{
-			if (!renderEnts[0].hide)
+			if (!map->ents[0]->hide)
 				drawModelClipnodes(0, false, clipnodeHull);
 		}
 
@@ -2322,17 +2322,16 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 		{
 			for (int i = 0, sz = (int)map->ents.size(); i < sz; i++)
 			{
+				if (map->ents[i]->hide)
+					continue;
 				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
-					if (renderEnts[i].hide)
-						continue;
 					if (clipnodeHull == -1 && renderModels[renderEnts[i].modelIdx].groupCount > 0)
 					{
 						continue; // skip rendering for models that have faces, if in auto mode
 					}
 					g_app->colorShader->pushMatrix();
-					*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
-					g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 					g_app->colorShader->updateMatrixes();
 
 					bool hightlighted = g_app->pickInfo.IsSelectedEnt(i);
@@ -2361,14 +2360,13 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 		glDepthFunc(GL_ALWAYS);
 		for (size_t highlightEnt : highlightEnts)
 		{
+			if (map->ents[highlightEnt]->hide)
+				continue;
 			if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 			{
-				if (renderEnts[highlightEnt].hide)
-					continue;
 				g_app->bspShader->pushMatrix();
 
-				*g_app->bspShader->modelMat = renderEnts[highlightEnt].modelMatAngles;
-				g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->matmodel = renderEnts[highlightEnt].modelMat4x4_calc;
 				g_app->bspShader->updateMatrixes();
 
 				if (modelVertsDraw)
@@ -2461,8 +2459,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 		if (ent && ent->needAngles)
 		{
 			g_app->colorShader->pushMatrix();
-			*g_app->colorShader->modelMat = ent->modelMatOrigin;
-			g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+			g_app->matmodel = ent->modelMat4x4_calc;
 			g_app->colorShader->updateMatrixes();
 			rgroup.wireframeBuffer->drawFull();
 			g_app->colorShader->popMatrix();
@@ -2563,8 +2560,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			}
 
 			g_app->bspShader->pushMatrix();
-			*g_app->bspShader->modelMat = ent->modelMatOrigin;
-			g_app->bspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+			g_app->matmodel = ent->modelMat4x4_calc;
 			g_app->bspShader->updateMatrixes();
 			rgroup.buffer->drawFull();
 			g_app->bspShader->popMatrix();
@@ -2645,13 +2641,13 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 
 	g_app->modelShader->pushMatrix();
 	g_app->colorShader->pushMatrix();
-	for (int i = 1, sz = (int)map->ents.size(); i < sz; i++)
+
+	for (size_t i = 1, sz = map->ents.size(); i < sz; i++)
 	{
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
-		if (renderEnts[i].hide)
+		if (map->ents[i]->hide)
 			continue;
-
 		if (g_app->pickInfo.IsSelectedEnt(i))
 		{
 			if (g_render_flags & RENDER_SELECTED_AT_TOP)
@@ -2659,8 +2655,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
 				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
-				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
-				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 				g_app->modelShader->updateMatrixes();
 
 				if (renderEnts[i].mdl)
@@ -2672,8 +2667,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 					renderEnts[i].spr->DrawSprite();
 				}
 
-				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
-				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 				g_app->colorShader->updateMatrixes();
 
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
@@ -2690,8 +2684,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			}
 			else
 			{
-				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
-				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 				g_app->colorShader->updateMatrixes();
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 				{
@@ -2710,8 +2703,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
 				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
-				*g_app->modelShader->modelMat = renderEnts[i].modelMatAngles;
-				g_app->modelShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 				g_app->modelShader->updateMatrixes();
 
 
@@ -2724,8 +2716,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 					renderEnts[i].spr->DrawSprite();
 				}
 
-				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
-				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 				g_app->colorShader->updateMatrixes();
 
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
@@ -2739,8 +2730,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			}
 			else
 			{
-				*g_app->colorShader->modelMat = renderEnts[i].modelMatAngles;
-				g_app->colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 				g_app->colorShader->updateMatrixes();
 
 				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
@@ -2754,6 +2744,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			}
 		}
 	}
+
 	g_app->modelShader->popMatrix();
 	g_app->colorShader->popMatrix();
 }
@@ -2781,7 +2772,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 
 	for (int i = 0; i < (int)map->ents.size(); i++)
 	{
-		if (renderEnts[i].hide)
+		if (map->ents[i]->hide)
 			continue;
 		if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 		{
