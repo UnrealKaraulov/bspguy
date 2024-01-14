@@ -732,10 +732,10 @@ void Renderer::renderLoop()
 		glfwSwapBuffers(window);
 		if (abs(curTime - mouseTime) >= 0.016)
 		{
-			if (vsync != g_settings.vsync ? 1 : 0)
+			if (vsync != (g_settings.vsync ? 1 : 0))
 			{
 				glfwSwapInterval(g_settings.vsync);
-				vsync = g_settings.vsync ? 1 : 0;
+				vsync = (g_settings.vsync ? 1 : 0);
 			}
 
 			mouseTime = curTime;

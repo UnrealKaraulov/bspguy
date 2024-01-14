@@ -1126,15 +1126,6 @@ void Bsp::save_undo_lightmaps(bool logged)
 	}
 	if (undo_lightmaps != NULL)
 	{
-		for (int i = 0; i < undo_lightmaps_count; i++)
-		{
-			if (undo_lightmaps[i].luxelFlags)
-			{
-				delete[] undo_lightmaps[i].luxelFlags;
-			}
-			undo_lightmaps[i].luxelFlags = NULL;
-		}
-
 		delete[] undo_lightmaps;
 	}
 	undo_lightmaps = new LIGHTMAP[faceCount];
@@ -1149,9 +1140,6 @@ void Bsp::save_undo_lightmaps(bool logged)
 
 		undo_lightmaps[i].width = size[0];
 		undo_lightmaps[i].height = size[1];
-
-		undo_lightmaps[i].luxelFlags = new unsigned char[size[0] * size[1]];
-		get_lightmap_luxelflags(this, i, undo_lightmaps[i].luxelFlags);
 
 		if (logged)
 			g_progress.tick();
@@ -1175,7 +1163,7 @@ int Bsp::get_new_lightmaps_data_size()
 	for (int i = 0; i < faceCount; i++) {
 		int size[2];
 		GetFaceLightmapSize(this, i, size);
-		tmpLightDataSz += ((size[0] * size[1] * sizeof(COLOR3)) * lightmap_count(i));
+		tmpLightDataSz += size[0] * size[1] * sizeof(COLOR3) * lightmap_count(i);
 	}
 	return tmpLightDataSz;
 }
@@ -1185,146 +1173,68 @@ void Bsp::resize_all_lightmaps(bool logged)
 	if (logged)
 		g_progress.update("Resize lightmaps", faceCount);
 
-	int newLightmapsSize = get_new_lightmaps_data_size();
+	std::vector<COLOR3> newLightData;
 
-	if (newLightmapsSize > 0)
+	for (int faceId = 0; faceId < faceCount; faceId++)
 	{
-		COLOR3* newLightmapsBytes = new COLOR3[newLightmapsSize];
-		memset(newLightmapsBytes, 255, newLightmapsSize * sizeof(COLOR3));
-
-		int lightmapOffset = 0;
-
-		for (int i = 0; i < faceCount; i++) {
-			BSPFACE32& face = faces[i];
-			if (logged)
-				g_progress.tick();
-
-			if (lightmap_count(i) == 0)
+		BSPFACE32& face = faces[faceId];
+		int newLightMapOffset = (int)newLightData.size();
+		for (int lightId = 0; lightId < MAX_LIGHTMAPS; lightId++)
+		{
+			if (face.nStyles[lightId] == 255 || face.nLightmapOffset < 0)
 				continue;
-
-			if (face.nLightmapOffset < 0)
-				continue;
-
 			int size[2];
-			GetFaceLightmapSize(this, i, size);
+			size[0] = undo_lightmaps[faceId].width;
+			size[1] = undo_lightmaps[faceId].height;
 
-			LIGHTMAP newLight = LIGHTMAP();
-			newLight.width = size[0];
-			newLight.height = size[1];
-			newLight.layers = lightmap_count(i);
+			int newsize[2];
+			GetFaceLightmapSize(this, faceId, newsize);
 
-			LIGHTMAP oldLight = newLight;
-			if (i < undo_lightmaps_count)
+			int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
+			int offset = face.nLightmapOffset + lightId * lightmapSz;
+
+			COLOR3* data = (COLOR3*)(lightdata + offset);
+
+			std::vector<COLOR3> newdata;
+
+			if (newsize[0] == size[0] && size[1] == newsize[1])
 			{
-				oldLight = undo_lightmaps[i];
-			}
-
-			int oldLayerSz = (oldLight.width * oldLight.height) * sizeof(COLOR3);
-			int oldSz = oldLayerSz * oldLight.layers;
-
-			int newLayerSz = (newLight.width * newLight.height) * sizeof(COLOR3);
-			int newSz = newLayerSz * newLight.layers;
-
-			bool lightmapResized = oldLayerSz != newLayerSz || oldLight.width != newLight.width
-				|| oldLight.height != newLight.height;
-
-			if (!lightmapResized)
-			{
-				if (lightmapOffset + oldSz > newLightmapsSize)
+				if (lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers)
 				{
-					print_log(PRINT_RED | PRINT_INTENSITY, fmt::format("ERROR! New lightmapdata overflowed at {} face {}/{}[1]\n", i, lightmapOffset + oldSz, newLightmapsSize));
-					face.nLightmapOffset = 0;
-					for (int s = 0; s < MAX_LIGHTMAPS; s++)
-					{
-						face.nStyles[s] = 255;
-					}
-					break;
-				}
-				else if (face.nLightmapOffset + oldSz > lightDataLength)
-				{
-					print_log(PRINT_RED | PRINT_INTENSITY, fmt::format("ERROR! Old lightmapdata overflowed at {} face {}/{}\n", i, face.nLightmapOffset + oldSz, lightDataLength));
-					face.nLightmapOffset = 0;
-					for (int s = 0; s < MAX_LIGHTMAPS; s++)
-					{
-						face.nStyles[s] = 255;
-					}
-					break;
+					newdata.insert(newdata.end(), data, data + size[0] * size[1]);
 				}
 				else
 				{
-					memcpy((unsigned char*)newLightmapsBytes + lightmapOffset, (unsigned char*)lightdata + face.nLightmapOffset, oldSz);
-					face.nLightmapOffset = lightmapOffset;
+					newdata.resize(size[0] * size[1]);
+					std::fill(newdata.begin(), newdata.end(), COLOR3(255, 255, 255));
 				}
-				lightmapOffset += oldSz;
 			}
 			else
 			{
-				if (lightmapOffset + newSz > newLightmapsSize)
+				if (lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers)
 				{
-					print_log(PRINT_RED | PRINT_INTENSITY, fmt::format("ERROR! New lightmapdata overflowed at {} face {}/{}[2]\n", i, lightmapOffset + oldSz, newLightmapsSize));
-					face.nLightmapOffset = 0;
-					for (int s = 0; s < MAX_LIGHTMAPS; s++)
-					{
-						face.nStyles[s] = 255;
-					}
-					break;
+					scaleImage(data, newdata, size[0], size[1], newsize[0], newsize[1]);
 				}
-				else if (oldLight.layers > 0)
+				else
 				{
-					newLight.luxelFlags = new unsigned char[newLight.width * newLight.height];
-					get_lightmap_luxelflags(this, i, newLight.luxelFlags);
-
-					//for (int layer = 0; layer < newLight.layers; layer++)
-					//{
-					//	int srcOffset = face.nLightmapOffset + oldLayerSz * (layer < oldLight.layers ? layer : std::min(layer,oldLight.layers-1));
-					//	int dstOffset = lightmapOffset + newLayerSz * layer;
-					//	std::vector<COLOR3> scaledImage;
-					//	scaleImage((COLOR3*)&lightdata[srcOffset], scaledImage, oldLight.width, oldLight.height, newLight.width, newLight.height);
-					//	memcpy((unsigned char*)newLightmapsBytes + dstOffset, &scaledImage[0], newLayerSz);
-					//}
-
-					//
-					int srcOffsetX, srcOffsetY;
-					get_lightmap_shift(oldLight, newLight, srcOffsetX, srcOffsetY);
-
-					for (int layer = 0; layer < newLight.layers; layer++) {
-						int srcOffset = (face.nLightmapOffset + oldLayerSz * (layer < oldLight.layers ? layer : std::min(layer, oldLight.layers - 1))) / sizeof(COLOR3);
-						int dstOffset = (lightmapOffset + newLayerSz * layer) / sizeof(COLOR3);
-
-						int startX = newLight.width > oldLight.width ? -1 : 0;
-						int startY = newLight.height > oldLight.height ? -1 : 0;
-
-						for (int y = startY; y < newLight.height; y++) {
-							for (int x = startX; x < newLight.width; x++) {
-								int offsetX = x + srcOffsetX;
-								int offsetY = y + srcOffsetY;
-
-								int srcX = oldLight.width > newLight.width ? offsetX : x;
-								int srcY = oldLight.height > newLight.height ? offsetY : y;
-								int dstX = newLight.width > oldLight.width ? offsetX : x;
-								int dstY = newLight.height > oldLight.height ? offsetY : y;
-
-								srcX = std::max(0, std::min(oldLight.width - 1, srcX));
-								srcY = std::max(0, std::min(oldLight.height - 1, srcY));
-								dstX = std::max(0, std::min(newLight.width - 1, dstX));
-								dstY = std::max(0, std::min(newLight.height - 1, dstY));
-
-								COLOR3& src = ((COLOR3*)lightdata)[srcOffset + srcY * oldLight.width + srcX];
-								COLOR3& dst = newLightmapsBytes[dstOffset + dstY * newLight.width + dstX];
-
-								dst = src;
-							}
-						}
-					}
-					face.nLightmapOffset = lightmapOffset;
+					newdata.resize(newsize[0] * newsize[1]);
+					std::fill(newdata.begin(), newdata.end(), COLOR3(255, 255, 255));
 				}
-				lightmapOffset += newSz;
 			}
+			newLightData.insert(newLightData.end(), newdata.begin(), newdata.end());
 		}
 
-		replace_lump(LUMP_LIGHTING, newLightmapsBytes, newLightmapsSize);
-		save_undo_lightmaps(logged);
+		if (face.nLightmapOffset >= 0)
+		{
+			face.nLightmapOffset = newLightMapOffset * sizeof(COLOR3);
+		}
+		g_progress.tick();
 	}
+
+	unsigned char* tmpLump = new unsigned char[newLightData.size() * sizeof(COLOR3)];
+	memcpy(tmpLump, newLightData.data(), newLightData.size() * sizeof(COLOR3));
+	replace_lump(LUMP_LIGHTING, tmpLump, newLightData.size() * sizeof(COLOR3));
+	save_undo_lightmaps(logged);
 }
 
 
@@ -2634,80 +2544,6 @@ bool Bsp::is_invisible_solid(Entity* ent)
 	}
 
 	return true;
-}
-
-void Bsp::get_lightmap_shift(const LIGHTMAP& oldLightmap, const LIGHTMAP& newLightmap, int& srcOffsetX, int& srcOffsetY)
-{
-	int minWidth = std::min(newLightmap.width, oldLightmap.width);
-	int minHeight = std::min(newLightmap.height, oldLightmap.height);
-
-	int bestMatch = 0;
-	int bestShiftCombo = 0;
-
-	// Try different combinations of shifts to find the best alignment of the lightmaps.
-	// Example (2 = unlit, 3 = lit)
-	//  old         new
-	// 3 3 3      2 3 3 3
-	// 3 3 3  ->  2 3 3 3  =  old lightmap matches more luxels when it's shifted right 1 pixel in the new lightmap
-	// 3 3 3      2 3 3 3
-	// Only works for lightmap resizes caused by precision errors. Faces that are actually different sizes will
-	// likely have more than 1 pixel of difference in either dimension.
-	for (int t = 0; t < 4; t++)
-	{
-		int numMatch = 0;
-		for (int y = 0; y < minHeight; y++)
-		{
-			for (int x = 0; x < minWidth; x++)
-			{
-				int offsetX = x;
-				int offsetY = y;
-
-				if (t == 1)
-				{
-					offsetX = x + 1;
-				}
-				if (t == 2)
-				{
-					offsetY = y + 1;
-				}
-				if (t == 3)
-				{
-					offsetX = x + 1;
-					offsetY = y + 1;
-				}
-
-				int srcX = oldLightmap.width > newLightmap.width ? offsetX : x;
-				int srcY = oldLightmap.height > newLightmap.height ? offsetY : y;
-				int dstX = newLightmap.width > oldLightmap.width ? offsetX : x;
-				int dstY = newLightmap.height > oldLightmap.height ? offsetY : y;
-
-				srcX = std::max(0, std::min(oldLightmap.width - 1, srcX));
-				srcY = std::max(0, std::min(oldLightmap.height - 1, srcY));
-				dstX = std::max(0, std::min(newLightmap.width - 1, dstX));
-				dstY = std::max(0, std::min(newLightmap.height - 1, dstY));
-
-				int oldLuxelFlag = oldLightmap.luxelFlags[srcY * oldLightmap.width + srcX];
-				int newLuxelFlag = newLightmap.luxelFlags[dstY * newLightmap.width + dstX];
-
-				if (oldLuxelFlag == newLuxelFlag)
-				{
-					numMatch += 1;
-				}
-			}
-		}
-
-		if (numMatch > bestMatch)
-		{
-			bestMatch = numMatch;
-			bestShiftCombo = t;
-		}
-	}
-
-	int shouldShiftLeft = bestShiftCombo == 1 || bestShiftCombo == 3;
-	int shouldShiftTop = bestShiftCombo == 2 || bestShiftCombo == 3;
-
-	srcOffsetX = newLightmap.width != oldLightmap.width ? shouldShiftLeft : 0;
-	srcOffsetY = newLightmap.height != oldLightmap.height ? shouldShiftTop : 0;
 }
 
 void Bsp::update_ent_lump(bool stripNodes)
@@ -6435,7 +6271,6 @@ void Bsp::duplicate_model_structures(int modelIdx)
 	{
 		append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
 		save_undo_lightmaps();
-		resize_all_lightmaps();
 		renderer->loadLightmaps();
 	}
 
@@ -6505,7 +6340,7 @@ int Bsp::duplicate_model(int modelIdx)
 		}*/
 		append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
 		save_undo_lightmaps();
-		resize_all_lightmaps();
+		renderer->loadLightmaps();
 	}
 
 	int newModelIdx = create_model();
@@ -6648,7 +6483,7 @@ bool Bsp::remove_face(int faceIdx)
 			{
 				models[m].nFaces--;
 			}
-			else 
+			else
 			{
 				models[m].iFirstFace--;
 			}
@@ -6677,7 +6512,7 @@ bool Bsp::remove_face(int faceIdx)
 			{
 				nodes[n].nFaces--;
 			}
-			else 
+			else
 			{
 				nodes[n].iFirstFace--;
 			}

@@ -333,11 +333,6 @@ private:
 
 	bool load_lumps(std::string fname);
 
-	// lightmaps that are resized due to precision errors should not be stretched to fit the new canvas.
-	// Instead, the texture should be shifted around, depending on which parts of the canvas is "lit" according
-	// to the qrad code. Shifts apply to one or both of the lightmaps, depending on which dimension is bigger.
-	void get_lightmap_shift(const LIGHTMAP& oldLightmap, const LIGHTMAP& newLightmap, int& srcOffsetX, int& srcOffsetY);
-
 	void print_model_bsp(int modelIdx);
 	void print_leaf(const BSPLEAF32& leaf);
 	void print_node(const BSPNODE32& node);

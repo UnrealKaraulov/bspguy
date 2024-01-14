@@ -1669,43 +1669,53 @@ float floatRound(float f) {
 	return (float)((f >= 0 || (float)(int)f == f) ? (int)f : (int)f - 1);
 }
 
-
 void scaleImage(const COLOR4* inputImage, std::vector<COLOR4>& outputImage,
-	int inputWidth, int inputHeight, int outputWidth, int outputHeight) {
+	int inputWidth, int inputHeight, int outputWidth, int outputHeight)
+{
 	outputImage.resize(outputWidth * outputHeight);
 
 	float xScale = static_cast<float>(inputWidth) / outputWidth;
 	float yScale = static_cast<float>(inputHeight) / outputHeight;
 
 	for (int y = 0; y < outputHeight; y++) {
+		float srcY = y * yScale;
+		int srcY1 = static_cast<int>(srcY);
+		int srcY2 = std::min(srcY1 + 1, inputHeight - 1);
+
+		float yWeight = srcY - srcY1;
+
 		for (int x = 0; x < outputWidth; x++) {
 			float srcX = x * xScale;
-			float srcY = y * yScale;
 
-			int x1 = static_cast<int>(srcX);
-			int y1 = static_cast<int>(srcY);
-			int x2 = x1 + 1;
-			int y2 = y1 + 1;
+			int srcX1 = static_cast<int>(srcX);
+			int srcX2 = std::min(srcX1 + 1, inputWidth - 1);
 
-			float xWeight = srcX - x1;
-			float yWeight = srcY - y1;
+			float xWeight = srcX - srcX1;
 
-			COLOR4 topLeft = inputImage[y1 * inputWidth + x1];
-			COLOR4 topRight = inputImage[y1 * inputWidth + x2];
-			COLOR4 bottomLeft = inputImage[y2 * inputWidth + x1];
-			COLOR4 bottomRight = inputImage[y2 * inputWidth + x2];
+			COLOR4 pixel1 = inputImage[srcY1 * inputWidth + srcX1];
+			COLOR4 pixel2 = inputImage[srcY1 * inputWidth + srcX2];
+			COLOR4 pixel3 = inputImage[srcY2 * inputWidth + srcX1];
+			COLOR4 pixel4 = inputImage[srcY2 * inputWidth + srcX2];
 
-			COLOR4 interpolatedColor;
-			interpolatedColor.r = (unsigned char)clamp((1 - xWeight) * ((1 - yWeight) * topLeft.r + yWeight * bottomLeft.r)
-				+ xWeight * ((1 - yWeight) * topRight.r + yWeight * bottomRight.r), 0.0f, 255.0f);
-			interpolatedColor.g = (unsigned char)clamp((1 - xWeight) * ((1 - yWeight) * topLeft.g + yWeight * bottomLeft.g)
-				+ xWeight * ((1 - yWeight) * topRight.g + yWeight * bottomRight.g), 0.0f, 255.0f);
-			interpolatedColor.b = (unsigned char)clamp((1 - xWeight) * ((1 - yWeight) * topLeft.b + yWeight * bottomLeft.b)
-				+ xWeight * ((1 - yWeight) * topRight.b + yWeight * bottomRight.b), 0.0f, 255.0f);
-			interpolatedColor.a = (unsigned char)clamp((1 - xWeight) * ((1 - yWeight) * topLeft.a + yWeight * bottomLeft.a)
-				+ xWeight * ((1 - yWeight) * topRight.a + yWeight * bottomRight.a), 0.0f, 255.0f);
+			COLOR4 interpolatedPixel;
+			interpolatedPixel.r = static_cast<unsigned char>(
+				(1 - xWeight) * ((1 - yWeight) * pixel1.r + yWeight * pixel3.r) +
+				xWeight * ((1 - yWeight) * pixel2.r + yWeight * pixel4.r)
+				);
+			interpolatedPixel.g = static_cast<unsigned char>(
+				(1 - xWeight) * ((1 - yWeight) * pixel1.g + yWeight * pixel3.g) +
+				xWeight * ((1 - yWeight) * pixel2.g + yWeight * pixel4.g)
+				);
+			interpolatedPixel.b = static_cast<unsigned char>(
+				(1 - xWeight) * ((1 - yWeight) * pixel1.b + yWeight * pixel3.b) +
+				xWeight * ((1 - yWeight) * pixel2.b + yWeight * pixel4.b)
+				);
+			interpolatedPixel.a = static_cast<unsigned char>(
+				(1 - xWeight) * ((1 - yWeight) * pixel1.a + yWeight * pixel3.a) +
+				xWeight * ((1 - yWeight) * pixel2.a + yWeight * pixel4.a)
+				);
 
-			outputImage[y * outputWidth + x] = interpolatedColor;
+			outputImage[y * outputWidth + x] = interpolatedPixel;
 		}
 	}
 }
@@ -1718,18 +1728,42 @@ void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 	float yScale = static_cast<float>(inputHeight) / outputHeight;
 
 	for (int y = 0; y < outputHeight; y++) {
+		float srcY = y * yScale;
+
+		int srcY1 = static_cast<int>(srcY);
+		int srcY2 = std::min(srcY1 + 1, inputHeight - 1);
+
+		float yWeight = srcY - srcY1;
+
 		for (int x = 0; x < outputWidth; x++) {
-			int srcX = static_cast<int>(x * xScale + 0.5f); // +0.5 for rounding
-			int srcY = static_cast<int>(y * yScale + 0.5f); // +0.5 for rounding
+			float srcX = x * xScale;
+			int srcX1 = static_cast<int>(srcX);
+			int srcX2 = std::min(srcX1 + 1, inputWidth - 1);
 
-			// Clamp coordinates to image boundaries
-			srcX = std::min(std::max(0, srcX), inputWidth - 1);
-			srcY = std::min(std::max(0, srcY), inputHeight - 1);
+			float xWeight = srcX - srcX1;
+			COLOR3 pixel1 = inputImage[srcY1 * inputWidth + srcX1];
+			COLOR3 pixel2 = inputImage[srcY1 * inputWidth + srcX2];
+			COLOR3 pixel3 = inputImage[srcY2 * inputWidth + srcX1];
+			COLOR3 pixel4 = inputImage[srcY2 * inputWidth + srcX2];
+			COLOR3 interpolatedPixel;
+			interpolatedPixel.r = static_cast<unsigned char>(
+				(1 - xWeight) * ((1 - yWeight) * pixel1.r + yWeight * pixel3.r) +
+				xWeight * ((1 - yWeight) * pixel2.r + yWeight * pixel4.r)
+				);
+			interpolatedPixel.g = static_cast<unsigned char>(
+				(1 - xWeight) * ((1 - yWeight) * pixel1.g + yWeight * pixel3.g) +
+				xWeight * ((1 - yWeight) * pixel2.g + yWeight * pixel4.g)
+				);
+			interpolatedPixel.b = static_cast<unsigned char>(
+				(1 - xWeight) * ((1 - yWeight) * pixel1.b + yWeight * pixel3.b) +
+				xWeight * ((1 - yWeight) * pixel2.b + yWeight * pixel4.b)
+				);
 
-			outputImage[y * outputWidth + x] = inputImage[srcY * inputWidth + srcX];
+			outputImage[y * outputWidth + x] = interpolatedPixel;
 		}
 	}
 }
+
 
 
 std::string GetExecutableDirInternal(std::string arg_0_dir)

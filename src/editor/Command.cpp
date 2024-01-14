@@ -581,6 +581,13 @@ void EditBspModelCommand::undo()
 			renderer->reloadTextures();
 		}
 	}
+	if (targetLumps & FL_LIGHTING)
+	{
+		if (renderer)
+		{
+			renderer->reloadLightmaps();
+		}
+	}
 }
 
 void EditBspModelCommand::refresh()

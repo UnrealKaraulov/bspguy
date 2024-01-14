@@ -288,8 +288,6 @@ void Gui::copyLightmap()
 	copiedLightmap.width = size[0];
 	copiedLightmap.height = size[1];
 	copiedLightmap.layers = map->lightmap_count((int)app->pickInfo.selectedFaces[0]);
-	copiedLightmap.luxelFlags = new unsigned char[size[0] * size[1]];
-	get_lightmap_luxelflags(map, copiedLightmap.face, copiedLightmap.luxelFlags);
 }
 
 void Gui::pasteLightmap()
@@ -2720,10 +2718,10 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			/*if (ImGui::MenuItem("Do something bad", NULL, false, !map->is_protected))
+			if (ImGui::MenuItem("Do something bad", NULL, false, !map->is_protected))
 			{
-
-			}*/
+				map->resize_all_lightmaps();
+			}
 
 			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
 			{
@@ -8422,6 +8420,7 @@ void Gui::drawLightMapTool()
 						delete currentlightMap[i];
 					currentlightMap[i] = NULL;
 				}
+
 				for (int i = 0; i < MAX_LIGHTMAPS; i++)
 				{
 					if (face->nStyles[i] == 255)
@@ -9212,13 +9211,13 @@ void Gui::drawFaceEditorWidget()
 			mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
 				textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
 
+			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
+			map->resize_all_lightmaps(true);
+			mapRenderer->loadLightmaps();
 			mapRenderer->calcFaceMaths();
 			app->updateModelVerts();
 
 			reloadLimits();
-
-			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
-			map->resize_all_lightmaps(true);
 		}
 
 		pasteTextureNow = false;

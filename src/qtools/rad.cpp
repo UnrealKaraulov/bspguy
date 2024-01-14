@@ -4,26 +4,6 @@
 #include "Bsp.h"
 #include <algorithm>
 
-// Used for better lightmap resizing
-void get_lightmap_luxelflags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut)
-{
-
-	BSPFACE32* f = &bsp->faces[faceIdx];
-
-	if (f->nStyles[0] == 255 || bsp->texinfos[f->iTextureInfo].nFlags & TEX_SPECIAL)
-		return;                                            // non-lit texture
-
-	lightinfo_t l;
-	memset(&l, 0, sizeof(l));
-	l.surfnum = faceIdx;
-	l.face = f;
-
-	CalcFaceExtents(bsp, &l);
-	fill_luxel_flags(bsp, &l, luxelFlagsOut);
-
-	return;
-}
-
 //
 // BEGIN COPIED QRAD CODE
 //
@@ -197,46 +177,6 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 		return false;
 	}
 	return true;
-}
-
-static bool TestSampleFrag(Bsp* bsp, int facenum, float s, float t, const float square[2][2], int maxsize)
-{
-	const vec3 v_s = {s, 0, 0};
-	const vec3 v_t = {0, t, 0};
-
-	samplefrag_t head;
-
-	head.facenum = facenum;
-
-	VectorScale(v_s, 1, (float*)&head.rect.planes[0].vNormal); head.rect.planes[0].fDist = square[0][0]; // smin
-	VectorScale(v_s, -1, (float*)&head.rect.planes[1].vNormal); head.rect.planes[1].fDist = -square[1][0]; // smax
-	VectorScale(v_t, 1, (float*)&head.rect.planes[2].vNormal); head.rect.planes[2].fDist = square[0][1]; // tmin
-	VectorScale(v_t, -1, (float*)&head.rect.planes[3].vNormal); head.rect.planes[3].fDist = -square[1][1]; // tmax
-
-	// ChopFrag
-	// get the shape of the fragment by clipping the face using the boundaries
-	matrix_t worldtotex;
-	BSPFACE32* f = &bsp->faces[head.facenum];
-	Winding facewinding(bsp, *f);
-
-	TranslateWorldToTex(bsp, head.facenum, worldtotex);
-	head.mywinding = new Winding(facewinding.m_NumPoints);
-	for (int x = 0; x < facewinding.m_NumPoints; x++)
-	{
-		ApplyMatrix(worldtotex, facewinding.m_Points[x], head.mywinding->m_Points[x]);
-		head.mywinding->m_Points[x][2] = 0.0;
-	}
-	head.mywinding->RemoveColinearPoints();
-
-	for (int x = 0; x < 4 && head.mywinding->m_NumPoints > 0; x++)
-	{
-		head.mywinding->Clip(head.rect.planes[x], false);
-	}
-
-	bool hasPoints = head.mywinding->m_NumPoints != 0;
-	delete head.mywinding;
-
-	return hasPoints && CanFindFacePosition(bsp, head.facenum);
 }
 
 float CalculatePointVecsProduct(const volatile float* point, const volatile float* vecs)
@@ -424,83 +364,4 @@ bool CalcFaceExtents(Bsp* bsp, lightinfo_t* l)
 		l->texsize[i] = bmaxs[i] - bmins[i];
 	}
 	return true;
-}
-
-void fill_luxel_flags(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
-{
-	const int       h = l->texsize[1] + 1;
-	const int       w = l->texsize[0] + 1;
-	const float     starts = l->texmins[0] * TEXTURE_STEP * 1.0f;
-	const float     startt = l->texmins[1] * TEXTURE_STEP * 1.0f;
-	unsigned char* pLuxelFlags;
-
-	for (int t = 0; t < h; t++)
-	{
-		for (int s = 0; s < w; s++)
-		{
-			pLuxelFlags = &LuxelFlags[s + w * t];
-			float us = starts + s * TEXTURE_STEP * 1.0f;
-			float ut = startt + t * TEXTURE_STEP * 1.0f;
-			float square[2][2]{};
-			square[0][0] = us - TEXTURE_STEP;
-			square[0][1] = ut - TEXTURE_STEP;
-			square[1][0] = us + TEXTURE_STEP;
-			square[1][1] = ut + TEXTURE_STEP;
-
-			*pLuxelFlags = (unsigned char)(TestSampleFrag(bsp, l->surfnum, us, ut, square, 100) ? LightNormal : LightOutside);
-		}
-	}
-
-
-	{
-		int s_other = 0;
-		int t_other = 0;
-		unsigned char* pLuxelFlags_other;
-		bool adjusted;
-		for (int i = 0; i < h + w; i++)
-		{ // propagate valid light samples
-			adjusted = false;
-			for (int t = 0; t < h; t++)
-			{
-				for (int s = 0; s < w; s++)
-				{
-					pLuxelFlags = &LuxelFlags[s + w * t];
-					if (*pLuxelFlags != LightOutside)
-						continue;
-					for (int n = 0; n < 4; n++)
-					{
-						switch (n)
-						{
-							case 0: s_other = s + 1; t_other = t; break;
-							case 1: s_other = s - 1; t_other = t; break;
-							case 2: s_other = s; t_other = t + 1; break;
-							case 3: s_other = s; t_other = t - 1; break;
-						}
-						if (t_other < 0 || t_other >= h || s_other < 0 || s_other >= w)
-							continue;
-						pLuxelFlags_other = &LuxelFlags[s_other + w * t_other];
-						if (*pLuxelFlags_other != LightOutside && *pLuxelFlags_other != LightShifted)
-						{
-							*pLuxelFlags = LightShifted;
-							adjusted = true;
-							break;
-						}
-					}
-				}
-			}
-			for (int t = 0; t < h; t++)
-			{
-				for (int s = 0; s < w; s++)
-				{
-					pLuxelFlags = &LuxelFlags[s + w * t];
-					if (*pLuxelFlags == LightShifted)
-					{
-						*pLuxelFlags = LightShiftedInside;
-					}
-				}
-			}
-			if (!adjusted)
-				break;
-		}
-	}
 }

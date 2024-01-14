@@ -106,18 +106,14 @@ struct LIGHTMAP
 	int width, height;
 	int layers; // for when multiple lights hit the same face (nStyles[0-3] != 255)
 	int face;
-	unsigned char* luxelFlags;
 	LIGHTMAP()
 	{
 		width = height = layers = 0;
 		face = -1;
-		luxelFlags = NULL;
 	}
 };
 
 class Bsp;
-
-void get_lightmap_luxelflags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut);
 
 const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE32* const face);
 
@@ -126,4 +122,3 @@ int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum);
 int GetFaceSingleLightmapSizeBytes(Bsp* bsp, int facenum);
 bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2]);
 bool CalcFaceExtents(Bsp* bsp, lightinfo_t* l);
-void fill_luxel_flags(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags);
