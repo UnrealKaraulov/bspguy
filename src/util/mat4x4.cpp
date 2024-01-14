@@ -431,22 +431,18 @@ mat4x4 mat4x4::invert()
 
 void mat4x4::mult(float mat[16])
 {
-	mat4x4 _other = mat;
+	mat4x4 & _other = *((mat4x4*)mat);
 	*this = *this * _other;
 }
 
 mat4x4 operator*(const mat4x4& m1, const mat4x4& m2)
 {
 	mat4x4 result;
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			result.m[i * 4 + j] =
-				m1.m[i * 4 + 0] * m2.m[0 * 4 + j] +
-				m1.m[i * 4 + 1] * m2.m[1 * 4 + j] +
-				m1.m[i * 4 + 2] * m2.m[2 * 4 + j] +
-				m1.m[i * 4 + 3] * m2.m[3 * 4 + j];
-		}
-	}
+	loadEmptyMat4x4(result.m);
+	for (int i = 0; i < 4; i++)
+		for (int j = 0; j < 4; j++)
+			for (int k = 0; k < 4; k++)
+				result.m[i * 4 + j] += m1.m[i * 4 + k] * m2.m[k * 4 + j];
 	return result;
 }
 

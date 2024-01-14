@@ -73,10 +73,13 @@ jobs:
           msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag
           -property:Configuration=Release
       - name: Create Windows release archive
-        run: |
+        run: >
           mkdir -p build\win64_release
+
           cp vs-project\Release\bspguy.exe build\win64_release\
+
           xcopy /I /E /Y "resources\*" "build\win64_release\"
+
           Compress-Archive -Path "build\win64_release\*" -DestinationPath "build\newbspguy_win7_x64_release.zip"
       - name: Publish nightly release binaries for windows 7+
         uses: softprops/action-gh-release@v1
@@ -89,10 +92,13 @@ jobs:
           msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag
           -property:Configuration=ReleaseXPx86
       - name: Create Windows release WinXP archive
-        run: |
+        run: >
           mkdir -p build\win32_release
+
           cp vs-project\Release\bspguy.exe build\win32_release\
+
           xcopy /I /E /Y "resources\*" "build\win32_release\"
+
           Compress-Archive -Path "build\win32_release\*" -DestinationPath "build\newbspguy_winxp_x86_release.zip"
       - name: Publish nightly release binaries for windows XP 32bit
         uses: softprops/action-gh-release@v1
@@ -105,10 +111,13 @@ jobs:
           msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag
           -property:Configuration=DebugGithub
       - name: Create Windows debug archive
-        run: |
+        run: >
           mkdir -p build\win64_debug
+
           cp vs-project\Release\bspguy_debug.exe build\win64_debug\
+
           xcopy /I /E /Y "resources\*" "build\win64_debug\"
+
           Compress-Archive -Path "build\win64_debug\*" -DestinationPath "build\newbspguy_win7_x64_dbg.zip"
       - name: Publish nightly debug binaries for windows 7+
         uses: softprops/action-gh-release@v1
@@ -116,3 +125,39 @@ jobs:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
             build/newbspguy_win7_x64_dbg.zip
+  window_build_cmake:
+    name: Windows CMAKE
+    runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Setup MinGW GCC
+        uses: actions/setup-msys2@v1
+        with:
+          msys2-packages: mingw-w64-x86_64-gcc
+      - name: Build app for release
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles"
+          mingw32-make
+      - name: Create Windows release archive
+        run: >
+          mkdir -p build/win64_release
+
+          cp build/bspguy.exe build/win64_release/
+
+          xcopy /I /E /Y "resources/*" "build/win64_release/"
+
+          Compress-Archive -Path "build/win64_release/*" -DestinationPath "build/newbspguy_win_x64_release.zip"
+      - name: Publish nightly release binaries for windows 7+
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+          files: |
+            build/newbspguy_win_x64_release.zip
