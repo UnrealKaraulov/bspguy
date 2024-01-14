@@ -127,6 +127,7 @@ jobs:
             build/newbspguy_win7_x64_dbg.zip
   window_build_cmake:
     name: Windows CMAKE
+    needs: get_time_build
     runs-on: windows-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
