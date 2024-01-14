@@ -137,9 +137,9 @@ jobs:
           fetch-depth: 0
           submodules: true
       - name: Setup MinGW GCC
-        uses: actions/setup-msys2@v1
+        uses: msys2/setup-msys2@v2
         with:
-          msys2-packages: mingw-w64-x86_64-gcc
+          update: true
       - name: Build app for release
         run: |
           mkdir build
