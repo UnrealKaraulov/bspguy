@@ -111,7 +111,7 @@ jobs:
             build/newbspguy_winxp_x86_release.zip
       - name: Build app for debug
         run: >
-          msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag-property:Configuration=DebugGithub
+          msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=DebugGithub
       - name: Create Windows debug archive
         run: >
           mkdir -p build\win64_debug
@@ -154,18 +154,16 @@ jobs:
           mingw32-make
       - name: Create Windows release archive
         run: >
-          tree /F
+          mkdir -p build\win64_cmake_release
           
-          mkdir -p build/win64_cmake_release
+          cp vs-project\Release\bspguy.exe build\win64_cmake_release\
           
-          cp build/bspguy.exe build/win64_cmake_release/
+          xcopy /I /E /Y "resources\*" "build\win64_cmake_release\"
           
-          xcopy /I /E /Y "resources/*" "build/win64_cmake_release/"
-          
-          Compress-Archive -Path "build/win64_cmake_release/*" -DestinationPath "build/newbspguy_win_x64_release.zip"
-      - name: Publish nightly release binaries for windows 7+
+          Compress-Archive -Path "build\win64_cmake_release\*" -DestinationPath "build\newbspguy_win7_x64_gcc_release.zip"
+      - name: Publish nightly release binaries for windows 7+ GCC
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
-            build/newbspguy_win_x64_release.zip
+            build/newbspguy_win7_x64_gcc_release.zip
