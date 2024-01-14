@@ -147,15 +147,16 @@ jobs:
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles"
           mingw32-make
+          dir /s
       - name: Create Windows release archive
         run: >
-          mkdir -p build/win64_release
+          mkdir -p build/win64_cmake_release
 
-          cp build/bspguy.exe build/win64_release/
+          cp build/bspguy.exe build/win64_cmake_release/
 
-          xcopy /I /E /Y "resources/*" "build/win64_release/"
+          xcopy /I /E /Y "resources/*" "build/win64_cmake_release/"
 
-          Compress-Archive -Path "build/win64_release/*" -DestinationPath "build/newbspguy_win_x64_release.zip"
+          Compress-Archive -Path "build/win64_cmake_release/*" -DestinationPath "build/newbspguy_win_x64_release.zip"
       - name: Publish nightly release binaries for windows 7+
         uses: softprops/action-gh-release@v1
         with:
