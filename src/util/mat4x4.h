@@ -65,4 +65,3 @@ void mat4x4print(const mat4x4& mat);
 
 extern float m_identity[16];
 extern float m_zero[16];
-void mat4x4_saveIdentity();

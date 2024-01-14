@@ -944,8 +944,6 @@ int main(int argc, char* argv[])
 		g_settings.loadDefault();
 		g_settings.load();
 
-		mat4x4_saveIdentity();
-
 
 		CommandLine cli(argc, argv);
 

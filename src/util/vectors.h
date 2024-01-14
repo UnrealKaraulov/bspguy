@@ -11,6 +11,30 @@
 #define ON_EPSILON 0.03125f
 
 
+#define CLAMP(v, min, max) if (v < min) { v = min; } else if (v > max) { v = max; }
+
+struct COLOR3
+{
+	unsigned char r, g, b;
+
+	COLOR3() : r(0), g(0), b(0) {};
+	COLOR3(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b)
+	{}
+};
+
+struct COLOR4
+{
+	unsigned char r, g, b, a;
+	COLOR4() : r(0), g(0), b(0), a(0) {};
+	COLOR4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a)
+	{}
+	COLOR4(const COLOR3& c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a)
+	{}
+	COLOR4(const COLOR3& c) : r(c.r), g(c.g), b(c.b), a(255)
+	{}
+};
+
+
 struct vec3
 {
 	float x, y, z;
@@ -226,6 +250,17 @@ struct vec4
 			w = +0.0f;
 	}
 	vec4(const vec3& v, float a) : x(v.x), y(v.y), z(v.z), w(a)
+	{
+		if (abs(x) < EPSILON)
+			x = +0.0f;
+		if (abs(y) < EPSILON)
+			y = +0.0f;
+		if (abs(z) < EPSILON)
+			z = +0.0f;
+		if (abs(w) < EPSILON)
+			w = +0.0f;
+	}
+	vec4(const COLOR4& c ) : x(c.r / 255.0f), y(c.g / 255.0f), z(c.b / 255.0f), w(c.a / 255.0f)
 	{
 		if (abs(x) < EPSILON)
 			x = +0.0f;
