@@ -156,7 +156,7 @@ jobs:
         run: >
           mkdir -p build\win64_cmake_release
           
-          cp vs-project\Release\bspguy.exe build\win64_cmake_release\
+          cp build\bspguy.exe build\win64_cmake_release\
           
           xcopy /I /E /Y "resources\*" "build\win64_cmake_release\"
           
