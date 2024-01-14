@@ -32,7 +32,6 @@ jobs:
       - name: Download and install dependencies
         run: >
           sudo apt update
-
           sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev libfmt-dev --allow-unauthenticated --fix-missing
       - name: Build release
         run: |
@@ -75,11 +74,8 @@ jobs:
       - name: Create Windows release archive
         run: >
           mkdir -p build\win64_release
-
           cp vs-project\Release\bspguy.exe build\win64_release\
-
           xcopy /I /E /Y "resources\*" "build\win64_release\"
-
           Compress-Archive -Path "build\win64_release\*" -DestinationPath "build\newbspguy_win7_x64_release.zip"
       - name: Publish nightly release binaries for windows 7+
         uses: softprops/action-gh-release@v1
@@ -94,11 +90,8 @@ jobs:
       - name: Create Windows release WinXP archive
         run: >
           mkdir -p build\win32_release
-
           cp vs-project\Release\bspguy.exe build\win32_release\
-
           xcopy /I /E /Y "resources\*" "build\win32_release\"
-
           Compress-Archive -Path "build\win32_release\*" -DestinationPath "build\newbspguy_winxp_x86_release.zip"
       - name: Publish nightly release binaries for windows XP 32bit
         uses: softprops/action-gh-release@v1
@@ -113,11 +106,8 @@ jobs:
       - name: Create Windows debug archive
         run: >
           mkdir -p build\win64_debug
-
           cp vs-project\Release\bspguy_debug.exe build\win64_debug\
-
           xcopy /I /E /Y "resources\*" "build\win64_debug\"
-
           Compress-Archive -Path "build\win64_debug\*" -DestinationPath "build\newbspguy_win7_x64_dbg.zip"
       - name: Publish nightly debug binaries for windows 7+
         uses: softprops/action-gh-release@v1
@@ -147,15 +137,12 @@ jobs:
           cd build
           cmake .. -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles"
           mingw32-make
-          dir /s
       - name: Create Windows release archive
         run: >
+          tree /F
           mkdir -p build/win64_cmake_release
-
           cp build/bspguy.exe build/win64_cmake_release/
-
           xcopy /I /E /Y "resources/*" "build/win64_cmake_release/"
-
           Compress-Archive -Path "build/win64_cmake_release/*" -DestinationPath "build/newbspguy_win_x64_release.zip"
       - name: Publish nightly release binaries for windows 7+
         uses: softprops/action-gh-release@v1
