@@ -158,11 +158,11 @@ jobs:
           
           cp build\bspguy.exe build\win64_cmake_release\
           
-          cp $MINGW_PREFIX\bin\libgcc_s_seh-1.dll build\win64_cmake_release\
+          cp $MINGW_PREFIX\mingw64\bin\libgcc_s_seh-1.dll build\win64_cmake_release\
           
-          cp $MINGW_PREFIX\bin\libwinpthread-1.dll build\win64_cmake_release\
+          cp $MINGW_PREFIX\mingw64\bin\libwinpthread-1.dll build\win64_cmake_release\
           
-          cp $MINGW_PREFIX\bin\libstdc++-6.dll build\win64_cmake_release\
+          cp $MINGW_PREFIX\mingw64\bin\libstdc++-6.dll build\win64_cmake_release\
           
           cp glew\bin\Release\x64\glew32.dll build\win64_cmake_release\
           
