@@ -2488,8 +2488,10 @@ void Gui::drawMenuBar()
 				{
 					g_settings.save();
 					glfwTerminate();
-#ifdef _GLIBCXX_HAVE_QUICK_EXIT 
-					::std::quick_exit(0);
+					
+#ifdef MINGW 
+					std::set_terminate(NULL);
+					std::terminate();
 #else 
 					std::quick_exit(0);
 #endif
@@ -2502,8 +2504,9 @@ void Gui::drawMenuBar()
 				else
 				{
 					glfwTerminate();
-#ifdef _GLIBCXX_HAVE_QUICK_EXIT 
-					::std::quick_exit(0);
+#ifdef MINGW 
+					std::set_terminate(NULL);
+					std::terminate();
 #else 
 					std::quick_exit(0);
 #endif

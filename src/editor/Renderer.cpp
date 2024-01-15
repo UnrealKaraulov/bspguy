@@ -132,8 +132,9 @@ void window_close_callback(GLFWwindow* window)
 	g_settings.save();
 	print_log(get_localized_string(LANG_0901));
 
-#ifdef _GLIBCXX_HAVE_QUICK_EXIT 
-	::std::quick_exit(0);
+#ifdef MINGW 
+	std::set_terminate(NULL);
+	std::terminate();
 #else 
 	std::quick_exit(0);
 #endif
@@ -311,8 +312,9 @@ Renderer::~Renderer()
 	g_settings.save();
 	print_log(get_localized_string(LANG_0901));
 	glfwTerminate();
-#ifdef _GLIBCXX_HAVE_QUICK_EXIT 
-	::std::quick_exit(0);
+#ifdef MINGW 
+	std::set_terminate(NULL);
+	std::terminate();
 #else 
 	std::quick_exit(0);
 #endif
