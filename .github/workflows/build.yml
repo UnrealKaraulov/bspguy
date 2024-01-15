@@ -127,8 +127,8 @@ jobs:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
             build/newbspguy_win7_x64_dbg.zip
-  window_build_cmake:
-    name: Windows CMAKE
+  window_build_gcc:
+    name: Windows GCC
     needs: get_time_build
     runs-on: windows-latest
     defaults:
@@ -165,24 +165,83 @@ jobs:
       - name: Create Windows release archive
         shell: pwsh
         run: >
-          mkdir -p build\win64_cmake_release
+          mkdir -p build\win64_gcc_release
           
-          cp build\bspguy.exe build\win64_cmake_release\
+          cp build\bspguy.exe build\win64_gcc_release\
           
-          cp ${{env.MINGW64_PREFIX}}\bin\libgcc_s_seh-1.dll build\win64_cmake_release\
+          cp ${{env.MINGW64_PREFIX}}\bin\libgcc_s_seh-1.dll build\win64_gcc_release\
           
-          cp ${{env.MINGW64_PREFIX}}\bin\libwinpthread-1.dll build\win64_cmake_release\
+          cp ${{env.MINGW64_PREFIX}}\bin\libwinpthread-1.dll build\win64_gcc_release\
           
-          cp ${{env.MINGW64_PREFIX}}\bin\libstdc++-6.dll build\win64_cmake_release\
+          cp ${{env.MINGW64_PREFIX}}\bin\libstdc++-6.dll build\win64_gcc_release\
           
-          cp glew\bin\Release\x64\glew32.dll build\win64_cmake_release\
+          cp glew\bin\Release\x64\glew32.dll build\win64_gcc_release\
           
-          xcopy /I /E /Y "resources\*" "build\win64_cmake_release\"
+          xcopy /I /E /Y "resources\*" "build\win64_gcc_release\"
           
-          Compress-Archive -Path "build\win64_cmake_release\*" -DestinationPath "build\newbspguy_win7_x64_gcc_release.zip"
+          Compress-Archive -Path "build\win64_gcc_release\*" -DestinationPath "build\newbspguy_win7_x64_clang_release.zip"
       - name: Publish nightly release binaries for windows 7+ GCC
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
-            build/newbspguy_win7_x64_gcc_release.zip
+            build/newbspguy_win7_x64_clang_release.zip
+  window_build_clang:
+    name: Windows CLANG
+    needs: get_time_build
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    env: 
+      MINGW64_PREFIX: "C:/msys64/mingw64"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup MinGW GCC
+        uses: msys2/setup-msys2@v2
+        with:
+          release: false
+          msystem: clang64
+          path-type: inherit
+          update: true
+          cache: false
+          location: C:/
+          pacboy: cc:p cmake:p ninja:p lld:p
+          install: >-
+            mingw-w64-x86_64-binutils
+
+      - name: Build app for release
+        run: |
+          mkdir build
+          
+          cd build
+          
+          cmake .. -DCMAKE_BUILD_TYPE=Release -G "MinGW Makefiles"
+          
+          mingw32-make
+      - name: Create Windows release archive
+        shell: pwsh
+        run: >
+          mkdir -p build\win64_clang_release
+          
+          cp build\bspguy.exe build\win64_clang_release\
+          
+          cp ${{env.MINGW64_PREFIX}}\bin\libgcc_s_seh-1.dll build\win64_clang_release\
+          
+          cp ${{env.MINGW64_PREFIX}}\bin\libwinpthread-1.dll build\win64_clang_release\
+          
+          cp ${{env.MINGW64_PREFIX}}\bin\libstdc++-6.dll build\win64_clang_release\
+          
+          cp glew\bin\Release\x64\glew32.dll build\win64_clang_release\
+          
+          xcopy /I /E /Y "resources\*" "build\win64_clang_release\"
+          
+          Compress-Archive -Path "build\win64_clang_release\*" -DestinationPath "build\newbspguy_win7_x64_clang_release.zip"
+      - name: Publish nightly release binaries for windows 7+ GCC
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+          files: |
+            build/newbspguy_win7_x64_clang_release.zip
