@@ -133,7 +133,7 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        shell: msys2 {0}
+        shell: pwsh
     env: 
       MINGW64_PREFIX: "C:/msys64/mingw64"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -146,7 +146,10 @@ jobs:
       - name: Setup MinGW GCC
         uses: msys2/setup-msys2@v2
         with:
+          msystem: mingw64
+          path-type: inherit
           update: true
+          cache: false
           location: C:/
           install: >-
             mingw-w64-x86_64-binutils
