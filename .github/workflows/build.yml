@@ -133,24 +133,23 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        shell: pwsh
+        shell: msys2 {0}
     env: 
       MINGW64_PREFIX: "C:/msys64/mingw64"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          submodules: true
+        uses: actions/checkout@v4
       - name: Setup MinGW GCC
         uses: msys2/setup-msys2@v2
         with:
+          release: false
           msystem: mingw64
           path-type: inherit
           update: true
           cache: false
           location: C:/
+          pacboy: cc:p cmake:p ninja:p lld:p
           install: >-
             mingw-w64-x86_64-binutils
 
