@@ -145,7 +145,6 @@ jobs:
         with:
           release: false
           msystem: mingw64
-          path-type: inherit
           update: true
           cache: false
           location: C:/
@@ -163,6 +162,7 @@ jobs:
           
           mingw32-make
       - name: Create Windows release archive
+        shell: pwsh
         run: >
           mkdir -p build\win64_cmake_release
           
