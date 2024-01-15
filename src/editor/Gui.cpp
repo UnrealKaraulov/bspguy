@@ -1,3 +1,8 @@
+
+#define _GLIBCXX_HAVE_QUICK_EXIT
+#include <cstdlib>
+#include <stdlib.h>
+
 #include "lang.h"
 #include "Gui.h"
 #include "ShaderProgram.h"

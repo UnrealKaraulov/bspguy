@@ -16,7 +16,7 @@
 // External Libraries
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <string.h>
 #pragma warning( disable : 4244 ) // double to float
 
