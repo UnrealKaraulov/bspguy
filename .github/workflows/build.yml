@@ -131,6 +131,9 @@ jobs:
     name: Windows CMAKE
     needs: get_time_build
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
     env: 
       MINGW64_PREFIX: "C:/msys64/mingw64"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
