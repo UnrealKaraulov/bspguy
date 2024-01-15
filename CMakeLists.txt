@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.20)
+cmake_minimum_required (VERSION 3.28)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -243,13 +243,15 @@ else()
 	set(CMAKE_CXX_STANDARD 20)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(PICO_ENABLE_CXX_EXCEPTIONS 1)
-	set(CMAKE_CXX_FLAGS "-Wall -std=c++2a -g0 -O3 -fno-stack-protector -w -Wfatal-errors \
-								-fcf-protection=none -ffunction-sections -fdata-sections\
-								-mtune=generic -fpermissive -fno-sized-deallocation\
-								-Wno-delete-non-virtual-dtor -Wno-invalid-offsetof\
-								-Wno-unused-variable -Wno-unused-value -Wno-unused-result -Wno-unused-function\
-								-Wno-write-strings -Wno-switch -Wno-enum-compare\
-								-Wno-sign-compare -Wno-format -Wno-ignored-attributes -Wno-strict-aliasing\
-								-fno-plt -fno-devirtualize -Wno-unused-local-typedefs -Wno-unused-but-set-variable\
-								-Wno-stringop-truncation -Wno-format-truncation -Wno-class-memaccess")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++2a -g0 -O3 -fno-stack-protector -w -Wfatal-errors\
+	-fcf-protection=none -ffunction-sections -fdata-sections -mtune=generic -fpermissive -fno-sized-deallocation\
+	-Wno-delete-non-virtual-dtor -Wno-invalid-offsetof -Wno-unused-variable -Wno-unused-value -Wno-unused-result\
+	-Wno-unused-function -Wno-write-strings -Wno-switch -Wno-enum-compare -Wno-sign-compare -Wno-format\
+	-Wno-ignored-attributes -Wno-strict-aliasing -fno-plt -fno-devirtualize -Wno-unused-local-typedefs\
+	-Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-class-memaccess")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -O3 -fno-stack-protector -Wfatal-errors -ffunction-sections\
+	-fdata-sections -mtune=generic -fpermissive -fno-sized-deallocation -Wno-unused-variable -Wno-unused-value\
+	-Wno-unused-result -Wno-unused-function -Wno-write-strings -Wno-switch -Wno-enum-compare -Wno-sign-compare\
+	-Wno-format -Wno-ignored-attributes -Wno-strict-aliasing -fno-plt -fno-devirtualize -Wno-unused-local-typedefs\
+	-Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-class-memaccess")
 endif()
