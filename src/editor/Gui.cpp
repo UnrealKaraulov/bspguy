@@ -1,8 +1,3 @@
-
-#define _GLIBCXX_HAVE_QUICK_EXIT
-#include <cstdlib>
-#include <stdlib.h>
-
 #include "lang.h"
 #include "Gui.h"
 #include "ShaderProgram.h"
@@ -16,12 +11,11 @@
 #include <string>
 #include "BspMerger.h"
 #include "filedialog/ImFileDialog.h"
-// embedded binary data
-
 #include "imgui_stdlib.h"
 #include "quantizer.h"
 #include <execution>
 #include "vis.h"
+#include <cstdlib>
 
 float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip
 
@@ -2494,7 +2488,11 @@ void Gui::drawMenuBar()
 				{
 					g_settings.save();
 					glfwTerminate();
+#ifdef _GLIBCXX_HAVE_QUICK_EXIT 
+					::std::quick_exit(0);
+#else 
 					std::quick_exit(0);
+#endif
 				}
 				g_settings.save();
 				if (fileSize(g_settings_path) == 0)
@@ -2504,7 +2502,11 @@ void Gui::drawMenuBar()
 				else
 				{
 					glfwTerminate();
+#ifdef _GLIBCXX_HAVE_QUICK_EXIT 
+					::std::quick_exit(0);
+#else 
 					std::quick_exit(0);
+#endif
 				}
 			}
 			ImGui::EndMenu();

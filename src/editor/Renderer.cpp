@@ -1,8 +1,3 @@
-
-#define _GLIBCXX_HAVE_QUICK_EXIT
-#include <cstdlib>
-#include <stdlib.h>
-
 #include "lang.h"
 #include "Settings.h"
 #include "Renderer.h"
@@ -18,6 +13,7 @@
 #include <execution>
 #include "filedialog/ImFileDialog.h"
 #include "lodepng.h"
+#include <cstdlib>
 
 Renderer* g_app = NULL;
 
@@ -135,7 +131,12 @@ void window_close_callback(GLFWwindow* window)
 {
 	g_settings.save();
 	print_log(get_localized_string(LANG_0901));
+
+#ifdef _GLIBCXX_HAVE_QUICK_EXIT 
+	::std::quick_exit(0);
+#else 
 	std::quick_exit(0);
+#endif
 }
 
 int g_scroll = 0;
@@ -310,7 +311,11 @@ Renderer::~Renderer()
 	g_settings.save();
 	print_log(get_localized_string(LANG_0901));
 	glfwTerminate();
+#ifdef _GLIBCXX_HAVE_QUICK_EXIT 
+	::std::quick_exit(0);
+#else 
 	std::quick_exit(0);
+#endif
 }
 
 void Renderer::renderLoop()
