@@ -226,7 +226,6 @@ if(MSVC)
 													src/filedialog/ImFileDialog.h)
 
 	source_group("Source Files\\filedialog" FILES	src/filedialog/ImFileDialog.c)
-	add_definitions(-DUSE_FILESYSTEM)
 	add_definitions(-DNOMINMAX)
 else()
 	add_definitions(-DNDEBUG)
@@ -243,7 +242,14 @@ else()
 	endif()
 	set(CMAKE_CXX_STANDARD 20)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
-	set(CMAKE_CXX_FLAGS "-Wall -std=c++2a")
 	set(PICO_ENABLE_CXX_EXCEPTIONS 1)
-	set(CMAKE_CXX_FLAGS_RELEASE "-Os -w -Wfatal-errors ")
+	set(CMAKE_CXX_FLAGS "-Wall -std=c++2a -g0 -O3 -fno-stack-protector -w -Wfatal-errors \
+								-fcf-protection=none -ffunction-sections -fdata-sections\
+								-mtune=generic -fpermissive -fno-sized-deallocation\
+								-Wno-delete-non-virtual-dtor -Wno-invalid-offsetof\
+								-Wno-unused-variable -Wno-unused-value -Wno-unused-result -Wno-unused-function\
+								-Wno-write-strings -Wno-switch -Wno-enum-compare\
+								-Wno-sign-compare -Wno-format -Wno-ignored-attributes -Wno-strict-aliasing\
+								-fno-plt -fno-devirtualize -Wno-unused-local-typedefs -Wno-unused-but-set-variable\
+								-Wno-stringop-truncation -Wno-format-truncation -Wno-class-memaccess")
 endif()
