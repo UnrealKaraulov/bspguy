@@ -145,6 +145,7 @@ jobs:
         with:
           release: false
           msystem: mingw64
+          path-type: inherit
           update: true
           cache: false
           location: C:/
