@@ -7289,10 +7289,10 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	const char* countName = "None";
 	switch (sortMode)
 	{
-	case SORT_VERTS:		maxCount = map->vertCount; countName = "Vertexes";  break;
-	case SORT_NODES:		maxCount = map->nodeCount; countName = "Nodes";  break;
-	case SORT_CLIPNODES:	maxCount = map->clipnodeCount; countName = "Clipnodes";  break;
-	case SORT_FACES:		maxCount = map->faceCount; countName = "Faces";  break;
+		case SORT_VERTS:		maxCount = map->vertCount; countName = "Vertexes";  break;
+		case SORT_NODES:		maxCount = map->nodeCount; countName = "Nodes";  break;
+		case SORT_CLIPNODES:	maxCount = map->clipnodeCount; countName = "Clipnodes";  break;
+		case SORT_FACES:		maxCount = map->faceCount; countName = "Faces";  break;
 	}
 
 	if (!loadedLimit[sortMode])

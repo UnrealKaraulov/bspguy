@@ -1519,46 +1519,11 @@ void Renderer::cameraContextMenus()
 {
 	// context menus
 	bool wasTurning = cameraIsRotating && totalMouseDrag.length() >= 1.0f;
-	if (draggingAxis == -1 && curRightMouse == GLFW_RELEASE && oldRightMouse != GLFW_RELEASE && !wasTurning)
+	if (draggingAxis == -1 && curRightMouse == GLFW_RELEASE && oldRightMouse == GLFW_PRESS && !wasTurning)
 	{
-		vec3 pickStart, pickDir;
-		getPickRay(pickStart, pickDir);
-
-		PickInfo tempPick = PickInfo();
-		tempPick.bestDist = FLT_MAX_COORD;
-
-		Bsp* oLdmap = SelectedMap;
-		Bsp* map = SelectedMap;
-
-		auto pickEnt = tempPick.GetSelectedEnts();
-
-		for (size_t i = 0; i < mapRenderers.size(); i++)
+		if (pickInfo.selectedEnts.size())
 		{
-			if (mapRenderers[i]->map && map == mapRenderers[i]->map->parentMap && mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map) && pickEnt.size())
-			{
-				if (map && oLdmap != map)
-				{
-					tempPick = PickInfo();
-					map->selectModelEnt();
-					map = oLdmap;
-					tempPick.SetSelectedEnt(pickEnt[0]);
-				}
-				break;
-			}
-		}
-
-		auto tmpSelectedEnt = tempPick.GetSelectedEnts();
-
-		if (tmpSelectedEnt.empty() || tmpSelectedEnt[0] == 0)
-		{
-			map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map);
-			if (tmpSelectedEnt.size())
-				tmpSelectedEnt = tempPick.GetSelectedEnts();
-		}
-
-		if (tmpSelectedEnt.size() && tmpSelectedEnt == pickInfo.GetSelectedEnts())
-		{
-			gui->openContextMenu((int)tmpSelectedEnt[0]);
+			gui->openContextMenu((int)pickInfo.selectedEnts[0]);
 		}
 		else
 		{
