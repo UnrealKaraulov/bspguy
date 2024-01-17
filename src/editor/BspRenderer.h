@@ -14,6 +14,13 @@
 
 class Command;
 
+enum RENDER_PASS : int
+{
+	REND_PASS_COLORSHADER,
+	REND_PASS_BSPSHADER_TRANSPARENT,
+	REND_PASS_MODELSHADER
+};
+
 struct LightmapInfo
 {
 	// each face can have 4 lightmaps, and those may be split across multiple atlases
@@ -81,25 +88,19 @@ struct RenderEnt
 
 struct RenderGroup
 {
-	cVert* wireframeVerts; // verts for rendering wireframe
 	lightmapVert* verts;
 	int vertCount;
-	int wireframeVertCount;
 	Texture* texture;
 	Texture* lightmapAtlas[MAX_LIGHTMAPS];
 	VertexBuffer* buffer;
-	VertexBuffer* wireframeBuffer;
 	bool transparent;
 	bool special;
-	bool highlighted;
 	RenderGroup()
 	{
-		highlighted = false;
-		wireframeVerts = NULL;
 		verts = NULL;
-		buffer = wireframeBuffer = NULL;
+		buffer = NULL;
 		transparent = special = false;
-		vertCount = wireframeVertCount = 0;
+		vertCount =  0;
 		texture = NULL;
 		for (int i = 0; i < MAX_LIGHTMAPS; i++)
 		{
@@ -125,11 +126,22 @@ struct RenderModel
 	int renderFaceCount;
 	RenderFace* renderFaces;
 	RenderGroup* renderGroups;
+
+	std::vector<cVert> wireframeVerts; // verts for rendering wireframe
+	VertexBuffer* wireframeBuffer;
+	int wireframeVertCount;
+
+	bool highlighted;
+
 	RenderModel()
 	{
+		wireframeVerts = std::vector<cVert>();
 		groupCount = renderFaceCount = 0;
 		renderFaces = NULL;
 		renderGroups = NULL;
+		wireframeBuffer = NULL;
+		wireframeVertCount = 0;
+		highlighted = false;
 	}
 };
 
@@ -197,11 +209,11 @@ public:
 	BspRenderer(Bsp* map);
 	~BspRenderer();
 
-	void render(std::vector<size_t> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull);
+	void render(bool highlightAlwaysOnTop, int clipnodeHull);
 
-	void drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly);
+	void drawModel(RenderEnt* ent, int transparent, bool highlight, bool edgesOnly);
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
-	void drawPointEntities(std::vector<size_t> highlightEnts);
+	void drawPointEntities(std::vector<size_t> highlightEnts, int pass);
 
 	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp** map);
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);

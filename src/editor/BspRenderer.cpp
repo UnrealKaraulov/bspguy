@@ -649,8 +649,7 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 {
 	deleteRenderFaces();
 
-	renderModels = new RenderModel[map->modelCount];
-	memset(renderModels, 0, sizeof(RenderModel) * map->modelCount);
+	renderModels = new RenderModel[map->modelCount]{};
 	renderModelCount = map->modelCount;
 
 	int worldRenderGroups = 0;
@@ -689,6 +688,11 @@ void BspRenderer::deleteRenderModel(RenderModel* renderModel)
 		return;
 	}
 
+	if (renderModel->wireframeBuffer)
+		delete renderModel->wireframeBuffer;
+	renderModel->wireframeVerts.clear();
+	renderModel->wireframeBuffer = NULL;
+
 	if (renderModel->renderGroups)
 	{
 		for (int k = 0; k < renderModel->groupCount; k++)
@@ -697,17 +701,11 @@ void BspRenderer::deleteRenderModel(RenderModel* renderModel)
 
 			if (group.verts)
 				delete[] group.verts;
-			if (group.wireframeVerts)
-				delete[] group.wireframeVerts;
 			if (group.buffer)
 				delete group.buffer;
-			if (group.wireframeBuffer)
-				delete group.wireframeBuffer;
 
 			group.verts = NULL;
-			group.wireframeVerts = NULL;
 			group.buffer = NULL;
-			group.wireframeBuffer = NULL;
 		}
 		delete[] renderModel->renderGroups;
 	}
@@ -823,12 +821,15 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 	std::vector<RenderGroup> renderGroups{};
 	std::vector<std::vector<lightmapVert>> renderGroupVerts{};
-	std::vector<std::vector<cVert>> renderGroupWireframeVerts{};
 
 	for (int i = 0; i < model.nFaces; i++)
 	{
 		int faceIdx = model.iFirstFace + i;
 		BSPFACE32& face = map->faces[faceIdx];
+
+		if (face.nEdges <= 0)
+			continue;
+
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 		BSPMIPTEX* tex = NULL;
 
@@ -1000,7 +1001,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 
 		int wireframeVertCount = face.nEdges * 2;
-		cVert* wireframeVerts = new cVert[wireframeVertCount];
+		std::vector<cVert> wireframeVerts;
+		wireframeVerts.resize(wireframeVertCount);
 		for (int k = 0; k < face.nEdges && (k + 1) % face.nEdges < face.nEdges; k++)
 		{
 			wireframeVerts[idx++].pos = verts[k].pos;
@@ -1011,11 +1013,11 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		{
 			if (modelIdx > 0)
 			{
-				wireframeVerts[w].c = COLOR4(0, 100, 255, 200);
+				wireframeVerts[w].c = COLOR4(0, 100, 255, 255);
 			}
 			else
 			{
-				wireframeVerts[w].c = COLOR4(100, 100, 100, 200);
+				wireframeVerts[w].c = COLOR4(30, 30, 30, 255);
 			}
 		}
 
@@ -1082,7 +1084,6 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			groupIdx = (int)renderGroups.size();
 			renderGroups.push_back(newGroup);
 			renderGroupVerts.emplace_back(std::vector<lightmapVert>());
-			renderGroupWireframeVerts.emplace_back(std::vector<cVert>());
 		}
 
 		renderModel->renderFaces[i].group = groupIdx;
@@ -1090,10 +1091,9 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		renderModel->renderFaces[i].vertCount = vertCount;
 
 		renderGroupVerts[groupIdx].insert(renderGroupVerts[groupIdx].end(), verts, verts + vertCount);
-		renderGroupWireframeVerts[groupIdx].insert(renderGroupWireframeVerts[groupIdx].end(), wireframeVerts, wireframeVerts + wireframeVertCount);
+		renderModel->wireframeVerts.insert(renderModel->wireframeVerts.end(), wireframeVerts.begin(), wireframeVerts.end());
 
 		delete[] verts;
-		delete[] wireframeVerts;
 	}
 
 	renderModel->renderGroups = new RenderGroup[renderGroups.size()];
@@ -1107,29 +1107,22 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		if (renderGroups[i].vertCount > 0)
 			memcpy(renderGroups[i].verts, &renderGroupVerts[i][0], renderGroups[i].vertCount * sizeof(lightmapVert));
 
-		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(renderGroupWireframeVerts[i]);
-
-		if (g_verbose)
-			print_log("Optimize wireframe {} renderGroup {} model: {} to {} lines.\n", i, modelIdx, renderGroupWireframeVerts[i].size(), cleanupWireframe.size());
-
-		renderGroups[i].wireframeVerts = new cVert[cleanupWireframe.size() + 1];
-		renderGroups[i].wireframeVertCount = (int)cleanupWireframe.size();
-
-		if (renderGroups[i].wireframeVertCount)
-			memcpy(renderGroups[i].wireframeVerts, &cleanupWireframe[0], renderGroups[i].wireframeVertCount * sizeof(cVert));
-
-		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, 0, renderGroups[i].verts, renderGroups[i].vertCount, GL_TRIANGLES);
-		tmpBuf->addAttribute(TEX_2F, "vTex");
-		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
-		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
-		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
-		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
-		tmpBuf->addAttribute(4, GL_FLOAT, 0, "vColor");
-		tmpBuf->addAttribute(POS_3F, "vPosition");
-
-		renderGroups[i].wireframeBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, renderGroups[i].wireframeVerts, renderGroups[i].wireframeVertCount, GL_LINES);
+		renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, renderGroups[i].verts, renderGroups[i].vertCount, GL_TRIANGLES);
 		//tmpWireBuff->ownData = true;
 		renderModel->renderGroups[i] = renderGroups[i];
+	}
+
+	if (renderModel->wireframeVerts.size())
+	{
+		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(renderModel->wireframeVerts);
+
+		if (g_verbose)
+			print_log("Optimize wireframe {} model: {} to {} lines.\n", modelIdx, renderModel->wireframeVerts.size(), cleanupWireframe.size());
+
+		renderModel->wireframeVerts = cleanupWireframe;
+		renderModel->wireframeVertCount = (int)cleanupWireframe.size();
+
+		renderModel->wireframeBuffer = new VertexBuffer(g_app->colorShader, renderModel->wireframeVerts.data(), renderModel->wireframeVertCount, GL_LINES);
 	}
 
 	for (int i = 0; i < model.nFaces; i++)
@@ -1267,11 +1260,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 		memcpy(wireOutput, cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->data,
 			cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts * sizeof(cVert));
 
-		renderClip->clipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output,
+		renderClip->clipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, output,
 			(GLsizei)cachedRenderClip->clipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts, GL_TRIANGLES);
 		renderClip->clipnodeBuffer[hullIdx]->ownData = true;
 
-		renderClip->wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput,
+		renderClip->wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(colorShader,  wireOutput,
 			(GLsizei)cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts, GL_LINES);
 		renderClip->wireframeClipnodeBuffer[hullIdx]->ownData = true;
 
@@ -1443,10 +1436,10 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	if (wireframeVerts.size())
 		std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
-	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
+	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
 	renderClip.clipnodeBuffer[hullIdx]->ownData = true;
 
-	renderClip.wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
+	renderClip.wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
 	renderClip.wireframeClipnodeBuffer[hullIdx]->ownData = true;
 
 	nodeBuffStr curHullIdxStruct = nodeBuffStr();
@@ -1496,7 +1489,7 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 		for (int k = 0; k < MAX_MAP_HULLS; k++)
 		{
 			VertexBuffer* clipBuf = renderClipnodes[i].clipnodeBuffer[k];
-			if (clipBuf && clipBuf->data && clipBuf->numVerts > 0 && clipBuf->attribs.size())
+			if (clipBuf && clipBuf->data && clipBuf->numVerts > 0)
 			{
 				cVert* vertData = (cVert*)clipBuf->data;
 				for (int v = 0; v < clipBuf->numVerts; v++)
@@ -2207,7 +2200,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 	return glTextures[texinfo.iMiptex]->id;
 }
 
-void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw, int clipnodeHull)
+void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 {
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
@@ -2225,6 +2218,13 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 		delayEntUndoList.clear();
 	}
 
+	g_app->matmodel.loadIdentity();
+	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	g_app->colorShader->updateMatrixes();
+
+	g_app->matmodel.loadIdentity();
+	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	g_app->bspShader->updateMatrixes();
 
 	static double leafUpdTime = 0.0;
 
@@ -2236,77 +2236,67 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 		int headNode = map->models[0].iHeadnodes[0];
 		map->pointContents(headNode, localCameraOrigin, 0, nodeBranch, curLeafIdx, childIdx);
 	}
-	
 
-	g_app->matmodel.loadIdentity();
-	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
-	g_app->colorShader->updateMatrixes();
-
-	g_app->matmodel.loadIdentity();
-	g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
-	g_app->bspShader->updateMatrixes();
-
-
-	std::for_each(std::execution::par_unseq, renderEnts, renderEnts + map->ents.size(), [=](RenderEnt & ent)
-		{
-			ent.modelMat4x4_calc = ent.modelMat4x4;
-			ent.modelMat4x4_calc.translate(renderOffset.x, renderOffset.y, renderOffset.z);
-		});
-
-
-	for (int pass = 0; pass < 2; pass++)
+	for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
 	{
-		g_app->bspShader->bind();
-		bool drawTransparentFaces = pass == 1;
-		if (drawTransparentFaces)
-		{
-			//glDepthMask(GL_FALSE);
-			//glDepthFunc(GL_LESS);
-		}
-		if (!map->ents[0]->hide)
-			drawModel(0, drawTransparentFaces, false, false);
+		RenderEnt& ent = renderEnts[i];
+		ent.modelMat4x4_calc = ent.modelMat4x4;
+		ent.modelMat4x4_calc.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	}
 
-		for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
+	std::vector<size_t> highlightEnts = g_app->pickInfo.selectedEnts;
+
+	for (bool transparent = false; transparent != true; transparent = true)
+	{
+		for (int pass = 0; pass <= 2; pass++)
 		{
-			if (map->ents[i]->hide)
-				continue;
-			if (g_app->pickInfo.IsSelectedEnt(i))
+			if (pass != REND_PASS_MODELSHADER)
 			{
-				if (g_render_flags & RENDER_SELECTED_AT_TOP)
-					glDepthFunc(GL_ALWAYS);
-				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
-				{
-					g_app->bspShader->pushMatrix();
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-					g_app->bspShader->updateMatrixes();
+				if (transparent && pass != REND_PASS_BSPSHADER_TRANSPARENT)
+					continue;
+				g_app->bspShader->bind();
 
-					drawModel(&renderEnts[i], drawTransparentFaces, true, false);
-					g_app->bspShader->popMatrix();
+				if (!map->ents[0]->hide)
+					drawModel(0, pass, false, false);
+
+				for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
+				{
+					if (map->ents[i]->hide)
+						continue;
+					if (g_app->pickInfo.IsSelectedEnt(i))
+					{
+						/*if (g_render_flags & RENDER_SELECTED_AT_TOP)
+							glDepthFunc(GL_ALWAYS);
+						if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
+						{
+							g_app->bspShader->pushMatrix();
+							g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+							g_app->bspShader->updateMatrixes();
+
+							drawModel(&renderEnts[i], pass, true, false);
+							g_app->bspShader->popMatrix();
+						}
+						if (g_render_flags & RENDER_SELECTED_AT_TOP)
+							glDepthFunc(GL_LESS);*/
+					}
+					else
+					{
+						if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
+						{
+							g_app->bspShader->pushMatrix();
+							g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+							g_app->bspShader->updateMatrixes();
+							drawModel(&renderEnts[i], pass, false, false);
+							g_app->bspShader->popMatrix();
+						}
+					}
 				}
-				if (g_render_flags & RENDER_SELECTED_AT_TOP)
-					glDepthFunc(GL_LESS);
 			}
-			else
+
+			if ((g_render_flags & RENDER_POINT_ENTS) && transparent == false && (pass == REND_PASS_COLORSHADER || pass == REND_PASS_MODELSHADER))
 			{
-				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
-				{
-					g_app->bspShader->pushMatrix();
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-					g_app->bspShader->updateMatrixes();
-					drawModel(&renderEnts[i], drawTransparentFaces, false, false);
-
-					g_app->bspShader->popMatrix();
-				}
+				drawPointEntities(highlightEnts, pass);
 			}
-		}
-		if (drawTransparentFaces)
-		{
-			//glDepthMask(GL_TRUE);
-			//glDepthFunc(GL_LESS);
-		}
-		if ((g_render_flags & RENDER_POINT_ENTS) && pass == 0)
-		{
-			drawPointEntities(highlightEnts);
 		}
 	}
 
@@ -2330,6 +2320,7 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 					{
 						continue; // skip rendering for models that have faces, if in auto mode
 					}
+					g_app->colorShader->bind();
 					g_app->colorShader->pushMatrix();
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
 					g_app->colorShader->updateMatrixes();
@@ -2338,7 +2329,7 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 
 					if (hightlighted)
 					{
-						glUniform4f(g_app->colorShaderMultId, 1.5f, 1.0f, 1.0f, 1.0f);
+						glUniform4f(g_app->colorShaderMultId, 1.5f, 0.75f, 0.75f, 1.0f);
 					}
 
 					drawModelClipnodes(renderEnts[i].modelIdx, false, clipnodeHull);
@@ -2356,217 +2347,52 @@ void BspRenderer::render(std::vector<size_t> highlightEnts, bool modelVertsDraw,
 
 	if (highlightEnts.size())
 	{
-		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_ALWAYS);
-		for (size_t highlightEnt : highlightEnts)
+		if (g_render_flags & RENDER_SELECTED_AT_TOP && !modelVertsDraw)
 		{
-			if (map->ents[highlightEnt]->hide)
-				continue;
-			if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_ALWAYS);
+		}
+		if (modelVertsDraw)
+		{
+			glDisable(GL_CULL_FACE);
+		}
+		g_app->bspShader->pushMatrix();
+		for (bool transparent = false; transparent != true; transparent = true)
+		{
+			for (int pass = 0; pass <= 2; pass++)
 			{
-				g_app->bspShader->pushMatrix();
+				if (transparent && pass != REND_PASS_BSPSHADER_TRANSPARENT)
+					continue;
+				if (pass == REND_PASS_MODELSHADER)
+					continue;
 
-				g_app->matmodel = renderEnts[highlightEnt].modelMat4x4_calc;
-				g_app->bspShader->updateMatrixes();
-
-				if (modelVertsDraw)
+				for (size_t highlightEnt : highlightEnts)
 				{
-					glDisable(GL_CULL_FACE);
+					if (map->ents[highlightEnt]->hide)
+						continue;
+					if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+					{
+						g_app->matmodel = renderEnts[highlightEnt].modelMat4x4_calc;
+						g_app->bspShader->updateMatrixes();
+						drawModel(&renderEnts[highlightEnt], pass, true, false);
+					}
 				}
-				drawModel(&renderEnts[highlightEnt], false, true, true);
-				drawModel(&renderEnts[highlightEnt], true, true, true);
-				if (modelVertsDraw)
-				{
-					glEnable(GL_CULL_FACE);
-				}
-				g_app->bspShader->popMatrix();
 			}
 		}
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LESS);
+		g_app->bspShader->popMatrix();
+		if (modelVertsDraw)
+		{
+			glEnable(GL_CULL_FACE);
+		}
+		if (g_render_flags & RENDER_SELECTED_AT_TOP && !modelVertsDraw)
+		{
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
+		}
 	}
 	delayLoadData();
 }
 
-void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly)
-{
-	int modelIdx = ent ? ent->modelIdx : 0;
-
-	if (modelIdx < 0 || modelIdx >= numRenderModels)
-	{
-		return;
-	}
-
-	if (edgesOnly)
-	{
-		for (int i = 0; i < renderModels[modelIdx].groupCount; i++)
-		{
-			RenderGroup& rgroup = renderModels[modelIdx].renderGroups[i];
-			if (highlight && !rgroup.highlighted)
-			{
-				rgroup.highlighted = true;
-				for (int n = 0; n < rgroup.wireframeVertCount; n++)
-				{
-					rgroup.wireframeVerts[n].c = COLOR4(245, 212, 66, 220);
-				}
-			}
-			else if (!highlight && rgroup.highlighted)
-			{
-				rgroup.highlighted = false;
-				if (modelIdx > 0)
-				{
-					for (int n = 0; n < rgroup.wireframeVertCount; n++)
-					{
-						rgroup.wireframeVerts[n].c = COLOR4(0, 100, 255, 220);
-					}
-				}
-				else
-				{
-					for (int n = 0; n < rgroup.wireframeVertCount; n++)
-					{
-						rgroup.wireframeVerts[n].c = COLOR4(100, 100, 100, 220);
-					}
-				}
-			}
-			rgroup.wireframeBuffer->drawFull();
-		}
-		return;
-	}
-
-	for (int i = 0; i < renderModels[modelIdx].groupCount; i++)
-	{
-		RenderGroup& rgroup = renderModels[modelIdx].renderGroups[i];
-
-		if (rgroup.transparent != transparent)
-			continue;
-
-		if (rgroup.special)
-		{
-			if (modelIdx == 0 && !(g_render_flags & RENDER_SPECIAL))
-			{
-				continue;
-			}
-			else if (modelIdx != 0 && !(g_render_flags & RENDER_SPECIAL_ENTS))
-			{
-				continue;
-			}
-		}
-		else if (modelIdx != 0 && !(g_render_flags & RENDER_ENTS))
-		{
-			continue;
-		}
-
-		if (ent && ent->needAngles)
-		{
-			g_app->colorShader->pushMatrix();
-			g_app->matmodel = ent->modelMat4x4_calc;
-			g_app->colorShader->updateMatrixes();
-			rgroup.wireframeBuffer->drawFull();
-			g_app->colorShader->popMatrix();
-		}
-
-		if (highlight || (g_render_flags & RENDER_WIREFRAME))
-		{
-			if (highlight && !rgroup.highlighted)
-			{
-				rgroup.highlighted = true;
-				for (int n = 0; n < rgroup.wireframeVertCount; n++)
-				{
-					rgroup.wireframeVerts[n].c = COLOR4(245, 212, 66, 220);
-				}
-			}
-			else if (!highlight && rgroup.highlighted)
-			{
-				rgroup.highlighted = false;
-				if (modelIdx > 0)
-				{
-					for (int n = 0; n < rgroup.wireframeVertCount; n++)
-					{
-						rgroup.wireframeVerts[n].c = COLOR4(0, 100, 255, 220);
-					}
-				}
-				else
-				{
-					for (int n = 0; n < rgroup.wireframeVertCount; n++)
-					{
-						rgroup.wireframeVerts[n].c = COLOR4(100, 100, 100, 220);
-					}
-				}
-			}
-			rgroup.wireframeBuffer->drawFull();
-		}
-
-		g_app->bspShader->bind();
-		if (texturesLoaded && g_render_flags & RENDER_TEXTURES)
-		{
-			rgroup.texture->bind(0);
-		}
-		else
-		{
-			whiteTex->bind(0);
-		}
-
-		for (int s = 0; s < MAX_LIGHTMAPS; s++)
-		{
-			if (highlight)
-			{
-				redTex->bind(s + 1);
-			}
-			else if (lightmapsUploaded && lightmapsGenerated && (g_render_flags & RENDER_LIGHTMAPS))
-			{
-				if (rgroup.lightmapAtlas[s] && lightEnableFlags[s])
-				{
-					rgroup.lightmapAtlas[s]->bind(s + 1);
-					if (s > 0 && !map->lightdata)
-					{
-						blackTex->bind(s + 1);
-					}
-				}
-				else
-				{
-					blackTex->bind(s + 1);
-				}
-
-			}
-			else
-			{
-				if (s == 0)
-				{
-					whiteTex->bind(s + 1);
-				}
-				else
-				{
-					blackTex->bind(s + 1);
-				}
-			}
-		}
-		/*	if (highlight)
-			{
-				glDepthMask(GL_FALSE);
-				glDepthFunc(GL_ALWAYS);
-			}*/
-		rgroup.buffer->drawFull();
-		/*
-		if (highlight)
-		{
-			glDepthMask(GL_TRUE);
-			glDepthFunc(GL_LESS);
-		}*/
-		if (ent)
-		{
-			for (int s = 0; s < MAX_LIGHTMAPS; s++)
-			{
-				whiteTex->bind(s + 1);
-			}
-
-			g_app->bspShader->pushMatrix();
-			g_app->matmodel = ent->modelMat4x4_calc;
-			g_app->bspShader->updateMatrixes();
-			rgroup.buffer->drawFull();
-			g_app->bspShader->popMatrix();
-		}
-	}
-}
 
 void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 {
@@ -2635,7 +2461,158 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	}
 }
 
-void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
+void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edgesOnly)
+{
+	int modelIdx = ent ? ent->modelIdx : 0;
+
+	if (modelIdx < 0 || modelIdx >= numRenderModels)
+	{
+		return;
+	}
+
+	if (pass == REND_PASS_COLORSHADER)
+	{
+		RenderModel& rend_mdl = renderModels[modelIdx];
+		if (rend_mdl.wireframeBuffer)
+		{
+			if (highlight || (g_render_flags & RENDER_WIREFRAME))
+			{
+				if (highlight && !rend_mdl.highlighted)
+				{
+					rend_mdl.highlighted = true;
+					for (int n = 0; n < rend_mdl.wireframeVertCount; n++)
+					{
+						rend_mdl.wireframeVerts[n].c = COLOR4(245, 212, 66, 220);
+					}
+				}
+				else if (!highlight && rend_mdl.highlighted)
+				{
+					rend_mdl.highlighted = false;
+					if (modelIdx > 0)
+					{
+						for (int n = 0; n < rend_mdl.wireframeVertCount; n++)
+						{
+							rend_mdl.wireframeVerts[n].c = COLOR4(0, 100, 255, 220);
+						}
+					}
+					else
+					{
+						for (int n = 0; n < rend_mdl.wireframeVertCount; n++)
+						{
+							rend_mdl.wireframeVerts[n].c = COLOR4(100, 100, 100, 220);
+						}
+					}
+				}
+				rend_mdl.wireframeBuffer->drawFull();
+			}
+
+
+			if (ent && ent->needAngles)
+			{
+				g_app->colorShader->pushMatrix();
+				g_app->matmodel = ent->modelMat4x4_calc;
+				g_app->colorShader->updateMatrixes();
+				rend_mdl.wireframeBuffer->drawFull();
+				g_app->colorShader->popMatrix();
+			}
+		}
+
+	}
+
+	for (int i = 0; i < renderModels[modelIdx].groupCount; i++)
+	{
+		RenderGroup& rgroup = renderModels[modelIdx].renderGroups[i];
+
+		if (rgroup.special)
+		{
+			if (modelIdx == 0 && !(g_render_flags & RENDER_SPECIAL))
+			{
+				continue;
+			}
+			else if (modelIdx != 0 && !(g_render_flags & RENDER_SPECIAL_ENTS))
+			{
+				continue;
+			}
+		}
+		else if (modelIdx != 0 && !(g_render_flags & RENDER_ENTS))
+		{
+			continue;
+		}
+
+		if (pass == REND_PASS_COLORSHADER || pass == REND_PASS_BSPSHADER_TRANSPARENT)
+		{
+			if (rgroup.transparent != (pass == REND_PASS_BSPSHADER_TRANSPARENT))
+				continue;
+		}
+
+		if (!edgesOnly)
+		{
+			if (pass == REND_PASS_COLORSHADER || pass == REND_PASS_BSPSHADER_TRANSPARENT)
+			{
+				g_app->bspShader->bind();
+				if (texturesLoaded && g_render_flags & RENDER_TEXTURES)
+				{
+					rgroup.texture->bind(0);
+				}
+				else
+				{
+					whiteTex->bind(0);
+				}
+
+				for (int s = 0; s < MAX_LIGHTMAPS; s++)
+				{
+					if (highlight)
+					{
+						redTex->bind(s + 1);
+					}
+					else if (lightmapsUploaded && lightmapsGenerated && (g_render_flags & RENDER_LIGHTMAPS))
+					{
+						if (rgroup.lightmapAtlas[s] && lightEnableFlags[s])
+						{
+							rgroup.lightmapAtlas[s]->bind(s + 1);
+							if (s > 0 && !map->lightdata)
+							{
+								blackTex->bind(s + 1);
+							}
+						}
+						else
+						{
+							blackTex->bind(s + 1);
+						}
+
+					}
+					else
+					{
+						if (s == 0)
+						{
+							whiteTex->bind(s + 1);
+						}
+						else
+						{
+							blackTex->bind(s + 1);
+						}
+					}
+				}
+				rgroup.buffer->drawFull();
+				if (ent)
+				{
+					for (int s = 0; s < MAX_LIGHTMAPS; s++)
+					{
+						whiteTex->bind(s + 1);
+					}
+
+					g_app->bspShader->pushMatrix();
+					g_app->matmodel = ent->modelMat4x4_calc;
+					g_app->bspShader->updateMatrixes();
+					rgroup.buffer->drawFull();
+					g_app->bspShader->popMatrix();
+				}
+			}
+		}
+	}
+}
+
+void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 {
 	// skip worldspawn
 
@@ -2648,6 +2625,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			continue;
 		if (map->ents[i]->hide)
 			continue;
+
 		if (g_app->pickInfo.IsSelectedEnt(i))
 		{
 			if (g_render_flags & RENDER_SELECTED_AT_TOP)
@@ -2655,45 +2633,56 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
 				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
-				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-				g_app->modelShader->updateMatrixes();
-
-				if (renderEnts[i].mdl)
+				if (pass == REND_PASS_MODELSHADER)
 				{
-					renderEnts[i].mdl->DrawMDL();
-				}
-				else
-				{
-					renderEnts[i].spr->DrawSprite();
-				}
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->modelShader->updateMatrixes();
 
-				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-				g_app->colorShader->updateMatrixes();
-
-				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
-				{
-					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+					if (renderEnts[i].mdl)
+					{
+						renderEnts[i].mdl->DrawMDL();
+					}
+					else
+					{
+						renderEnts[i].spr->DrawSprite();
+					}
 				}
-				else
+				else if (pass == REND_PASS_COLORSHADER)
 				{
-					renderEnts[i].spr->DrawAxes();
-					renderEnts[i].spr->DrawBBox();
-				}
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->colorShader->updateMatrixes();
 
-				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+					if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+					{
+						renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+					}
+					else
+					{
+						renderEnts[i].spr->DrawAxes();
+						renderEnts[i].spr->DrawBBox();
+					}
+
+					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+				}
 			}
 			else
 			{
-				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-				g_app->colorShader->updateMatrixes();
-				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+				if (pass == REND_PASS_COLORSHADER)
 				{
-					renderEnts[i].mdl->mdl_cube->selectBuffer->drawFull();
-					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->colorShader->updateMatrixes();
+
+					renderEnts[i].pointEntCube->axesBuffer->drawFull();
+
+					if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+					{
+						renderEnts[i].mdl->mdl_cube->cubeBuffer->drawFull();
+						renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+					}
+
+					renderEnts[i].pointEntCube->selectBuffer->drawFull();
+					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 				}
-				renderEnts[i].pointEntCube->axesBuffer->drawFull();
-				renderEnts[i].pointEntCube->selectBuffer->drawFull();
-				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 			}
 			if (g_render_flags & RENDER_SELECTED_AT_TOP)
 				glDepthFunc(GL_LESS);
@@ -2703,44 +2692,52 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts)
 			if ((g_render_flags & RENDER_MODELS) && (renderEnts[i].spr
 				|| (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())))
 			{
-				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-				g_app->modelShader->updateMatrixes();
-
-
-				if (renderEnts[i].mdl)
+				if (pass == REND_PASS_MODELSHADER)
 				{
-					renderEnts[i].mdl->DrawMDL();
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->modelShader->updateMatrixes();
+
+
+					if (renderEnts[i].mdl)
+					{
+						renderEnts[i].mdl->DrawMDL();
+					}
+					else
+					{
+						renderEnts[i].spr->DrawSprite();
+					}
 				}
-				else
+				else if (pass == REND_PASS_COLORSHADER)
 				{
-					renderEnts[i].spr->DrawSprite();
-				}
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->colorShader->updateMatrixes();
 
-				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-				g_app->colorShader->updateMatrixes();
-
-				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
-				{
-					//renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
-				}
-				else
-				{
-					renderEnts[i].spr->DrawAxes();
+					if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+					{
+						//renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+					}
+					else
+					{
+						renderEnts[i].spr->DrawAxes();
+					}
 				}
 			}
 			else
 			{
-				g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-				g_app->colorShader->updateMatrixes();
-
-				if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+				if (pass == REND_PASS_COLORSHADER)
 				{
-					renderEnts[i].mdl->mdl_cube->selectBuffer->drawFull();
-					renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
-				}
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->colorShader->updateMatrixes();
 
-				renderEnts[i].pointEntCube->axesBuffer->drawFull();
-				renderEnts[i].pointEntCube->cubeBuffer->drawFull();
+					renderEnts[i].pointEntCube->axesBuffer->drawFull();
+
+					if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+					{
+						renderEnts[i].mdl->mdl_cube->cubeBuffer->drawFull();
+						renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+					}
+					renderEnts[i].pointEntCube->cubeBuffer->drawFull();
+				}
 			}
 		}
 	}

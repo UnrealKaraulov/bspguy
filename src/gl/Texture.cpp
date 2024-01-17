@@ -45,7 +45,7 @@ Texture::~Texture()
 	if (this->owndata)
 		delete[] data;
 
-	dumpTextures.erase(std::remove(dumpTextures.begin(), dumpTextures.end(), this), dumpTextures.end());
+	dumpTextures.erase(std::remove(dumpTextures.begin(), dumpTextures.end(), this));
 }
 
 void Texture::upload(int type)

@@ -120,14 +120,12 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 		cube->right.setColor(entCube->color * 0.93f);
 		cube->top.setColor(entCube->color * 0.40f);
 		cube->back.setColor(entCube->color * 0.53f);
-		entCube->cubeBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, cube, (6 * 6), GL_TRIANGLES);
+		entCube->cubeBuffer = new VertexBuffer(g_app->colorShader, cube, (6 * 6), GL_TRIANGLES);
 	}
 	else
 	{
 		tCube* cube = new tCube({ -1.0,min.y,min.z }, { 1.0,max.y, max.z });
-		entCube->cubeBuffer = new VertexBuffer(g_app->modelShader, 0, cube, 8, GL_QUADS);
-		entCube->cubeBuffer->addAttribute(POS_3F, "vPosition");
-		entCube->cubeBuffer->addAttribute(TEX_2F, "vTex");
+		entCube->cubeBuffer = new VertexBuffer(g_app->modelShader, cube, 8, GL_QUADS);
 	}
 
 	COLOR4 selectColor = { 220, 0, 0, 255 };
@@ -138,10 +136,10 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 	selectCube->top.setColor(selectColor * 0.40f);
 	selectCube->back.setColor(selectColor * 0.53f);
 
-	entCube->selectBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, selectCube, (6 * 6), GL_TRIANGLES);
+	entCube->selectBuffer = new VertexBuffer(g_app->colorShader, selectCube, (6 * 6), GL_TRIANGLES);
 
 	cCubeAxes* axescube = new cCubeAxes(min, max);
-	entCube->axesBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, axescube, (6 * 6), GL_TRIANGLES);
+	entCube->axesBuffer = new VertexBuffer(g_app->colorShader, axescube, (6 * 6), GL_TRIANGLES);
 
 
 	vec3 vcube[8] = {
@@ -179,7 +177,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 	cVert* selectWireframeBuf = new cVert[12 * 2];
 	memcpy(selectWireframeBuf, selectWireframe, sizeof(cVert) * 12 * 2);
 
-	entCube->wireframeBuffer = new VertexBuffer(g_app->colorShader, COLOR_4B | POS_3F, selectWireframeBuf, 2 * 12, GL_LINES);
+	entCube->wireframeBuffer = new VertexBuffer(g_app->colorShader, selectWireframeBuf, 2 * 12, GL_LINES);
 
 	entCube->axesBuffer->ownData = true;
 	entCube->cubeBuffer->ownData = true;

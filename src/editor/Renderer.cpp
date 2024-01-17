@@ -255,7 +255,7 @@ Renderer::Renderer()
 	//glGenVertexArrays(1, &in);
 	//glBindVertexArray(in);
 
-	glLineWidth(1.2f);
+	glLineWidth(1.3f);
 
 	// init to black screen instead of white
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -265,16 +265,26 @@ Renderer::Renderer()
 	bspShader->setMatrixes(&modelView, &modelViewProjection);
 	bspShader->setMatrixNames(NULL, "modelViewProjection");
 
+	bspShader->addAttribute(TEX_2F, "vTex");
+	bspShader->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
+	bspShader->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
+	bspShader->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
+	bspShader->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
+	bspShader->addAttribute(4, GL_FLOAT, 0, "vColor");
+	bspShader->addAttribute(POS_3F, "vPosition");
+
 	modelShader = new ShaderProgram(Shaders::g_shader_model_vertex, Shaders::g_shader_model_fragment);
 	modelShader->setMatrixes(&modelView, &modelViewProjection);
 	modelShader->setMatrixNames(NULL, "modelViewProjection");
+	modelShader->addAttribute(POS_3F, "vPosition");
+	modelShader->addAttribute(TEX_2F, "vTex");
 
 	colorShader = new ShaderProgram(Shaders::g_shader_cVert_vertex, Shaders::g_shader_cVert_fragment);
 	colorShader->setMatrixes(&modelView, &modelViewProjection);
 	colorShader->setMatrixNames(NULL, "modelViewProjection");
-	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL);
+	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL, COLOR_4B | POS_3F);
 
-	g_app->bspShader->bind();
+	bspShader->bind();
 	glUniform1i(glGetUniformLocation(g_app->bspShader->ID, "sTex"), 0);
 	for (int s = 0; s < MAX_LIGHTMAPS; s++)
 	{
@@ -282,13 +292,16 @@ Renderer::Renderer()
 		// assign lightmap texture units (skips the normal texture unit)
 		glUniform1i(sLightmapTexIds, s + 1);
 	}
+	bspShader->bindAttributes();
 
-	g_app->modelShader->bind();
+	modelShader->bind();
 	glUniform1i(glGetUniformLocation(g_app->modelShader->ID, "sTex"), 0);
+	modelShader->bindAttributes();
 
 	colorShader->bind();
 	colorShaderMultId = glGetUniformLocation(g_app->colorShader->ID, "colorMult");
 	glUniform4f(colorShaderMultId, 1, 1, 1, 1);
+	colorShader->bindAttributes();
 
 	clearSelection();
 
@@ -332,12 +345,12 @@ void Renderer::renderLoop()
 
 	{
 		line_verts = new cVert[2];
-		lineBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, line_verts, 2, GL_LINES);
+		lineBuf = new VertexBuffer(colorShader, line_verts, 2, GL_LINES);
 	}
 
 	{
 		plane_verts = new cQuad(cVert(), cVert(), cVert(), cVert());
-		planeBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, plane_verts, 6, GL_TRIANGLES);
+		planeBuf = new VertexBuffer(colorShader, plane_verts, 6, GL_TRIANGLES);
 	}
 
 	{
@@ -351,7 +364,7 @@ void Renderer::renderLoop()
 		moveAxes.hoverColor[2] = { 64, 255, 64, 255 };
 		moveAxes.hoverColor[3] = { 255, 255, 255, 255 };
 		// flipped for HL coords
-		moveAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &moveAxes.model, 6 * 6 * 4, GL_TRIANGLES);
+		moveAxes.buffer = new VertexBuffer(colorShader, &moveAxes.model, 6 * 6 * 4, GL_TRIANGLES);
 		moveAxes.numAxes = 4;
 	}
 
@@ -372,7 +385,7 @@ void Renderer::renderLoop()
 		scaleAxes.hoverColor[4] = { 64, 64, 255, 255 };
 		scaleAxes.hoverColor[5] = { 64, 255, 64, 255 };
 		// flipped for HL coords
-		scaleAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &scaleAxes.model, 6 * 6 * 6, GL_TRIANGLES);
+		scaleAxes.buffer = new VertexBuffer(colorShader, &scaleAxes.model, 6 * 6 * 6, GL_TRIANGLES);
 		scaleAxes.numAxes = 6;
 	}
 
@@ -396,6 +409,8 @@ void Renderer::renderLoop()
 	memset(pressed, 0, sizeof(pressed));
 	memset(oldPressed, 0, sizeof(oldPressed));
 
+	//glEnable(GL_DEPTH_CLAMP);
+	//glEnable(GL_STENCIL_TEST);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
@@ -435,7 +450,6 @@ void Renderer::renderLoop()
 		mousePos = vec2((float)xpos, (float)ypos);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
 		//Update keyboard / mouse state 
 		oldLeftMouse = curLeftMouse;
@@ -527,8 +541,6 @@ void Renderer::renderLoop()
 
 		for (size_t i = 0; i < mapRenderers.size(); i++)
 		{
-			std::vector<size_t> highlightEnts;
-
 			if (!mapRenderers[i])
 			{
 				continue;
@@ -539,11 +551,6 @@ void Renderer::renderLoop()
 			Bsp* curMap = mapRenderers[i]->map;
 			if (!curMap || !curMap->bsp_name.size())
 				continue;
-
-			if (SelectedMap == curMap && pickMode == PICK_OBJECT)
-			{
-				highlightEnts = pickInfo.selectedEnts;
-			}
 
 			if (SelectedMap && getSelectedMap() != curMap && (!curMap->is_bsp_model || curMap->parentMap != SelectedMap))
 			{
@@ -594,7 +601,7 @@ void Renderer::renderLoop()
 				}
 			}
 
-			mapRenderers[i]->render(highlightEnts, transformTarget == TRANSFORM_VERTEX, clipnodeRenderHull);
+			mapRenderers[i]->render(transformTarget == TRANSFORM_VERTEX, clipnodeRenderHull);
 
 
 			if (!mapRenderers[i]->isFinishedLoading())
@@ -2686,7 +2693,7 @@ void Renderer::updateModelVerts()
 
 	map->getBspRender()->refreshModel(modelIdx);
 
-	modelOriginBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &modelOriginCube, 6 * 6, GL_TRIANGLES);
+	modelOriginBuff = new VertexBuffer(colorShader, &modelOriginCube, 6 * 6, GL_TRIANGLES);
 
 	updateSelectionSize();
 
@@ -2714,7 +2721,7 @@ void Renderer::updateModelVerts()
 
 	size_t numCubes = modelVerts.size() + modelEdges.size();
 	modelVertCubes = new cCube[numCubes];
-	modelVertBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, modelVertCubes, (int)(6 * 6 * numCubes), GL_TRIANGLES);
+	modelVertBuff = new VertexBuffer(colorShader, modelVertCubes, (int)(6 * 6 * numCubes), GL_TRIANGLES);
 	//print_log(get_localized_string(LANG_0913),modelVerts.size());
 }
 
@@ -2875,8 +2882,8 @@ void Renderer::updateEntConnections()
 		lines[idx++] = cVert(ori, bothColor);
 	}
 
-	entConnections = new VertexBuffer(colorShader, COLOR_4B | POS_3F, lines, (int)numVerts, GL_LINES);
-	entConnectionPoints = new VertexBuffer(colorShader, COLOR_4B | POS_3F, points, (int)(numPoints * 6 * 6), GL_TRIANGLES);
+	entConnections = new VertexBuffer(colorShader, lines, (int)numVerts, GL_LINES);
+	entConnectionPoints = new VertexBuffer(colorShader, points, (int)(numPoints * 6 * 6), GL_TRIANGLES);
 	entConnections->ownData = true;
 	entConnectionPoints->ownData = true;
 }
