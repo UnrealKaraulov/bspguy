@@ -402,6 +402,8 @@ public:
 
 	StudioModel(const std::string modelname)
 	{
+        m_iGroup = 0;
+        m_iGroupValue = 0;
 		mdl_cube = NULL;
 		mins = maxs = vec3();
 		fps = 30.0;

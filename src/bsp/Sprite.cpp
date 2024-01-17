@@ -109,7 +109,9 @@ Sprite::Sprite(const std::string& filename)
 		return;
 	}
 	this->name = stripExt(basename(filename));
-	this->current_group = 0;
+	current_group = 0;
+    colors = 0;
+    anim_time = 0.0f;
 
 	std::ifstream spr(filename, std::ios::binary);
 	if (!spr) {

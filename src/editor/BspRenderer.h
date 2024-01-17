@@ -253,9 +253,9 @@ public:
 
 
 	LightmapInfo* lightmaps = NULL;
-	RenderEnt* renderEnts = NULL;
-	RenderModel* renderModels = NULL;
-	RenderClipnodes* renderClipnodes = NULL;
+	std::vector<RenderEnt> renderEnts;
+	std::vector<RenderModel> renderModels;
+	std::vector<RenderClipnodes> renderClipnodes;
 	FaceMath* faceMaths = NULL;
 
 

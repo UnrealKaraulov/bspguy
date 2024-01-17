@@ -560,6 +560,7 @@ void Renderer::renderLoop()
 			if (SelectedMap->is_mdl_model && SelectedMap->mdl)
 			{
 				matmodel.loadIdentity();
+				modelShader->bind();
 				modelShader->updateMatrixes();
 				SelectedMap->mdl->DrawMDL();
 				continue;
@@ -1750,7 +1751,7 @@ void Renderer::pickObject()
 			}
 		}
 	}
-	else if (pickMode == PICK_OBJECT)
+	else
 	{
 		for (auto idx : pickInfo.selectedFaces)
 		{

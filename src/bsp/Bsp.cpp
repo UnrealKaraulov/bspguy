@@ -1068,10 +1068,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	if (logged)
 	{
 		resize_all_lightmaps();
-	}
-
-	if (logged)
 		g_progress.clear();
+	}
 
 	return true;
 }

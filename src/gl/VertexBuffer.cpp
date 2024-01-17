@@ -8,8 +8,8 @@ std::vector<VertexBuffer*> totalVertBuffers;
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int numVerts, int primitive)
 {
 	uploaded = false;
-	vboId = (GLuint)-1;
-	vaoId = (GLuint)-1;
+	vboId = 0xFFFFFFFF;
+	vaoId = 0xFFFFFFFF;
 	ownData = false;
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
@@ -41,13 +41,14 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 		return;
 
 	uploaded = true;
-	shaderProgram->bind();
 	deleteBuffer();
 
 	glGenVertexArrays(1, &vaoId);
 	glBindVertexArray(vaoId);
+
 	glGenBuffers(1, &vboId);
 	glBindBuffer(GL_ARRAY_BUFFER, vboId);
+
 	glBufferData(GL_ARRAY_BUFFER, shaderProgram->elementSize * numVerts, data, GL_STATIC_DRAW);
 
 	GLuint64 offset = 0;
@@ -56,8 +57,8 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 		if (a.handle == -1)
 			continue;
 
-		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, shaderProgram->elementSize, (const GLvoid*)(offset));
 		glEnableVertexAttribArray(a.handle);
+		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, shaderProgram->elementSize, (const GLvoid*)(offset));
 		if (glGetError() != GL_NO_ERROR && !hideErrors)
 		{
 			std::cout << "Error! Name: " << a.varName << std::endl;
@@ -67,12 +68,12 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 }
 
 void VertexBuffer::deleteBuffer() {
-	if (vboId != (GLuint)-1)
+	if (vboId != 0xFFFFFFFF)
 		glDeleteBuffers(1, &vboId);
-	if (vaoId != (GLuint)-1)
+	if (vaoId != 0xFFFFFFFF)
 		glDeleteVertexArrays(1, &vaoId);
-	vboId = (GLuint)-1;
-	vaoId = (GLuint)-1;
+	vboId = 0xFFFFFFFF;
+	vaoId = 0xFFFFFFFF;
 }
 
 void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors)

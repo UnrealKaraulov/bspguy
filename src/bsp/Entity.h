@@ -31,13 +31,13 @@ public:
 
 	Entity(const std::string& classname)
 	{
+		hide = false;
 		cachedModelIdx = -2;
 		targetsCached = false;
 		rendermode = kRenderNormal;
 		renderamt = 0;
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
-		originInited = false;
 		originInited = false;
 		targetsCached = false;
 		setOrAddKeyvalue("classname", classname);

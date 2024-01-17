@@ -57,6 +57,7 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 
 ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSource)
 {
+    elementSize = 0;
 	modelViewID = modelViewProjID = -1;
 	ID = 0xFFFFFFFF;
 	vposID = vcolorID = vtexID = 0;

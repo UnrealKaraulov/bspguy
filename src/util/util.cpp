@@ -1823,8 +1823,7 @@ std::vector<vec3> stretch_model(const std::vector<vec3>& vertices, float stretch
 		vec3 stretched_vertex = { std::signbit(shifted_vertex.x) ? shifted_vertex.x - stretch_value : shifted_vertex.x + stretch_value ,
 			std::signbit(shifted_vertex.y) ? shifted_vertex.y - stretch_value : shifted_vertex.y + stretch_value,
 		std::signbit(shifted_vertex.z) ? shifted_vertex.z - stretch_value : shifted_vertex.z + stretch_value };
-		vec3 final_vertex = vertex;
-		final_vertex = { stretched_vertex.x + center_model.x, stretched_vertex.y + center_model.y, stretched_vertex.z + center_model.z };
+		vec3 final_vertex = { stretched_vertex.x + center_model.x, stretched_vertex.y + center_model.y, stretched_vertex.z + center_model.z };
 		stretched_vertices.push_back(final_vertex);
 	}
 

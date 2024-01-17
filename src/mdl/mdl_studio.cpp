@@ -738,16 +738,16 @@ void StudioModel::RefreshMeshList(int body)
 					int v2PosIdx = vertexIdx - 3 * 1;
 					int v1TexIdx = fanStartTexIdx;
 					int v2TexIdx = texCoordIdx - 2 * 1;
-					int v1ColorIdx = fanStartColorIdx;
-					int v2ColorIdx = colorIdx - 4 * 1;
+					//int v1ColorIdx = fanStartColorIdx;
+					//int v2ColorIdx = colorIdx - 4 * 1;
 
 					if (drawMode == GL_TRIANGLE_STRIP) {
 						v1PosIdx = vertexIdx - 3 * 2;
 						v2PosIdx = vertexIdx - 3 * 1;
 						v1TexIdx = texCoordIdx - 2 * 2;
 						v2TexIdx = texCoordIdx - 2 * 1;
-						v1ColorIdx = colorIdx - 4 * 2;
-						v2ColorIdx = colorIdx - 4 * 1;
+						//v1ColorIdx = colorIdx - 4 * 2;
+						//v2ColorIdx = colorIdx - 4 * 1;
 					}
 
 					texCoordData[texCoordIdx++] = texCoordData[v1TexIdx];
