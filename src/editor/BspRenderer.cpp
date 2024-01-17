@@ -2462,7 +2462,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 					rend_mdl.highlighted = true;
 					for (int n = 0; n < rend_mdl.wireframeVertCount; n++)
 					{
-						rend_mdl.wireframeVerts[n].c = COLOR4(245, 212, 66, 220);
+						rend_mdl.wireframeVerts[n].c = COLOR4(245, 212, 66, 255);
 					}
 				}
 				else if (!highlight && rend_mdl.highlighted)
@@ -2472,14 +2472,14 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 					{
 						for (int n = 0; n < rend_mdl.wireframeVertCount; n++)
 						{
-							rend_mdl.wireframeVerts[n].c = COLOR4(0, 100, 255, 220);
+							rend_mdl.wireframeVerts[n].c = COLOR4(0, 100, 255, 255);
 						}
 					}
 					else
 					{
 						for (int n = 0; n < rend_mdl.wireframeVertCount; n++)
 						{
-							rend_mdl.wireframeVerts[n].c = COLOR4(100, 100, 100, 220);
+							rend_mdl.wireframeVerts[n].c = COLOR4(100, 100, 100, 255);
 						}
 					}
 				}
@@ -2634,15 +2634,16 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 
 					if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 					{
-						renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+						if (g_render_flags & RENDER_WIREFRAME)
+							renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
 					}
 					else if (renderEnts[i].spr)
 					{
 						renderEnts[i].spr->DrawAxes();
-						//renderEnts[i].spr->DrawBBox();
+						renderEnts[i].spr->DrawBBox();
 					}
-
-					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+					if (g_render_flags & RENDER_WIREFRAME)
+						renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 				}
 			}
 			else
@@ -2654,10 +2655,11 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 
 					renderEnts[i].pointEntCube->axesBuffer->drawFull();
 
-					if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+					/*if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 					{
-						renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
-					}
+						if (g_render_flags & RENDER_WIREFRAME)
+							renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
+					}*/
 
 					renderEnts[i].pointEntCube->selectBuffer->drawFull();
 					renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
@@ -2707,10 +2709,10 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 
 					renderEnts[i].pointEntCube->axesBuffer->drawFull();
 
-					if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
+					/*if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
 					{
 						renderEnts[i].mdl->mdl_cube->wireframeBuffer->drawFull();
-					}
+					}*/
 					renderEnts[i].pointEntCube->cubeBuffer->drawFull();
 				}
 			}

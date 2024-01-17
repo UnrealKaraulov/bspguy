@@ -713,7 +713,7 @@ void StudioModel::RefreshMeshList(int body)
 
 		int totalElements = 0;
 		int texCoordIdx = 0;
-		int colorIdx = 0;
+		//int colorIdx = 0;
 		int vertexIdx = 0;
 		while (int i = *(ptricmds++))
 		{
@@ -728,7 +728,7 @@ void StudioModel::RefreshMeshList(int body)
 			int elementsThisStrip = 0;
 			int fanStartVertIdx = vertexIdx;
 			int fanStartTexIdx = texCoordIdx;
-			int fanStartColorIdx = colorIdx;
+			//int fanStartColorIdx = colorIdx;
 
 			for (; i > 0; i--, ptricmds += 4)
 			{
