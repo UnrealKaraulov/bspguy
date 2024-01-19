@@ -11,7 +11,7 @@ std::vector<Texture*> dumpTextures;
 
 Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba, bool _owndata)
 {
-	this->owndata = _owndata;
+	this->tex_owndata = _owndata;
 	this->wad_name = "";
 	this->width = _width;
 	this->height = _height;
@@ -19,7 +19,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std
 	this->farFilter = GL_LINEAR;
 	this->data = data;
 	this->dataLen = (unsigned int)(width * height) * (rgba ? sizeof(COLOR4) : sizeof(COLOR3));
-	this->id = 0;
+	this->id = 0xFFFFFFFF;
 	this->format = rgba ? GL_RGBA : GL_RGB;
 	this->texName = name;
 	this->uploaded = false;
@@ -39,21 +39,60 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std
 Texture::~Texture()
 {
 	this->wad_name = "";
-	if (uploaded)
+
+	if (id != 0xFFFFFFFF)
 		glDeleteTextures(1, &id);
 
-	if (this->owndata)
+	if (this->tex_owndata && data != NULL)
 		delete[] data;
 
-	dumpTextures.erase(std::remove(dumpTextures.begin(), dumpTextures.end(), this));
+	auto it = std::remove(dumpTextures.begin(), dumpTextures.end(), this);
+	if (it != dumpTextures.end())
+	{
+		dumpTextures.erase(it);
+	}
+	else
+	{
+		if (g_verbose)
+		{
+			print_log(PRINT_RED, "MISSING TEX BUFF IN TOTAL TEXTURES BUFF!\n");
+		}
+	}
+}
+
+unsigned char* Texture::get_data()
+{
+	if (data == NULL)
+	{
+		tex_owndata = true;
+		data = new unsigned char[dataLen];
+		if (id != 0xFFFFFFFF)
+		{
+			memset(binded_tex, 0, sizeof(binded_tex));
+			glBindTexture(GL_TEXTURE_2D, id);
+			glPixelStorei(GL_PACK_ALIGNMENT, 1);
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+			glGetTexImage(GL_TEXTURE_2D, 0, format, GL_UNSIGNED_BYTE, data);
+			//glReadPixels(0,0, width,height,format, GL_UNSIGNED_BYTE, data);
+		}
+		else
+		{
+			memset(data, 255, dataLen);
+		}
+	}
+	return data;
 }
 
 void Texture::upload(int type)
 {
-	if (uploaded)
+	g_mutex_list[3].lock();
+	get_data();
+
+	if (id != 0xFFFFFFFF)
 	{
 		glDeleteTextures(1, &id);
 	}
+
 	glGenTextures(1, &id);
 	glBindTexture(GL_TEXTURE_2D, id); // Binds this texture handle so we can load the data into it
 
@@ -102,13 +141,19 @@ void Texture::upload(int type)
 		}
 	}
 
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0971), texName, width, height);
 
-	uploaded = true;
+	if (tex_owndata)
+	{
+		delete[] data;
+		data = NULL;
+	}
+	g_mutex_list[3].unlock();
 }
 
 Texture* binded_tex[64];

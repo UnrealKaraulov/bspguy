@@ -7,7 +7,6 @@
 class VertexBuffer
 {
 public:
-	unsigned char* data;
 	int numVerts;
 	int primitive;
 	bool ownData; // set to true if buffer should delete data on destruction
@@ -22,6 +21,9 @@ public:
 	//       Data will be deleted when the buffer is destroyed.
 	void setData(void* data, int numVerts);
 
+	// get data (if deleted, then fill it from subbuffer)
+	unsigned char* get_data();
+
 	void upload(bool hideErrors = true, bool forceReupload = true);
 	void deleteBuffer();
 
@@ -31,7 +33,8 @@ public:
 
 	bool uploaded;
 private:
-	
+
+	unsigned char* data;
 	GLuint vboId;
 	GLuint vaoId;
 	// add attributes according to the attribute flags

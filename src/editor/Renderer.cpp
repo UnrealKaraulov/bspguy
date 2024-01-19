@@ -209,41 +209,59 @@ Renderer::Renderer()
 
 	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/missing.png");
 	missingTex_rgba = new Texture(w, h, img_dat, "missing", true);
-	missingTex_rgba->upload();
+	img_dat = NULL;
 
 	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
 	aaatriggerTex_rgba = new Texture(w, h, img_dat, "aaatrigger", true);
-	aaatriggerTex_rgba->upload();
+	img_dat = NULL;
 
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/aaatrigger.png");
 	aaatriggerTex = new Texture(w, h, img_dat, "aaatrigger");
-	aaatriggerTex->upload();
+	img_dat = NULL;
 
 	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/sky.png");
 	skyTex_rgba = new Texture(w, h, img_dat, "sky", true);
-	skyTex_rgba->upload();
+	img_dat = NULL;
 
 	lodepng_decode32_file(&img_dat, &w, &h, "./pictures/clip.png");
 	clipTex_rgba = new Texture(w, h, img_dat, "clip", true);
-	clipTex_rgba->upload();
+	img_dat = NULL;
 
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/missing.png");
 	missingTex = new Texture(w, h, img_dat, "missing_rgb");
-	missingTex->upload();
+	img_dat = NULL;
 
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/white.png");
 	whiteTex = new Texture(w, h, img_dat, "white");
+	img_dat = NULL;
+
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/grey.png");
 	greyTex = new Texture(w, h, img_dat, "grey");
+	img_dat = NULL;
+
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/red.png");
 	redTex = new Texture(w, h, img_dat, "red");
+	img_dat = NULL;
+
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/yellow.png");
 	yellowTex = new Texture(w, h, img_dat, "yellow");
+	img_dat = NULL;
+
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/black.png");
 	blackTex = new Texture(w, h, img_dat, "black");
+	img_dat = NULL;
+
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/blue.png");
 	blueTex = new Texture(w, h, img_dat, "blue");
+	img_dat = NULL;
 
+
+	missingTex_rgba->upload();
+	aaatriggerTex_rgba->upload();
+	aaatriggerTex->upload();
+	skyTex_rgba->upload();
+	clipTex_rgba->upload();
+	missingTex->upload();
 	whiteTex->upload();
 	redTex->upload();
 	yellowTex->upload();
@@ -2897,11 +2915,12 @@ void Renderer::updateEntConnectionPositions()
 		Entity* ent = SelectedMap->ents[entIdx[0]];
 		vec3 pos = getEntOrigin(getSelectedMap(), ent).flip();
 
-		cVert* verts = (cVert*)entConnections->data;
+		cVert* verts = (cVert*)entConnections->get_data();
 		for (int i = 0; i < entConnections->numVerts; i += 2)
 		{
 			verts[i].pos = pos;
 		}
+		entConnections->uploaded = false;
 	}
 }
 

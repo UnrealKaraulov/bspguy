@@ -490,7 +490,7 @@ int CreateBspModelCommand::addDefaultTexture()
 	Bsp* map = getBsp();
 	if (!map)
 		return -1;
-	int aaatriggerIdx = map->add_texture("aaatrigger", aaatriggerTex->data, aaatriggerTex->width, aaatriggerTex->height);
+	int aaatriggerIdx = map->add_texture("aaatrigger", aaatriggerTex->get_data(), aaatriggerTex->width, aaatriggerTex->height);
 
 	return aaatriggerIdx;
 }

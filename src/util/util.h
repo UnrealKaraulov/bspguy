@@ -50,6 +50,7 @@ extern bool g_verbose;
 extern ProgressMeter g_progress;
 extern std::vector<std::string> g_log_buffer;
 extern std::vector<unsigned short> g_color_buffer;
+
 extern std::mutex g_mutex_list[10];
 
 
@@ -64,18 +65,17 @@ std::vector<std::string> splitString(const std::string& s, const std::string& de
 template<class ...Args>
 inline void print_log(const std::string& format, Args ...args) noexcept
 {
-	g_mutex_list[0].lock();
-
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
+	auto splitstr = splitString(line, "\n");
 
+
+	g_mutex_list[0].lock();
 #ifndef NDEBUG
 	static std::ofstream outfile("log.txt", std::ios_base::app);
 	outfile << line;
 	outfile.flush();
 	std::cout << line;
 #endif
-
-	auto splitstr = splitString(line, "\n");
 
 	if (splitstr.size() == 1)
 	{
@@ -103,10 +103,12 @@ inline void print_log(const std::string& format, Args ...args) noexcept
 template<class ...Args>
 inline void print_log(unsigned short colors, const std::string& format, Args ...args) noexcept
 {
-	g_mutex_list[0].lock();
 	set_console_colors(colors);
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 
+	auto splitstr = splitString(line, "\n");
+
+	g_mutex_list[0].lock();
 #ifndef NDEBUG
 	static std::ofstream outfile("log.txt", std::ios_base::app);
 	outfile << line;
@@ -114,7 +116,6 @@ inline void print_log(unsigned short colors, const std::string& format, Args ...
 	std::cout << line;
 #endif
 
-	auto splitstr = splitString(line, "\n");
 
 	if (splitstr.size() == 1)
 	{

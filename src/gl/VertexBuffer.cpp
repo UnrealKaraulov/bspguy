@@ -18,14 +18,26 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int numVerts
 }
 
 VertexBuffer::~VertexBuffer() {
+
+	auto it = std::find(totalVertBuffers.begin(), totalVertBuffers.end(), this);
+	if (it != totalVertBuffers.end())
+	{
+		totalVertBuffers.erase(it);
+	}
+	else
+	{
+		if (g_verbose)
+		{
+			print_log(PRINT_RED, "MISSING VERT BUFF IN TOTAL VERTS BUFF!\n");
+		}
+	}
+
 	deleteBuffer();
 	if (ownData && data) {
 		delete[] data;
 	}
 	data = NULL;
 	numVerts = 0;
-
-	totalVertBuffers.erase(std::find(totalVertBuffers.begin(), totalVertBuffers.end(), this));
 }
 
 void VertexBuffer::setData(void* _data, int _numVerts)
@@ -35,12 +47,30 @@ void VertexBuffer::setData(void* _data, int _numVerts)
 	uploaded = false;
 }
 
+unsigned char* VertexBuffer::get_data()
+{
+	if (data == NULL)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, vboId);
+		glBindVertexArray(vaoId);
+		GLint bufferSize;
+		glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &bufferSize);
+		data = new unsigned char[bufferSize];
+		glGetBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, data);
+	}
+	return data;
+}
+
 void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 {
 	if (!shaderProgram || (uploaded && !forceReupload))
 		return;
 
-	uploaded = true;
+	if (data == NULL)
+	{
+		get_data();
+	}
+
 	deleteBuffer();
 
 	glGenVertexArrays(1, &vaoId);
@@ -65,6 +95,13 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
 		}
 		offset += a.size;
 	}
+
+
+	if (ownData) {
+		delete[] data;
+		data = NULL;
+	}
+	uploaded = true;
 }
 
 void VertexBuffer::deleteBuffer() {

@@ -1,5 +1,4 @@
 #include "lang.h"
-#include "util.h"
 #include "BspMerger.h"
 #include <string>
 #include <algorithm>
@@ -10,8 +9,8 @@
 #include "Settings.h"
 #include "winding.h"
 #include "fmt/format.h"
-
 #include "Sprite.h"
+#include "util.h"
 
 // super todo:
 // gui scale not accurate and mostly broken

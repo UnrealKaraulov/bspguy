@@ -2214,9 +2214,9 @@ void Gui::drawMenuBar()
 							if (tex != missingTex)
 							{
 								if (tex->format == GL_RGBA)
-									lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
+									lodepng_encode32_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->get_data(), tex->width, tex->height);
 								else
-									lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->data, tex->width, tex->height);
+									lodepng_encode24_file((g_working_dir + map->bsp_name + "/dump_textures/" + std::string(tex->texName) + ".png").c_str(), (const unsigned char*)tex->get_data(), tex->width, tex->height);
 							}
 						}
 					}
@@ -2866,7 +2866,7 @@ void Gui::drawMenuBar()
 						if (l == leafIdx || CHECKVISBIT(visData, l))
 						{
 							auto faceList = map->getLeafFaces(l + 1);
-							faces_to_remove.insert(faces_to_remove.end(),faceList.begin(), faceList.end());
+							faces_to_remove.insert(faces_to_remove.end(), faceList.begin(), faceList.end());
 						}
 					}
 
@@ -3608,7 +3608,7 @@ void Gui::drawStatusMessage()
 		}
 	}
 
-	bool showStatus = (app->invalidSolid && selectedEntity) || (!app->isTransformableSolid && selectedEntity)|| badSurfaceExtents || lightmapTooLarge || app->modelUsesSharedStructures;
+	bool showStatus = (app->invalidSolid && selectedEntity) || (!app->isTransformableSolid && selectedEntity) || badSurfaceExtents || lightmapTooLarge || app->modelUsesSharedStructures;
 
 	if (showStatus)
 	{
@@ -7289,10 +7289,10 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	const char* countName = "None";
 	switch (sortMode)
 	{
-		case SORT_VERTS:		maxCount = map->vertCount; countName = "Vertexes";  break;
-		case SORT_NODES:		maxCount = map->nodeCount; countName = "Nodes";  break;
-		case SORT_CLIPNODES:	maxCount = map->clipnodeCount; countName = "Clipnodes";  break;
-		case SORT_FACES:		maxCount = map->faceCount; countName = "Faces";  break;
+	case SORT_VERTS:		maxCount = map->vertCount; countName = "Vertexes";  break;
+	case SORT_NODES:		maxCount = map->nodeCount; countName = "Nodes";  break;
+	case SORT_CLIPNODES:	maxCount = map->clipnodeCount; countName = "Clipnodes";  break;
+	case SORT_FACES:		maxCount = map->faceCount; countName = "Faces";  break;
 	}
 
 	if (!loadedLimit[sortMode])
@@ -8440,9 +8440,9 @@ void Gui::drawLightMapTool()
 					int offset = face->nLightmapOffset + i * lightmapSz;
 					light_offsets[i] = offset;
 					if (!map->lightdata || offset + lightmapSz > map->lightDataLength)
-						memset(currentlightMap[i]->data, 255, lightmapSz);
+						memset(currentlightMap[i]->get_data(), 255, lightmapSz);
 					else
-						memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
+						memcpy(currentlightMap[i]->get_data(), map->lightdata + offset, lightmapSz);
 					currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
 					lightmap_count++;
 					//print_log(get_localized_string(LANG_0418),i,offset);
@@ -8531,7 +8531,7 @@ void Gui::drawLightMapTool()
 					if (offset < 0)
 						offset = 0;
 
-					COLOR3* lighdata = (COLOR3*)currentlightMap[i]->data;
+					COLOR3* lighdata = (COLOR3*)currentlightMap[i]->get_data();
 
 					if (needPickColor)
 					{
@@ -8582,7 +8582,7 @@ void Gui::drawLightMapTool()
 							continue;
 						int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 						int offset = face->nLightmapOffset + i * lightmapSz;
-						memcpy(map->lightdata + offset, currentlightMap[i]->data, lightmapSz);
+						memcpy(map->lightdata + offset, currentlightMap[i]->get_data(), lightmapSz);
 					}
 					renderer->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
 					map->resize_all_lightmaps(true);

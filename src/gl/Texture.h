@@ -21,11 +21,15 @@ public:
 		TYPE_DECAL
 	};
 
-	Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba = false, bool owndata = true);
+	Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba = false, bool tex_owndata = true);
 	~Texture();
 
 	// upload the texture with the specified settings
+	// then cleanup data memory!
 	void upload(int type = TYPE_TEXTURE);
+
+	// get data (if deleted, then fill it from texture)
+	unsigned char* get_data();
 
 	void setWadName(const std::string& s) {
 		wad_name = s;
@@ -34,12 +38,12 @@ public:
 	// use this texture for rendering
 	void bind(GLuint texnum);
 
-	unsigned char* data; // RGB(A) data
 	size_t dataLen;
 
-	bool uploaded = false;
-
-	bool owndata = true;
+	bool uploaded;
+private:
+	unsigned char* data; // RGB(A) data
+	bool tex_owndata;
 };
 extern std::vector<Texture*> dumpTextures;
 bool IsTextureTransparent(const std::string& texname);

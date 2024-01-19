@@ -88,8 +88,6 @@ struct RenderEnt
 
 struct RenderGroup
 {
-	lightmapVert* verts;
-	int vertCount;
 	Texture* texture;
 	Texture* lightmapAtlas[MAX_LIGHTMAPS];
 	VertexBuffer* buffer;
@@ -97,10 +95,8 @@ struct RenderGroup
 	bool special;
 	RenderGroup()
 	{
-		verts = NULL;
 		buffer = NULL;
 		transparent = special = false;
-		vertCount =  0;
 		texture = NULL;
 		for (int i = 0; i < MAX_LIGHTMAPS; i++)
 		{
@@ -124,23 +120,19 @@ struct RenderModel
 {
 	int groupCount;
 	int renderFaceCount;
+
 	RenderFace* renderFaces;
 	RenderGroup* renderGroups;
-
-	std::vector<cVert> wireframeVerts; // verts for rendering wireframe
 	VertexBuffer* wireframeBuffer;
-	int wireframeVertCount;
 
 	bool highlighted;
 
 	RenderModel()
 	{
-		wireframeVerts = std::vector<cVert>();
 		groupCount = renderFaceCount = 0;
 		renderFaces = NULL;
 		renderGroups = NULL;
 		wireframeBuffer = NULL;
-		wireframeVertCount = 0;
 		highlighted = false;
 	}
 };

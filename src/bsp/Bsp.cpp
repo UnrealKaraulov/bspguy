@@ -3210,6 +3210,7 @@ bool Bsp::load_lumps(std::string fpath)
 		{
 			lumps[i] = new unsigned char[bsp_header.lump[i].nLength];
 			fin.read((char*)lumps[i], bsp_header.lump[i].nLength);
+			replacedLump[i] = true;
 		}
 	}
 
@@ -3354,6 +3355,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 				delete[] lumps[i];
 				lumps[i] = (unsigned char*)tmpfaces;
+				replacedLump[i] = true;
 
 				bsp_header.lump[i].nLength = faceCount * sizeof(BSPFACE32);
 			}
@@ -3426,6 +3428,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 				delete[] lumps[i];
 				lumps[i] = (unsigned char*)tmpclipnodes;
+				replacedLump[i] = true;
 
 				bsp_header.lump[i].nLength = clipnodeCount * sizeof(BSPCLIPNODE32);
 			}
@@ -3469,6 +3472,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 					delete[] lumps[i];
 					lumps[i] = (unsigned char*)tmpleaves;
+					replacedLump[i] = true;
 
 					bsp_header.lump[i].nLength = leafCount * sizeof(BSPLEAF32);
 				}
@@ -3499,6 +3503,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 				delete[] lumps[i];
 				lumps[i] = (unsigned char*)tmpleaves;
+				replacedLump[i] = true;
 
 				bsp_header.lump[i].nLength = leafCount * sizeof(BSPLEAF32);
 			}
@@ -3525,6 +3530,8 @@ bool Bsp::load_lumps(std::string fpath)
 
 				delete[] lumps[i];
 				lumps[i] = (unsigned char*)tmpSurf;
+				replacedLump[i] = true;
+
 				bsp_header.lump[i].nLength = marksurfCount * sizeof(int);
 			}
 		}
@@ -3551,6 +3558,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 				delete[] lumps[i];
 				lumps[i] = (unsigned char*)tmpedges;
+				replacedLump[i] = true;
 
 				bsp_header.lump[i].nLength = edgeCount * sizeof(BSPEDGE32);
 			}
@@ -7447,7 +7455,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 
 				for (int n = 0; n < rface->vertCount; n++)
 				{
-					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
+					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
 
 					vec3 org_pos = vert.pos + origin_offset;
 
@@ -7463,7 +7471,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 
 				for (int n = 0; n < rface->vertCount; n++)
 				{
-					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
+					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
 					//vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y);
 					//vec3 pos = vec3(org_pos.x, -org_pos.z, -org_pos.y);
 					vec3 pos = vert.pos.flipUV();

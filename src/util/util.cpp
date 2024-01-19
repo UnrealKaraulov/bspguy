@@ -34,9 +34,6 @@ std::vector<unsigned short> g_color_buffer;
 
 std::mutex g_mutex_list[10] = {};
 
-
-
-
 bool fileExists(const std::string& fileName)
 {
 	return fs::exists(fileName) && !fs::is_directory(fileName);
@@ -1777,11 +1774,18 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 	}
 	else
 	{
-		retdir = stripFileName(std::filesystem::canonical(arg_0_dir).string());
-		fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-		if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
+		try
 		{
-			return retdir;
+			retdir = stripFileName(std::filesystem::canonical(arg_0_dir).string());
+			fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+			if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
+			{
+				return retdir;
+			}
+		}
+		catch (...)
+		{
+
 		}
 #ifdef WIN32
 		char path[MAX_PATH];

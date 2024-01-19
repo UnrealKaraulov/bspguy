@@ -857,31 +857,42 @@ void StudioModel::RefreshMeshList(int body)
 			mdl_mesh_groups[body][j].verts[z].pos.y = vertexData[z * 3 + 2];
 			mdl_mesh_groups[body][j].verts[z].pos.z = -vertexData[z * 3 + 1];
 
-			if (mins.x > vertexData[z * 3 + 0])
-				mins.x = vertexData[z * 3 + 0];
-			if (mins.y > vertexData[z * 3 + 1])
-				mins.y = vertexData[z * 3 + 1];
-			if (mins.z > vertexData[z * 3 + 2])
-				mins.z = vertexData[z * 3 + 2];
+			if (needForceUpdate)
+			{
+				if (mins.x > vertexData[z * 3 + 0])
+					mins.x = vertexData[z * 3 + 0];
+				if (mins.y > vertexData[z * 3 + 1])
+					mins.y = vertexData[z * 3 + 1];
+				if (mins.z > vertexData[z * 3 + 2])
+					mins.z = vertexData[z * 3 + 2];
 
-			if (maxs.x < vertexData[z * 3 + 0])
-				maxs.x = vertexData[z * 3 + 0];
-			if (maxs.y < vertexData[z * 3 + 1])
-				maxs.y = vertexData[z * 3 + 1];
-			if (maxs.z < vertexData[z * 3 + 2])
-				maxs.z = vertexData[z * 3 + 2];
+				if (maxs.x < vertexData[z * 3 + 0])
+					maxs.x = vertexData[z * 3 + 0];
+				if (maxs.y < vertexData[z * 3 + 1])
+					maxs.y = vertexData[z * 3 + 1];
+				if (maxs.z < vertexData[z * 3 + 2])
+					maxs.z = vertexData[z * 3 + 2];
+			}
 		}
 	}
 
-	if (mdl_cube)
+	if (mdl_cube != NULL)
 	{
-		delete mdl_cube;
+		mdl_cube->mins = mins;
+		mdl_cube->maxs = maxs;
+		if (needForceUpdate)
+		{
+			g_app->pointEntRenderer->genCubeBuffers(mdl_cube);
+		}
 	}
-	mdl_cube = new EntCube();
-	mdl_cube->color = { 255, 255, 0, 255 };
-	mdl_cube->mins = mins;
-	mdl_cube->maxs = maxs;
-	g_app->pointEntRenderer->genCubeBuffers(mdl_cube);
+	else
+	{
+		mdl_cube = new EntCube();
+		mdl_cube->color = { 255, 255, 0, 255 };
+		mdl_cube->mins = mins;
+		mdl_cube->maxs = maxs;
+		g_app->pointEntRenderer->genCubeBuffers(mdl_cube);
+	}
 }
 
 
