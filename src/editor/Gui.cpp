@@ -1942,16 +1942,22 @@ void Gui::drawMenuBar()
 			{
 				filterNeeded = true;
 				int mapRenderId = map->getBspRenderId();
-				BspRenderer* mapRender = map->getBspRender();
 				if (mapRenderId >= 0)
 				{
-					app->deselectObject();
-					app->clearSelection();
-					app->deselectMap();
-					delete mapRender;
-					app->mapRenderers.erase(app->mapRenderers.begin() + mapRenderId);
-					app->selectMapId(0);
+					BspRenderer* mapRender = map->getBspRender();
+					if (mapRender)
+					{
+						map->setBspRender(NULL);
+						app->deselectObject();
+						app->clearSelection();
+						app->deselectMap();
+						app->mapRenderers.erase(app->mapRenderers.begin() + mapRenderId);
+						delete mapRender;
+						map = NULL;
+						app->selectMapId(0);
+					}
 				}
+
 			}
 
 
@@ -1966,7 +1972,6 @@ void Gui::drawMenuBar()
 						app->clearSelection();
 						app->deselectMap();
 						app->clearMaps();
-						app->addMap(new Bsp(""));
 						app->selectMapId(0);
 					}
 				}

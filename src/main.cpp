@@ -126,12 +126,11 @@ bool start_viewer(const char* map)
 	{
 		return false;
 	}
-	if (!map)
-	{
-		map = "";
-	}
 	Renderer renderer{};
-	renderer.addMap(new Bsp(map));
+	if (map && map[0] != '\0')
+	{
+		renderer.addMap(new Bsp(map));
+	}
 	renderer.reloadBspModels();
 	hideConsoleWindow();
 

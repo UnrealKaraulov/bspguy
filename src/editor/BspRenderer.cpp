@@ -28,6 +28,8 @@ BspRenderer::BspRenderer(Bsp* _map)
 
 	intersectVec = mapOffset = renderOffset = localCameraOrigin = vec3();
 
+	renderClipnodes = {};
+
 	renderCameraOrigin = renderCameraAngles = vec3();
 	renderCameraAngles.z = 90.0f;
 	// Setup Deafult Camera
@@ -700,7 +702,7 @@ void BspRenderer::deleteRenderModel(RenderModel* renderModel)
 
 			if (group.buffer)
 				delete group.buffer;
-			
+
 			group.buffer = NULL;
 		}
 		delete[] renderModel->renderGroups;
@@ -732,9 +734,13 @@ void BspRenderer::deleteRenderModelClipnodes(RenderClipnodes* renderClip)
 		if (renderClip->clipnodeBuffer[i])
 		{
 			delete renderClip->clipnodeBuffer[i];
-			delete renderClip->wireframeClipnodeBuffer[i];
 		}
 		renderClip->clipnodeBuffer[i] = NULL;
+
+		if (renderClip->wireframeClipnodeBuffer[i])
+		{
+			delete renderClip->wireframeClipnodeBuffer[i];
+		}
 		renderClip->wireframeClipnodeBuffer[i] = NULL;
 	}
 }
@@ -1094,7 +1100,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 	for (int i = 0; i < renderModel->groupCount; i++)
 	{
-		lightmapVert * result_verts = new lightmapVert[renderGroupVerts[i].size() + 1];
+		lightmapVert* result_verts = new lightmapVert[renderGroupVerts[i].size() + 1];
 		if (renderGroupVerts[i].size() > 0)
 			memcpy(result_verts, &renderGroupVerts[i][0], renderGroupVerts[i].size() * sizeof(lightmapVert));
 
@@ -1110,7 +1116,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		if (g_verbose)
 			print_log("Optimize wireframe {} model: {} to {} lines.\n", modelIdx, wireframeVerts_full.size(), cleanupWireframe.size());
 
-		
+
 		cVert* resultWireFrame = new cVert[cleanupWireframe.size()];
 		memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
 
@@ -1207,6 +1213,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 		delete renderClip.clipnodeBuffer[hullIdx];
 		renderClip.clipnodeBuffer[hullIdx] = NULL;
 	}
+
 	if (renderClip.wireframeClipnodeBuffer[hullIdx])
 	{
 		delete renderClip.wireframeClipnodeBuffer[hullIdx];
@@ -1999,11 +2006,11 @@ BspRenderer::~BspRenderer()
 	clipnodesBufferCache.clear();
 	nodesBufferCache.clear();
 
-	// TODO: share these with all renderers
+	if (g_app->SelectedMap == map)
+		g_app->selectMap(NULL);
 	map->setBspRender(NULL);
 	delete map;
 	map = NULL;
-
 }
 
 void BspRenderer::reuploadTextures()
