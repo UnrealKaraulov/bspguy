@@ -75,6 +75,8 @@ extern Texture* clipTex_rgba;
 extern int pickCount; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
 extern int vertPickCount;
 
+extern size_t g_drawFrameId;
+
 class Renderer
 {
 	friend class Gui;

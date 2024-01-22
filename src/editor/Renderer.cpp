@@ -27,6 +27,8 @@ int pickCount = 0; // used to give unique IDs to text inputs so switching ents d
 int vertPickCount = 0;
 
 
+size_t g_drawFrameId = 0;
+
 Texture* whiteTex = NULL;
 Texture* redTex = NULL;
 Texture* yellowTex = NULL;
@@ -151,6 +153,7 @@ Renderer::Renderer()
 {
 	g_app = this;
 	gl_errors = 0;
+	g_drawFrameId = 0;
 
 	glfwSetErrorCallback(error_callback);
 
@@ -455,7 +458,7 @@ void Renderer::renderLoop()
 	{
 		oldTime = curTime;
 		curTime = glfwGetTime();
-
+		g_drawFrameId++;
 		frame_fps++;
 
 		if (abs(curTime - fpsTime) >= 0.50)
@@ -3712,11 +3715,14 @@ void Renderer::deleteEnts()
 	if (map && pickInfo.selectedEnts.size() > 0)
 	{
 		bool reloadbspmdls = false;
-		std::sort(pickInfo.selectedEnts.begin(), pickInfo.selectedEnts.end());
-		std::reverse(pickInfo.selectedEnts.begin(), pickInfo.selectedEnts.end());
+		auto tmpEnts = pickInfo.selectedEnts;
+		std::sort(tmpEnts.begin(), tmpEnts.end());
+		std::reverse(tmpEnts.begin(), tmpEnts.end());
 
 
-		for (auto entIdx : pickInfo.selectedEnts)
+		clearSelection();
+
+		for (auto entIdx : tmpEnts)
 		{
 			if (map->ents[entIdx]->hasKey("model") &&
 				toLowerCase(map->ents[entIdx]->keyvalues["model"]).ends_with(".bsp"))
@@ -3730,8 +3736,6 @@ void Renderer::deleteEnts()
 		{
 			reloadBspModels();
 		}
-
-		clearSelection();
 	}
 }
 

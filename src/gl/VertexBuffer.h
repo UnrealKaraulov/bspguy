@@ -32,8 +32,8 @@ public:
 	void drawFull();
 
 	bool uploaded;
+	size_t frameId;
 private:
-
 	unsigned char* data;
 	GLuint vboId;
 	GLuint vaoId;

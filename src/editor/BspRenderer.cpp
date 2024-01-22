@@ -30,7 +30,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	leafCube->maxs = { 32.0f ,32.0f ,32.0f };
 
 	g_app->pointEntRenderer->genCubeBuffers(leafCube);
-	
+
 
 	lightEnableFlags[0] = lightEnableFlags[1] = lightEnableFlags[2] = lightEnableFlags[3] = true;
 
@@ -1114,6 +1114,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, result_verts, renderGroupVerts[i].size(), GL_TRIANGLES);
 		renderGroups[i].buffer->ownData = true;
+		renderGroups[i].buffer->frameId = 0;
 		renderModel->renderGroups[i] = renderGroups[i];
 	}
 
@@ -1127,9 +1128,10 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		cVert* resultWireFrame = new cVert[cleanupWireframe.size()];
 		memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
-
+		
 		renderModel->wireframeBuffer = new VertexBuffer(g_app->colorShader, resultWireFrame, cleanupWireframe.size(), GL_LINES);
 		renderModel->wireframeBuffer->ownData = true;
+		renderModel->wireframeBuffer->frameId = 0;
 	}
 
 	for (int i = 0; i < model.nFaces; i++)
@@ -1440,9 +1442,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
 	renderClip.clipnodeBuffer[hullIdx]->ownData = true;
+	renderClip.clipnodeBuffer[hullIdx]->frameId = 0;
 
 	renderClip.wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
 	renderClip.wireframeClipnodeBuffer[hullIdx]->ownData = true;
+	renderClip.wireframeClipnodeBuffer[hullIdx]->frameId = 0;
 
 	nodeBuffStr curHullIdxStruct = nodeBuffStr();
 	curHullIdxStruct.hullIdx = hullIdx;
@@ -2244,7 +2248,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		map->pointContents(headNode, localCameraOrigin, 0, nodeBranch, curLeafIdx, childIdx);
 		if (curLeafIdx < 0)
 			curLeafIdx = 0;
-		if (g_app->pickMode == PICK_FACE_LEAF )
+		if (g_app->pickMode == PICK_FACE_LEAF)
 		{
 			if (!g_app->gui->showFaceEditWidget)
 			{
@@ -2258,14 +2262,48 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		}
 	}
 
-	for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
+	static bool need_refresh_mat = true;
+	static vec3 old_rend_offs = renderOffset;
+
+	if ((old_rend_offs - renderOffset).length() > 0.01)
 	{
-		RenderEnt& ent = renderEnts[i];
-		ent.modelMat4x4_calc = ent.modelMat4x4;
-		ent.modelMat4x4_calc.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+		need_refresh_mat = true;
+	}
+
+	if (need_refresh_mat)
+	{
+		for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
+		{
+			RenderEnt& ent = renderEnts[i];
+			need_refresh_mat = false;
+			ent.modelMat4x4_calc = ent.modelMat4x4;
+			ent.modelMat4x4_calc.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+		}
 	}
 
 	std::vector<size_t> highlightEnts = g_app->pickInfo.selectedEnts;
+
+
+	if (g_render_flags & RENDER_POINT_ENTS)
+	{
+		if (g_app->pickMode == PICK_FACE_LEAF)
+		{
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_ALWAYS);
+			glDisable(GL_CULL_FACE);
+			glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
+			g_app->matmodel.loadIdentity();
+			g_app->colorShader->updateMatrixes();
+			leafCube->wireframeBuffer->drawFull();
+			glLineWidth(1.3f);
+			glEnable(GL_CULL_FACE);
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
+		}
+
+		drawPointEntities(highlightEnts, REND_PASS_COLORSHADER);
+		drawPointEntities(highlightEnts, REND_PASS_MODELSHADER);
+	}
 
 	for (int transparent = 0; transparent <= 1; transparent++)
 	{
@@ -2276,6 +2314,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 				if (transparent && pass != REND_PASS_BSPSHADER_TRANSPARENT)
 					continue;
 				g_app->bspShader->bind();
+				g_app->bspShader->updateMatrixes();
 
 				if (!map->ents[0]->hide)
 					drawModel(0, pass, false, false);
@@ -2312,26 +2351,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 						}
 					}
 				}
-			}
-
-			if ((g_render_flags & RENDER_POINT_ENTS) && transparent == false && (pass == REND_PASS_COLORSHADER || pass == REND_PASS_MODELSHADER))
-			{
-				if (g_app->pickMode == PICK_FACE_LEAF)
-				{
-					glDepthMask(GL_FALSE);
-					glDepthFunc(GL_ALWAYS);
-					glDisable(GL_CULL_FACE);
-					glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
-					g_app->matmodel.loadIdentity();
-					g_app->colorShader->updateMatrixes();
-					leafCube->wireframeBuffer->drawFull();
-					glLineWidth(1.3f);
-					glEnable(GL_CULL_FACE);
-					glDepthMask(GL_TRUE);
-					glDepthFunc(GL_LESS);
-				}
-
-				drawPointEntities(highlightEnts, pass);
 			}
 		}
 	}
@@ -2402,6 +2421,8 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 				if (pass == REND_PASS_MODELSHADER)
 					continue;
 
+				g_app->bspShader->bind();
+				g_app->bspShader->updateMatrixes();
 				for (size_t highlightEnt : highlightEnts)
 				{
 					if (map->ents[highlightEnt]->hide)

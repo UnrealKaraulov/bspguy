@@ -680,7 +680,7 @@ void Gui::drawBspContexMenu()
 					}
 				}
 			}
-			if (map->ents[entIdx[0]]->hide)
+			if (entIdx[0] < map->ents.size() && map->ents[entIdx[0]]->hide)
 			{
 				if (ImGui::MenuItem(get_localized_string(LANG_0453).c_str(), get_localized_string(LANG_0454).c_str()))
 				{
@@ -2493,7 +2493,7 @@ void Gui::drawMenuBar()
 				{
 					g_settings.save();
 					glfwTerminate();
-					
+
 #ifdef MINGW 
 					std::set_terminate(NULL);
 					std::terminate();
@@ -3137,6 +3137,24 @@ void Gui::drawMenuBar()
 					ImGui::TextUnformatted(get_localized_string(LANG_0582).c_str());
 					ImGui::EndTooltip();
 				}
+
+				if (ImGui::MenuItem("Fix bad leaf count"))
+				{
+					int totalLeaves = 1;
+					for (int i = 0; i < map->modelCount; i++)
+					{
+						totalLeaves += map->models[i].nVisLeafs;
+					}
+					while (totalLeaves > map->leafCount)
+						map->create_leaf(CONTENTS_EMPTY);
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("Create empty leafs. ");
+					ImGui::EndTooltip();
+				}
+
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0583).c_str()))
 				{
@@ -4195,9 +4213,6 @@ void Gui::drawTextureBrowser()
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
 	if (ImGui::Begin(fmt::format("{}###TEXTURE_BROWSER", get_localized_string(LANG_0651)).c_str(), &showTextureBrowser, 0))
 	{
-		// Список встроенных в карту текстур, с возможностью Удалить/Экспортировать/Импортировать/Переименовать
-		// Список встроенных в карту WAD текстур, с возможностью Удалить/
-		// Список всех WAD файлов и доступных текстур, с возможностью добавления в карту ссылки или копии текстуры.
 		if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyScroll |
 			ImGuiTabBarFlags_::ImGuiTabBarFlags_NoCloseWithMiddleMouseButton |
 			ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable))
@@ -9276,7 +9291,6 @@ void Gui::drawFaceEditorWidget()
 
 		if (leaf_decompress && last_leaf != -1 && last_leaf < map->leafCount)
 		{
-			leaf_decompress = false;
 			if (visData)
 			{
 				delete[] visData;
@@ -9302,6 +9316,7 @@ void Gui::drawFaceEditorWidget()
 			std::sort(vis_leafs.begin(), vis_leafs.end());
 			std::sort(invis_leafs.begin(), invis_leafs.end());
 		}
+		leaf_decompress = false;
 
 		if (last_leaf != mapRenderer->curLeafIdx && (auto_update_leaf || new_last_leaf))
 		{
@@ -9319,7 +9334,7 @@ void Gui::drawFaceEditorWidget()
 			mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
 
 			g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
-				
+
 			leaf_faces = map->getLeafFaces(last_leaf);
 			last_leaf_mdl = map->get_model_from_leaf(last_leaf);
 		}
@@ -9762,7 +9777,83 @@ void Gui::drawFaceEditorWidget()
 			if (last_leaf == 0)
 				ImGui::EndDisabled();
 
-			
+			int vertIdx = 0;
+			bool updatedLeafVec = false;
+
+			BSPLEAF32& tmpLeaf = map->leaves[last_leaf];
+			vec3 mins = tmpLeaf.nMins;
+			vec3 maxs = tmpLeaf.nMaxs;
+
+			ImGui::TextUnformatted("Leaf mins/maxs");
+			ImGui::PushItemWidth(105);
+			vertIdx++;
+			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0423)), vertIdx).c_str(), &mins.x, 0.0f, 0, 0, "X1:%.2f"))
+			{
+				updatedLeafVec = true;
+			}
+
+			vertIdx++;
+			ImGui::SameLine();
+			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &mins.y, 0.0f, 0, 0, "Y2:%.2f"))
+			{
+				updatedLeafVec = true;
+			}
+
+			vertIdx++;
+			ImGui::SameLine();
+			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &mins.z, 0.0f, 0, 0, "Z1:%.2f"))
+			{
+				updatedLeafVec = true;
+			}
+
+			vertIdx++;
+			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0423)), vertIdx).c_str(), &maxs.x, 0.0f, 0, 0, "X2:%.2f"))
+			{
+				updatedLeafVec = true;
+			}
+
+			vertIdx++;
+			ImGui::SameLine();
+			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &maxs.y, 0.0f, 0, 0, "Y2:%.2f"))
+			{
+				updatedLeafVec = true;
+			}
+
+			vertIdx++;
+			ImGui::SameLine();
+			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &maxs.z, 0.0f, 0, 0, "Z3:%.2f"))
+			{
+				updatedLeafVec = true;
+			}
+			ImGui::PopItemWidth();
+			if (updatedLeafVec)
+			{
+				tmpLeaf.nMins = mins;
+				tmpLeaf.nMaxs = maxs;
+
+				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES | FL_MARKSURFACES);
+
+
+
+				mapRenderer->leafCube->mins = tmpLeaf.nMins;
+				mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
+
+				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
+			}
+
+		/*	if (ImGui::Button("Create duplicate"))
+			{
+				last_leaf = map->clone_world_leaf(last_leaf);
+				BSPLEAF32& leaf = map->leaves[last_leaf];
+				app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
+				mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_MODELS);
+			}*/
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Create new laef with same settings.");
+				ImGui::EndTooltip();
+			}
 
 			if (need_compress)
 			{

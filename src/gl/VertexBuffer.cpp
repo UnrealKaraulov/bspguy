@@ -2,9 +2,11 @@
 #include "VertexBuffer.h"
 #include "util.h"
 #include <string.h>
+#include "Renderer.h"
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int numVerts, int primitive)
 {
+	frameId = (size_t)-1;
 	uploaded = false;
 	vboId = 0xFFFFFFFF;
 	vaoId = 0xFFFFFFFF;
@@ -99,6 +101,14 @@ void VertexBuffer::deleteBuffer() {
 
 void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors)
 {
+	if (frameId != (size_t)-1)
+	{
+		if (frameId == g_drawFrameId)
+		{
+			return;
+		}
+		frameId = g_drawFrameId;
+	}
 	shaderProgram->bind();
 	upload(true, false);
 

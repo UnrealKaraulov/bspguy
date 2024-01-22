@@ -3910,6 +3910,8 @@ bool Bsp::validate()
 {
 	bool isValid = true;
 
+
+
 	for (int i = 0; i < marksurfCount; i++)
 	{
 		if (marksurfs[i] < 0 || marksurfs[i] >= faceCount)
@@ -6578,6 +6580,44 @@ bool Bsp::remove_face(int faceIdx)
 	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
 	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
 	return true;
+}
+
+int Bsp::clone_world_leaf(int oldleafIdx)
+{
+	std::vector<BSPLEAF32> outLeafs{};
+	for (int i = 0; i <= models[0].nVisLeafs; i++)
+	{
+		outLeafs.push_back(leaves[i]);
+	}
+
+	for (int i = 0; i < nodeCount; i++)
+	{
+		BSPNODE32& node = nodes[i];
+		if (node.iChildren[i] < 0)
+		{
+			int l = ~node.iChildren[i];
+			if (l >= outLeafs.size())
+			{
+				node.iChildren[i]--; // leaf++?
+			}
+		}
+	}
+
+	outLeafs.push_back(leaves[oldleafIdx]);
+
+	for (int i = models[0].nVisLeafs + 1; i < leafCount; i++)
+	{
+		outLeafs.push_back(leaves[i]);
+	}
+
+	BSPLEAF32* newLeaves = new BSPLEAF32[outLeafs.size()];
+	memcpy(newLeaves, outLeafs.data(), outLeafs.size() * sizeof(BSPLEAF32));
+	replace_lump(LUMP_LEAVES, newLeaves, outLeafs.size() * sizeof(BSPLEAF32));
+
+
+	models[0].nVisLeafs++;
+
+	return models[0].nVisLeafs;
 }
 
 int Bsp::merge_two_models(int src_model, int dst_model)

@@ -256,6 +256,7 @@ public:
 	bool leaf_add_face(int faceIdx, int leafIdx);
 	bool leaf_del_face(int faceIdx, int leafIdx);
 	bool remove_face(int faceid);
+	int clone_world_leaf(int oldleafIdx);
 	int merge_two_models(int src_model, int dst_model);
 
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
