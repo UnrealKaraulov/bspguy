@@ -272,7 +272,7 @@ Renderer::Renderer()
 	//GLuint in;
 	//glGenVertexArrays(1, &in);
 	//glBindVertexArray(in);
-
+	glGetFloatv(GL_LINE_WIDTH_RANGE, lineWidthRange);
 	glLineWidth(1.3f);
 
 	// init to black screen instead of white

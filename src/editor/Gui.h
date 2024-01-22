@@ -61,8 +61,6 @@ public:
 	void pasteLightmap();
 	void refresh();
 
-private:
-	ImGuiIO* imgui_io = nullptr;
 
 	bool showDebugWidget = false;
 	bool showKeyvalueWidget = false;
@@ -83,8 +81,11 @@ private:
 	bool showGOTOWidget = false;
 	bool showTextureBrowser = false;
 	bool reloadSettings = true;
-	size_t settingsTab = 0;
 	bool openSavedTabs = false;
+
+private:
+	ImGuiIO* imgui_io = nullptr;
+	size_t settingsTab = 0;
 
 	ImFont* defaultFont;
 	ImFont* smallFont;

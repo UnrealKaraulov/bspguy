@@ -9313,6 +9313,13 @@ void Gui::drawFaceEditorWidget()
 				leaf_decompress = true;
 			}
 
+			BSPLEAF32& tmpLeaf = map->leaves[last_leaf];
+
+			mapRenderer->leafCube->mins = tmpLeaf.nMins;
+			mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
+
+			g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
+				
 			leaf_faces = map->getLeafFaces(last_leaf);
 			last_leaf_mdl = map->get_model_from_leaf(last_leaf);
 		}
@@ -9515,6 +9522,11 @@ void Gui::drawFaceEditorWidget()
 						last_leaf = tmp_new_leaf;
 						new_last_leaf = true;
 					}
+				}
+				if (ImGui::Button("GO TO##LEAF"))
+				{
+					BSPLEAF32& leaf = map->leaves[last_leaf];
+					app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
 				}
 			}
 
@@ -9749,6 +9761,9 @@ void Gui::drawFaceEditorWidget()
 			ImGui::EndDisabled();
 			if (last_leaf == 0)
 				ImGui::EndDisabled();
+
+			
+
 			if (need_compress)
 			{
 				leaf_decompress = true;

@@ -254,6 +254,7 @@ public:
 	bool debugClipnodes = false;
 	bool debugNodes = false;
 	int clipnodeRenderHull = -1;
+	GLfloat lineWidthRange[2];
 
 	vec3 getMoveDir();
 	void controls();

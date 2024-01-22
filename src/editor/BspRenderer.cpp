@@ -13,6 +13,7 @@
 #include "Clipper.h"
 #include "Command.h"
 #include "Sprite.h"
+#include "Gui.h"
 
 BspRenderer::BspRenderer(Bsp* _map)
 {
@@ -24,7 +25,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	faceMaths = NULL;
 	leafCube = new EntCube();
 
-	leafCube->color = { 255, 255, 0, 255 };
+	leafCube->color = { 0, 255, 255, 150 };
 	leafCube->mins = { -32.0f,-32.0f,-32.0f };
 	leafCube->maxs = { 32.0f ,32.0f ,32.0f };
 
@@ -2241,6 +2242,20 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		int childIdx = -1;
 		int headNode = map->models[0].iHeadnodes[0];
 		map->pointContents(headNode, localCameraOrigin, 0, nodeBranch, curLeafIdx, childIdx);
+		if (curLeafIdx < 0)
+			curLeafIdx = 0;
+		if (g_app->pickMode == PICK_FACE_LEAF )
+		{
+			if (!g_app->gui->showFaceEditWidget)
+			{
+				BSPLEAF32& tmpLeaf = map->leaves[curLeafIdx];
+
+				leafCube->mins = tmpLeaf.nMins;
+				leafCube->maxs = tmpLeaf.nMaxs;
+
+				g_app->pointEntRenderer->genCubeBuffers(leafCube);
+			}
+		}
 	}
 
 	for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
@@ -2301,6 +2316,21 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 			if ((g_render_flags & RENDER_POINT_ENTS) && transparent == false && (pass == REND_PASS_COLORSHADER || pass == REND_PASS_MODELSHADER))
 			{
+				if (g_app->pickMode == PICK_FACE_LEAF)
+				{
+					glDepthMask(GL_FALSE);
+					glDepthFunc(GL_ALWAYS);
+					glDisable(GL_CULL_FACE);
+					glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
+					g_app->matmodel.loadIdentity();
+					g_app->colorShader->updateMatrixes();
+					leafCube->wireframeBuffer->drawFull();
+					glLineWidth(1.3f);
+					glEnable(GL_CULL_FACE);
+					glDepthMask(GL_TRUE);
+					glDepthFunc(GL_LESS);
+				}
+
 				drawPointEntities(highlightEnts, pass);
 			}
 		}
