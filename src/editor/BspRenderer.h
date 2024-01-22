@@ -244,6 +244,7 @@ public:
 
 	bool getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup);
 
+	vec3 old_rend_offs;
 
 	LightmapInfo* lightmaps;
 	std::vector<RenderEnt> renderEnts;

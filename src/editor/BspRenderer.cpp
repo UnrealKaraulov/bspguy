@@ -24,6 +24,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	glTextures = NULL;
 	faceMaths = NULL;
 	leafCube = new EntCube();
+	old_rend_offs = vec3();
 
 	leafCube->color = { 0, 255, 255, 150 };
 	leafCube->mins = { -32.0f,-32.0f,-32.0f };
@@ -1128,7 +1129,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		cVert* resultWireFrame = new cVert[cleanupWireframe.size()];
 		memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
-		
+
 		renderModel->wireframeBuffer = new VertexBuffer(g_app->colorShader, resultWireFrame, cleanupWireframe.size(), GL_LINES);
 		renderModel->wireframeBuffer->ownData = true;
 		renderModel->wireframeBuffer->frameId = 0;
@@ -2262,12 +2263,12 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		}
 	}
 
-	static bool need_refresh_mat = true;
-	static vec3 old_rend_offs = renderOffset;
+	bool need_refresh_mat = true;
 
 	if ((old_rend_offs - renderOffset).length() > 0.01)
 	{
 		need_refresh_mat = true;
+		old_rend_offs = renderOffset;
 	}
 
 	if (need_refresh_mat)
@@ -2275,7 +2276,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
 		{
 			RenderEnt& ent = renderEnts[i];
-			need_refresh_mat = false;
 			ent.modelMat4x4_calc = ent.modelMat4x4;
 			ent.modelMat4x4_calc.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 		}
@@ -2305,50 +2305,45 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		drawPointEntities(highlightEnts, REND_PASS_MODELSHADER);
 	}
 
-	for (int transparent = 0; transparent <= 1; transparent++)
+	for (int pass = 0; pass <= 2; pass++)
 	{
-		for (int pass = 0; pass <= 2; pass++)
+		if (pass != REND_PASS_MODELSHADER)
 		{
-			if (pass != REND_PASS_MODELSHADER)
+			g_app->bspShader->bind();
+			g_app->bspShader->updateMatrixes();
+
+			if (!map->ents[0]->hide)
+				drawModel(0, pass, false, false);
+
+			for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
 			{
-				if (transparent && pass != REND_PASS_BSPSHADER_TRANSPARENT)
+				if (map->ents[i]->hide)
 					continue;
-				g_app->bspShader->bind();
-				g_app->bspShader->updateMatrixes();
-
-				if (!map->ents[0]->hide)
-					drawModel(0, pass, false, false);
-
-				for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
+				if (g_app->pickInfo.IsSelectedEnt(i))
 				{
-					if (map->ents[i]->hide)
-						continue;
-					if (g_app->pickInfo.IsSelectedEnt(i))
+					/*if (g_render_flags & RENDER_SELECTED_AT_TOP)
+						glDepthFunc(GL_ALWAYS);
+					if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 					{
-						/*if (g_render_flags & RENDER_SELECTED_AT_TOP)
-							glDepthFunc(GL_ALWAYS);
-						if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
-						{
-							g_app->bspShader->pushMatrix();
-							g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-							g_app->bspShader->updateMatrixes();
+						g_app->bspShader->pushMatrix();
+						g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+						g_app->bspShader->updateMatrixes();
 
-							drawModel(&renderEnts[i], pass, true, false);
-							g_app->bspShader->popMatrix();
-						}
-						if (g_render_flags & RENDER_SELECTED_AT_TOP)
-							glDepthFunc(GL_LESS);*/
+						drawModel(&renderEnts[i], pass, true, false);
+						g_app->bspShader->popMatrix();
 					}
-					else
+					if (g_render_flags & RENDER_SELECTED_AT_TOP)
+						glDepthFunc(GL_LESS);*/
+				}
+				else
+				{
+					if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 					{
-						if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
-						{
-							g_app->bspShader->pushMatrix();
-							g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-							g_app->bspShader->updateMatrixes();
-							drawModel(&renderEnts[i], pass, false, false);
-							g_app->bspShader->popMatrix();
-						}
+						g_app->bspShader->pushMatrix();
+						g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+						g_app->bspShader->updateMatrixes();
+						drawModel(&renderEnts[i], pass, false, false);
+						g_app->bspShader->popMatrix();
 					}
 				}
 			}
@@ -2412,27 +2407,22 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			glDisable(GL_CULL_FACE);
 		}
 		g_app->bspShader->pushMatrix();
-		for (int transparent = 0; transparent <= 1; transparent++)
+		for (int pass = 0; pass <= 2; pass++)
 		{
-			for (int pass = 0; pass <= 2; pass++)
-			{
-				if (transparent && pass != REND_PASS_BSPSHADER_TRANSPARENT)
-					continue;
-				if (pass == REND_PASS_MODELSHADER)
-					continue;
+			if (pass == REND_PASS_MODELSHADER)
+				continue;
 
-				g_app->bspShader->bind();
-				g_app->bspShader->updateMatrixes();
-				for (size_t highlightEnt : highlightEnts)
+			g_app->bspShader->bind();
+			g_app->bspShader->updateMatrixes();
+			for (size_t highlightEnt : highlightEnts)
+			{
+				if (map->ents[highlightEnt]->hide)
+					continue;
+				if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 				{
-					if (map->ents[highlightEnt]->hide)
-						continue;
-					if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
-					{
-						g_app->matmodel = renderEnts[highlightEnt].modelMat4x4_calc;
-						g_app->bspShader->updateMatrixes();
-						drawModel(&renderEnts[highlightEnt], pass, true, false);
-					}
+					g_app->matmodel = renderEnts[highlightEnt].modelMat4x4_calc;
+					g_app->bspShader->updateMatrixes();
+					drawModel(&renderEnts[highlightEnt], pass, true, false);
 				}
 			}
 		}
@@ -2598,15 +2588,9 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 			continue;
 		}
 
-		if (pass == REND_PASS_COLORSHADER || pass == REND_PASS_BSPSHADER_TRANSPARENT)
+		if (pass == REND_PASS_BSPSHADER_TRANSPARENT)
 		{
-			if (rgroup.transparent != (pass == REND_PASS_BSPSHADER_TRANSPARENT))
-				continue;
-		}
-
-		if (!edgesOnly)
-		{
-			if (pass == REND_PASS_COLORSHADER || pass == REND_PASS_BSPSHADER_TRANSPARENT)
+			if (!edgesOnly)
 			{
 				g_app->bspShader->bind();
 				if (texturesLoaded && g_render_flags & RENDER_TEXTURES)
