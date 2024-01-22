@@ -2298,8 +2298,6 @@ void Renderer::addMap(Bsp* map)
 	{
 		deselectObject();
 		clearSelection();
-		if (map->ents.size())
-			pickInfo.SetSelectedEnt(0);
 		/*
 		* TODO: save camera pos
 		*/
@@ -2318,6 +2316,8 @@ void Renderer::addMap(Bsp* map)
 	{
 		clearSelection();
 		selectMap(map);
+		if (map->ents.size())
+			pickInfo.SetSelectedEnt(0);
 	}
 }
 

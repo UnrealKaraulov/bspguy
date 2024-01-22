@@ -178,7 +178,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 }*/
 	}
 
-	if (map == g_app->getSelectedMap())
+	if (g_app->getSelectedMap() == NULL || map == g_app->getSelectedMap())
 	{
 		cameraOrigin = renderCameraOrigin;
 		cameraAngles = renderCameraAngles;
