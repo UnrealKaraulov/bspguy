@@ -245,12 +245,12 @@ public:
 	bool getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup);
 
 
-	LightmapInfo* lightmaps = NULL;
+	LightmapInfo* lightmaps;
 	std::vector<RenderEnt> renderEnts;
 	std::vector<RenderModel> renderModels;
 	std::vector<RenderClipnodes> renderClipnodes;
-	FaceMath* faceMaths = NULL;
-
+	FaceMath* faceMaths;
+	EntCube* leafCube;
 
 	size_t numLightmapAtlases;
 

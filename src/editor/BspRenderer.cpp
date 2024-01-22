@@ -12,17 +12,24 @@
 #include "Renderer.h"
 #include "Clipper.h"
 #include "Command.h"
-
 #include "Sprite.h"
 
 BspRenderer::BspRenderer(Bsp* _map)
 {
-	this->map = _map;
-	this->map->setBspRender(this);
-	this->lightmaps = NULL;
-	this->glTexturesSwap = NULL;
-	this->glTextures = NULL;
-	this->faceMaths = NULL;
+	map = _map;
+	map->setBspRender(this);
+	lightmaps = NULL;
+	glTexturesSwap = NULL;
+	glTextures = NULL;
+	faceMaths = NULL;
+	leafCube = new EntCube();
+
+	leafCube->color = { 255, 255, 0, 255 };
+	leafCube->mins = { -32.0f,-32.0f,-32.0f };
+	leafCube->maxs = { 32.0f ,32.0f ,32.0f };
+
+	g_app->pointEntRenderer->genCubeBuffers(leafCube);
+	
 
 	lightEnableFlags[0] = lightEnableFlags[1] = lightEnableFlags[2] = lightEnableFlags[3] = true;
 
@@ -1996,6 +2003,9 @@ BspRenderer::~BspRenderer()
 	{
 		renderEnts.clear();
 	}
+
+	delete leafCube;
+	leafCube = NULL;
 
 	deleteTextures();
 	deleteLightmapTextures();

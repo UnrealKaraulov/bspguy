@@ -2733,10 +2733,10 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::MenuItem("Do something bad", NULL, false, !map->is_protected))
+			/*if (ImGui::MenuItem("Do something bad", NULL, false, !map->is_protected))
 			{
 				map->resize_all_lightmaps();
-			}
+			}*/
 
 			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
 			{
