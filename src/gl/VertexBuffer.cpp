@@ -3,8 +3,6 @@
 #include "util.h"
 #include <string.h>
 
-std::vector<VertexBuffer*> totalVertBuffers;
-
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int numVerts, int primitive)
 {
 	uploaded = false;
@@ -14,23 +12,9 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int numVerts
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	setData(dat, numVerts);
-	totalVertBuffers.push_back(this);
 }
 
 VertexBuffer::~VertexBuffer() {
-
-	auto it = std::find(totalVertBuffers.begin(), totalVertBuffers.end(), this);
-	if (it != totalVertBuffers.end())
-	{
-		totalVertBuffers.erase(it);
-	}
-	else
-	{
-		if (g_verbose)
-		{
-			print_log(PRINT_RED, "MISSING VERT BUFF IN TOTAL VERTS BUFF!\n");
-		}
-	}
 
 	deleteBuffer();
 	if (ownData && data) {

@@ -40,5 +40,3 @@ private:
 	// add attributes according to the attribute flags
 	void addAttributes(int attFlags);
 };
-
-extern std::vector<VertexBuffer*> totalVertBuffers;

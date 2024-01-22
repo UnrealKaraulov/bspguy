@@ -46,7 +46,7 @@ Texture::~Texture()
 	if (this->tex_owndata && data != NULL)
 		delete[] data;
 
-	auto it = std::remove(dumpTextures.begin(), dumpTextures.end(), this);
+	std::vector<Texture*>::iterator it = std::remove(dumpTextures.begin(), dumpTextures.end(), this);
 	if (it != dumpTextures.end())
 	{
 		dumpTextures.erase(it);

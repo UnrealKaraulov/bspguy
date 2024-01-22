@@ -2115,6 +2115,17 @@ Bsp* Renderer::getSelectedMap()
 		SelectedMap = mapRenderers[0]->map;
 	}
 
+	// TEMP DEBUG FOR CRASH DETECT
+	if (SelectedMap != NULL && !mapRenderers.size())
+	{
+		if (g_verbose)
+		{
+			print_log(PRINT_RED, "CRITICAL ERROR! BAD MAP POINTER!!\n");
+		}
+
+		SelectedMap = NULL;
+	}
+
 	return SelectedMap;
 }
 
@@ -2287,7 +2298,6 @@ void Renderer::addMap(Bsp* map)
 	{
 		deselectObject();
 		clearSelection();
-		selectMap(map);
 		if (map->ents.size())
 			pickInfo.SetSelectedEnt(0);
 		/*

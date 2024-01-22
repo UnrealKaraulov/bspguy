@@ -64,12 +64,13 @@ struct RenderEnt
 	vec3 angles; // support angles
 	int modelIdx; // -1 = point entity
 	EntCube* pointEntCube;
-	bool needAngles = false;
+	bool needAngles;
 	StudioModel* mdl;
 	Sprite* spr;
 	std::string mdlFileName;
 	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), offset(vec3()), angles(vec3())
 	{
+		needAngles = false;
 		modelIdx = 0;
 		pointEntCube = NULL;
 		mdl = NULL;
