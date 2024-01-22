@@ -936,6 +936,8 @@ int main(int argc, char* argv[])
 
 		fs::current_path(bspguy_dir);
 
+		if (fileExists("./log.txt"))
+			fs::remove("./log.txt");
 
 		g_settings_path = "./bspguy.cfg";
 
