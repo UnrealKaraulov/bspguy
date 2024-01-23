@@ -262,7 +262,7 @@ int merge_maps(CommandLine& cli)
 	Bsp* result = merger.merge(maps, gap, output_name, cli.hasOption("-noripent"), cli.hasOption("-noscript"));
 
 	print_log("\n");
-	if (result->isValid()) result->write(output_name);
+	if (result->validate() && result->isValid()) result->write(output_name);
 	print_log("\n");
 	result->print_info(false, 0, 0);
 
@@ -443,7 +443,8 @@ int noclip(CommandLine& cli)
 			print_log(get_localized_string(LANG_0022));
 		print_log("\n");
 
-		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		if (map->validate() && map->isValid())
+			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
 		print_log("\n");
 
 		map->print_info(false, 0, 0);
@@ -523,7 +524,8 @@ int simplify(CommandLine& cli)
 
 		print_log("\n");
 
-		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		if (map->validate() && map->isValid())
+			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
 		print_log("\n");
 
 		map->print_info(false, 0, 0);
@@ -562,7 +564,8 @@ int deleteCmd(CommandLine& cli)
 			print_log("\n");
 		}
 
-		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		if (map->validate() && map->isValid())
+			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
 		print_log("\n");
 
 		map->print_info(false, 0, 0);
@@ -596,7 +599,8 @@ int transform(CommandLine& cli)
 			return 1;
 		}
 
-		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		if (map->validate() && map->isValid())
+			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
 		print_log("\n");
 
 		map->print_info(false, 0, 0);
@@ -615,8 +619,8 @@ int unembed(CommandLine& cli)
 		int deleted = map->delete_embedded_textures();
 		print_log(get_localized_string(LANG_0029), deleted);
 
-		if (map->isValid())
-			map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		if (map->validate() && map->isValid())
+			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
 		print_log("\n");
 		delete map;
 		return 0;
@@ -744,6 +748,8 @@ void print_help(const std::string& command)
 
 			"Usage:   bspguy unembed <mapname>\n"
 			"Example: bspguy unembed c1a0.bsp\n"
+			"\n[Options]\n"
+			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
 		);
 	}
 	else if (command == "exportobj")
@@ -755,6 +761,74 @@ void print_help(const std::string& command)
 			"Example: bspguy exportobj c1a0.bsp\n"
 		);
 	}
+	else if (command == "exportlit")
+	{
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
+			"exportlit   : Export .lit (Quake) lightdata file.\n\n"
+
+			"Usage:   bspguy exportlit <mapname>\n"
+			"Example: bspguy exportlit c1a0.bsp\n"
+			"\n[Options]\n"
+			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
+		);
+	}
+	else if (command == "exportrad")
+	{
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
+			"exportrad   : Export RAD.exe .ext & .wa_ files.\n\n"
+
+			"Usage:   bspguy exportrad <mapname>\n"
+			"Example: bspguy exportrad c1a0.bsp\n"
+			"\n[Options]\n"
+			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
+		);
+	}
+	else if (command == "exportwad")
+	{
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
+			"exportwad   : Export all map textures to .wad file.\n\n"
+
+			"Usage:   bspguy exportwad <mapname>\n"
+			"Example: bspguy exportwad c1a0.bsp\n"
+			"\n[Options]\n"
+			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
+		);
+	}
+	else if (command == "importwad")
+	{
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
+			"  importwad   : Import all .wad textures to map.\n\n"
+
+			"Usage:   bspguy importwad <mapname>\n"
+			"Example: bspguy importwad c1a0.bsp\n"
+			"\n[Options]\n"
+			"  -i <file>     : Input file. By default, <mapname> is overwritten.\n"
+			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
+		);
+	}
+	else if (command == "importlit")
+	{
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
+			"importlit   : Import .lit (Quake) lightdata file to map.\n\n"
+
+			"Usage:   bspguy importlit <mapname>\n"
+			"Example: bspguy importlit c1a0.bsp\n"
+			"\n[Options]\n"
+			"  -i <file>     : Input file. By default, <mapname> is overwritten.\n"
+			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
+		);
+	}
+	else if (command == "cullfaces")
+	{
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
+			"cullfaces - Remove leaf faces from map.\n\n"
+
+			"Usage:   bspguy cullfaces -leaf \"0\" <mapname>\n"
+			"Example: bspguy cullfaces c1a0.bsp - clean solid outside faces\n"
+			"\n[Options]\n"
+			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
+		);
+	}
 	else
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, "{}\n\n", g_version_string);
@@ -763,15 +837,23 @@ void print_help(const std::string& command)
 			"Usage: bspguy <command> <mapname> [options]\n"
 
 			"\n<Commands>\n"
-			"  info      : Show BSP data summary\n"
-			"  merge     : Merges two or more maps together\n"
-			"  noclip    : Delete some clipnodes/nodes from the BSP\n"
-			"  delete    : Delete BSP models\n"
-			"  simplify  : Simplify BSP models\n"
-			"  transform : Apply 3D transformations to the BSP\n"
-			"  unembed   : Deletes embedded texture data\n"
+			"  info        : Show BSP data summary\n"
+			"  merge       : Merges two or more maps together\n"
+			"  noclip      : Delete some clipnodes/nodes from the BSP\n"
+			"  delete      : Delete BSP models\n"
+			"  simplify    : Simplify BSP models\n"
+			"  transform   : Apply 3D transformations to the BSP\n"
+			"  unembed     : Deletes embedded texture data\n"
 			"  exportobj   : Export bsp geometry to obj [WIP]\n"
-			"  no command : Open empty bspguy window\n"
+			"  cullfaces   : Remove leaf faces from map.\n"
+			"  exportlit   : Export .lit (Quake) lightdata file.\n"
+			"  importlit   : Import .lit (Quake) lightdata file to map.\n"
+			"  exportrad   : Export RAD.exe .ext & .wa_ files.\n"
+			"  exportwad   : Export all map textures to .wad file.\n"
+			"  importwad   : Import all .wad textures to map.\n"
+			" "
+			" "
+			"  no command  : Open empty bspguy window\n"
 
 			"\nRun 'bspguy <command> help' to read about a specific command.\n"
 			"\nTo launch the 3D editor. Drag and drop a .bsp file onto the executable,\n"
@@ -905,7 +987,7 @@ int main(int argc, char* argv[])
 		if (::GetConsoleWindow())
 		{
 			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
-		}
+}
 #ifndef NDEBUG
 		SetUnhandledExceptionFilter(unhandled_handler);
 		AddVectoredExceptionHandler(1, unhandled_handler);
@@ -957,6 +1039,11 @@ int main(int argc, char* argv[])
 			cli.bspfile = g_startup_dir + cli.bspfile;
 		}
 
+		if (cli.hasOption("-v") || cli.hasOption("-verbose"))
+		{
+			g_verbose = true;
+		}
+
 		if (cli.command == "exportobj")
 		{
 			int scale = 1;
@@ -969,10 +1056,57 @@ int main(int argc, char* argv[])
 			delete tmpBsp;
 			return 0;
 		}
-
-		if (cli.hasOption("-v") || cli.hasOption("-verbose"))
+		else if (cli.command == "exportlit")
 		{
-			g_verbose = true;
+			Bsp* tmpBsp = new Bsp(cli.bspfile);
+			tmpBsp->ExportLightFile(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			delete tmpBsp;
+			return 0;
+		}
+		else if (cli.command == "importlit")
+		{
+			Bsp* tmpBsp = new Bsp(cli.bspfile);
+			tmpBsp->ImportLightFile(cli.hasOption("-i") ? cli.getOption("-i") : cli.bspfile);
+			tmpBsp->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			delete tmpBsp;
+			return 0;
+		}
+		else if (cli.command == "exportrad")
+		{
+			Bsp* tmpBsp = new Bsp(cli.bspfile);
+			tmpBsp->ExportExtFile(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			delete tmpBsp;
+			return 0;
+		}
+		else if (cli.command == "exportwad")
+		{
+			Bsp* tmpBsp = new Bsp(cli.bspfile);
+			tmpBsp->ExportWad(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile + ".wad");
+			delete tmpBsp;
+			return 0;
+		}
+		else if (cli.command == "importwad")
+		{
+			Bsp* tmpBsp = new Bsp(cli.bspfile);
+			tmpBsp->ImportWad(cli.hasOption("-i") ? cli.getOption("-i") : cli.bspfile + ".wad");
+			tmpBsp->validate();
+			tmpBsp->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			delete tmpBsp;
+			return 0;
+		}
+		else if (cli.command == "cullfaces")
+		{
+			int leafIdx = 0;
+			if (cli.hasOption("-leaf"))
+			{
+				leafIdx = std::atoi(getValueInQuotes(cli.getOption("-leaf")).c_str());
+			}
+			Bsp* tmpBsp = new Bsp(cli.bspfile);
+			tmpBsp->cull_leaf_faces(leafIdx);
+			if (tmpBsp->validate() && tmpBsp->isValid())
+				tmpBsp->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			delete tmpBsp;
+			return 0;
 		}
 
 		int retval = 0;
@@ -1065,7 +1199,7 @@ int main(int argc, char* argv[])
 			print_help(cli.command);
 			return 1;
 		}
-	}
+}
 	catch (fs::filesystem_error& ex)
 	{
 		std::cout << "std::filesystem fatal error." << std::endl << "what():  " << ex.what() << '\n'

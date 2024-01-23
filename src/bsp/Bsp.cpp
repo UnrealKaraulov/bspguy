@@ -6509,6 +6509,59 @@ int Bsp::duplicate_model(int modelIdx)
 	return newModelIdx;
 }
 
+bool Bsp::cull_leaf_faces(int leafIdx)
+{
+	BSPLEAF32& leaf = leaves[leafIdx];
+	int rowSize = (((leafCount - 1) + 63) & ~63) >> 3;
+	unsigned char* visData = new unsigned char[rowSize];
+	memset(visData, 0xFF, rowSize);
+	DecompressVis(visdata + leaf.nVisOffset, visData, rowSize, leafCount - 1, visDataLength - leaf.nVisOffset);
+
+	std::vector<int> faces_to_remove;
+
+	for (int l = 0; l < models[0].nVisLeafs; l++)
+	{
+		if (l == leafIdx || CHECKVISBIT(visData, l))
+		{
+			auto faceList = getLeafFaces(l + 1);
+			faces_to_remove.insert(faces_to_remove.end(), faceList.begin(), faceList.end());
+		}
+	}
+
+	std::sort(faces_to_remove.begin(), faces_to_remove.end());
+	faces_to_remove.erase(std::unique(faces_to_remove.begin(), faces_to_remove.end()), faces_to_remove.end());
+
+
+	STRUCTCOUNT count_1(this);
+	g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)faces_to_remove.size());
+
+	while (faces_to_remove.size())
+	{
+		remove_face(faces_to_remove[faces_to_remove.size() - 1]);
+		faces_to_remove.pop_back();
+		g_progress.tick();
+	}
+	delete[] visData;
+	STRUCTCOUNT count_2(this);
+	count_1.sub(count_2);
+	count_1.print_delete_stats(1);
+
+
+	renderer->loadLightmaps();
+	renderer->calcFaceMaths();
+	renderer->preRenderFaces();
+	renderer->preRenderEnts();
+
+	update_ent_lump();
+	update_lump_pointers();
+
+	if (leafIdx == 0)
+		renderer->pushModelUndoState("REMOVE FACES FROM SOLID(0 leaf)", EDIT_MODEL_LUMPS);
+	else
+		renderer->pushModelUndoState(fmt::format("REMOVE FACES FROM {} leaf", leafIdx), EDIT_MODEL_LUMPS);
+	return true;
+}
+
 bool Bsp::leaf_add_face(int faceIdx, int leafIdx)
 {
 	if (faceIdx < 0 || faceIdx >= faceCount)
@@ -7684,15 +7737,15 @@ void recurse_node_map(Bsp* map, int nodeIdx)
 	recurse_node_map(map, map->nodes[nodeIdx].iChildren[1]);
 }
 
-void Bsp::ExportPortalFile()
+void Bsp::ExportPortalFile(const std::string& path)
 {
-	if (bsp_path.size() < 4)
+	if (path.size() < 4)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0198));
 		return;
 	}
-	std::string targetFileName = bsp_path.substr(0, bsp_path.size() - 4) + "X.prt";
-	//std::string targetViewFileName = bsp_path.substr(0, bsp_path.size() - 4) + ".pts";
+	std::string targetFileName = path.substr(0, path.size() - 4) + "X.prt";
+	//std::string targetViewFileName = path.substr(0, path.size() - 4) + ".pts";
 	std::ofstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
 	if (!targetFile.is_open())
 	{
@@ -7727,15 +7780,15 @@ void Bsp::ExportPortalFile()
 	}
 	targetFile.flush();*/
 }
-void Bsp::ExportLightFile()
+void Bsp::ExportLightFile(const std::string& path)
 {
-	if (bsp_path.size() < 4)
+	if (path.size() < 4)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0203));
 		return;
 	}
 
-	std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4);
+	std::string targetMapFileName = path.substr(0, path.size() - 4);
 	std::string targetFileName = targetMapFileName + ".lit";
 	std::ofstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
 	if (!targetFile.is_open())
@@ -7749,15 +7802,15 @@ void Bsp::ExportLightFile()
 	targetFile.write((const char*)lightdata, lightDataLength);
 }
 
-void Bsp::ImportLightFile()
+void Bsp::ImportLightFile(const std::string& path)
 {
-	if (bsp_path.size() < 4)
+	if (path.size() < 4)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0205));
 		return;
 	}
 
-	std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4);
+	std::string targetMapFileName = path.substr(0, path.size() - 4);
 	std::string targetFileName = targetMapFileName + ".lit";
 	std::ifstream targetFile(targetFileName, std::ios::binary);
 	if (!targetFile.is_open())
@@ -7780,15 +7833,15 @@ void Bsp::ImportLightFile()
 	}
 }
 
-void Bsp::ExportExtFile()
+void Bsp::ExportExtFile(const std::string& path)
 {
-	if (bsp_path.size() < 4)
+	if (path.size() < 4)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0208));
 		return;
 	}
 
-	std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4);
+	std::string targetMapFileName = path.substr(0, path.size() - 4);
 	std::string targetFileName = targetMapFileName + "_nolight.ext";
 	std::ofstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
 	if (!targetFile.is_open())
@@ -7896,6 +7949,83 @@ void Bsp::ExportExtFile()
 
 	delete tmpWad;
 	delete tmpBsp;
+}
+
+
+bool Bsp::ExportWad(const std::string& path)
+{
+	bool retval = true;
+	if (textureCount > 0)
+	{
+		Wad* tmpWad = new Wad(path);
+		std::vector<WADTEX*> tmpWadTex;
+		for (int i = 0; i < textureCount; i++)
+		{
+			int oldOffset = ((int*)textures)[i + 1];
+			if (oldOffset >= 0)
+			{
+				BSPMIPTEX* bspTex = (BSPMIPTEX*)(textures + oldOffset);
+				if (bspTex->nOffsets[0] <= 0)
+					continue;
+				WADTEX* oldTex = new WADTEX(bspTex);
+				tmpWadTex.push_back(oldTex);
+			}
+		}
+		if (!tmpWadTex.empty())
+		{
+			tmpWad->write(path, tmpWadTex);
+		}
+		else
+		{
+			retval = false;
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0337));
+		}
+		tmpWadTex.clear();
+		delete tmpWad;
+	}
+	else
+	{
+		retval = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0338));
+	}
+	return retval;
+}
+
+bool Bsp::ImportWad(const std::string& path)
+{
+	Wad* tmpWad = new Wad(path);
+
+	if (!tmpWad->readInfo())
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0339));
+		delete tmpWad;
+		return false;
+	}
+	else
+	{
+		for (int i = 0; i < (int)tmpWad->dirEntries.size(); i++)
+		{
+			WADTEX* wadTex = tmpWad->readTexture(i);
+			COLOR3* imageData = ConvertWadTexToRGB(wadTex);
+			if (is_bsp2 || is_bsp29)
+			{
+				add_texture(wadTex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+			}
+			else
+			{
+				add_texture(wadTex);
+			}
+			delete[] imageData;
+			delete wadTex;
+		}
+		for (size_t i = 0; i < mapRenderers.size(); i++)
+		{
+			mapRenderers[i]->reloadTextures();
+		}
+	}
+
+	delete tmpWad;
+	return true;
 }
 
 struct ENTDATA

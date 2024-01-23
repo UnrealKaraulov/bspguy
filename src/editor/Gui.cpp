@@ -1039,83 +1039,6 @@ void Gui::drawBspContexMenu()
 	}
 }
 
-bool ExportWad(Bsp* map)
-{
-	bool retval = true;
-	if (map->textureCount > 0)
-	{
-		Wad* tmpWad = new Wad(map->bsp_path);
-		std::vector<WADTEX*> tmpWadTex;
-		for (int i = 0; i < map->textureCount; i++)
-		{
-			int oldOffset = ((int*)map->textures)[i + 1];
-			if (oldOffset >= 0)
-			{
-				BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
-				if (bspTex->nOffsets[0] <= 0)
-					continue;
-				WADTEX* oldTex = new WADTEX(bspTex);
-				tmpWadTex.push_back(oldTex);
-			}
-		}
-		if (!tmpWadTex.empty())
-		{
-			createDir(g_working_dir);
-			tmpWad->write(g_working_dir + map->bsp_name + ".wad", tmpWadTex);
-		}
-		else
-		{
-			retval = false;
-			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0337));
-		}
-		tmpWadTex.clear();
-		delete tmpWad;
-	}
-	else
-	{
-		retval = false;
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0338));
-	}
-	return retval;
-}
-
-void ImportWad(Bsp* map, Renderer* app, std::string path)
-{
-	Wad* tmpWad = new Wad(path);
-
-	if (!tmpWad->readInfo())
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0339));
-		delete tmpWad;
-		return;
-	}
-	else
-	{
-		for (int i = 0; i < (int)tmpWad->dirEntries.size(); i++)
-		{
-			WADTEX* wadTex = tmpWad->readTexture(i);
-			COLOR3* imageData = ConvertWadTexToRGB(wadTex);
-			if (map->is_bsp2 || map->is_bsp29)
-			{
-				map->add_texture(wadTex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
-			}
-			else
-			{
-				map->add_texture(wadTex);
-			}
-			delete[] imageData;
-			delete wadTex;
-		}
-		for (size_t i = 0; i < mapRenderers.size(); i++)
-		{
-			mapRenderers[i]->reloadTextures();
-		}
-	}
-
-	delete tmpWad;
-}
-
-
 void Gui::drawMenuBar()
 {
 	ImGuiContext& g = *GImGui;
@@ -1149,7 +1072,7 @@ void Gui::drawMenuBar()
 						}
 					}
 					app->updateEnts();
-					ImportWad(map, app, res.string());
+					map->ImportWad(res.string());
 					app->reloadBspModels();
 					g_settings.lastdir = stripFileName(res.string());
 				}
@@ -2010,7 +1933,8 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					print_log(get_localized_string(LANG_0343), g_working_dir, map->bsp_name + ".wad");
-					if (ExportWad(map))
+					createDir(g_working_dir);
+					if (map->ExportWad(g_working_dir + map->bsp_name + ".wad"))
 					{
 						print_log(get_localized_string(LANG_0344));
 						map->delete_embedded_textures();
@@ -2073,7 +1997,7 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0537).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
-					map->ExportPortalFile();
+					map->ExportPortalFile(map->bsp_path);
 				}
 
 
@@ -2086,7 +2010,7 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0539).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
-					map->ExportExtFile();
+					map->ExportExtFile(map->bsp_path);
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -2100,7 +2024,7 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0540).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
-					map->ExportLightFile();
+					map->ExportLightFile(map->bsp_path);
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -2257,7 +2181,7 @@ void Gui::drawMenuBar()
 				{
 					if (map)
 					{
-						map->ImportLightFile();
+						map->ImportLightFile(map->bsp_path);
 					}
 					else
 					{
@@ -2860,103 +2784,13 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem("Delete from SOLID (0 leaf)"))
 				{
-					BSPLEAF32& leaf = map->leaves[leafIdx];
-					int rowSize = (((map->leafCount - 1) + 63) & ~63) >> 3;
-					unsigned char* visData = new unsigned char[rowSize];
-					memset(visData, 0xFF, rowSize);
-					DecompressVis(map->visdata + leaf.nVisOffset, visData, rowSize, map->leafCount - 1, map->visDataLength - leaf.nVisOffset);
-
-					std::vector<int> faces_to_remove;
-
-					for (int l = 0; l < map->models[0].nVisLeafs; l++)
-					{
-						if (l == leafIdx || CHECKVISBIT(visData, l))
-						{
-							auto faceList = map->getLeafFaces(l + 1);
-							faces_to_remove.insert(faces_to_remove.end(), faceList.begin(), faceList.end());
-						}
-					}
-
-					std::sort(faces_to_remove.begin(), faces_to_remove.end());
-					faces_to_remove.erase(std::unique(faces_to_remove.begin(), faces_to_remove.end()), faces_to_remove.end());
-
-
-					STRUCTCOUNT count_1(map);
-					g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)faces_to_remove.size());
-
-					while (faces_to_remove.size())
-					{
-						map->remove_face(faces_to_remove[faces_to_remove.size() - 1]);
-						faces_to_remove.pop_back();
-						g_progress.tick();
-					}
-					delete[] visData;
-					STRUCTCOUNT count_2(map);
-					count_1.sub(count_2);
-					count_1.print_delete_stats(1);
-
-					map->getBspRender()->loadLightmaps();
-					map->getBspRender()->calcFaceMaths();
-					map->getBspRender()->preRenderFaces();
-					map->getBspRender()->preRenderEnts();
-
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
-					map->getBspRender()->pushModelUndoState("REMOVE FACES FROM SOLID(0 leaf)", EDIT_MODEL_LUMPS);
-
+					map->cull_leaf_faces(leafIdx);
 				}
 				if (rend->curLeafIdx > 0)
 				{
 					if (ImGui::MenuItem(fmt::format("Delete from {} leaf", rend->curLeafIdx).c_str()))
 					{
-						BSPLEAF32& leaf = map->leaves[rend->curLeafIdx];
-						int rowSize = (((map->leafCount - 1) + 63) & ~63) >> 3;
-						unsigned char* visData = new unsigned char[rowSize];
-						memset(visData, 0xFF, rowSize);
-						//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
-						DecompressVis(map->visdata + leaf.nVisOffset, visData, rowSize, map->leafCount - 1, map->visDataLength - leaf.nVisOffset);
-
-						std::vector<int> faces_to_remove;
-
-						for (int l = 0; l < map->models[0].nVisLeafs; l++)
-						{
-							if (l == leafIdx || CHECKVISBIT(visData, l))
-							{
-								auto faceList = map->getLeafFaces(l + 1);
-								faces_to_remove.insert(faces_to_remove.end(), faceList.begin(), faceList.end());
-							}
-						}
-
-						std::sort(faces_to_remove.begin(), faces_to_remove.end());
-						faces_to_remove.erase(std::unique(faces_to_remove.begin(), faces_to_remove.end()), faces_to_remove.end());
-
-
-						STRUCTCOUNT count_1(map);
-						g_progress.update("Remove cull faces.[LEAF 0 CLEAN]", (int)faces_to_remove.size());
-
-						while (faces_to_remove.size())
-						{
-							map->remove_face(faces_to_remove[faces_to_remove.size() - 1]);
-							faces_to_remove.pop_back();
-							g_progress.tick();
-						}
-
-						delete[] visData;
-						STRUCTCOUNT count_2(map);
-						count_1.sub(count_2);
-						count_1.print_delete_stats(1);
-
-						map->getBspRender()->loadLightmaps();
-						map->getBspRender()->calcFaceMaths();
-						map->getBspRender()->preRenderFaces();
-						map->getBspRender()->preRenderEnts();
-
-						map->update_ent_lump();
-						map->update_lump_pointers();
-
-
-						map->getBspRender()->pushModelUndoState(fmt::format("REMOVE FACES FROM {} leaf", rend->curLeafIdx), EDIT_MODEL_LUMPS);
+						map->cull_leaf_faces(rend->curLeafIdx);
 					}
 				}
 				ImGui::EndMenu();
@@ -9843,13 +9677,13 @@ void Gui::drawFaceEditorWidget()
 				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
 			}
 
-		/*	if (ImGui::Button("Create duplicate"))
-			{
-				last_leaf = map->clone_world_leaf(last_leaf);
-				BSPLEAF32& leaf = map->leaves[last_leaf];
-				app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
-				mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_MODELS);
-			}*/
+			/*	if (ImGui::Button("Create duplicate"))
+				{
+					last_leaf = map->clone_world_leaf(last_leaf);
+					BSPLEAF32& leaf = map->leaves[last_leaf];
+					app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
+					mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_MODELS);
+				}*/
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();

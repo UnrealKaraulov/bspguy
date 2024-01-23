@@ -253,6 +253,7 @@ public:
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);
+	bool cull_leaf_faces(int leafIdx);
 	bool leaf_add_face(int faceIdx, int leafIdx);
 	bool leaf_del_face(int faceIdx, int leafIdx);
 	bool remove_face(int faceid);
@@ -303,10 +304,14 @@ public:
 
 	void ExportToMapWIP(const std::string& path);
 
-	void ExportPortalFile();
-	void ExportExtFile();
-	void ExportLightFile();
-	void ImportLightFile();
+	void ExportPortalFile(const std::string& path);
+	void ExportExtFile(const std::string& path);
+	void ExportLightFile(const std::string& path);
+	void ImportLightFile(const std::string& path);
+
+	bool ImportWad(const std::string& path);
+	bool ExportWad(const std::string& path);
+
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
 	bool isModelHasLeafIdx(const BSPMODEL& bspmdl, int leafidx);
 
