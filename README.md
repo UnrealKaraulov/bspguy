@@ -8,7 +8,7 @@ To launch the 3D editor, drag and drop a .bsp file onto the executable/window, o
 
 See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
 
-## newbspguy Editor Features
+## BPSGUY Editor Features
 - Keyvalue editor with FGD support
 - Entity + BSP model creation and duplication
 - Easy object movement and scaling
@@ -19,12 +19,15 @@ See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
 - Hull deletion + redirection + creation
   - clipnode generation is similar to `-cliptype legacy` in the CSG compiler (the _worst_ method)
 - Basic face editing
-# also
+# NEWBPSGUY Editor Updated Features:
 - Texture Rotation
 - Face Editor Update(better texture support, verts manual editor, etc, but without texture browser)
+- Cull leaf faces (for example 0 solid leaf for cleanup)
+- Leaf Editor (WIP)
 - Export obj, wad, ent, bsp/bspmodel, hlrad files.
 - Import wad, ent, bsp(in two modes)
 - Render .BSP and .MDL models.
+- Render .SPR sprites (WIP).
 - Full support for "angle" and "angles" keyvalue.
 - Full featured **LightMap Editor** for edit single or multiple faces.
 - Updated Entity Report, added search by any parameters and sorting by fgd flags.
@@ -34,6 +37,7 @@ See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
 - Updated controls logic(now can't using hotkeys and manipulation, if any input/window is active)
 - Support J.A.C.K fgd files
 - Keyvalue editor can be used for edit all selected entities
+- Protect map (anti-decompile, WIP)
 ...
 
 ![image](https://user-images.githubusercontent.com/12087544/88471604-1768ac80-cec0-11ea-9ce5-13095e843ce7.png)
@@ -64,9 +68,19 @@ Usage: bspguy <command> <mapname> [options]
   info      : Show BSP data summary
   merge     : Merges two or more maps together
   noclip    : Delete some clipnodes/nodes from the BSP
-  delete    : Delete BSP models
   simplify  : Simplify BSP models
+  delete    : Delete BSP models
   transform : Apply 3D transformations to the BSP
+  unembed   : Deletes embedded texture data
+  exportobj : Export bsp geometry to obj [WIP]
+  cullfaces : Remove leaf faces from map
+  exportlit : Export .lit (Quake) lightdata file
+  importlit : Import .lit (Quake) lightdata file to map.
+  exportrad : Export RAD.exe .ext & .wa_ files for hlrad.exe
+  exportwad   : Export all map textures to .wad file
+  importwad   : Import all .wad textures to map
+
+  
 
 Run 'bspguy <command> help' to read about a specific command.
 ```
@@ -79,11 +93,10 @@ Run 'bspguy <command> help' to read about a specific command.
 3. Open vs-project/bspguy.sln
 
 ### Linux users:
-1. Install Git, CMake, X11, GLFW, GLEW, and a compiler.
+1. Install Git, CMake, X11, GLEW, and a compiler.
     * Debian: `sudo apt install build-essential git cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev xorg-dev libglfw3-dev libglew-dev`
 2. Download the source: `git clone https://github.com/wootguy/bspguy.git`
-3. Download [Dear ImGui](https://github.com/ocornut/imgui/releases/tag/v1.81) and extract next to the `src` folder. Rename to `imgui`.
-4. Open a terminal in the `bspguy` folder and run these commands:
+3. Open a terminal in the `bspguy` folder and run these commands:
     ```
     mkdir build; cd build
     cmake .. -DCMAKE_BUILD_TYPE=RELEASE
