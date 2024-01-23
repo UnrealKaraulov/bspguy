@@ -14,22 +14,22 @@ Command::Command(std::string _desc, int _mapIdx)
 
 Bsp* Command::getBsp()
 {
-	if (mapIdx < 0 || mapIdx >= (int)g_app->mapRenderers.size())
+	if (mapIdx < 0 || mapIdx >= (int)mapRenderers.size())
 	{
 		return NULL;
 	}
 
-	return g_app->mapRenderers[mapIdx]->map;
+	return mapRenderers[mapIdx]->map;
 }
 
 BspRenderer* Command::getBspRenderer()
 {
-	if (mapIdx < 0 || mapIdx >= (int)g_app->mapRenderers.size())
+	if (mapIdx < 0 || mapIdx >= (int)mapRenderers.size())
 	{
 		return NULL;
 	}
 
-	return g_app->mapRenderers[mapIdx];
+	return mapRenderers[mapIdx];
 }
 
 

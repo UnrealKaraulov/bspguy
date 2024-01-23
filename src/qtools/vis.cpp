@@ -33,10 +33,12 @@ void printVisRow(unsigned char* vis, int len, int offsetLeaf, int mask)
 	print_log("\n");
 }
 
-bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
+int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 {
+	int overflow = 0;
+
 	if (shift == 0)
-		return false;
+		return overflow;
 
 	g_debug_shift = false;
 
@@ -71,7 +73,6 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 		print_log(get_localized_string(LANG_0992));
 	}
 
-	int overflow = 0;
 	for (int k = 0; k < bitShifts; k++)
 	{
 		if (g_debug_shift)
@@ -141,9 +142,6 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 			printVisRow(vis, len, offsetLeaf, mask);
 		}
 	}
-	if (overflow)
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0993), overflow);
-
 
 	if (byteShifts > 0)
 	{

@@ -16,6 +16,7 @@
 #include <cstdlib>
 
 Renderer* g_app = NULL;
+std::vector<BspRenderer*> mapRenderers{};
 
 int current_fps = 0;
 
@@ -2753,7 +2754,7 @@ void Renderer::updateModelVerts()
 
 	size_t numCubes = modelVerts.size() + modelEdges.size();
 	modelVertCubes = new cCube[numCubes];
-	modelVertBuff = new VertexBuffer(colorShader, modelVertCubes, (int)(6 * 6 * numCubes), GL_TRIANGLES);
+	modelVertBuff = new VertexBuffer(colorShader, modelVertCubes, (6 * 6 * numCubes), GL_TRIANGLES);
 	//print_log(get_localized_string(LANG_0913),modelVerts.size());
 }
 
@@ -2914,8 +2915,8 @@ void Renderer::updateEntConnections()
 		lines[idx++] = cVert(ori, bothColor);
 	}
 
-	entConnections = new VertexBuffer(colorShader, lines, (int)numVerts, GL_LINES);
-	entConnectionPoints = new VertexBuffer(colorShader, points, (int)(numPoints * 6 * 6), GL_TRIANGLES);
+	entConnections = new VertexBuffer(colorShader, lines, numVerts, GL_LINES);
+	entConnectionPoints = new VertexBuffer(colorShader, points, (numPoints * 6 * 6), GL_TRIANGLES);
 	entConnections->ownData = true;
 	entConnectionPoints->ownData = true;
 }

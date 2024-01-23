@@ -1765,12 +1765,17 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 
 	// shift mapB's world leaves after mapA's world leaves
 
-
+	int overflows = 0;
 	for (int i = 0; i < otherWorldLeafCount; i++)
 	{
-		shiftVis(decompressedOtherVis + i * newVisRowSize, newVisRowSize, 0, thisWorldLeafCount);
+		overflows += shiftVis(decompressedOtherVis + i * newVisRowSize, newVisRowSize, 0, thisWorldLeafCount);
 		g_progress.tick();
 	}
+
+
+	if (overflows > 0)
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0993), overflows);
+
 
 	// recompress the combined vis data
 	unsigned char* compressedVis = new unsigned char[decompressedVisSize];

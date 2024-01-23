@@ -327,6 +327,7 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 	print_log(get_localized_string(LANG_0315));
 	src_map->update_ent_lump();
 	src_map->update_lump_pointers();
+	src_map->validate();
 	src_map->write(src_map->bsp_path + ".tmp.bsp");
 
 
@@ -1105,9 +1106,9 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 			delete[] imageData;
 			delete wadTex;
 		}
-		for (size_t i = 0; i < app->mapRenderers.size(); i++)
+		for (size_t i = 0; i < mapRenderers.size(); i++)
 		{
-			app->mapRenderers[i]->reloadTextures();
+			mapRenderers[i]->reloadTextures();
 		}
 	}
 
@@ -1223,6 +1224,7 @@ void Gui::drawMenuBar()
 			{
 				map->update_ent_lump();
 				map->update_lump_pointers();
+				map->validate();
 				map->write(map->bsp_path);
 			}
 			if (ImGui::BeginMenu(get_localized_string(LANG_0480).c_str(), map && !map->is_mdl_model && !app->isLoading))
@@ -1951,7 +1953,7 @@ void Gui::drawMenuBar()
 						app->deselectObject();
 						app->clearSelection();
 						app->deselectMap();
-						app->mapRenderers.erase(app->mapRenderers.begin() + mapRenderId);
+						mapRenderers.erase(mapRenderers.begin() + mapRenderId);
 						delete mapRender;
 						map = NULL;
 						app->selectMapId(0);
@@ -1961,7 +1963,7 @@ void Gui::drawMenuBar()
 			}
 
 
-			if (app->mapRenderers.size() > 1)
+			if (mapRenderers.size() > 1)
 			{
 				if (ImGui::MenuItem(get_localized_string(LANG_0531).c_str(), NULL, false, !app->isLoading))
 				{
@@ -2296,9 +2298,9 @@ void Gui::drawMenuBar()
 							char* newlump = loadFile(entFilePath, len);
 							map->replace_lump(LUMP_ENTITIES, newlump, len);
 							map->load_ents();
-							for (size_t i = 0; i < app->mapRenderers.size(); i++)
+							for (size_t i = 0; i < mapRenderers.size(); i++)
 							{
-								BspRenderer* mapRender = app->mapRenderers[i];
+								BspRenderer* mapRender = mapRenderers[i];
 								mapRender->reload();
 							}
 						}
@@ -2970,11 +2972,11 @@ void Gui::drawMenuBar()
 				{
 					if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), NULL, false, anyHullValid[i]))
 					{
-						//for (int k = 0; k < app->mapRenderers.size(); k++) {
-						//	Bsp* map = app->mapRenderers[k]->map;
+						//for (int k = 0; k < mapRenderers.size(); k++) {
+						//	Bsp* map = mapRenderers[k]->map;
 						map->delete_hull(i, -1);
 						map->getBspRender()->reloadClipnodes();
-						//	app->mapRenderers[k]->reloadClipnodes();
+						//	mapRenderers[k]->reloadClipnodes();
 						print_log(get_localized_string(LANG_0360), i, map->bsp_name);
 						//}
 						checkValidHulls();
@@ -2995,11 +2997,11 @@ void Gui::drawMenuBar()
 								continue;
 							if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), "", false, anyHullValid[k]))
 							{
-								//for (int j = 0; j < app->mapRenderers.size(); j++) {
-								//	Bsp* map = app->mapRenderers[j]->map;
+								//for (int j = 0; j < mapRenderers.size(); j++) {
+								//	Bsp* map = mapRenderers[j]->map;
 								map->delete_hull(i, k);
 								map->getBspRender()->reloadClipnodes();
-								//	app->mapRenderers[j]->reloadClipnodes();
+								//	mapRenderers[j]->reloadClipnodes();
 								print_log(get_localized_string(LANG_0361), i, k, map->bsp_name);
 								//}
 								checkValidHulls();
@@ -3424,7 +3426,7 @@ void Gui::drawMenuBar()
 		if (ImGui::BeginMenu(get_localized_string(LANG_0601).c_str()))
 		{
 			Bsp* selectedMap = app->getSelectedMap();
-			for (BspRenderer* bspRend : app->mapRenderers)
+			for (BspRenderer* bspRend : mapRenderers)
 			{
 				if (bspRend->map && !bspRend->map->is_bsp_model)
 				{
@@ -6600,9 +6602,9 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox(get_localized_string(LANG_0792).c_str(), &transparentNodes))
 			{
 				g_render_flags ^= RENDER_TRANSPARENT;
-				for (size_t i = 0; i < app->mapRenderers.size(); i++)
+				for (size_t i = 0; i < mapRenderers.size(); i++)
 				{
-					app->mapRenderers[i]->updateClipnodeOpacity(transparentNodes ? 128 : 255);
+					mapRenderers[i]->updateClipnodeOpacity(transparentNodes ? 128 : 255);
 				}
 			}
 
@@ -6708,9 +6710,9 @@ void Gui::drawSettings()
 			app->reloading = true;
 			app->loadFgds();
 			app->postLoadFgds();
-			for (size_t i = 0; i < app->mapRenderers.size(); i++)
+			for (size_t i = 0; i < mapRenderers.size(); i++)
 			{
-				BspRenderer* mapRender = app->mapRenderers[i];
+				BspRenderer* mapRender = mapRenderers[i];
 				mapRender->reload();
 			}
 			app->reloading = false;
@@ -10010,9 +10012,9 @@ void Gui::checkValidHulls()
 	for (int i = 0; i < MAX_MAP_HULLS; i++)
 	{
 		anyHullValid[i] = false;
-		for (size_t k = 0; k < app->mapRenderers.size() && !anyHullValid[i]; k++)
+		for (size_t k = 0; k < mapRenderers.size() && !anyHullValid[i]; k++)
 		{
-			Bsp* map = app->mapRenderers[k]->map;
+			Bsp* map = mapRenderers[k]->map;
 
 			for (int m = 0; m < map->modelCount; m++)
 			{

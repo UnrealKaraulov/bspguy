@@ -4,7 +4,7 @@
 #include <string.h>
 #include "Renderer.h"
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int numVerts, int primitive)
+VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, size_t numVerts, int primitive)
 {
 	frameId = (size_t)-1;
 	uploaded = false;
@@ -26,7 +26,7 @@ VertexBuffer::~VertexBuffer() {
 	numVerts = 0;
 }
 
-void VertexBuffer::setData(void* _data, int _numVerts)
+void VertexBuffer::setData(void* _data, size_t _numVerts)
 {
 	data = (unsigned char*)_data;
 	numVerts = _numVerts;
@@ -99,7 +99,7 @@ void VertexBuffer::deleteBuffer() {
 	vaoId = 0xFFFFFFFF;
 }
 
-void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors)
+void VertexBuffer::drawRange(int _primitive, size_t start, size_t end, bool hideErrors)
 {
 	if (frameId != (size_t)-1)
 	{
@@ -132,7 +132,7 @@ void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, vboId);
 	glBindVertexArray(vaoId);
-	glDrawArrays(_primitive, start, end - start);
+	glDrawArrays(_primitive, (GLint)start, (GLint)(end - start));
 }
 
 void VertexBuffer::draw(int _primitive)

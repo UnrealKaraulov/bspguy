@@ -2,7 +2,7 @@
 
 struct BSPLEAF32;
 
-bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift);
+int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift);
 
 // decompress the given vis data into arrays of bits where each bit indicates if a leaf is visible or not
 // iterationLeaves = number of leaves to decompress vis for

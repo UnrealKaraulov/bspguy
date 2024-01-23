@@ -77,6 +77,9 @@ extern int vertPickCount;
 
 extern size_t g_drawFrameId;
 
+
+extern std::vector<BspRenderer*> mapRenderers;
+
 class Renderer
 {
 	friend class Gui;
@@ -90,7 +93,6 @@ class Renderer
 	friend class OptimizeMapCommand;
 
 public:
-	std::vector<BspRenderer*> mapRenderers;
 
 	vec3 debugPoint;
 	vec3 debugVec1;

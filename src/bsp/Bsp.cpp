@@ -101,9 +101,9 @@ void Bsp::selectModelEnt()
 {
 	if (!is_bsp_model || ents.empty())
 		return;
-	for (size_t i = 0; i < g_app->mapRenderers.size(); i++)
+	for (size_t i = 0; i < mapRenderers.size(); i++)
 	{
-		BspRenderer* mapRender = g_app->mapRenderers[i];
+		BspRenderer* mapRender = mapRenderers[i];
 		if (!mapRender)
 			continue;
 		Bsp* map = mapRender->map;
@@ -2655,7 +2655,6 @@ void Bsp::write(const std::string& path)
 
 	update_lump_pointers();
 
-
 	unsigned char* nulls = new unsigned char[sizeof(BSPHEADER) + sizeof(BSPHEADER_EX)];
 
 	file.write((const char*)nulls, is_bsp30ext && extralumps ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
@@ -3889,28 +3888,91 @@ bool sortModelInfos(const STRUCTUSAGE* a, const STRUCTUSAGE* b)
 
 bool Bsp::isValid()
 {
-	return modelCount < (int)MAX_MAP_MODELS
-		&& planeCount < (is_bsp2 ? INT_MAX : MAX_MAP_PLANES)
-		&& vertCount < MAX_MAP_VERTS
-		&& nodeCount < (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES)
-		&& texinfoCount < (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS)
-		&& faceCount < (is_bsp2 ? INT_MAX : MAX_MAP_FACES)
-		&& clipnodeCount < (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES)
-		&& leafCount < (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES)
-		&& marksurfCount < (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS)
-		&& surfedgeCount < (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES)
-		&& edgeCount < (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES)
-		&& textureCount < (int)MAX_MAP_TEXTURES
-		&& lightDataLength < (int)MAX_MAP_LIGHTDATA
-		&& visDataLength < (int)MAX_MAP_VISDATA
-		&& ents.size() < (int)MAX_MAP_ENTS;
+	if (planeCount > (is_bsp2 ? INT_MAX : MAX_MAP_PLANES))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0179));
+	}
+	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0180));
+	}
+	if (leafCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0181));
+	}
+	if (modelCount > (int)MAX_MAP_MODELS)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0182));
+	}
+	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1037));
+	}
+	if (nodeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0183));
+	}
+	if (vertCount > (is_bsp2 ? INT_MAX : MAX_MAP_VERTS))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0184));
+	}
+	if (faceCount > (is_bsp2 ? INT_MAX : MAX_MAP_FACES))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0185));
+	}
+	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0186));
+	}
+	if (marksurfCount > (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0187));
+	}
+	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0188));
+	}
+	if (edgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_EDGES))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0189));
+	}
+	if (textureCount > (int)MAX_MAP_TEXTURES)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0190));
+	}
+	if (lightDataLength > (int)MAX_MAP_LIGHTDATA)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0191));
+	}
+	if (visDataLength > (int)MAX_MAP_VISDATA)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0192));
+	}
+	if (ents.size() > MAX_MAP_ENTS)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "Overflowed entities !!!\n");
+	}
+
+	return modelCount <= (int)MAX_MAP_MODELS
+		&& planeCount <= (is_bsp2 ? INT_MAX : MAX_MAP_PLANES)
+		&& vertCount <= MAX_MAP_VERTS
+		&& nodeCount <= (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES)
+		&& texinfoCount <= (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS)
+		&& faceCount <= (is_bsp2 ? INT_MAX : MAX_MAP_FACES)
+		&& clipnodeCount <= (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES)
+		&& leafCount <= (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES)
+		&& marksurfCount <= (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS)
+		&& surfedgeCount <= (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES)
+		&& edgeCount <= (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES)
+		&& textureCount <= (int)MAX_MAP_TEXTURES
+		&& lightDataLength <= (int)MAX_MAP_LIGHTDATA
+		&& visDataLength <= (int)MAX_MAP_VISDATA
+		&& ents.size() <= MAX_MAP_ENTS;
 }
 
 bool Bsp::validate()
 {
 	bool isValid = true;
-
-
 
 	for (int i = 0; i < marksurfCount; i++)
 	{
@@ -4170,6 +4232,87 @@ bool Bsp::validate()
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
 			}
 		}
+	}
+
+	if (planeCount > (is_bsp2 ? INT_MAX : MAX_MAP_PLANES))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0179));
+	}
+	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0180));
+	}
+	if (leafCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0181));
+	}
+	if (modelCount > (int)MAX_MAP_MODELS)
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0182));
+	}
+	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1037));
+	}
+	if (nodeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0183));
+	}
+	if (vertCount > (is_bsp2 ? INT_MAX : MAX_MAP_VERTS))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0184));
+	}
+	if (faceCount > (is_bsp2 ? INT_MAX : MAX_MAP_FACES))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0185));
+	}
+	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0186));
+	}
+	if (marksurfCount > (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0187));
+	}
+	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0188));
+	}
+	if (edgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_EDGES))
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0189));
+	}
+	if (textureCount > (int)MAX_MAP_TEXTURES)
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0190));
+	}
+	if (lightDataLength > (int)MAX_MAP_LIGHTDATA)
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0191));
+	}
+	if (visDataLength > (int)MAX_MAP_VISDATA)
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0192));
+	}
+	if (ents.size() > MAX_MAP_ENTS)
+	{
+		isValid = false;
+		print_log(PRINT_RED | PRINT_INTENSITY, "Overflowed entities !!!\n");
 	}
 
 	unsigned int newVisRowSize = ((leafCount + 63) & ~63) >> 3;
@@ -7222,37 +7365,6 @@ void Bsp::update_lump_pointers()
 	lightDataLength = bsp_header.lump[LUMP_LIGHTING].nLength;
 	visDataLength = bsp_header.lump[LUMP_VISIBILITY].nLength;
 
-	if (planeCount > (is_bsp2 ? INT_MAX : MAX_MAP_PLANES))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0179));
-	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0180));
-	if (leafCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0181));
-	if (modelCount > (int)MAX_MAP_MODELS)
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0182));
-	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1037));
-	if (nodeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0183));
-	if (vertCount > (is_bsp2 ? INT_MAX : MAX_MAP_VERTS))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0184));
-	if (faceCount > (is_bsp2 ? INT_MAX : MAX_MAP_FACES))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0185));
-	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0186));
-	if (marksurfCount > (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0187));
-	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0188));
-	if (edgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_EDGES))
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0189));
-	if (textureCount > (int)MAX_MAP_TEXTURES)
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0190));
-	if (lightDataLength > (int)MAX_MAP_LIGHTDATA)
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0191));
-	if (visDataLength > (int)MAX_MAP_VISDATA)
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0192));
-
 	if (!is_protected)
 	{
 		if (surfedgeCount > 0)
@@ -7436,16 +7548,15 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 				else
 				{
 					bool foundInWad = false;
-					for (size_t r = 0; r < g_app->mapRenderers.size() && !foundInWad; r++)
+					for (size_t r = 0; r < mapRenderers.size() && !foundInWad; r++)
 					{
-						Renderer* rend = g_app;
-						for (size_t k = 0; k < rend->mapRenderers[r]->wads.size(); k++)
+						for (size_t k = 0; k < mapRenderers[r]->wads.size(); k++)
 						{
-							if (rend->mapRenderers[r]->wads[k]->hasTexture(tex.szName))
+							if (mapRenderers[r]->wads[k]->hasTexture(tex.szName))
 							{
 								foundInWad = true;
 
-								WADTEX* wadTex = rend->mapRenderers[r]->wads[k]->readTexture(tex.szName);
+								WADTEX* wadTex = mapRenderers[r]->wads[k]->readTexture(tex.szName);
 								int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 								COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 								unsigned char* src = wadTex->data;
@@ -7834,17 +7945,17 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 BspRenderer* Bsp::getBspRender()
 {
-	if (!renderer)
-		for (size_t i = 0; i < g_app->mapRenderers.size(); i++)
-			if (g_app->mapRenderers[i]->map == this)
-				renderer = g_app->mapRenderers[i];
+	if (!renderer && g_app)
+		for (size_t i = 0; i < mapRenderers.size(); i++)
+			if (mapRenderers[i]->map == this)
+				renderer = mapRenderers[i];
 	return renderer;
 }
 
 int Bsp::getBspRenderId()
 {
-	for (size_t i = 0; i < g_app->mapRenderers.size(); i++)
-		if (g_app->mapRenderers[i]->map == this)
+	for (size_t i = 0; i < mapRenderers.size(); i++)
+		if (mapRenderers[i]->map == this)
 			return (int)i;
 	return -1;
 }
