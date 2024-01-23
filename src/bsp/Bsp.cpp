@@ -6758,6 +6758,12 @@ bool Bsp::remove_face(int faceIdx)
 		{
 			for (int m = 0; m < leafCount; m++)
 			{
+				if (leaves[m].nMarkSurfaces <= 0 || leaves[m].iFirstMarkSurface < 0)
+				{
+					leaves[m].iFirstMarkSurface = 0;
+					leaves[m].nMarkSurfaces = 0;
+					continue;
+				}
 				if (leaves[m].nMarkSurfaces <= 0)
 					continue;
 				if (s >= leaves[m].iFirstMarkSurface && s < leaves[m].iFirstMarkSurface + leaves[m].nMarkSurfaces)
