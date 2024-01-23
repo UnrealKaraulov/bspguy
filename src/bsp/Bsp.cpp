@@ -3172,7 +3172,7 @@ bool Bsp::load_lumps(std::string fpath)
 			}
 
 			fin.seekg(bsp_header_ex.lump[i].nOffset);
-			if (fin.eof() || bsp_header_ex.lump[i].nOffset + bsp_header_ex.lump[i].nLength >= size)
+			if (fin.eof() || bsp_header_ex.lump[i].nOffset + bsp_header_ex.lump[i].nLength > size)
 			{
 				print_log(get_localized_string(LANG_1020), i);
 				is_bsp30ext = false;
