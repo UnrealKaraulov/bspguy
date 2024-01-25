@@ -9695,6 +9695,8 @@ void Gui::drawFaceEditorWidget()
 
 				if (!removed.allZero())
 					removed.print_delete_stats(1);
+
+				mapRenderer->pushModelUndoState("UPDATE LEAF VISIBILITY", FL_VISIBILITY);
 			}
 
 			ImGui::PopStyleColor();
@@ -9736,6 +9738,9 @@ void Gui::drawFaceEditorWidget()
 
 				if (!removed.allZero())
 					removed.print_delete_stats(1);
+
+
+				mapRenderer->pushModelUndoState("UPDATE LEAF VISIBILITY", FL_VISIBILITY);
 			}
 			ImGui::PopStyleColor();
 
