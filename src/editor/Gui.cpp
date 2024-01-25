@@ -8511,7 +8511,7 @@ void Gui::drawFaceEditorWidget()
 	static float scroll_y = 0.0f;
 
 	ImGui::SetNextWindowScroll(ImVec2(scroll_x, scroll_y));
-	
+
 	ImGui::SetNextWindowSize(ImVec2(300.f, 570.f), ImGuiCond_FirstUseEver);
 	//ImGui::SetNextWindowSize(ImVec2(400, 600));
 	bool beginFaceEditor = ImGui::Begin(fmt::format("{} {}###FACE_EDITOR_WIDGET", get_localized_string(LANG_0870),
@@ -9212,7 +9212,7 @@ void Gui::drawFaceEditorWidget()
 
 					//g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodePlaneCube);
 				}
-			
+
 				leaf_faces = map->getLeafFaces(last_leaf);
 				last_leaf_mdl = map->get_model_from_leaf(last_leaf);
 			}
@@ -9657,18 +9657,44 @@ void Gui::drawFaceEditorWidget()
 			}
 			ImGui::PopStyleColor();
 
-			ImGui::BeginDisabled();
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{ 0.0, 0.0, 1.0, 1.0 });
 
 			if (ImGui::Button("Mark visible for all"))
 			{
-				std::vector<int> visLeafs;
-				map->modelLeafs(0, visLeafs);
+				unsigned char* tmpVisData = new unsigned char[rowSize];
+				unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
 
-				for (auto l : visLeafs)
+				// ADD ONE LEAF TO ALL VISIBILITY BYTES
+				for (int i = 1; i < map->leafCount; i++)
 				{
+					if (map->leaves[i].nVisOffset >= 0)
+					{
+						memset(tmpVisData, 0, rowSize);
+						DecompressVis(map->visdata + map->leaves[i].nVisOffset, tmpVisData, rowSize, map->leafCount - 1, map->visDataLength - map->leaves[i].nVisOffset);
 
+						if (last_leaf > 0)
+							SETVISBIT(tmpVisData, last_leaf - 1);
+
+						memset(tmpCompressed, 0, MAX_MAP_LEAVES / 8);
+						int size = CompressVis(tmpVisData, rowSize, tmpCompressed, MAX_MAP_LEAVES / 8);
+
+						map->leaves[i].nVisOffset = map->visDataLength;
+
+						unsigned char* newVisLump = new unsigned char[map->visDataLength + size];
+						memcpy(newVisLump, map->visdata, map->visDataLength);
+						memcpy(newVisLump + map->visDataLength, tmpCompressed, size);
+						map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
+					}
 				}
+
+				delete[] tmpCompressed;
+				delete[] tmpVisData;
+
+				// repack visdata
+				auto removed = map->remove_unused_model_structures(CLEAN_VISDATA);
+
+				if (!removed.allZero())
+					removed.print_delete_stats(1);
 			}
 
 			ImGui::PopStyleColor();
@@ -9676,11 +9702,43 @@ void Gui::drawFaceEditorWidget()
 
 			if (ImGui::Button("Mark invisible for all"))
 			{
+				unsigned char* tmpVisData = new unsigned char[rowSize];
+				unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
 
+				// ADD ONE LEAF TO ALL VISIBILITY BYTES
+				for (int i = 1; i < map->leafCount; i++)
+				{
+					if (map->leaves[i].nVisOffset >= 0)
+					{
+						memset(tmpVisData, 0, rowSize);
+						DecompressVis(map->visdata + map->leaves[i].nVisOffset, tmpVisData, rowSize, map->leafCount - 1, map->visDataLength - map->leaves[i].nVisOffset);
+
+						if (last_leaf > 0)
+							CLEARVISBIT(tmpVisData, last_leaf - 1);
+
+						memset(tmpCompressed, 0, MAX_MAP_LEAVES / 8);
+						int size = CompressVis(tmpVisData, rowSize, tmpCompressed, MAX_MAP_LEAVES / 8);
+
+						map->leaves[i].nVisOffset = map->visDataLength;
+
+						unsigned char* newVisLump = new unsigned char[map->visDataLength + size];
+						memcpy(newVisLump, map->visdata, map->visDataLength);
+						memcpy(newVisLump + map->visDataLength, tmpCompressed, size);
+						map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
+					}
+				}
+
+				delete[] tmpCompressed;
+				delete[] tmpVisData;
+
+				// repack visdata
+				auto removed = map->remove_unused_model_structures(CLEAN_VISDATA);
+
+				if (!removed.allZero())
+					removed.print_delete_stats(1);
 			}
 			ImGui::PopStyleColor();
 
-			ImGui::EndDisabled();
 			if (last_leaf == 0)
 				ImGui::EndDisabled();
 
@@ -9739,7 +9797,7 @@ void Gui::drawFaceEditorWidget()
 				tmpLeaf.nMins = mins;
 				tmpLeaf.nMaxs = maxs;
 
-				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES );
+				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES);
 
 
 				mapRenderer->leafCube->mins = tmpLeaf.nMins;
