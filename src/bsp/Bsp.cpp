@@ -6560,7 +6560,7 @@ bool Bsp::cull_leaf_faces(int leafIdx)
 	BSPLEAF32& leaf = leaves[leafIdx];
 	int rowSize = (((leafCount - 1) + 63) & ~63) >> 3;
 	unsigned char* visData = new unsigned char[rowSize];
-	memset(visData, 0, rowSize);
+	memset(visData, 0xFF, rowSize);
 	DecompressVis(visdata + leaf.nVisOffset, visData, rowSize, leafCount - 1, visDataLength - leaf.nVisOffset);
 
 	std::vector<int> faces_to_remove;

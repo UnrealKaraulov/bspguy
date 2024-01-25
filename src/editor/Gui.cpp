@@ -8507,9 +8507,13 @@ void Gui::drawLightMapTool()
 }
 void Gui::drawFaceEditorWidget()
 {
+	static float scroll_x = 0.0f;
+	static float scroll_y = 0.0f;
+
+	ImGui::SetNextWindowScroll(ImVec2(scroll_x, scroll_y));
+	
 	ImGui::SetNextWindowSize(ImVec2(300.f, 570.f), ImGuiCond_FirstUseEver);
 	//ImGui::SetNextWindowSize(ImVec2(400, 600));
-
 	bool beginFaceEditor = ImGui::Begin(fmt::format("{} {}###FACE_EDITOR_WIDGET", get_localized_string(LANG_0870),
 		app->pickInfo.selectedFaces.size() != 1 ? std::string() : std::to_string(app->pickInfo.selectedFaces[0])).c_str(), &showFaceEditWidget);
 
@@ -9125,13 +9129,14 @@ void Gui::drawFaceEditorWidget()
 		static bool auto_update_leaf = true;
 		static std::vector<size_t> last_faces;
 
+		int rowSize = (((map->leafCount - 1) + 63) & ~63) >> 3;
 		if (leaf_decompress && last_leaf != -1 && last_leaf < map->leafCount)
 		{
 			if (visData)
 			{
 				delete[] visData;
+				visData = NULL;
 			}
-			int rowSize = (((map->leafCount - 1) + 63) & ~63) >> 3;
 			visData = new unsigned char[rowSize];
 			memset(visData, 0, rowSize);
 			DecompressVis(map->visdata + map->leaves[last_leaf].nVisOffset, visData, rowSize, map->leafCount - 1, map->visDataLength - map->leaves[last_leaf].nVisOffset);
@@ -9153,9 +9158,6 @@ void Gui::drawFaceEditorWidget()
 					invis_leafs.push_back(l);
 				}
 			}
-
-			std::sort(vis_leafs.begin(), vis_leafs.end());
-			std::sort(invis_leafs.begin(), invis_leafs.end());
 		}
 		leaf_decompress = false;
 
@@ -9627,9 +9629,9 @@ void Gui::drawFaceEditorWidget()
 				std::vector<int> visLeafs;
 				map->modelLeafs(0, visLeafs);
 
-
 				for (auto l : visLeafs)
 				{
+					print_log("{}\n", l);
 					vis_leafs.push_back(l);
 				}
 				need_compress = true;
@@ -9642,11 +9644,13 @@ void Gui::drawFaceEditorWidget()
 			{
 				invis_leafs.clear();
 				vis_leafs.clear();
+
 				std::vector<int> visLeafs;
 				map->modelLeafs(0, visLeafs);
 
 				for (auto l : visLeafs)
 				{
+					print_log("{}\n", l);
 					invis_leafs.push_back(l);
 				}
 				need_compress = true;
@@ -9755,6 +9759,14 @@ void Gui::drawFaceEditorWidget()
 
 				mins = tmpNode.nMins;
 				maxs = tmpNode.nMaxs;
+
+
+				if (ImGui::Button("Same as leaf"))
+				{
+					mins = tmpLeaf.nMins;
+					maxs = tmpLeaf.nMaxs;
+					updatedLeafVec = true;
+				}
 
 				ImGui::TextUnformatted(fmt::format("Leaf node [{}] mins/maxs", nodeIdx).c_str());
 
@@ -9892,7 +9904,6 @@ void Gui::drawFaceEditorWidget()
 			if (need_compress)
 			{
 				leaf_decompress = true;
-				int rowSize = (((map->leafCount - 1) + 63) & ~63) >> 3;
 				memset(visData, 0, rowSize);
 
 				for (auto sel : vis_leafs)
@@ -9900,13 +9911,12 @@ void Gui::drawFaceEditorWidget()
 					SETVISBIT(visData, sel - 1);
 				}
 
-				for (auto unsel : invis_leafs)
-				{
-					CLEARVISBIT(visData, unsel - 1);
-				}
+				//for (auto unsel : invis_leafs)
+				//{
+				//	CLEARVISBIT(visData, unsel - 1);
+				//}
 
-
-				unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES / 8];
+				unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES * 8];
 				memset(compressed, 0, MAX_MAP_LEAVES / 8);
 				int size = CompressVis(visData, rowSize, compressed, MAX_MAP_LEAVES / 8);
 
@@ -9916,16 +9926,23 @@ void Gui::drawFaceEditorWidget()
 				memcpy(newVisLump + map->visDataLength, compressed, size);
 				map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
 
+				delete[] compressed;
+
 				auto removed = map->remove_unused_model_structures(CLEAN_VISDATA);
 
 				if (!removed.allZero())
 					removed.print_delete_stats(1);
 
-				delete[] compressed;
-
 				mapRenderer->pushModelUndoState("UPDATE VIS LUMP", FL_LEAVES | FL_MARKSURFACES);
 			}
 		}
+	}
+
+	if (g_app->curLeftMouse != GLFW_RELEASE
+		|| g_app->oldLeftMouse != GLFW_RELEASE)
+	{
+		scroll_x = ImGui::GetScrollX();
+		scroll_y = ImGui::GetScrollY();
 	}
 	ImGui::End();
 }
