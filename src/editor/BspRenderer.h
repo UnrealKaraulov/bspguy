@@ -58,27 +58,23 @@ struct FaceMath
 
 struct RenderEnt
 {
-	mat4x4 modelMat4x4; // model matrix for rendering with angles
-	mat4x4 modelMat4x4_calc; // model matrix for rendering with angles
+	mat4x4 modelMat4x4; // model matrix for rendering
+	mat4x4 modelMat4x4_angles; // model matrix for rendering with angles
+	mat4x4 modelMat4x4_calc;
+	mat4x4 modelMat4x4_calc_angles;
 	vec3 offset; // vertex transformations for picking
 	vec3 angles; // support angles
 	int modelIdx; // -1 = point entity
 	EntCube* pointEntCube;
 	bool needAngles;
+	bool isDuplicateModel;
 	StudioModel* mdl;
 	Sprite* spr;
 	std::string mdlFileName;
-	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), offset(vec3()), angles(vec3())
+	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()), modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
 	{
+		isDuplicateModel = false;
 		needAngles = false;
-		modelIdx = 0;
-		pointEntCube = NULL;
-		mdl = NULL;
-		mdlFileName = "";
-		spr = NULL;
-	}
-	~RenderEnt()
-	{
 		modelIdx = 0;
 		pointEntCube = NULL;
 		mdl = NULL;

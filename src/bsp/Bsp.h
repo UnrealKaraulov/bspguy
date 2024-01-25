@@ -133,6 +133,8 @@ public:
 	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1);
 
 	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
+	size_t modelLeafs(int modelIdx, std::vector<int>& modelLeafs);
+	size_t modelLeafs(const BSPMODEL& model, std::vector<int>& modelLeafs);
 	int pointContents(int iNode, const vec3& p, int hull);
 	const char* getLeafContentsName(int contents);
 
@@ -336,6 +338,7 @@ private:
 	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes, int * removeddata = NULL);
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 
+	void recurse_node_leafs(int nodeIdx, std::vector<int>& outLeafs);
 
 	bool load_lumps(std::string fname);
 

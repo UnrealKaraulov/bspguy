@@ -9133,19 +9133,24 @@ void Gui::drawFaceEditorWidget()
 			}
 			int rowSize = (((map->leafCount - 1) + 63) & ~63) >> 3;
 			visData = new unsigned char[rowSize];
-			memset(visData, 0xFF, rowSize);
+			memset(visData, 0, rowSize);
 			DecompressVis(map->visdata + map->leaves[last_leaf].nVisOffset, visData, rowSize, map->leafCount - 1, map->visDataLength - map->leaves[last_leaf].nVisOffset);
 			vis_leafs.clear();
 			invis_leafs.clear();
-			for (int l = 0; l < map->models[0].nVisLeafs; l++)
+			std::vector<int> visLeafs;
+			map->modelLeafs(0, visLeafs);
+
+			for (auto l : visLeafs)
 			{
-				if (CHECKVISBIT(visData, l))
+				if (l == 0)
+					continue;
+				if (CHECKVISBIT(visData, l - 1))
 				{
-					vis_leafs.push_back(l + 1);
+					vis_leafs.push_back(l);
 				}
 				else
 				{
-					invis_leafs.push_back(l + 1);
+					invis_leafs.push_back(l);
 				}
 			}
 
@@ -9154,25 +9159,38 @@ void Gui::drawFaceEditorWidget()
 		}
 		leaf_decompress = false;
 
-		if (last_leaf != mapRenderer->curLeafIdx && (auto_update_leaf || new_last_leaf))
+		if ((last_leaf != mapRenderer->curLeafIdx && auto_update_leaf) || new_last_leaf)
 		{
-			if (!new_last_leaf || (last_leaf < 0 && last_leaf >= map->leafCount))
-				last_leaf = mapRenderer->curLeafIdx;
-
-			if (last_leaf >= 0 && auto_update_leaf)
+			if (auto_update_leaf)
+			{
+				if (last_leaf != mapRenderer->curLeafIdx)
+				{
+					last_leaf = mapRenderer->curLeafIdx;
+					leaf_decompress = true;
+				}
+			}
+			if (new_last_leaf)
 			{
 				leaf_decompress = true;
 			}
 
-			BSPLEAF32& tmpLeaf = map->leaves[last_leaf];
+			if (last_leaf < 0 && last_leaf >= map->leafCount)
+			{
+				leaf_decompress = false;
+			}
+			else
+			{
+				BSPLEAF32& tmpLeaf = map->leaves[last_leaf];
 
-			mapRenderer->leafCube->mins = tmpLeaf.nMins;
-			mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
+				mapRenderer->leafCube->mins = tmpLeaf.nMins;
+				mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
 
-			g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
+				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
 
-			leaf_faces = map->getLeafFaces(last_leaf);
-			last_leaf_mdl = map->get_model_from_leaf(last_leaf);
+				leaf_faces = map->getLeafFaces(last_leaf);
+				last_leaf_mdl = map->get_model_from_leaf(last_leaf);
+			}
+			new_last_leaf = false;
 		}
 
 		if (leaf_decompress)
@@ -9354,6 +9372,13 @@ void Gui::drawFaceEditorWidget()
 				ImGui::EndChild();
 			}
 
+			ImGui::Separator();
+
+			ImVec4 errorColor = { 1.0, 0.0, 0.0, 1.0 };
+			ImGui::PushStyleColor(ImGuiCol_Text, errorColor);
+			ImGui::TextUnformatted("Leaves");
+			ImGui::PopStyleColor(1);
+
 			if (ImGui::Checkbox("Auto update", &auto_update_leaf) && auto_update_leaf)
 			{
 				if (last_leaf >= 0)
@@ -9405,16 +9430,21 @@ void Gui::drawFaceEditorWidget()
 				{
 					vis_debugger_press = true;
 
+					std::vector<int> visLeafs;
+					map->modelLeafs(0, visLeafs);
+
 					for (int l = 0; l < map->leafCount - 1; l++)
 					{
-						if (l < map->models[0].nVisLeafs)
+						if (std::find(visLeafs.begin(), visLeafs.end(), l) != visLeafs.end())
 						{
-							if (l == last_leaf || CHECKVISBIT(visData, l))
+							if (l == 0)
+								continue;
+							if (l == last_leaf || CHECKVISBIT(visData, l - 1))
 							{
 							}
 							else
 							{
-								auto faceList = map->getLeafFaces(l + 1);
+								auto faceList = map->getLeafFaces(l);
 								for (const auto& idx : faceList)
 								{
 									mapRenderer->highlightFace(idx, 1);
@@ -9431,11 +9461,13 @@ void Gui::drawFaceEditorWidget()
 						}
 					}
 
-					for (int l = 0; l < map->models[0].nVisLeafs; l++)
+					for (auto l : visLeafs)
 					{
-						if (l == last_leaf || CHECKVISBIT(visData, l))
+						if (l == 0)
+							continue;
+						if (l == last_leaf || CHECKVISBIT(visData, l - 1))
 						{
-							auto faceList = map->getLeafFaces(l + 1);
+							auto faceList = map->getLeafFaces(l);
 							for (const auto& idx : faceList)
 							{
 								mapRenderer->highlightFace(idx, 2);
@@ -9567,9 +9599,14 @@ void Gui::drawFaceEditorWidget()
 			{
 				invis_leafs.clear();
 				vis_leafs.clear();
-				for (int l = 0; l < map->models[0].nVisLeafs; l++)
+
+				std::vector<int> visLeafs;
+				map->modelLeafs(0, visLeafs);
+
+
+				for (auto l : visLeafs)
 				{
-					vis_leafs.push_back(l + 1);
+					vis_leafs.push_back(l);
 				}
 				need_compress = true;
 			}
@@ -9581,9 +9618,12 @@ void Gui::drawFaceEditorWidget()
 			{
 				invis_leafs.clear();
 				vis_leafs.clear();
-				for (int l = 0; l < map->models[0].nVisLeafs; l++)
+				std::vector<int> visLeafs;
+				map->modelLeafs(0, visLeafs);
+
+				for (auto l : visLeafs)
 				{
-					invis_leafs.push_back(l + 1);
+					invis_leafs.push_back(l);
 				}
 				need_compress = true;
 			}
@@ -9594,7 +9634,10 @@ void Gui::drawFaceEditorWidget()
 
 			if (ImGui::Button("Mark visible for all"))
 			{
-				for (int l = 0; l < map->models[0].nVisLeafs; l++)
+				std::vector<int> visLeafs;
+				map->modelLeafs(0, visLeafs);
+
+				for (auto l : visLeafs)
 				{
 
 				}
@@ -9670,20 +9713,20 @@ void Gui::drawFaceEditorWidget()
 				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES | FL_MARKSURFACES);
 
 
-
 				mapRenderer->leafCube->mins = tmpLeaf.nMins;
 				mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
 
 				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
 			}
 
-			/*	if (ImGui::Button("Create duplicate"))
-				{
-					last_leaf = map->clone_world_leaf(last_leaf);
-					BSPLEAF32& leaf = map->leaves[last_leaf];
-					app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
-					mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_MODELS);
-				}*/
+			if (ImGui::Button("Create duplicate"))
+			{
+				last_leaf = map->clone_world_leaf(last_leaf);
+				mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_NODES | FL_MARKSURFACES | FL_VISIBILITY );
+				BSPLEAF32& leaf = map->leaves[last_leaf];
+				app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
+			}
+
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();
@@ -9709,6 +9752,7 @@ void Gui::drawFaceEditorWidget()
 
 
 				unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES / 8];
+				memset(compressed, 0, MAX_MAP_LEAVES / 8);
 				int size = CompressVis(visData, rowSize, compressed, MAX_MAP_LEAVES / 8);
 
 				map->leaves[last_leaf].nVisOffset = map->visDataLength;

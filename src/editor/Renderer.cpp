@@ -2311,8 +2311,6 @@ void Renderer::addMap(Bsp* map)
 
 	mapRenderers.push_back(mapRenderer);
 
-	mapRenderer->saveLumpState();
-
 	gui->checkValidHulls();
 
 	// Pick default map

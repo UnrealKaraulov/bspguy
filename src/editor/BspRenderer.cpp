@@ -1558,9 +1558,9 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 {
 	if (!map->ents[entIdx]->hasKey("classname"))
 	{
-		renderEnts[entIdx].modelMat4x4.rotateY((angles.y * (PI / 180.0f)));
-		renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
-		renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
 		renderEnts[entIdx].needAngles = false;
 	}
 	else
@@ -1570,9 +1570,9 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		if (entClassName == "func_breakable")
 		{
 			renderEnts[entIdx].angles.y = 0.0f;
-			renderEnts[entIdx].modelMat4x4.rotateY(0.0f);
-			renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
-			renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
+			renderEnts[entIdx].modelMat4x4_angles.rotateY(0.0f);
+			renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
+			renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
 		}
 		else if (IsEntNotSupportAngles(entClassName))
 		{
@@ -1583,15 +1583,15 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 			if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
 			{
 				renderEnts[entIdx].angles.z = 0.0f;
-				renderEnts[entIdx].modelMat4x4.rotateY(0.0);
-				renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4.rotateX((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateY(0.0);
+				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.y * (PI / 180.0f)));
 			}
 			else
 			{
-				renderEnts[entIdx].modelMat4x4.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
 			}
 		}
 		else
@@ -1601,18 +1601,18 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 			{
 				if (entClassName.starts_with(prefix))
 				{
-					renderEnts[entIdx].modelMat4x4.rotateY((angles.y * (PI / 180.0f)));
-					renderEnts[entIdx].modelMat4x4.rotateZ((angles.x * (PI / 180.0f)));
-					renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4_angles.rotateZ((angles.x * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
 					foundAngles = true;
 					break;
 				}
 			}
 			if (!foundAngles)
 			{
-				renderEnts[entIdx].modelMat4x4.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4.rotateX((angles.z * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
 			}
 		}
 	}
@@ -1632,9 +1632,26 @@ void BspRenderer::refreshEnt(int entIdx)
 	int body = -1;
 
 	Entity* ent = map->ents[entIdx];
+
 	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
 	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
-	renderEnts[entIdx].modelMat4x4.loadIdentity();
+	renderEnts[entIdx].isDuplicateModel = false;
+
+	if (renderEnts[entIdx].modelIdx >= 0)
+	{
+		for (size_t i = 0; i < map->ents.size(); i++)
+		{
+			if (i != entIdx)
+			{
+				if (map->ents[i]->getBspModelIdx() == renderEnts[entIdx].modelIdx)
+				{
+					renderEnts[entIdx].isDuplicateModel = true;
+					break;
+				}
+			}
+		}
+	}
+
 	renderEnts[entIdx].offset = vec3();
 	renderEnts[entIdx].angles = vec3();
 	renderEnts[entIdx].needAngles = false;
@@ -1642,7 +1659,10 @@ void BspRenderer::refreshEnt(int entIdx)
 	bool setAngles = false;
 
 	vec3 origin = ent->getOrigin();
+	renderEnts[entIdx].modelMat4x4.loadIdentity();
 	renderEnts[entIdx].modelMat4x4.translate(origin.x, origin.z, -origin.y);
+	renderEnts[entIdx].modelMat4x4_angles.loadIdentity();
+	renderEnts[entIdx].modelMat4x4_angles.translate(origin.x, origin.z, -origin.y);
 	renderEnts[entIdx].offset = origin;
 
 	for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
@@ -2249,6 +2269,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		map->pointContents(headNode, localCameraOrigin, 0, nodeBranch, curLeafIdx, childIdx);
 		if (curLeafIdx < 0)
 			curLeafIdx = 0;
+
 		if (g_app->pickMode == PICK_FACE_LEAF)
 		{
 			if (!g_app->gui->showFaceEditWidget)
@@ -2278,6 +2299,8 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			RenderEnt& ent = renderEnts[i];
 			ent.modelMat4x4_calc = ent.modelMat4x4;
 			ent.modelMat4x4_calc.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+			ent.modelMat4x4_calc_angles = ent.modelMat4x4_angles;
+			ent.modelMat4x4_calc_angles.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 		}
 	}
 
@@ -2286,21 +2309,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	if (g_render_flags & RENDER_POINT_ENTS)
 	{
-		if (g_app->pickMode == PICK_FACE_LEAF)
-		{
-			glDepthMask(GL_FALSE);
-			glDepthFunc(GL_ALWAYS);
-			glDisable(GL_CULL_FACE);
-			glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
-			g_app->matmodel.loadIdentity();
-			g_app->colorShader->updateMatrixes();
-			leafCube->wireframeBuffer->drawFull();
-			glLineWidth(1.3f);
-			glEnable(GL_CULL_FACE);
-			glDepthMask(GL_TRUE);
-			glDepthFunc(GL_LESS);
-		}
-
 		drawPointEntities(highlightEnts, REND_PASS_COLORSHADER);
 		drawPointEntities(highlightEnts, REND_PASS_MODELSHADER);
 	}
@@ -2340,8 +2348,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 					if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 					{
 						g_app->bspShader->pushMatrix();
-						g_app->matmodel = renderEnts[i].modelMat4x4_calc;
-						g_app->bspShader->updateMatrixes();
 						drawModel(&renderEnts[i], pass, false, false);
 						g_app->bspShader->popMatrix();
 					}
@@ -2355,7 +2361,15 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		if (g_render_flags & RENDER_WORLD_CLIPNODES && clipnodeHull != -1)
 		{
 			if (!map->ents[0]->hide)
+			{
+				g_app->colorShader->bind();
+				g_app->colorShader->pushMatrix();
+				g_app->matmodel.loadIdentity();
+				g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				g_app->colorShader->updateMatrixes();
 				drawModelClipnodes(0, false, clipnodeHull);
+				g_app->colorShader->popMatrix();
+			}
 		}
 
 		if (g_render_flags & RENDER_ENT_CLIPNODES)
@@ -2364,7 +2378,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			{
 				if (map->ents[i]->hide)
 					continue;
-				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
+				if (renderEnts[i].modelIdx > 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
 					if (clipnodeHull == -1 && renderModels[renderEnts[i].modelIdx].groupCount > 0)
 					{
@@ -2372,7 +2386,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 					}
 					g_app->colorShader->bind();
 					g_app->colorShader->pushMatrix();
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
 
 					bool hightlighted = g_app->pickInfo.IsSelectedEnt(i);
@@ -2420,8 +2434,6 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 					continue;
 				if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 				{
-					g_app->matmodel = renderEnts[highlightEnt].modelMat4x4_calc;
-					g_app->bspShader->updateMatrixes();
 					drawModel(&renderEnts[highlightEnt], pass, true, false);
 				}
 			}
@@ -2437,6 +2449,26 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			glDepthFunc(GL_LESS);
 		}
 	}
+
+
+
+	if (g_app->pickMode == PICK_FACE_LEAF)
+	{
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
+		glDisable(GL_CULL_FACE);
+		glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
+		g_app->colorShader->bind();
+		g_app->matmodel.loadIdentity();
+		g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+		g_app->colorShader->updateMatrixes();
+		leafCube->wireframeBuffer->drawFull();
+		glLineWidth(1.3f);
+		glEnable(GL_CULL_FACE);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+	}
+
 	delayLoadData();
 }
 
@@ -2517,11 +2549,15 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 		return;
 	}
 
+
 	if (pass == REND_PASS_COLORSHADER)
 	{
 		RenderModel& rend_mdl = renderModels[modelIdx];
 		if (rend_mdl.wireframeBuffer)
 		{
+			if (ent && ent->isDuplicateModel)
+				rend_mdl.wireframeBuffer->frameId--;
+
 			if (highlight || (g_render_flags & RENDER_WIREFRAME))
 			{
 				if (highlight && !rend_mdl.highlighted)
@@ -2552,16 +2588,35 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 						}
 					}
 				}
-				rend_mdl.wireframeBuffer->drawFull();
-			}
 
-
-			if (ent && ent->needAngles)
-			{
 				g_app->colorShader->pushMatrix();
-				g_app->matmodel = ent->modelMat4x4_calc;
-				g_app->colorShader->updateMatrixes();
-				rend_mdl.wireframeBuffer->drawFull();
+
+				if (ent && ent->needAngles)
+				{
+					if (highlight)
+					{
+						glLineWidth(std::min(g_app->lineWidthRange[1], 3.0f));
+						g_app->matmodel = ent->modelMat4x4_calc;
+						g_app->colorShader->updateMatrixes();
+						rend_mdl.wireframeBuffer->drawFull();
+						rend_mdl.wireframeBuffer->frameId--;
+						glLineWidth(1.3f);
+					}
+
+					g_app->matmodel = ent->modelMat4x4_calc_angles;
+					g_app->colorShader->updateMatrixes();
+					rend_mdl.wireframeBuffer->drawFull();
+				}
+				else
+				{
+					if (ent)
+					{
+						g_app->matmodel = ent->modelMat4x4_calc;
+						g_app->colorShader->updateMatrixes();
+					}
+					rend_mdl.wireframeBuffer->drawFull();
+				}
+
 				g_app->colorShader->popMatrix();
 			}
 		}
@@ -2590,9 +2645,13 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 		if (pass == REND_PASS_BSPSHADER_TRANSPARENT)
 		{
-			if (!edgesOnly)
+			if (!edgesOnly && rgroup.buffer)
 			{
+				if (ent && ent->isDuplicateModel)
+					rgroup.buffer->frameId--;
+
 				g_app->bspShader->bind();
+				g_app->bspShader->pushMatrix();
 				if (texturesLoaded && g_render_flags & RENDER_TEXTURES)
 				{
 					rgroup.texture->bind(0);
@@ -2636,20 +2695,29 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 						}
 					}
 				}
-				rgroup.buffer->drawFull();
+
 				if (ent)
+				{
+					g_app->matmodel = ent->modelMat4x4_calc_angles;
+					g_app->bspShader->updateMatrixes();
+				}
+
+				rgroup.buffer->drawFull();
+
+				if (ent && ent->needAngles && !highlight)
 				{
 					for (int s = 0; s < MAX_LIGHTMAPS; s++)
 					{
 						whiteTex->bind(s + 1);
 					}
 
-					g_app->bspShader->pushMatrix();
 					g_app->matmodel = ent->modelMat4x4_calc;
 					g_app->bspShader->updateMatrixes();
+					rgroup.buffer->frameId--;
 					rgroup.buffer->drawFull();
-					g_app->bspShader->popMatrix();
 				}
+
+				g_app->bspShader->popMatrix();
 			}
 		}
 	}
@@ -3186,7 +3254,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 				differences[i] = true;
 				if (g_verbose)
 				{
-					print_log(get_localized_string(LANG_0291), g_lump_names[i], newLumps.lumps[i].size(), undoLumpState.lumps[i].size());
+					print_log(get_localized_string(LANG_0291), g_lump_names[i], undoLumpState.lumps[i].size(), newLumps.lumps[i].size());
 				}
 				targetLumps = targetLumps | (1 << i);
 			}
