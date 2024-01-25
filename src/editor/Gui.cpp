@@ -9186,7 +9186,31 @@ void Gui::drawFaceEditorWidget()
 				mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
 
 				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
+				std::vector<int> leafNodes;
+				map->get_leaf_nodes(last_leaf, leafNodes);
 
+				if (leafNodes.size())
+				{
+					BSPNODE32 node = map->nodes[leafNodes[0]];
+
+					mapRenderer->nodeCube->mins = node.nMins;
+					mapRenderer->nodeCube->maxs = node.nMaxs;
+
+					g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodeCube);
+
+					//BSPPLANE plane = map->planes[node.iPlane];
+
+					//float d = dotProduct(plane.vNormal, cameraOrigin) - plane.fDist;
+
+					//mapRenderer->nodePlaneCube->mins = node.nMins;
+					//mapRenderer->nodePlaneCube->maxs = node.nMaxs;
+
+					//mapRenderer->nodePlaneCube->mins += plane.vNormal * d;
+					//mapRenderer->nodePlaneCube->maxs += plane.vNormal * d;
+
+					//g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodePlaneCube);
+				}
+			
 				leaf_faces = map->getLeafFaces(last_leaf);
 				last_leaf_mdl = map->get_model_from_leaf(last_leaf);
 			}
@@ -9295,13 +9319,13 @@ void Gui::drawFaceEditorWidget()
 					ImGui::EndTooltip();
 				}
 
-				if (ImGui::Button(fmt::format("DEL FROM {} LEAF", mapRenderer->curLeafIdx).c_str()))
+				if (ImGui::Button(fmt::format("DEL FROM {} LEAF", last_leaf).c_str()))
 				{
 					auto selected_faces = app->pickInfo.selectedFaces;
 					std::sort(selected_faces.begin(), selected_faces.end());
 					while (selected_faces.size())
 					{
-						map->leaf_del_face((int)selected_faces[selected_faces.size() - 1], mapRenderer->curLeafIdx);
+						map->leaf_del_face((int)selected_faces[selected_faces.size() - 1], last_leaf);
 						selected_faces.pop_back();
 					}
 
@@ -9320,13 +9344,13 @@ void Gui::drawFaceEditorWidget()
 					ImGui::EndTooltip();
 				}
 
-				if (ImGui::Button(fmt::format("ADD TO {} LEAF", mapRenderer->curLeafIdx).c_str()))
+				if (ImGui::Button(fmt::format("ADD TO {} LEAF", last_leaf).c_str()))
 				{
 					auto selected_faces = app->pickInfo.selectedFaces;
 					std::sort(selected_faces.begin(), selected_faces.end());
 					while (selected_faces.size())
 					{
-						map->leaf_add_face((int)selected_faces[selected_faces.size() - 1], mapRenderer->curLeafIdx);
+						map->leaf_add_face((int)selected_faces[selected_faces.size() - 1], last_leaf);
 						selected_faces.pop_back();
 					}
 
@@ -9393,7 +9417,7 @@ void Gui::drawFaceEditorWidget()
 				int tmp_new_leaf = last_leaf;
 				if (ImGui::InputInt("##inputleaf", &tmp_new_leaf, 1, 1))
 				{
-					if (tmp_new_leaf != last_leaf)
+					if (tmp_new_leaf != last_leaf && last_leaf >= 0 && last_leaf < map->leafCount)
 					{
 						last_leaf = tmp_new_leaf;
 						new_last_leaf = true;
@@ -9673,7 +9697,7 @@ void Gui::drawFaceEditorWidget()
 
 			vertIdx++;
 			ImGui::SameLine();
-			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &mins.y, 0.0f, 0, 0, "Y2:%.2f"))
+			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &mins.y, 0.0f, 0, 0, "Y1:%.2f"))
 			{
 				updatedLeafVec = true;
 			}
@@ -9700,29 +9724,160 @@ void Gui::drawFaceEditorWidget()
 
 			vertIdx++;
 			ImGui::SameLine();
-			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &maxs.z, 0.0f, 0, 0, "Z3:%.2f"))
+			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &maxs.z, 0.0f, 0, 0, "Z2:%.2f"))
 			{
 				updatedLeafVec = true;
 			}
+			vertIdx++;
 			ImGui::PopItemWidth();
 			if (updatedLeafVec)
 			{
 				tmpLeaf.nMins = mins;
 				tmpLeaf.nMaxs = maxs;
 
-				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES | FL_MARKSURFACES);
+				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES );
 
 
 				mapRenderer->leafCube->mins = tmpLeaf.nMins;
 				mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
 
 				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
+				updatedLeafVec = false;
+			}
+
+			std::vector<int> leafNodes{};
+			map->get_leaf_nodes(last_leaf, leafNodes);
+
+			if (leafNodes.size())
+			{
+				int nodeIdx = leafNodes[0];
+				BSPNODE32& tmpNode = map->nodes[nodeIdx];
+
+				mins = tmpNode.nMins;
+				maxs = tmpNode.nMaxs;
+
+				ImGui::TextUnformatted(fmt::format("Leaf node [{}] mins/maxs", nodeIdx).c_str());
+
+
+				ImGui::PushItemWidth(105);
+				vertIdx++;
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0423)), vertIdx).c_str(), &mins.x, 0.0f, 0, 0, "X1:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				ImGui::SameLine();
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &mins.y, 0.0f, 0, 0, "Y1:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				ImGui::SameLine();
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &mins.z, 0.0f, 0, 0, "Z1:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0423)), vertIdx).c_str(), &maxs.x, 0.0f, 0, 0, "X2:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				ImGui::SameLine();
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &maxs.y, 0.0f, 0, 0, "Y2:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				ImGui::SameLine();
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &maxs.z, 0.0f, 0, 0, "Z2:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+				vertIdx++;
+				ImGui::PopItemWidth();
+				if (updatedLeafVec)
+				{
+					tmpNode.nMins = mins;
+					tmpNode.nMaxs = maxs;
+
+					mapRenderer->nodeCube->mins = tmpNode.nMins;
+					mapRenderer->nodeCube->maxs = tmpNode.nMaxs;
+
+					g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodeCube);
+					updatedLeafVec = false;
+					mapRenderer->pushModelUndoState("UPDATE LEAF NODE MINS/MAXS", FL_NODES);
+				}
+			}
+
+			map->get_leaf_nodes(last_leaf, leafNodes);
+			if (leafNodes.size())
+			{
+				int nodeIdx = leafNodes[0];
+				BSPNODE32& tmpNode = map->nodes[nodeIdx];
+
+				ImGui::PushItemWidth(105);
+				ImGui::TextUnformatted(fmt::format("Node [{}] plane [{}]", nodeIdx, tmpNode.iPlane).c_str());
+
+
+				BSPPLANE& tmpPlane = map->planes[tmpNode.iPlane];
+				maxs = tmpPlane.vNormal;
+				float dist = tmpPlane.fDist;
+
+				vertIdx++;
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0423)), vertIdx).c_str(), &maxs.x, 0.0f, 0, 0, "X:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				ImGui::SameLine();
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &maxs.y, 0.0f, 0, 0, "Y:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				ImGui::SameLine();
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &maxs.z, 0.0f, 0, 0, "Z:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &dist, 0.0f, 0, 0, "DIST:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				if (updatedLeafVec)
+				{
+					tmpPlane.vNormal = maxs;
+					tmpPlane.fDist = dist;
+
+					/*mapRenderer->nodePlaneCube->mins = { -32,-32,-32 };
+					mapRenderer->nodePlaneCube->maxs = { 32, 32, 32 };
+
+					mapRenderer->nodePlaneCube->mins += tmpPlane.vNormal;
+					mapRenderer->nodePlaneCube->maxs += tmpPlane.vNormal;
+
+					g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodePlaneCube);*/
+					updatedLeafVec = false;
+					mapRenderer->pushModelUndoState("UPDATE LEAF NODE MINS/MAXS", FL_NODES);
+				}
+				ImGui::PopItemWidth();
 			}
 
 			if (ImGui::Button("Create duplicate"))
 			{
 				last_leaf = map->clone_world_leaf(last_leaf);
-				mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_NODES | FL_MARKSURFACES | FL_VISIBILITY );
+				mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_NODES | FL_PLANES | FL_MARKSURFACES | FL_VISIBILITY);
 				BSPLEAF32& leaf = map->leaves[last_leaf];
 				app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
 			}

@@ -24,13 +24,27 @@ BspRenderer::BspRenderer(Bsp* _map)
 	glTextures = NULL;
 	faceMaths = NULL;
 	leafCube = new EntCube();
+	nodeCube = new EntCube();/*
+	nodePlaneCube = new EntCube();*/
 	old_rend_offs = vec3();
 
-	leafCube->color = { 0, 255, 255, 150 };
+	leafCube->sel_color = { 0, 255, 255, 150 };
 	leafCube->mins = { -32.0f,-32.0f,-32.0f };
 	leafCube->maxs = { 32.0f ,32.0f ,32.0f };
 
 	g_app->pointEntRenderer->genCubeBuffers(leafCube);
+
+	nodeCube->sel_color = { 255, 0, 255, 150 };
+	nodeCube->mins = { -32.0f,-32.0f,-32.0f };
+	nodeCube->maxs = { 32.0f ,32.0f ,32.0f };
+
+	g_app->pointEntRenderer->genCubeBuffers(nodeCube);
+
+	//nodePlaneCube->sel_color = { 255, 255, 0, 150 };
+	//nodePlaneCube->mins = { -32.0f,-32.0f,-32.0f };
+	//nodePlaneCube->maxs = { 32.0f ,32.0f ,32.0f };
+
+	//g_app->pointEntRenderer->genCubeBuffers(nodePlaneCube);
 
 
 	lightEnableFlags[0] = lightEnableFlags[1] = lightEnableFlags[2] = lightEnableFlags[3] = true;
@@ -2032,6 +2046,10 @@ BspRenderer::~BspRenderer()
 
 	delete leafCube;
 	leafCube = NULL;
+	delete nodeCube;
+	nodeCube = NULL;/*
+	delete nodePlaneCube;
+	nodePlaneCube = NULL;*/
 
 	deleteTextures();
 	deleteLightmapTextures();
@@ -2280,6 +2298,25 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 				leafCube->maxs = tmpLeaf.nMaxs;
 
 				g_app->pointEntRenderer->genCubeBuffers(leafCube);
+				std::vector<int> leafNodes;
+				map->get_leaf_nodes(curLeafIdx, leafNodes);
+
+				if (leafNodes.size())
+				{
+					BSPNODE32 node = map->nodes[leafNodes[0]];
+
+					nodeCube->mins = node.nMins;
+					nodeCube->maxs = node.nMaxs;
+
+					g_app->pointEntRenderer->genCubeBuffers(nodeCube);/*
+
+					BSPPLANE plane = map->planes[node.iPlane];
+
+					nodePlaneCube->mins = { -32,-32,-32 };
+					nodePlaneCube->maxs = { 32,32,32 };
+					nodePlaneCube->mins += plane.vNormal;
+					g_app->pointEntRenderer->genCubeBuffers(nodePlaneCube);*/
+				}
 			}
 		}
 	}
@@ -2457,12 +2494,16 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 		glDisable(GL_CULL_FACE);
-		glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
+		glLineWidth(std::min(g_app->lineWidthRange[1], 2.0f));
 		g_app->colorShader->bind();
 		g_app->matmodel.loadIdentity();
 		g_app->matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 		g_app->colorShader->updateMatrixes();
 		leafCube->wireframeBuffer->drawFull();
+		glLineWidth(std::min(g_app->lineWidthRange[1], 3.0f));
+		nodeCube->wireframeBuffer->drawFull();/*
+		glLineWidth(std::min(g_app->lineWidthRange[1], 4.0f));
+		nodePlaneCube->wireframeBuffer->drawFull();*/
 		glLineWidth(1.3f);
 		glEnable(GL_CULL_FACE);
 		glDepthMask(GL_TRUE);
@@ -2746,7 +2787,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 			{
 				if (pass == REND_PASS_MODELSHADER)
 				{
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->modelShader->updateMatrixes();
 
 					if (renderEnts[i].mdl)
@@ -2760,7 +2801,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 				}
 				else if (pass == REND_PASS_COLORSHADER)
 				{
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
 
 					if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
@@ -2781,7 +2822,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 			{
 				if (pass == REND_PASS_COLORSHADER)
 				{
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
 
 					renderEnts[i].pointEntCube->axesBuffer->drawFull();
@@ -2806,7 +2847,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 			{
 				if (pass == REND_PASS_MODELSHADER)
 				{
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->modelShader->updateMatrixes();
 
 
@@ -2821,7 +2862,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 				}
 				else if (pass == REND_PASS_COLORSHADER)
 				{
-					//g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					//g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					//g_app->colorShader->updateMatrixes();
 
 					///*if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_cube)
@@ -2835,7 +2876,7 @@ void BspRenderer::drawPointEntities(std::vector<size_t> highlightEnts, int pass)
 			{
 				if (pass == REND_PASS_COLORSHADER)
 				{
-					g_app->matmodel = renderEnts[i].modelMat4x4_calc;
+					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
 
 					renderEnts[i].pointEntCube->axesBuffer->drawFull();

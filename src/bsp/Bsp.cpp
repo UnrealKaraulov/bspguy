@@ -665,6 +665,22 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE
 	}
 }
 
+
+void Bsp::get_leaf_nodes(int leaf, std::vector<int>& out_nodes)
+{
+	for (int i = 0; i < nodeCount; i++)
+	{
+		if (~nodes[i].iChildren[0] == leaf)
+		{
+			out_nodes.push_back(i);
+		}
+		if (~nodes[i].iChildren[1] == leaf)
+		{
+			out_nodes.push_back(i);
+		}
+	}
+}
+
 void Bsp::get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
 {
 	BSPNODE32& node = nodes[iNode];
@@ -6768,8 +6784,39 @@ bool Bsp::remove_face(int faceIdx)
 	return true;
 }
 
+/*
+
+node.child[0] = node_next
+node.child[1] = need_leaf
+
+
+node.child[1] = new_node
+
+new_node.child[0] = new_node2
+new_node_child[1] = old_leaf
+
+new_node2.child[0] = empty_leaf
+new_node2.child[1] = new_leaf
+
+* */
+
 int Bsp::clone_world_leaf(int oldleafIdx)
 {
+	int anyEmptyLeaf = 0;
+	for (int i = 0; i < leafCount; i++)
+	{
+		if (leaves[i].nContents == CONTENTS_EMPTY)
+		{
+			anyEmptyLeaf = i;
+			break;
+		}
+	}
+
+	if (anyEmptyLeaf == 0)
+	{
+		anyEmptyLeaf = create_leaf(CONTENTS_EMPTY);
+	}
+
 	int startup_node_count = nodeCount;
 	for (int i = 0; i < startup_node_count; i++)
 	{
@@ -6779,13 +6826,26 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 			int l = ~node.iChildren[0];
 			if (l == oldleafIdx)
 			{
-				// clone node and add new leaf
-				BSPNODE32* newThisNodes = new BSPNODE32[nodeCount + 1];
-				newThisNodes[nodeCount] = node;
-				node.iChildren[0] = nodeCount;
+				BSPNODE32* newThisNodes = new BSPNODE32[nodeCount + 2];
 				memcpy(newThisNodes, nodes, nodeCount * sizeof(BSPNODE32));
-				newThisNodes[nodeCount].iChildren[1] = ~leafCount;
-				replace_lump(LUMP_NODES, newThisNodes, (nodeCount + 1) * sizeof(BSPNODE32));
+
+				newThisNodes[i].iChildren[0] = nodeCount;
+
+				newThisNodes[nodeCount] = node;
+				newThisNodes[nodeCount].iChildren[0] = ~l;
+				newThisNodes[nodeCount].iChildren[1] = nodeCount + 1;
+				newThisNodes[nodeCount + 1] = node;
+				newThisNodes[nodeCount + 1].iChildren[1] = ~leafCount;
+				newThisNodes[nodeCount + 1].iChildren[0] = ~leafCount;
+				if (newThisNodes[nodeCount + 1].iPlane >= 0)
+				{
+					newThisNodes[nodeCount + 1].iPlane = planeCount;
+					BSPPLANE* newThisPlanes = new BSPPLANE[planeCount + 1];
+					memcpy(newThisPlanes, planes, planeCount * sizeof(BSPPLANE));
+					newThisPlanes[planeCount] = planes[node.iPlane];
+					replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
+				}
+				replace_lump(LUMP_NODES, newThisNodes, (nodeCount + 2) * sizeof(BSPNODE32));
 			}
 		}
 		if (node.iChildren[1] < 0)
@@ -6793,13 +6853,28 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 			int l = ~node.iChildren[1];
 			if (l == oldleafIdx)
 			{
-				// clone node and add new leaf
-				BSPNODE32* newThisNodes = new BSPNODE32[nodeCount + 1];
-				newThisNodes[nodeCount] = node;
-				node.iChildren[1] = nodeCount;
+				BSPNODE32* newThisNodes = new BSPNODE32[nodeCount + 2];
 				memcpy(newThisNodes, nodes, nodeCount * sizeof(BSPNODE32));
-				newThisNodes[nodeCount].iChildren[0] = ~leafCount;
-				replace_lump(LUMP_NODES, newThisNodes, (nodeCount + 1) * sizeof(BSPNODE32));
+
+				newThisNodes[i].iChildren[1] = nodeCount;
+
+				newThisNodes[nodeCount] = node;
+				newThisNodes[nodeCount].iChildren[1] = ~l;
+				newThisNodes[nodeCount].iChildren[0] = nodeCount + 1;
+				newThisNodes[nodeCount + 1] = node;
+				newThisNodes[nodeCount + 1].iChildren[0] = ~leafCount;
+				newThisNodes[nodeCount + 1].iChildren[1] = ~leafCount;;
+
+				if (newThisNodes[nodeCount + 1].iPlane >= 0)
+				{
+					newThisNodes[nodeCount + 1].iPlane = planeCount;
+					BSPPLANE* newThisPlanes = new BSPPLANE[planeCount + 1];
+					memcpy(newThisPlanes, planes, planeCount * sizeof(BSPPLANE));
+					newThisPlanes[planeCount] = planes[node.iPlane];
+					replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
+				}
+
+				replace_lump(LUMP_NODES, newThisNodes, (nodeCount + 2) * sizeof(BSPNODE32));
 			}
 		}
 	}

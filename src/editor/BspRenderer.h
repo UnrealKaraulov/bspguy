@@ -248,6 +248,8 @@ public:
 	std::vector<RenderClipnodes> renderClipnodes;
 	FaceMath* faceMaths;
 	EntCube* leafCube;
+	EntCube* nodeCube;/*
+	EntCube* nodePlaneCube;*/
 
 	size_t numLightmapAtlases;
 

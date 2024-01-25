@@ -163,24 +163,22 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 		vec3(min.x, max.y, max.z), // back-left-top
 	};
 
-	COLOR4 yellow = { 255, 255, 0, 255 };
-
 	// edges
 	cVert selectWireframe[12 * 2] = {
-		cVert(vcube[0], yellow), cVert(vcube[1], yellow), // front-bottom
-		cVert(vcube[1], yellow), cVert(vcube[2], yellow), // right-bottom
-		cVert(vcube[2], yellow), cVert(vcube[3], yellow), // back-bottom
-		cVert(vcube[3], yellow), cVert(vcube[0], yellow), // left-bottom
+		cVert(vcube[0], entCube->sel_color), cVert(vcube[1], entCube->sel_color), // front-bottom
+		cVert(vcube[1], entCube->sel_color), cVert(vcube[2], entCube->sel_color), // right-bottom
+		cVert(vcube[2], entCube->sel_color), cVert(vcube[3], entCube->sel_color), // back-bottom
+		cVert(vcube[3], entCube->sel_color), cVert(vcube[0], entCube->sel_color), // left-bottom
 
-		cVert(vcube[4], yellow), cVert(vcube[5], yellow), // front-top
-		cVert(vcube[5], yellow), cVert(vcube[6], yellow), // right-top
-		cVert(vcube[6], yellow), cVert(vcube[7], yellow), // back-top
-		cVert(vcube[7], yellow), cVert(vcube[4], yellow), // left-top
+		cVert(vcube[4], entCube->sel_color), cVert(vcube[5], entCube->sel_color), // front-top
+		cVert(vcube[5], entCube->sel_color), cVert(vcube[6], entCube->sel_color), // right-top
+		cVert(vcube[6], entCube->sel_color), cVert(vcube[7], entCube->sel_color), // back-top
+		cVert(vcube[7], entCube->sel_color), cVert(vcube[4], entCube->sel_color), // left-top
 
-		cVert(vcube[0], yellow), cVert(vcube[4], yellow), // front-left-pillar
-		cVert(vcube[1], yellow), cVert(vcube[5], yellow), // front-right-pillar
-		cVert(vcube[2], yellow), cVert(vcube[6], yellow), // back-right-pillar
-		cVert(vcube[3], yellow), cVert(vcube[7], yellow) // back-left-pillar
+		cVert(vcube[0], entCube->sel_color), cVert(vcube[4], entCube->sel_color), // front-left-pillar
+		cVert(vcube[1], entCube->sel_color), cVert(vcube[5], entCube->sel_color), // front-right-pillar
+		cVert(vcube[2], entCube->sel_color), cVert(vcube[6], entCube->sel_color), // back-right-pillar
+		cVert(vcube[3], entCube->sel_color), cVert(vcube[7], entCube->sel_color) // back-left-pillar
 	};
 
 	cVert* selectWireframeBuf = new cVert[12 * 2];

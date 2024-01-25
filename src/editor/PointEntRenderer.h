@@ -8,6 +8,7 @@ struct EntCube
 	vec3 mins;
 	vec3 maxs;
 	COLOR4 color;
+	COLOR4 sel_color;
 
 	VertexBuffer* axesBuffer;
 	VertexBuffer* cubeBuffer;
@@ -15,6 +16,15 @@ struct EntCube
 	VertexBuffer* wireframeBuffer; // yellow outline for selected ents
 
 	bool Textured;
+
+	EntCube()
+	{
+		axesBuffer = cubeBuffer = selectBuffer = wireframeBuffer = NULL;
+		mins = maxs = vec3();
+		color = COLOR4(255, 255, 255, 255);
+		sel_color = { 255, 255, 0, 255 };
+		Textured = false;
+	}
 };
 
 class PointEntRenderer
