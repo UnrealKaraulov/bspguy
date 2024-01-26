@@ -44,6 +44,12 @@ struct PathToggleStruct
 	}
 };
 
+struct PaletteData
+{
+	std::string name;
+	unsigned char data[0x300];
+};
+
 struct AppSettings
 {
 	int windowWidth;
@@ -68,6 +74,11 @@ struct AppSettings
 	std::string selected_lang;
 
 	std::vector<std::string> languages;
+
+	std::vector<PaletteData> palettes;
+	std::string palette_name;
+
+	unsigned char palette_data[0x300];
 
 	bool settingLoaded; // Settings loaded
 	bool verboseLogs;
@@ -109,8 +120,10 @@ struct AppSettings
 	void load();
 	void reset();
 	void save();
+private:
 	void save(std::string path);
 	void fillLanguages(const std::string& folderPath);
+	void fillPalettes(const std::string& folderPath);
 };
 
 extern AppSettings g_settings;

@@ -97,6 +97,7 @@ public:
 	BSPMODEL* models;
 
 	bool is_colored_lightmap;
+	bool is_texture_pal;
 
 	std::string bsp_path;
 	std::string bsp_name;
@@ -333,7 +334,6 @@ public:
 	void save_undo_lightmaps(bool logged = false);
 	void resize_all_lightmaps(bool logged = false);
 	bool should_resize_lightmap(LIGHTMAP& oldLightmap, LIGHTMAP& newLightmap);
-	int get_new_lightmaps_data_size();
 
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);

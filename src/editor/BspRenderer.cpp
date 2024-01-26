@@ -381,7 +381,7 @@ void BspRenderer::loadTextures()
 		}
 		else
 		{
-			imageData = ConvertMipTexToRGB(tex, map->is_texture_with_pal(i) ? NULL : (COLOR3*)quakeDefaultPalette);
+			imageData = ConvertMipTexToRGB(tex, map->is_texture_with_pal(i) ? NULL : (COLOR3*)g_settings.palette_data);
 			embedCount++;
 		}
 

@@ -173,6 +173,7 @@ Bsp::Bsp(std::string fpath)
 	is_broken_clipnodes = false;
 	is_blue_shift = false;
 	is_colored_lightmap = true;
+	is_texture_pal = true;
 
 	force_skip_crc = false;
 
@@ -1177,16 +1178,6 @@ bool Bsp::should_resize_lightmap(LIGHTMAP& oldLightmap, LIGHTMAP& newLightmap)
 	return false;
 }
 
-int Bsp::get_new_lightmaps_data_size()
-{
-	int tmpLightDataSz = 0;
-	for (int i = 0; i < faceCount; i++) {
-		int size[2];
-		GetFaceLightmapSize(this, i, size);
-		tmpLightDataSz += size[0] * size[1] * sizeof(COLOR3) * lightmap_count(i);
-	}
-	return tmpLightDataSz;
-}
 
 void Bsp::resize_all_lightmaps(bool logged)
 {
@@ -3599,79 +3590,57 @@ bool Bsp::load_lumps(std::string fpath)
 
 	update_lump_pointers();
 
-	int iFirstFace = -1;
-	int nOffseLight = 0;
 
-	for (int i = faceCount - 1; i >= 0; i--)
+	int lightmap3_bytes = 0;
+	for (int i = 0; i < faceCount; i++)
 	{
-		BSPFACE32& face = faces[i];
-		if (face.nLightmapOffset >= 0 && face.nLightmapOffset < bsp_header.lump[LUMP_LIGHTING].nLength)
+		if (faces[i].nLightmapOffset >= 0)
 		{
-			iFirstFace = i;
-			nOffseLight = face.nLightmapOffset;
-			break;
+			lightmap3_bytes += GetFaceLightmapSizeBytes(this, i);
 		}
 	}
 
-	int iNextFace = -1;
-	int nNextOffseLight = lightDataLength;
-
-	for (int i = iFirstFace - 1; i >= 0; i--)
-	{
-		BSPFACE32& face = faces[i];
-		if (face.nLightmapOffset >= 0 && face.nLightmapOffset < bsp_header.lump[LUMP_LIGHTING].nLength)
-		{
-			if (abs(face.nLightmapOffset - nOffseLight) < abs(nNextOffseLight - nOffseLight))
-			{
-				nNextOffseLight = face.nLightmapOffset;
-				iNextFace = i;
-			}
-		}
-	}
-
-	float fLightSamples = is_bsp2 || is_bsp2_old || is_bsp29 ? 1.0f : 3.0f;
-	//print_log("{} {} {} -> {}\n", is_bsp2, is_bsp2_old, is_bsp29, fLightSamples);
-	if (fLightSamples < 3.0 && iNextFace >= 0 && iFirstFace >= 0 && iFirstFace != iNextFace)
-	{
-		float face1light = GetFaceLightmapSizeBytes(this, iFirstFace) / (float)sizeof(COLOR3);
-		float face2light = GetFaceLightmapSizeBytes(this, iNextFace) / (float)sizeof(COLOR3);
-
-		int memsize = abs(nOffseLight - nNextOffseLight);
-
-		if (iFirstFace > iNextFace)
-		{
-			fLightSamples = memsize / face1light;
-		}
-		else if (iNextFace > iFirstFace)
-		{
-			fLightSamples = memsize / face2light;
-		}
-
-		//print_log(get_localized_string(LANG_0101),fLightSamples,memsize,face1light,face2light);
-
-		if (abs(fLightSamples - (int)fLightSamples) > 0.01f)
-		{
-			memsize = (memsize + 3) & ~3;
-			if (iFirstFace > iNextFace)
-			{
-				fLightSamples = memsize / face1light;
-			}
-			else if (iNextFace > iFirstFace)
-			{
-				fLightSamples = memsize / face2light;
-			}
-			//print_log(get_localized_string(LANG_1021),fLightSamples,memsize,face1light,face2light);
-		}
-	}
-
-	int tmp_is_colored_lightmap = (int)round(fLightSamples);
-	if (tmp_is_colored_lightmap < 1)
-		tmp_is_colored_lightmap = 1;
-
-	is_colored_lightmap = tmp_is_colored_lightmap > 1;
+	int lightmap1_bytes = lightmap3_bytes / 3;
+	is_colored_lightmap = lightdata == NULL || abs(lightmap1_bytes - lightDataLength) > abs(lightmap3_bytes - lightDataLength);
 
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0102), !is_colored_lightmap ? "monochrome" : "colored");
+
+	int textures_bytes = 0;
+	int textures_no_pal_bytes = 0;
+
+	for (int t = 0; t < textureCount; t++)
+	{
+		int iStartOffset = ((int*)textures)[t + 1];
+
+		if (iStartOffset < 0 || iStartOffset + (int)sizeof(BSPMIPTEX) > textureDataLength)
+			continue;
+
+		BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));
+		if (tex->nOffsets[0] > textureDataLength)
+			continue;
+
+		textures_bytes += sizeof(BSPMIPTEX);
+		textures_no_pal_bytes += sizeof(BSPMIPTEX);
+
+		if (tex->nOffsets[0] > 0)
+		{
+			textures_bytes += sizeof(short);
+			textures_no_pal_bytes += sizeof(short);
+
+			textures_bytes += sizeof(COLOR3) * 256;
+
+			for (int i = 0; i < MIPLEVELS; i++)
+			{
+				textures_bytes += (tex->nWidth >> i) * (tex->nHeight >> i);
+				textures_no_pal_bytes += (tex->nWidth >> i) * (tex->nHeight >> i);
+			}
+		}
+	}
+
+	is_texture_pal = textureCount == 0 || textures_no_pal_bytes == textures_bytes || abs(textures_no_pal_bytes - textureDataLength) > abs(textures_bytes - textureDataLength);;
+	if (g_settings.verboseLogs)
+		print_log("Embedded Textures: {}\n", !is_texture_pal ? "quake pal" : "has pal");
 
 	if (!is_colored_lightmap)
 	{
@@ -5331,7 +5300,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			if (is_bsp2 || is_bsp29 || force_quake_pal)
 			{
 				if (!custompal)
-					memcpy(palette, quakeDefaultPalette, 256 * sizeof(COLOR3));
+					memcpy(palette, g_settings.palette_data, 256 * sizeof(COLOR3));
 				Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 				tmpCQuantizer->SetColorTable(palette, 256);
 				tmpCQuantizer->ApplyColorTable((COLOR3*)data, width * height);
@@ -7762,7 +7731,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 				{
 					if (texOffset >= 0)
 					{
-						COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)), is_texture_with_pal(texinfo.iMiptex) ? NULL : (COLOR3*)quakeDefaultPalette);
+						COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)), is_texture_with_pal(texinfo.iMiptex) ? NULL : (COLOR3*)g_settings.palette_data);
 
 						for (int k = 0; k < tex.nHeight * tex.nWidth; k++)
 						{
@@ -8449,44 +8418,15 @@ bool Bsp::is_texture_with_pal(int textureid)
 	if (textureid < 0 || textureid >= textureCount)
 		return false;
 
-	if (bsp_header.nVersion == 30)
-		return true;
 
 	int iStartOffset = ((int*)textures)[textureid + 1];
-	unsigned char* pStartOffset = (unsigned char*)textures + iStartOffset;
-	unsigned char* pEndOffset = (unsigned char*)textures + textureDataLength;
-
 	if (iStartOffset >= 0)
 	{
-		for (int i = 0; i < textureCount; i++)
-		{
-			int iCurOffset = ((int*)textures)[i + 1];
-			if (iCurOffset < 0 || i == textureid || iCurOffset == iStartOffset)
-			{
-				continue;
-			}
-
-			unsigned char* pCurOffset = (unsigned char*)textures + iCurOffset;
-
-			if (pCurOffset < pEndOffset && pCurOffset > pStartOffset)
-			{
-				pEndOffset = pCurOffset;
-			}
-		}
-
 		BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));
 
 		if (tex->nOffsets[0] <= 0) // wad texture
 			return true;
-
-		int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
-		unsigned char* palOffset = pStartOffset + tex->nOffsets[3] + lastMipSize;
-
-		if (abs(palOffset - pEndOffset) >= sizeof(COLOR3) * 256)
-		{
-			return true;
-		}
 	}
 
-	return false;
+	return is_texture_pal;
 }

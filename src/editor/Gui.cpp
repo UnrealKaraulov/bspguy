@@ -2780,8 +2780,6 @@ void Gui::drawMenuBar()
 
 			if (ImGui::BeginMenu("Delete cull faces", map))
 			{
-				int leafIdx = 0;
-
 				if (ImGui::MenuItem("Delete from [SKY LEAFS]"))
 				{
 					map->remove_faces_by_content(CONTENTS_SKY);
@@ -5840,6 +5838,7 @@ void Gui::drawSettings()
 	bool oldShowSettings = showSettingsWidget;
 	bool apply_settings_pressed = false;
 	static std::string langForSelect = g_settings.selected_lang;
+	static std::string palForSelect = g_settings.palette_name;
 
 	if (ImGui::Begin(fmt::format("{}###SETTING_WIDGET", get_localized_string(LANG_1114)).c_str(), &showSettingsWidget))
 	{
@@ -6065,6 +6064,8 @@ void Gui::drawSettings()
 				ImGui::EndTooltip();
 			}
 			ImGui::Separator();
+			ImGui::TextUnformatted("Language:");
+			ImGui::SameLine();
 			if (ImGui::BeginCombo("##lang", langForSelect.c_str()))
 			{
 				for (const auto& s : g_settings.languages)
@@ -6072,6 +6073,20 @@ void Gui::drawSettings()
 					if (ImGui::Selectable(s.c_str(), s == langForSelect))
 					{
 						langForSelect = s;
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::Separator();
+			ImGui::TextUnformatted("Palette:");
+			ImGui::SameLine();
+			if (ImGui::BeginCombo("##pal", palForSelect.c_str()))
+			{
+				for (const auto& s : g_settings.palettes)
+				{
+					if (ImGui::Selectable(s.name.c_str(), s.name == palForSelect))
+					{
+						palForSelect = s.name;
 					}
 				}
 				ImGui::EndCombo();
@@ -6592,6 +6607,7 @@ void Gui::drawSettings()
 	if (oldShowSettings && !showSettingsWidget || apply_settings_pressed)
 	{
 		g_settings.selected_lang = langForSelect;
+		g_settings.palette_name = palForSelect;
 		set_localize_lang(g_settings.selected_lang);
 		g_settings.save();
 		if (!app->reloading)

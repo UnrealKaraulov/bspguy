@@ -987,7 +987,7 @@ int main(int argc, char* argv[])
 		if (::GetConsoleWindow())
 		{
 			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
-}
+		}
 #ifndef NDEBUG
 		SetUnhandledExceptionFilter(unhandled_handler);
 		AddVectoredExceptionHandler(1, unhandled_handler);
@@ -1210,7 +1210,7 @@ int main(int argc, char* argv[])
 			print_help(cli.command);
 			return 1;
 		}
-}
+	}
 	catch (fs::filesystem_error& ex)
 	{
 		std::cout << "std::filesystem fatal error." << std::endl << "what():  " << ex.what() << '\n'
