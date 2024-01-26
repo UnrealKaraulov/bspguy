@@ -355,6 +355,31 @@ Renderer::~Renderer()
 #endif
 }
 
+void Renderer::updateWindowTitle(double _curTime)
+{ 
+	static double lastTitleTime = 0.0f;
+	if (_curTime - lastTitleTime > 0.25)
+	{
+		lastTitleTime = _curTime;
+		if (SelectedMap)
+		{
+			std::string smallPath = SelectedMap->bsp_path;
+			if (smallPath.length() > 51) {
+				smallPath = smallPath.substr(0, 18) + "..." + smallPath.substr(smallPath.length() - 32);
+			}
+			if (g_progress.progress_total > 0)
+			{
+				float percent = (g_progress.progress / (float)g_progress.progress_total) * 100.0f;
+				glfwSetWindowTitle(window, fmt::format("bspguy [fps {:>4}] - [{} = {:.0f}%]", current_fps, g_progress.progress_title, percent).c_str());
+			}
+			else
+			{
+				glfwSetWindowTitle(window, fmt::format("bspguy [fps {:>4}] - {}", current_fps, std::string("bspguy - ") + smallPath).c_str());
+			}
+		}
+	}
+}
+
 void Renderer::renderLoop()
 {
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
@@ -415,7 +440,6 @@ void Renderer::renderLoop()
 
 	oldTime = glfwGetTime();
 	curTime = oldTime;
-	double lastTitleTime = curTime;
 
 	glfwSwapInterval(0);
 	static int vsync = -1;
@@ -455,6 +479,7 @@ void Renderer::renderLoop()
 	else
 		glClearColor(0.0, 0.0, 0.0, 1.0);
 
+
 	while (!glfwWindowShouldClose(window))
 	{
 		oldTime = curTime;
@@ -488,16 +513,8 @@ void Renderer::renderLoop()
 		oldControl = canControl;
 
 		canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
-
-
-		if (curTime - lastTitleTime > 1.0)
-		{
-			lastTitleTime = curTime;
-			if (SelectedMap)
-			{
-				glfwSetWindowTitle(window, fmt::format("bspguy - {} FPS {}", std::string("bspguy - ") + SelectedMap->bsp_path, current_fps).c_str());
-			}
-		}
+		
+		updateWindowTitle(curTime);
 
 		int modelIdx = -1;
 		auto entIdx = pickInfo.GetSelectedEnts();
@@ -2709,10 +2726,13 @@ void Renderer::updateModelVerts()
 		modelFaceVerts.clear();
 	}
 
-	if (modelOriginBuff)
+	if (!modelOriginBuff)
 	{
-		delete modelOriginBuff;
-		modelOriginBuff = NULL;
+		modelOriginBuff = new VertexBuffer(colorShader, &modelOriginCube, 6 * 6, GL_TRIANGLES);
+	}
+	else
+	{
+		modelOriginBuff->uploaded = false;
 	}
 
 	if (modelIdx < 0)
@@ -2722,9 +2742,7 @@ void Renderer::updateModelVerts()
 		return;
 	}
 
-	map->getBspRender()->refreshModel(modelIdx);
-
-	modelOriginBuff = new VertexBuffer(colorShader, &modelOriginCube, 6 * 6, GL_TRIANGLES);
+	//map->getBspRender()->refreshModel(modelIdx);
 
 	updateSelectionSize();
 

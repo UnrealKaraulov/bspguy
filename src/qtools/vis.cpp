@@ -188,6 +188,8 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 		lastChunkMask = lastChunkMask | (1 << k);
 	}
 
+	g_progress.update("Decompress vis", iterationLeaves);
+
 	for (int i = 0; i < iterationLeaves; i++)
 	{
 		g_progress.tick();
@@ -233,6 +235,11 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 			return;
 		}
 	}
+
+
+
+	g_progress.clear();
+	g_progress = ProgressMeter();
 }
 
 //
@@ -356,6 +363,9 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 
 	unsigned char* vismap_p = output;
 
+
+	g_progress.update("Compress vis", iterLeaves);
+
 	int* sharedRows = new int[iterLeaves];
 	for (int i = 0; i < iterLeaves; i++)
 	{
@@ -377,6 +387,9 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 		}
 		g_progress.tick();
 	}
+
+	g_progress.clear();
+	g_progress = ProgressMeter();
 
 	unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES / 8];
 

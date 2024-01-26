@@ -2782,15 +2782,70 @@ void Gui::drawMenuBar()
 			{
 				int leafIdx = 0;
 
-				if (ImGui::MenuItem("Delete from SOLID (0 leaf)"))
+				if (ImGui::MenuItem("Delete from [SKY LEAFS]"))
 				{
-					map->cull_leaf_faces(leafIdx);
+					map->remove_faces_by_content(CONTENTS_SKY);
+
+					rend->loadLightmaps();
+					rend->calcFaceMaths();
+					rend->preRenderFaces();
+					rend->preRenderEnts();
+
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					rend->pushModelUndoState("REMOVE FACES FROM SKY", EDIT_MODEL_LUMPS);
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("WARNING! Can remove unexpected faces if VIS has been edited previously.");
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem("Delete from [SOLID LEAFS]"))
+				{
+					map->remove_faces_by_content(CONTENTS_SOLID);
+
+
+					rend->loadLightmaps();
+					rend->calcFaceMaths();
+					rend->preRenderFaces();
+					rend->preRenderEnts();
+
+					map->update_ent_lump();
+					map->update_lump_pointers();
+					rend->pushModelUndoState("REMOVE FACES FROM SOLID", EDIT_MODEL_LUMPS);
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("WARNING! Can remove unexpected faces if VIS has been edited previously.");
+					ImGui::EndTooltip();
 				}
 				if (rend->curLeafIdx > 0)
 				{
-					if (ImGui::MenuItem(fmt::format("Delete from {} leaf", rend->curLeafIdx).c_str()))
+					if (ImGui::MenuItem(fmt::format("Delete from [{} leaf]", rend->curLeafIdx).c_str()))
 					{
 						map->cull_leaf_faces(rend->curLeafIdx);
+
+
+
+						rend->loadLightmaps();
+						rend->calcFaceMaths();
+						rend->preRenderFaces();
+						rend->preRenderEnts();
+
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						rend->pushModelUndoState(fmt::format("REMOVE FACES FROM {} LEAF", rend->curLeafIdx), EDIT_MODEL_LUMPS);
+					}
+					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+					{
+						ImGui::BeginTooltip();
+						ImGui::TextUnformatted("WARNING! Can remove unexpected faces if VIS has been edited previously.");
+						ImGui::EndTooltip();
 					}
 				}
 				ImGui::EndMenu();
@@ -6715,6 +6770,7 @@ void Gui::drawMergeWindow()
 						print_log(get_localized_string(LANG_1058));
 						STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
 						g_progress.clear();
+						g_progress = ProgressMeter();
 						removed.print_delete_stats(2);
 					}
 
@@ -9447,7 +9503,10 @@ void Gui::drawFaceEditorWidget()
 			ImGui::TextUnformatted(fmt::format("Leaf model id:{}", last_leaf_mdl).c_str());
 
 			if (last_leaf >= 0 && last_leaf < map->leafCount)
+			{
 				ImGui::TextUnformatted(fmt::format("Vis offset:{}", map->leaves[last_leaf].nVisOffset).c_str());
+				ImGui::TextUnformatted(fmt::format("Contents:{}", map->leaves[last_leaf].nContents).c_str());
+			}
 
 
 			if (ImGui::Button(get_localized_string(LANG_0645).c_str()))

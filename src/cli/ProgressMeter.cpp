@@ -4,29 +4,35 @@
 #include <stdio.h> 
 #include "util.h"
 
+#include "Settings.h"
+#include "Renderer.h"
+
 ProgressMeter::ProgressMeter()
 {
+	hide = false;
+	simpleMode = false;
 	progress_total = progress = 0;
-	last_progress_title = progress_title = "";
+	progress_title = "";
 }
 
-void ProgressMeter::update(const char* newTitle, int totalProgressTicks)
+void ProgressMeter::update(const std::string & newTitle, int totalProgressTicks)
 {
 	progress_title = newTitle;
 	progress = 0;
 	progress_total = totalProgressTicks;
 	if (simpleMode && !hide)
 	{
-		print_log(std::string(newTitle) + "\n");
+		print_log(newTitle + "\n");
 	}
 }
 
 void ProgressMeter::tick()
 {
-	if (progress_title[0] == '\0' || simpleMode || hide)
+	if (progress_title[0] == '\0' || hide)
 	{
 		return;
 	}
+
 	if (progress++ > 0)
 	{
 		auto now = std::chrono::system_clock::now();
@@ -38,10 +44,16 @@ void ProgressMeter::tick()
 		last_progress = now;
 	}
 
-	float percent = (progress / (float)progress_total) * 100;
+	if (simpleMode)
+	{
+		g_app->updateWindowTitle(glfwGetTime());
+		return;
+	}
+
+	float percent = (progress / (float)progress_total) * 100.0f;
 
 	for (int i = 0; i < 12; i++) print_log("\b\b\b\b");
-	print_log(get_localized_string(LANG_0266),progress_title,percent);
+		print_log(get_localized_string(LANG_0266),progress_title,percent);
 }
 
 void ProgressMeter::clear()

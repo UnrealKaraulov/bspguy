@@ -125,6 +125,8 @@ public:
 
 	void addMap(Bsp* map);
 
+	void updateWindowTitle(double _curTime);
+
 	void reloadBspModels();
 	void renderLoop();
 	void postLoadFgdsAndTextures();

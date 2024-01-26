@@ -1085,6 +1085,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	{
 		resize_all_lightmaps();
 		g_progress.clear();
+		g_progress = ProgressMeter();
 	}
 
 	return true;
@@ -1157,6 +1158,11 @@ void Bsp::save_undo_lightmaps(bool logged)
 
 		if (logged)
 			g_progress.tick();
+	}
+	if (logged)
+	{
+		g_progress.clear();
+		g_progress = ProgressMeter();
 	}
 }
 
@@ -1242,7 +1248,14 @@ void Bsp::resize_all_lightmaps(bool logged)
 		{
 			face.nLightmapOffset = newLightMapOffset * sizeof(COLOR3);
 		}
-		g_progress.tick();
+		if (logged)
+			g_progress.tick();
+	}
+
+	if (logged)
+	{
+		g_progress.clear();
+		g_progress = ProgressMeter();
 	}
 
 	unsigned char* tmpLump = new unsigned char[newLightData.size() * sizeof(COLOR3)];
@@ -1268,6 +1281,9 @@ void Bsp::split_shared_model_structures(int modelIdx)
 
 		g_progress.tick();
 	}
+
+	g_progress.clear();
+	g_progress = ProgressMeter();
 
 	STRUCTREMAP remappedStuff(this);
 
@@ -2277,18 +2293,17 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 {
 	if (!noProgress)
 	{
-		if (g_verbose)
-			g_progress.update("", 0);
-		else
-			g_progress.update("Deleting unused hulls", modelCount - 1);
+		g_progress.update("Deleting unused hulls", modelCount - 1);
 	}
 
 	int deletedHulls = 0;
 
 	for (int i = 1; i < modelCount; i++)
 	{
-		if (!g_verbose && !noProgress)
+		if (!noProgress)
+		{
 			g_progress.tick();
+		}
 
 		std::vector<Entity*> usageEnts = get_model_ents(i);
 
@@ -2462,9 +2477,10 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 
 	update_ent_lump();
 
-	if (!g_verbose && !noProgress)
+	if (!noProgress)
 	{
 		g_progress.clear();
+		g_progress = ProgressMeter();
 	}
 
 	return removed;
@@ -6596,23 +6612,13 @@ bool Bsp::cull_leaf_faces(int leafIdx)
 		g_progress.tick();
 	}
 
+	g_progress.clear();
+	g_progress = ProgressMeter();
+
 	STRUCTCOUNT count_2(this);
 	count_1.sub(count_2);
 	count_1.print_delete_stats(1);
 
-
-	renderer->loadLightmaps();
-	renderer->calcFaceMaths();
-	renderer->preRenderFaces();
-	renderer->preRenderEnts();
-
-	update_ent_lump();
-	update_lump_pointers();
-
-	if (leafIdx == 0)
-		renderer->pushModelUndoState("REMOVE FACES FROM SOLID(0 leaf)", EDIT_MODEL_LUMPS);
-	else
-		renderer->pushModelUndoState(fmt::format("REMOVE FACES FROM {} leaf", leafIdx), EDIT_MODEL_LUMPS);
 	return true;
 }
 
@@ -6690,6 +6696,49 @@ bool Bsp::leaf_del_face(int faceIdx, int leafIdx)
 	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
 
 	return true;
+}
+
+void Bsp::remove_faces_by_content(int content)
+{
+	std::vector<int> faces_to_remove;
+
+	g_progress.update("Remove faces by content[SEARCH]", faceCount);
+
+	for (int f = 0; f < faceCount; f++)
+	{
+		auto face_leafs = getFaceLeafs(f);
+		bool same_content = true;
+		for (auto l : face_leafs)
+		{
+			if (leaves[l].nContents != content)
+			{
+				same_content = false;
+				break;
+			}
+		}
+		if (same_content)
+		{
+			faces_to_remove.push_back(f);
+		}
+		g_progress.tick();
+	}
+
+	g_progress.update("Remove faces by content[DELETE]", (int)faces_to_remove.size());
+
+	int removedFaces = 0;
+
+	while (faces_to_remove.size())
+	{
+		remove_face(faces_to_remove[faces_to_remove.size() - 1]);
+		faces_to_remove.pop_back();
+		g_progress.tick();
+		removedFaces++;
+	}
+
+	g_progress.clear();
+	g_progress = ProgressMeter();
+
+	print_log("Removed {} faces from map!\n", removedFaces);
 }
 
 bool Bsp::remove_face(int faceIdx)
@@ -8276,11 +8325,18 @@ std::vector<int> Bsp::getLeafFaces(BSPLEAF32& leaf)
 		return retFaces;
 	}
 
-	retFaces.reserve(leaf.nMarkSurfaces);
-	for (int i = 0; i < leaf.nMarkSurfaces; i++)
+	if (leaf.nMarkSurfaces > 0)
 	{
-		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
+		retFaces.reserve(leaf.nMarkSurfaces);
+		for (int i = 0; i < leaf.nMarkSurfaces; i++)
+		{
+			retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
+		}
+
+		std::sort(retFaces.begin(), retFaces.end());
+		retFaces.erase(std::unique(retFaces.begin(), retFaces.end()), retFaces.end());
 	}
+
 	return retFaces;
 }
 
@@ -8298,10 +8354,16 @@ std::vector<int> Bsp::getLeafFaces(int leafIdx)
 		return retFaces;
 	}
 
-	retFaces.reserve(leaf.nMarkSurfaces);
-	for (int i = 0; i < leaf.nMarkSurfaces; i++)
+	if (leaf.nMarkSurfaces > 0)
 	{
-		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
+		retFaces.reserve(leaf.nMarkSurfaces);
+		for (int i = 0; i < leaf.nMarkSurfaces; i++)
+		{
+			retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
+		}
+
+		std::sort(retFaces.begin(), retFaces.end());
+		retFaces.erase(std::unique(retFaces.begin(), retFaces.end()), retFaces.end());
 	}
 	return retFaces;
 }
@@ -8309,7 +8371,6 @@ std::vector<int> Bsp::getLeafFaces(int leafIdx)
 std::vector<int> Bsp::getFaceLeafs(int faceIdx)
 {
 	std::vector<int> retLeafes;
-	retLeafes.reserve(leafCount);
 
 	for (int l = 1; l < leafCount; l++)
 	{

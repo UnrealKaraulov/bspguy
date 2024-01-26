@@ -98,7 +98,7 @@
 // Removing HULL 0 from solid model crashes game when standing on it
 
 
-std::string g_version_string = "NewBSPGuy v4.11";
+std::string g_version_string = "NewBSPGuy v4.12";
 
 bool g_verbose = false;
 
@@ -1019,7 +1019,16 @@ int main(int argc, char* argv[])
 		fs::current_path(bspguy_dir);
 
 		if (fileExists("./log.txt"))
-			fs::remove("./log.txt");
+		{
+			try
+			{
+				fs::remove("./log.txt");
+			}
+			catch (...)
+			{
+
+			}
+		}
 
 		g_settings_path = "./bspguy.cfg";
 
