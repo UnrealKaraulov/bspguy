@@ -10,7 +10,7 @@
 ProgressMeter::ProgressMeter()
 {
 	hide = false;
-	simpleMode = false;
+	simpleMode = true;
 	progress_total = progress = 0;
 	progress_title = "";
 }
@@ -20,7 +20,7 @@ void ProgressMeter::update(const std::string & newTitle, int totalProgressTicks)
 	progress_title = newTitle;
 	progress = 0;
 	progress_total = totalProgressTicks;
-	if (simpleMode && !hide)
+	if (simpleMode && !hide && !newTitle.empty())
 	{
 		print_log(newTitle + "\n");
 	}

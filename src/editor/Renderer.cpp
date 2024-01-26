@@ -334,8 +334,6 @@ Renderer::Renderer()
 
 	gui->init();
 
-	g_progress.simpleMode = true;
-
 	pointEntRenderer = new PointEntRenderer(NULL);
 
 	reloading = true;

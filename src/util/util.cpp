@@ -27,7 +27,7 @@
 #include <unordered_set>
 
 bool DebugKeyPressed = false;
-ProgressMeter g_progress;
+ProgressMeter g_progress = {};
 int g_render_flags;
 std::vector<std::string> g_log_buffer;
 std::vector<unsigned short> g_color_buffer;

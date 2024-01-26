@@ -1053,6 +1053,8 @@ int main(int argc, char* argv[])
 			g_verbose = true;
 		}
 
+		g_progress.simpleMode = false;
+
 		if (cli.command == "exportobj")
 		{
 			int scale = 1;
