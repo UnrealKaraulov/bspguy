@@ -6423,7 +6423,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 
 			bool renderTextures = g_render_flags & RENDER_TEXTURES;
-			bool renderTexturesFilter = g_render_flags & RENDER_TEXTURES_FILTER;
+			bool renderTexturesFilter = !(g_render_flags & RENDER_TEXTURES_NOFILTER);
 			bool renderLightmaps = g_render_flags & RENDER_LIGHTMAPS;
 			bool renderWireframe = g_render_flags & RENDER_WIREFRAME;
 			bool renderEntities = g_render_flags & RENDER_ENTS;
@@ -6449,13 +6449,13 @@ void Gui::drawSettings()
 			}
 			if (ImGui::Checkbox("Texture Filter", &renderTexturesFilter))
 			{
-				g_render_flags ^= RENDER_TEXTURES_FILTER;
+				g_render_flags ^= RENDER_TEXTURES_NOFILTER;
 				for (auto& tex : g_all_Textures)
 				{
-					bool filterneed = g_render_flags & RENDER_TEXTURES_FILTER;
+					bool filternoneed = g_render_flags & RENDER_TEXTURES_NOFILTER;
 					if (tex->type >= 0 && tex->type != tex->TYPE_LIGHTMAP)
 					{
-						tex->farFilter = tex->nearFilter = filterneed ? GL_LINEAR : GL_NEAREST;
+						tex->farFilter = tex->nearFilter = !filternoneed ? GL_LINEAR : GL_NEAREST;
 						tex->upload(tex->type);
 					}
 				}

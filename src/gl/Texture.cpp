@@ -16,7 +16,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std
 	this->width = _width;
 	this->height = _height;
 
-	if (g_render_flags & RENDER_TEXTURES_FILTER)
+	if (!(g_render_flags & RENDER_TEXTURES_NOFILTER))
 	{
 		nearFilter = GL_LINEAR;
 		farFilter = GL_LINEAR;
