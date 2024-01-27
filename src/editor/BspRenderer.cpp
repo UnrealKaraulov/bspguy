@@ -956,17 +956,17 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			vec3& vert = map->verts[vertIdx];
 			verts[e].pos = vert.flip();
 
-			verts[e].r = 1.0f;
-			if (ent)
+			verts[e].r = 0.0f;
+			if (ent && ent->rendermode == 5)
 			{
-				verts[e].g = 1.0f + abs((float)ent->rendermode);
+				verts[e].g = 1.001f + abs((float)ent->rendermode);
 			}
 			else
 			{
-				verts[e].g = 1.0f;
+				verts[e].g = 0.0f;
 			}
-			verts[e].b = 1.0f;
-			verts[e].a = isSky || isTrigger ? 1.0f : opacity;
+			verts[e].b = 0.0f;
+			verts[e].a = isSky || isTrigger ? 1.0f - opacity : 0.0f;
 
 			// texture coords
 			float tw = 1.0f;
@@ -2150,7 +2150,7 @@ void BspRenderer::highlightFace(size_t faceIdx, int highlight, bool reupload)
 		return;
 	}
 	float r, g, b;
-	r = g = b = 1.0f;
+	r = g = b = 0.0f;
 
 	if (highlight == 1)
 	{
@@ -2430,14 +2430,14 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 					if (hightlighted)
 					{
-						glUniform4f(g_app->colorShaderMultId, 1.5f, 0.75f, 0.75f, 1.0f);
+						glUniform4f(g_app->colorShaderMultId, 0.5f, 0.2f, 0.2f, 0.0f);
 					}
 
 					drawModelClipnodes(renderEnts[i].modelIdx, false, clipnodeHull);
 
 					if (hightlighted)
 					{
-						glUniform4f(g_app->colorShaderMultId, 1.0f, 1.0f, 1.0f, 1.0f);
+						glUniform4f(g_app->colorShaderMultId, 0.0f, 0.0f, 0.0f, 0.0f);
 					}
 
 					g_app->colorShader->popMatrix();

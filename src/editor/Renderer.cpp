@@ -322,7 +322,7 @@ Renderer::Renderer()
 
 	colorShader->bind();
 	colorShaderMultId = glGetUniformLocation(g_app->colorShader->ID, "colorMult");
-	glUniform4f(colorShaderMultId, 1, 1, 1, 1);
+	glUniform4f(colorShaderMultId, 0.0, 0.0, 0.0, 0.0);
 	colorShader->bindAttributes();
 
 	clearSelection();

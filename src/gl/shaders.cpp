@@ -20,7 +20,7 @@ namespace Shaders
 		"void main()\n"
 		"{\n"
 		"	gl_Position = modelViewProjection * vec4(vPosition, 1);\n"
-		"	fColor = vColor * colorMult;\n"
+		"	fColor = vColor + colorMult;\n"
 		"}\n";
 
 
@@ -141,19 +141,19 @@ namespace Shaders
 		"	}\n"
 		"	if (fcolor.g == 6.0)\n"
 		"	{\n"
-		"		color.rgb = color.rgb * fcolor.a;\n"
-		"		fcolor.g = 1.0;\n"
+		"		color.rgb = color.rgb - fcolor.a;\n"
+		"		fcolor.g = 0.0;\n"
 		"	}\n"
-		"	else if (fcolor.g > 1.0)\n"
+		"	if (fcolor.g > 1.0)\n"
 		"	{\n"
-		"		fcolor.g = 1.0;\n"
+		"		fcolor.g = fcolor.g - 1.0;\n"
 		"	}\n"
 		"	vec3 lightmap = texture2D(sLightmapTex0, fLightmapTex0.xy).rgb * fLightmapTex0.z;\n"
 		"	lightmap += texture2D(sLightmapTex1, fLightmapTex1.xy).rgb * fLightmapTex1.z;\n"
 		"	lightmap += texture2D(sLightmapTex2, fLightmapTex2.xy).rgb * fLightmapTex2.z;\n"
 		"	lightmap += texture2D(sLightmapTex3, fLightmapTex3.xy).rgb * fLightmapTex3.z;\n"
-		"	color.rgb = color.rgb * lightmap * fcolor.rgb; \n"
+		"	color.rgb = (color.rgb * lightmap) + fcolor.rgb; \n"
 		"	float gamma = 1.6;\n"
-		"	gl_FragColor = vec4(pow(color.rgb, vec3(1.0/gamma)), color.a * fcolor.a );\n"
+		"	gl_FragColor = vec4(pow(color.rgb, vec3(1.0/gamma)), color.a - fcolor.a );\n"
 		"}\n";
 }

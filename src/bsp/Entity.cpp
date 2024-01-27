@@ -12,6 +12,8 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 
 	if (key == "origin")
 		originInited = false;
+	if (key == "classname")
+		classname = value;
 
 	int dup = 1;
 	if (keyvalues.find(key) == keyvalues.end())
@@ -64,8 +66,7 @@ void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
 {
 	if (!key.size())
 		return;
-	if (key == "origin")
-		originInited = false;
+
 	cachedModelIdx = -2;
 	targetsCached = false;
 
@@ -79,6 +80,8 @@ void Entity::removeKeyvalue(const std::string key)
 
 	if (key == "origin")
 		originInited = false;
+	if (key == "classname")
+		classname = "";
 
 	if (std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end())
 		keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
@@ -86,8 +89,6 @@ void Entity::removeKeyvalue(const std::string key)
 	keyvalues.erase(key);
 	cachedModelIdx = -2;
 	targetsCached = false;
-	if (key == "origin")
-		originInited = false;
 
 	if (key.starts_with("render"))
 		updateRenderModes();
@@ -99,9 +100,13 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	{
 		return false;
 	}
-	if (keyOrder[idx].starts_with("render"))
+
+	std::string keyName = keyOrder[idx];
+
+	if (keyName.starts_with("render"))
 		updateRenderModes();
-	if (keyOrder[idx] == "origin" || newName == "origin")
+
+	if (keyName == "origin" || newName == "origin")
 		originInited = false;
 
 	for (size_t i = 0; i < keyOrder.size(); i++)
@@ -118,6 +123,13 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	keyOrder[idx] = newName;
 	cachedModelIdx = -2;
 	targetsCached = false;
+
+
+	if (keyName == "classname" && newName != "classname")
+		classname = "";
+	else if (newName == "classname" && keyName != "classname")
+		classname = keyvalues["classname"];
+
 	return true;
 }
 
@@ -151,6 +163,14 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 	keyOrder[idx] = newName;
 	cachedModelIdx = -2;
 	targetsCached = false;
+
+
+	if (oldName == "classname" && newName != "classname")
+		classname = "";
+	else if (newName == "classname" && oldName != "classname")
+		classname = keyvalues["classname"];
+
+
 	return true;
 }
 

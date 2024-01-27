@@ -7,22 +7,33 @@
 #include "Settings.h"
 #include "Renderer.h"
 
-std::vector<Texture*> dumpTextures;
+std::vector<Texture*> g_all_Textures;
 
 Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std::string& name, bool rgba, bool _owndata)
 {
-	this->tex_owndata = _owndata;
-	this->wad_name = "";
+	tex_owndata = _owndata;
+	wad_name = "";
 	this->width = _width;
 	this->height = _height;
-	this->nearFilter = GL_LINEAR;
-	this->farFilter = GL_LINEAR;
+
+	if (g_render_flags & RENDER_TEXTURES_FILTER)
+	{
+		nearFilter = GL_LINEAR;
+		farFilter = GL_LINEAR;
+	}
+	else
+	{
+		nearFilter = GL_NEAREST;
+		farFilter = GL_NEAREST;
+	}
 	this->data = data;
-	this->dataLen = (unsigned int)(width * height) * (rgba ? sizeof(COLOR4) : sizeof(COLOR3));
-	this->id = 0xFFFFFFFF;
-	this->format = rgba ? GL_RGBA : GL_RGB;
+	dataLen = (unsigned int)(width * height) * (rgba ? sizeof(COLOR4) : sizeof(COLOR3));
+	id = 0xFFFFFFFF;
+	format = rgba ? GL_RGBA : GL_RGB;
 	this->texName = name;
-	this->uploaded = false;
+	uploaded = false;
+
+	type = -1;
 
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0970), name, width, height);
@@ -33,7 +44,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const std
 	{
 		this->transparentMode = 2;
 	}
-	dumpTextures.push_back(this);
+	g_all_Textures.push_back(this);
 }
 
 Texture::~Texture()
@@ -46,10 +57,10 @@ Texture::~Texture()
 	if (this->tex_owndata && data != NULL)
 		delete[] data;
 
-	std::vector<Texture*>::iterator it = std::remove(dumpTextures.begin(), dumpTextures.end(), this);
-	if (it != dumpTextures.end())
+	std::vector<Texture*>::iterator it = std::remove(g_all_Textures.begin(), g_all_Textures.end(), this);
+	if (it != g_all_Textures.end())
 	{
-		dumpTextures.erase(it);
+		g_all_Textures.erase(it);
 	}
 	else
 	{
@@ -83,8 +94,9 @@ unsigned char* Texture::get_data()
 	return data;
 }
 
-void Texture::upload(int type)
+void Texture::upload(int _type)
 {
+	this->type = _type;
 	g_mutex_list[3].lock();
 	get_data();
 
@@ -109,14 +121,14 @@ void Texture::upload(int type)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->nearFilter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->farFilter);
 	}
 	else if (type == TYPE_DECAL)
 	{
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->nearFilter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->farFilter);
 	}
 
 	if (texName[0] == '{')

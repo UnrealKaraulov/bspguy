@@ -2138,9 +2138,9 @@ void Gui::drawMenuBar()
 				{
 					createDir(g_working_dir + map->bsp_name + "/dump_textures/");
 
-					if (dumpTextures.size() && rend)
+					if (g_all_Textures.size() && rend)
 					{
-						for (const auto& tex : dumpTextures)
+						for (const auto& tex : g_all_Textures)
 						{
 							if (tex != missingTex)
 							{
@@ -3379,6 +3379,11 @@ void Gui::drawMenuBar()
 					ImGui::TextUnformatted(fmt::format("Click [{:^5},{:^5},{:^5}]", floatRound(rend->intersectVec.x), floatRound(rend->intersectVec.y), floatRound(rend->intersectVec.z)).c_str());
 
 					ImGui::TextUnformatted(fmt::format("Leaf [{}]", rend->curLeafIdx).c_str());
+				}
+
+				if (g_app->pickInfo.selectedEnts.size() == 1 && g_app->pickInfo.selectedEnts[0] < selectedMap->ents.size())
+				{
+					ImGui::TextUnformatted(fmt::format("Classname [{}]", selectedMap->ents[g_app->pickInfo.selectedEnts[0]]->classname).c_str());
 				}
 			}
 
@@ -6418,6 +6423,7 @@ void Gui::drawSettings()
 			ImGui::Separator();
 
 			bool renderTextures = g_render_flags & RENDER_TEXTURES;
+			bool renderTexturesFilter = g_render_flags & RENDER_TEXTURES_FILTER;
 			bool renderLightmaps = g_render_flags & RENDER_LIGHTMAPS;
 			bool renderWireframe = g_render_flags & RENDER_WIREFRAME;
 			bool renderEntities = g_render_flags & RENDER_ENTS;
@@ -6440,6 +6446,19 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox(get_localized_string(LANG_0780).c_str(), &renderTextures))
 			{
 				g_render_flags ^= RENDER_TEXTURES;
+			}
+			if (ImGui::Checkbox("Texture Filter", &renderTexturesFilter))
+			{
+				g_render_flags ^= RENDER_TEXTURES_FILTER;
+				for (auto& tex : g_all_Textures)
+				{
+					bool filterneed = g_render_flags & RENDER_TEXTURES_FILTER;
+					if (tex->type >= 0 && tex->type != tex->TYPE_LIGHTMAP)
+					{
+						tex->farFilter = tex->nearFilter = filterneed ? GL_LINEAR : GL_NEAREST;
+						tex->upload(tex->type);
+					}
+				}
 			}
 			if (ImGui::Checkbox(get_localized_string(LANG_0781).c_str(), &renderLightmaps))
 			{
@@ -7114,7 +7133,7 @@ void Gui::drawLimits()
 					if (!loadedStats)
 					{
 						stats.clear();
-						stats.push_back(calcStat("GL_TEXTURES", (unsigned int)dumpTextures.size(), 0, false));
+						stats.push_back(calcStat("GL_TEXTURES", (unsigned int)g_all_Textures.size(), 0, false));
 						stats.push_back(calcStat("models", map->modelCount, MAX_MAP_MODELS, false));
 						stats.push_back(calcStat("planes", map->planeCount, MAX_MAP_PLANES, false));
 						stats.push_back(calcStat("vertexes", map->vertCount, MAX_MAP_VERTS, false));

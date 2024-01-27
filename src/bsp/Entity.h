@@ -10,6 +10,8 @@ public:
 	hashmap keyvalues;
 	std::vector<std::string> keyOrder;
 
+	std::string classname;
+
 	int cachedModelIdx; // -2 = not cached
 	std::vector<std::string> cachedTargets;
 	bool targetsCached;
@@ -17,6 +19,7 @@ public:
 
 	Entity()
 	{
+		classname = "";
 		cachedModelIdx = -2;
 		targetsCached = false;
 		rendermode = kRenderNormal;

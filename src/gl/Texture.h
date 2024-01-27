@@ -6,6 +6,7 @@ class Texture
 {
 public:
 	unsigned int id; // OpenGL texture ID
+	int type;
 	GLsizei height, width;
 	int nearFilter;
 	int farFilter;
@@ -45,6 +46,6 @@ private:
 	unsigned char* data; // RGB(A) data
 	bool tex_owndata;
 };
-extern std::vector<Texture*> dumpTextures;
+extern std::vector<Texture*> g_all_Textures;
 bool IsTextureTransparent(const std::string& texname);
 extern Texture* binded_tex[64];

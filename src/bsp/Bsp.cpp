@@ -3702,7 +3702,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 		for (int m = 0; m < lightPixels; m++)
 		{
-			newLight[m] = oldLight[m].rgb(COLOR3(0, 0, 0));
+			newLight[m] = oldLight[m].rgb(COLOR3(255, 255, 255));
 		}
 
 		if (replacedLump[LUMP_LIGHTING])
