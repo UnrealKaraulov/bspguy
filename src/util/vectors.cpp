@@ -888,3 +888,17 @@ void VectorIRotate(const vec3& in1, const float in2[3][4], vec3& out)
 	out[1] = in1[0] * in2[0][1] + in1[1] * in2[1][1] + in1[2] * in2[2][1];
 	out[2] = in1[0] * in2[0][2] + in1[1] * in2[1][2] + in1[2] * in2[2][2];
 }
+
+
+float clamp(float val, float min, float max)
+{
+	if (val > max)
+	{
+		return max;
+	}
+	else if (val < min)
+	{
+		return min;
+	}
+	return val;
+}

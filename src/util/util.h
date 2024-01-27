@@ -175,8 +175,6 @@ std::string trimSpaces(const std::string& str);
 
 int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette = false);
 
-float clamp(float val, float min, float max);
-
 vec3 parseVector(const std::string& s);
 
 bool IsEntNotSupportAngles(std::string& entname);

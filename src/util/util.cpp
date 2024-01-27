@@ -277,18 +277,6 @@ int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette)
 	return sz;
 }
 
-float clamp(float val, float min, float max)
-{
-	if (val > max)
-	{
-		return max;
-	}
-	else if (val < min)
-	{
-		return min;
-	}
-	return val;
-}
 
 vec3 parseVector(const std::string& s)
 {

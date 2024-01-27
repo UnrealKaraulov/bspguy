@@ -7,6 +7,7 @@
 
 #define MAXTEXTURENAME 16
 #define MIPLEVELS 4
+
 #define MAX_MAP_HULLS 4
 #define MAX_MAP_PLANES 65535
 #define MAX_MAP_TEXINFOS 32767  // Can be 65535 if unsigned short?

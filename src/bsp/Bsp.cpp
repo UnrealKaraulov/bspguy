@@ -3590,21 +3590,43 @@ bool Bsp::load_lumps(std::string fpath)
 
 	update_lump_pointers();
 
-
+	std::set<int> tmp_offsets;
 	int lightmap3_bytes = 0;
 	for (int i = 0; i < faceCount; i++)
 	{
-		if (faces[i].nLightmapOffset >= 0)
+		int light_offset = faces[i].nLightmapOffset;
+
+		if (light_offset >= 0 && !tmp_offsets.count(light_offset))
 		{
+			tmp_offsets.insert(light_offset);
 			lightmap3_bytes += GetFaceLightmapSizeBytes(this, i);
 		}
 	}
 
-	int lightmap1_bytes = lightmap3_bytes / 3;
+	int lightmap1_bytes = lightmap3_bytes / sizeof(COLOR3);
+	int lightmap4_bytes = lightmap1_bytes * sizeof(COLOR4);
+
 	is_colored_lightmap = lightdata == NULL || abs(lightmap1_bytes - lightDataLength) > abs(lightmap3_bytes - lightDataLength);
 
+	bool is_fuck_rgba_lightmap = false;
+
+	if (is_colored_lightmap && lightdata != NULL)
+	{
+		if (abs(lightmap3_bytes - lightDataLength) > abs(lightmap4_bytes - lightDataLength))
+		{
+			is_fuck_rgba_lightmap = true;
+			if (g_settings.verboseLogs)
+			{
+				print_log("fuck rgba lightmaps detected\n");
+			}
+		}
+	}
+
 	if (g_settings.verboseLogs)
-		print_log(get_localized_string(LANG_0102), !is_colored_lightmap ? "monochrome" : "colored");
+	{
+		//print_log(get_localized_string(LANG_0102), !is_colored_lightmap ? "monochrome" : "colored");
+		print_log("Light: {} [mono {}, color {}, map has {}]\n", !is_colored_lightmap ? "monochrome" : "colored", lightmap1_bytes, lightmap3_bytes, lightDataLength);
+	}
 
 	int textures_bytes = 0;
 	int textures_no_pal_bytes = 0;
@@ -3617,13 +3639,15 @@ bool Bsp::load_lumps(std::string fpath)
 			continue;
 
 		BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));
-		if (tex->nOffsets[0] > textureDataLength)
+
+		int data_offset = tex->nOffsets[0];
+
+		if (data_offset > textureDataLength)
 			continue;
 
 		textures_bytes += sizeof(BSPMIPTEX);
 		textures_no_pal_bytes += sizeof(BSPMIPTEX);
-
-		if (tex->nOffsets[0] > 0)
+		if (data_offset > 0)
 		{
 			textures_bytes += sizeof(short);
 			textures_no_pal_bytes += sizeof(short);
@@ -3638,9 +3662,13 @@ bool Bsp::load_lumps(std::string fpath)
 		}
 	}
 
-	is_texture_pal = textureCount == 0 || textures_no_pal_bytes == textures_bytes || abs(textures_no_pal_bytes - textureDataLength) > abs(textures_bytes - textureDataLength);;
+	is_texture_pal = textureCount == 0 || textures_no_pal_bytes == textures_bytes || abs(textures_no_pal_bytes - textureDataLength) > abs(textures_bytes - textureDataLength);
+
 	if (g_settings.verboseLogs)
-		print_log("Embedded Textures: {}\n", !is_texture_pal ? "quake pal" : "has pal");
+	{
+		//print_log("Embedded Textures: {}\n", !is_texture_pal ? "quake pal" : "has pal");
+		print_log("Embedded Textures: {} [pal:{}, nopal:{}, map has:{}]\n", !is_texture_pal ? "quake pal" : "has pal", textures_bytes, textures_no_pal_bytes, textureDataLength);
+	}
 
 	if (!is_colored_lightmap)
 	{
@@ -3653,7 +3681,8 @@ bool Bsp::load_lumps(std::string fpath)
 			newLight[m] = COLOR3(lumps[LUMP_LIGHTING][m], lumps[LUMP_LIGHTING][m], lumps[LUMP_LIGHTING][m]);
 		}
 
-		delete lumps[LUMP_LIGHTING];
+		if (replacedLump[LUMP_LIGHTING])
+			delete lumps[LUMP_LIGHTING];
 
 		lumps[LUMP_LIGHTING] = (unsigned char*)newLight;
 		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels * sizeof(COLOR3);
@@ -3662,6 +3691,30 @@ bool Bsp::load_lumps(std::string fpath)
 		for (int n = 0; n < faceCount; n++)
 		{
 			faces[n].nLightmapOffset = faces[n].nLightmapOffset * sizeof(COLOR3);
+		}
+	}
+	else if (is_fuck_rgba_lightmap)
+	{
+		int lightPixels = bsp_header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR4);
+
+		COLOR3* newLight = new COLOR3[lightPixels];
+		COLOR4* oldLight = (COLOR4*)lumps[LUMP_LIGHTING];
+
+		for (int m = 0; m < lightPixels; m++)
+		{
+			newLight[m] = oldLight[m].rgb(COLOR3(0, 0, 0));
+		}
+
+		if (replacedLump[LUMP_LIGHTING])
+			delete lumps[LUMP_LIGHTING];
+
+		lumps[LUMP_LIGHTING] = (unsigned char*)newLight;
+		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels * sizeof(COLOR3);
+
+
+		for (int n = 0; n < faceCount; n++)
+		{
+			faces[n].nLightmapOffset = (faces[n].nLightmapOffset / sizeof(COLOR4)) * sizeof(COLOR3);
 		}
 	}
 
@@ -5273,7 +5326,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	int colorCount = 0;
 
 
-	if (!is_bsp2 && !is_bsp29 && !force_quake_pal)
+	if (is_texture_pal && !force_quake_pal)
 	{
 		texDataSize += width * height + sizeof(short) /* palette count */ + sizeof(COLOR3) * 256;
 	}
@@ -5290,23 +5343,22 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		COLOR3* src = (COLOR3*)data;
 
 		// If custom pal || quake || force quake
-		if (is_bsp2 || is_bsp29 || force_quake_pal || custompal)
+		if (!is_texture_pal || force_quake_pal)
 		{
+			colorCount = 256;
 			if (custompal)
 			{
 				memcpy(palette, custompal, 256 * sizeof(COLOR3));
-				colorCount = 256;
 			}
-			if (is_bsp2 || is_bsp29 || force_quake_pal)
+			else
 			{
-				if (!custompal)
-					memcpy(palette, g_settings.palette_data, 256 * sizeof(COLOR3));
-				Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-				tmpCQuantizer->SetColorTable(palette, 256);
-				tmpCQuantizer->ApplyColorTable((COLOR3*)data, width * height);
-				delete tmpCQuantizer;
-				colorCount = 256;
+				memcpy(palette, g_settings.palette_data, 256 * sizeof(COLOR3));
 			}
+			Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+			tmpCQuantizer->SetColorTable(palette, 256);
+			tmpCQuantizer->ApplyColorTable((COLOR3*)data, width * height);
+			delete tmpCQuantizer;
+			colorCount = 256;
 		}
 
 		// create pallete and full-rez mipmap
@@ -5395,7 +5447,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 		size_t palleteOffset = oldtex->nOffsets[3] + (width >> 3) * (height >> 3);
 
-		if (!is_bsp2 && !is_bsp29 && !force_quake_pal)
+		if (is_texture_pal && !force_quake_pal)
 		{
 			palleteOffset += sizeof(short) /* pal count */;
 			memcpy(textures + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
@@ -5475,7 +5527,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + sizeof(short);
 		unsigned char* paletteCount = newTexData + newTexOffset + (palleteOffset - sizeof(short));
 
-		if (!is_bsp2 && !is_bsp29 && !force_quake_pal)
+		if (is_texture_pal && !force_quake_pal)
 		{
 			memcpy(newTexData + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
 		}

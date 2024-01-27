@@ -11,6 +11,8 @@
 #define ON_EPSILON 0.03125f
 
 
+float clamp(float val, float min, float max);
+
 #define CLAMP(v, min, max) if (v < min) { v = min; } else if (v > max) { v = max; }
 
 struct COLOR3
@@ -32,6 +34,17 @@ struct COLOR4
 	{}
 	COLOR4(const COLOR3& c) : r(c.r), g(c.g), b(c.b), a(255)
 	{}
+
+	COLOR3 rgb(COLOR3 background) {
+		float alpha = a / 255.0;
+		unsigned char r_new = clamp((1 - alpha) * r + alpha * background.r, 0.0, 255.0f);
+		unsigned char g_new = clamp((1 - alpha) * g + alpha * background.g, 0.0, 255.0f);
+		unsigned char b_new = clamp((1 - alpha) * b + alpha * background.b, 0.0, 255.0f);
+		return COLOR3(r_new, g_new, b_new);
+	}
+	COLOR3 rgb() {
+		return COLOR3(r, g, b);
+	}
 };
 
 
@@ -39,7 +52,7 @@ struct vec3
 {
 	float x, y, z;
 
-	void Copy(const vec3& other) 
+	void Copy(const vec3& other)
 	{
 		x = other.x;
 		y = other.y;
@@ -47,11 +60,11 @@ struct vec3
 	}
 	vec3& operator =(const vec3& other)
 	{
-		Copy(other); 
+		Copy(other);
 		return *this;
 	}
 
-	vec3(const vec3& other) 
+	vec3(const vec3& other)
 	{
 		Copy(other);
 	}
@@ -87,7 +100,7 @@ struct vec3
 	std::string toString();
 	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
 	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
-	vec3 unflip(); 
+	vec3 unflip();
 	vec3 unflipUV();
 
 	void operator-=(const vec3& v);
@@ -158,7 +171,7 @@ struct pairHash {
 		seed ^= hasher(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		return seed;
 	}
-}; 
+};
 
 vec3 operator-(vec3 v1, const vec3& v2);
 vec3 operator+(vec3 v1, const vec3& v2);
@@ -260,7 +273,7 @@ struct vec4
 		if (abs(w) < EPSILON)
 			w = +0.0f;
 	}
-	vec4(const COLOR4& c ) : x(c.r / 255.0f), y(c.g / 255.0f), z(c.b / 255.0f), w(c.a / 255.0f)
+	vec4(const COLOR4& c) : x(c.r / 255.0f), y(c.g / 255.0f), z(c.b / 255.0f), w(c.a / 255.0f)
 	{
 		if (abs(x) < EPSILON)
 			x = +0.0f;
