@@ -7078,10 +7078,12 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 
-	vec3 amin = models[dst_model].nMins;
-	vec3 amax = models[dst_model].nMaxs;
-	vec3 bmin = models[src_model].nMins;
-	vec3 bmax = models[src_model].nMaxs;
+	vec3 amin = models[dst_model].nMins + models[dst_model].vOrigin;
+	vec3 amax = models[dst_model].nMaxs + models[dst_model].vOrigin;
+	vec3 bmin = models[src_model].nMins + models[src_model].vOrigin;
+	vec3 bmax = models[src_model].nMaxs + models[src_model].vOrigin;
+
+	BSPPLANE separate_plane = getSeparatePlane(bmin, bmax,amin, amax);
 
 	std::vector<vec3> veclist;
 	veclist.push_back(amin);
@@ -7093,7 +7095,6 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 
 	getBoundingBox(veclist, new_min, new_max);
 
-	BSPPLANE separate_plane = getSeparatePlane(amin, amax, bmin, bmax);
 
 	int separationPlaneIdx = planeCount;
 
@@ -7110,8 +7111,8 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 	{
 		BSPNODE32 headNode = {
 			separationPlaneIdx,			// plane idx
-			{ models[src_model].iHeadnodes[0],
-			models[dst_model].iHeadnodes[0] },		// child nodes
+			{ models[dst_model].iHeadnodes[0],
+			models[src_model].iHeadnodes[0] },		// child nodes
 			{ new_min.x, new_min.y, new_min.z },	// mins
 			{ new_max.x, new_max.y, new_max.z },	// maxs
 			0, // first face
@@ -7144,10 +7145,19 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 			newHeadNodes[i] = {
 				separationPlaneIdx,	// plane idx
 				{	// child nodes
-					models[src_model].iHeadnodes[i + 1],
-					models[dst_model].iHeadnodes[i + 1]
+					models[dst_model].iHeadnodes[i + 1],
+					models[src_model].iHeadnodes[i + 1]
 				},
 			};
+
+			if (models[dst_model].iHeadnodes[i + 1] < 0)
+			{
+				newHeadNodes[i].iChildren[0] = CONTENTS_EMPTY;
+			}
+			if (models[src_model].iHeadnodes[i + 1] < 0)
+			{
+				newHeadNodes[i].iChildren[1] = CONTENTS_EMPTY;
+			}
 
 			if (swapNodeChildren)
 			{
