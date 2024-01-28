@@ -3181,7 +3181,7 @@ void Gui::drawMenuBar()
 
 				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
 				rend->pushUndoCommand(command);
-
+				map->save_undo_lightmaps();
 				delete newEnt;
 
 				newEnt = map->ents[map->ents.size() - 1];
@@ -3193,6 +3193,7 @@ void Gui::drawMenuBar()
 						map->faces[model.iFirstFace + i].nStyles[0] = 0;
 					}
 				}
+				map->resize_all_lightmaps();
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0591).c_str(), 0, false, !app->isLoading && map))
@@ -3213,6 +3214,7 @@ void Gui::drawMenuBar()
 
 				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
 				rend->pushUndoCommand(command);
+				map->save_undo_lightmaps();
 
 				delete newEnt;
 
@@ -3225,6 +3227,7 @@ void Gui::drawMenuBar()
 						map->faces[model.iFirstFace + i].nStyles[0] = 0;
 					}
 				}
+				map->resize_all_lightmaps();
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0590).c_str(), 0, false, !app->isLoading && map))

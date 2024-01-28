@@ -5860,7 +5860,7 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 			face.nEdges = 4;
 			face.nPlaneSide = i % 2 == 0; // even-numbered planes are inverted
 			face.iTextureInfo = (startTexinfo + i);
-			face.nLightmapOffset = -1; // TODO: Lighting
+			face.nLightmapOffset = 0; // TODO: Lighting
 			memset(face.nStyles, 255, MAX_LIGHTMAPS);
 		}
 
@@ -6047,7 +6047,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 			face.nEdges = (int)solid.faces[i].verts.size();
 			face.nPlaneSide = solid.faces[i].planeSide;
 			face.iTextureInfo = solid.faces[i].iTextureInfo;
-			face.nLightmapOffset = -1; // TODO: Lighting
+			face.nLightmapOffset = 0; // TODO: Lighting
 			memset(face.nStyles, 255, MAX_LIGHTMAPS);
 			surfedgeOffset += face.nEdges;
 		}
