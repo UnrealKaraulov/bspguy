@@ -915,7 +915,7 @@ void Gui::drawBspContexMenu()
 					{
 						ImGui::EndDisabled();
 					}
-					if (ImGui::MenuItem("MERGE TWO BSPMODELS (WIP)", 0, false, !app->isLoading && allowDuplicate &&
+					if (ImGui::MenuItem("MERGE TWO BSPMODELS (WIP) (!WARN!)", 0, false, !app->isLoading && allowDuplicate &&
 						app->pickInfo.selectedEnts.size() == 2 &&
 						map->ents[app->pickInfo.selectedEnts[0]]->isBspModel() && map->ents[app->pickInfo.selectedEnts[1]]->isBspModel()))
 					{
@@ -947,6 +947,12 @@ void Gui::drawBspContexMenu()
 
 
 						map->getBspRender()->pushModelUndoState("MERGE MODEL [DEBUG]", EDIT_MODEL_LUMPS);
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::BeginTooltip();
+						ImGui::TextUnformatted("CAUSE MAP ERROR WHEN LOOKING AT THIS MODEL IN 50% CASES!!");
+						ImGui::EndTooltip();
 					}
 				}
 				if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading))
