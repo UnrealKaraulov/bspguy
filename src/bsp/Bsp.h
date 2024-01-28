@@ -172,7 +172,7 @@ public:
 	void get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output);
 	void get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output);
 
-	void get_leaf_nodes(int leaf, std::vector<int> & out_nodes);
+	void get_leaf_nodes(int leaf, std::vector<int>& out_nodes);
 
 	// this a cheat to recalculate plane normals after scaling a solid. Really I should get the plane
 	// intersection code working for nonconvex solids, but that's looking like a ton of work.
@@ -199,8 +199,8 @@ public:
 
 	// delete structures not used by the map (needed after deleting models/hulls)
 	STRUCTCOUNT remove_unused_model_structures(unsigned int target = CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES |
-											   CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-											   CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
+		CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
+		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
 	void delete_model(int modelIdx);
 	void clean_unused_texinfos();
 	int merge_all_verts(float epsilon = 1.0f);
@@ -252,9 +252,9 @@ public:
 	int create_texinfo();
 
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
-						std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
-						std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-						std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX *>& newTextures);
+		std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
+		std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
+		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures);
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);
@@ -279,7 +279,7 @@ public:
 
 	int get_ent_from_model(int modelIdx);
 
-	void decalShoot(vec3 pos, const std::string & texname);
+	void decalShoot(vec3 pos, const std::string& texname);
 
 	std::vector<STRUCTUSAGE*> get_sorted_model_infos(int sortMode);
 
@@ -310,6 +310,8 @@ public:
 
 	void ExportToMapWIP(const std::string& path);
 
+	int merge_all_faces();
+
 	void ExportPortalFile(const std::string& path);
 	void ExportExtFile(const std::string& path);
 	void ExportLightFile(const std::string& path);
@@ -338,7 +340,7 @@ public:
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
-	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes, int * removeddata = NULL);
+	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes, int* removeddata = NULL);
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 
 	void recurse_node_leafs(int nodeIdx, std::vector<int>& outLeafs);

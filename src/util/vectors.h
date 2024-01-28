@@ -102,6 +102,7 @@ struct vec3
 	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
 	vec3 unflip();
 	vec3 unflipUV();
+	float dist(vec3 to);
 
 	void operator-=(const vec3& v);
 	void operator+=(const vec3& v);

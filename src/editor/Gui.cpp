@@ -915,7 +915,7 @@ void Gui::drawBspContexMenu()
 					{
 						ImGui::EndDisabled();
 					}
-					if (DebugKeyPressed && ImGui::MenuItem("DEBUG[MERGE TWO BSPMODELS!]", 0, false, !app->isLoading && allowDuplicate &&
+					if (ImGui::MenuItem("MERGE TWO BSPMODELS (WIP)", 0, false, !app->isLoading && allowDuplicate &&
 						app->pickInfo.selectedEnts.size() == 2 &&
 						map->ents[app->pickInfo.selectedEnts[0]]->isBspModel() && map->ents[app->pickInfo.selectedEnts[1]]->isBspModel()))
 					{
@@ -3762,6 +3762,12 @@ void Gui::drawDebugWidget()
 
 						ImGui::Checkbox(get_localized_string(LANG_0630).c_str(), &app->debugNodes);
 						ImGui::SliderInt(get_localized_string(LANG_0631).c_str(), &app->debugNode, 0, app->debugNodeMax);
+					}
+
+					if (modelIdx >= 0)
+					{
+						ImGui::TextUnformatted(fmt::format("Model{}.FirstFace:{}", modelIdx, map->models[modelIdx].iFirstFace).c_str());
+						ImGui::TextUnformatted(fmt::format("Model{}.NumFace:{}", modelIdx, map->models[modelIdx].nFaces).c_str());
 					}
 
 					if (app->pickInfo.selectedFaces.size())
@@ -8881,7 +8887,6 @@ void Gui::drawFaceEditorWidget()
 
 			std::string tmplabel = "##unklabel";
 
-			BSPFACE32 face = map->faces[app->pickInfo.selectedFaces[0]];
 			int edgeIdx = 0;
 			for (auto& v : edgeVerts)
 			{
@@ -8906,6 +8911,46 @@ void Gui::drawFaceEditorWidget()
 					updatedFaceVec = true;
 				}
 			}
+
+			if (ImGui::Button("COPY"))
+			{
+				std::string outstr = "";
+				for (auto& s : edgeVerts)
+				{
+					outstr += s.toKeyvalueString() + "\n";
+				}
+				ImGui::SetClipboardText(outstr.c_str());
+			}
+
+			//if (ImGui::Button("Optimize"))
+			//{
+			//	auto edge_copy_verts = edgeVerts;
+			//	removeColinearPoints(edge_copy_verts, EPSILON);
+
+			//	bool swap_need = false;
+			//	for (int e = face.iFirstEdge, v = 0; e < face.iFirstEdge + face.nEdges && v < (int)edge_copy_verts.size(); e++, v++)
+			//	{
+			//		int edge_id = map->surfedges[e];
+			//		BSPEDGE32 edge = map->edges[abs(edge_id)];
+			//		vec3 vert = edge_id >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+			//		if (vert == edge_copy_verts[v]) continue; // already in 
+			//	
+			//		for (int z = e; z < face.iFirstEdge + face.nEdges - 1; z++)
+			//		{
+			//			map->surfedges[z] = map->surfedges[z + 1];
+			//		}
+
+			//		e--;
+			//		v--;
+			//		face.nEdges--;
+			//	}
+
+			//	face.nEdges = (int)edge_copy_verts.size();
+
+			//	edgeVerts = edge_copy_verts;
+
+			//	updatedFaceVec = true;
+			//}
 		}
 
 		if (app->pickInfo.selectedFaces.size() > 1)

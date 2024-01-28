@@ -2011,3 +2011,66 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 
 	return result;
 }
+
+void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
+
+	for (int i1 = 0; i1 < verts.size(); i1++)
+	{
+		bool colinear = false;
+		for (int i2 = 0; !colinear && i2 < verts.size(); i2++)
+		{
+			for (int i3 = 0; !colinear && i3 < verts.size(); i3++)
+			{
+				if (i1 == i2 || i1 == i3 || i2 == i3)
+					continue;
+				
+				if (verts[i1].x == verts[i2].x &&
+					verts[i2].x == verts[i3].x)
+				{
+					if (verts[i1].y == verts[i2].y &&
+						verts[i2].y == verts[i3].y)
+					{
+						if (verts[i1].z > verts[i2].z && verts[i1].z < verts[i3].z)
+						{
+							colinear = true;
+							break;
+						}
+					}
+				}
+
+				if (verts[i1].x == verts[i2].x &&
+					verts[i2].x == verts[i3].x)
+				{
+					if (verts[i1].z == verts[i2].z &&
+						verts[i2].z == verts[i3].z)
+					{
+						if (verts[i1].y > verts[i2].y && verts[i1].y < verts[i3].y)
+						{
+							colinear = true;
+							break;
+						}
+					}
+				}
+
+				if (verts[i1].y == verts[i2].y &&
+					verts[i2].y == verts[i3].y)
+				{
+					if (verts[i1].z == verts[i2].z &&
+						verts[i2].z == verts[i3].z)
+					{
+						if (verts[i1].x > verts[i2].x && verts[i1].x < verts[i3].x)
+						{
+							colinear = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		if (colinear)
+		{
+			verts.erase(verts.begin() + i1);
+			i1--;
+		}
+	}
+}

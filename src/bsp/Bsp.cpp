@@ -7023,21 +7023,31 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 
 	int newfaces = models[src_model].nFaces;
 
+	for (int f = 0; f < newfaces; f++)
+	{
+		leaf_del_face(models[src_model].iFirstFace + f, -1);
+	}
+
+	for (int f2 = 0; f2 < models[dst_model].nFaces; f2++)
+	{
+		leaf_del_face(models[dst_model].iFirstFace + f2, -1);
+	}
+
 	std::vector<BSPFACE32> all_faces;
 
 	for (int f = 0; f < faceCount; f++)
 	{
 		all_faces.push_back(faces[f]);
-		if (f == models[dst_model].iFirstFace + models[dst_model].nFaces)
+		if (f == models[dst_model].iFirstFace + models[dst_model].nFaces - 1)
 		{
-			for (int f2 = 0; f2 < models[src_model].nFaces; f2++)
+			for (int f2 = 0; f2 < newfaces; f2++)
 			{
-				all_faces.push_back(faces[models[src_model].iFirstFace + f2 + 1]);
+				all_faces.push_back(faces[models[src_model].iFirstFace + f2/* + 1*/]);
 			}
 		}
 	}
 
-	for (int m = 1; m < modelCount; m++)
+	for (int m = 0; m < modelCount; m++)
 	{
 		if (models[m].iFirstFace >= models[dst_model].iFirstFace + models[dst_model].nFaces)
 		{
@@ -7061,31 +7071,10 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 		}
 	}
 
-	std::vector<int> all_mark_surfaces;
-	int surface_idx = 0;
-	for (int i = 0; i < leafCount; i++)
-	{
-		for (int n = 0; n < leaves[i].nMarkSurfaces; n++)
-		{
-			all_mark_surfaces.push_back(marksurfs[leaves[i].iFirstMarkSurface + n]);
-		}
+	// add faces from first model to second model leafs and back
 
-		leaves[i].iFirstMarkSurface = surface_idx;
-		leaves[i].nMarkSurfaces += newfaces;
 
-		surface_idx += leaves[i].nMarkSurfaces;
-
-		for (int f2 = 0; f2 < models[src_model].nFaces; f2++)
-		{
-			all_mark_surfaces.push_back(models[dst_model].iFirstFace + models[dst_model].nFaces + f2);
-		}
-	}
-
-	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
-	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
-	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
-
-	newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
+	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 
@@ -7094,15 +7083,15 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 	vec3 bmin = models[src_model].nMins;
 	vec3 bmax = models[src_model].nMaxs;
 
-	//std::vector<vec3> veclist;
-	//veclist.push_back(amin);
-	//veclist.push_back(amax);
-	//veclist.push_back(bmin);
-	//veclist.push_back(bmax);
+	std::vector<vec3> veclist;
+	veclist.push_back(amin);
+	veclist.push_back(amax);
+	veclist.push_back(bmin);
+	veclist.push_back(bmax);
 
-	//vec3 new_min, new_max;
+	vec3 new_min, new_max;
 
-	//getBoundingBox(veclist, new_min, new_max);
+	getBoundingBox(veclist, new_min, new_max);
 
 	BSPPLANE separate_plane = getSeparatePlane(amin, amax, bmin, bmax);
 
@@ -7123,8 +7112,8 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 			separationPlaneIdx,			// plane idx
 			{ models[src_model].iHeadnodes[0],
 			models[dst_model].iHeadnodes[0] },		// child nodes
-			{ amin.x, amin.y, amin.z },	// mins
-			{ amax.x, amax.y, amax.z },	// maxs
+			{ new_min.x, new_min.y, new_min.z },	// mins
+			{ new_max.x, new_max.y, new_max.z },	// maxs
 			0, // first face
 			0  // n faces (none since this plane is in the void)
 		};
@@ -7183,7 +7172,10 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 	// swap leaves?
 
 	models[dst_model].nFaces += newfaces;
-	models[dst_model].nVisLeafs += models[src_model].nVisLeafs; //0
+	models[dst_model].nVisLeafs += models[src_model].nVisLeafs;
+
+	models[dst_model].nMins = new_min;
+	models[dst_model].nMaxs = new_max;
 
 	models[src_model].iFirstFace = 0;
 	models[src_model].iHeadnodes[0] = models[src_model].iHeadnodes[1] =
@@ -7193,6 +7185,18 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 
 	update_lump_pointers();
 
+	std::vector<int> leafs;
+	modelLeafs(dst_model, leafs);
+
+	for (auto& l : leafs)
+	{
+		for (int f2 = 0; f2 < models[dst_model].nFaces; f2++)
+		{
+			leaf_add_face(models[dst_model].iFirstFace + f2, l);
+		}
+	}
+
+	save_undo_lightmaps();
 	return dst_model;
 }
 
@@ -7666,6 +7670,14 @@ bool Bsp::isModelHasLeafIdx(const BSPMODEL& bspmdl, int leafidx)
 	std::vector<int> visLeafs;
 	modelLeafs(bspmdl, visLeafs);
 	return std::find(visLeafs.begin(), visLeafs.end(), leafidx) != visLeafs.end();
+}
+
+int Bsp::merge_all_faces()
+{
+	int merged = 0;
+
+
+	return merged;
 }
 
 void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int iscale, bool lightmapmode)

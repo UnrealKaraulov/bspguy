@@ -283,6 +283,11 @@ vec3 vec3::unflipUV()
 	return flip();
 }
 
+float vec3::dist(vec3 to)
+{
+	return sqrt(pow(x - to.x, 2) + pow(y - to.y, 2) + pow(z - to.z, 2));
+}
+
 bool operator==(const vec2& v1, const vec2& v2)
 {
 	vec2 v = v1 - v2;
