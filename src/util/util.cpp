@@ -919,15 +919,15 @@ std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts)
 	return outVerts;
 }
 
-bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
+bool pointInsidePolygon(std::vector<vec3>& poly, vec2 p)
 {
 	// https://stackoverflow.com/a/34689268
 	bool inside = true;
 	float lastd = 0;
 	for (size_t i = 0; i < poly.size(); i++)
 	{
-		vec2& v1 = poly[i];
-		vec2& v2 = poly[(i + 1) % poly.size()];
+		vec3& v1 = poly[i];
+		vec3& v2 = poly[(i + 1) % poly.size()];
 
 		if (abs(v1.x - p.x) < EPSILON && abs(v1.y - p.y) < EPSILON)
 		{
@@ -946,6 +946,7 @@ bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 	}
 	return inside;
 }
+
 
 #define DATA_OFFSET_OFFSET 0x000A
 #define WIDTH_OFFSET 0x0012
@@ -1009,6 +1010,11 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 		fwrite(&pixels[pixelOffset], 1, paddedRowSize, outputFile);
 	}
 	fclose(outputFile);
+}
+
+int ArrayXYtoId(int w, int x, int y)
+{
+	return x + (y * w);
 }
 
 

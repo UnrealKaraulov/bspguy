@@ -39,20 +39,20 @@ struct FaceMath
 	mat4x4 worldToLocal; // transforms world coordiantes to this face's plane's coordinate system
 	vec3 normal;
 	float fdist;
-	std::vector<vec2> localVerts;
+	std::vector<vec3> localVerts;
 	FaceMath()
 	{
 		worldToLocal = mat4x4();
 		normal = vec3();
 		fdist = 0.0f;
-		localVerts = std::vector<vec2>();
+		localVerts = std::vector<vec3>();
 	}
 	~FaceMath()
 	{
 		worldToLocal = mat4x4();
 		normal = vec3();
 		fdist = 0.0f;
-		localVerts = std::vector<vec2>();
+		localVerts = std::vector<vec3>();
 	}
 };
 

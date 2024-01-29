@@ -221,7 +221,9 @@ std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts);
 
 std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts);
 
-bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p);
+bool pointInsidePolygon(std::vector<vec3>& poly, vec2 p);
+
+int ArrayXYtoId(int w, int x, int y);
 
 enum class FIXUPPATH_SLASH
 {

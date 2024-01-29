@@ -1396,10 +1396,10 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 			faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
 
-			faceMath.localVerts = std::vector<vec2>(faceVerts.size());
+			faceMath.localVerts = std::vector<vec3>(faceVerts.size());
 			for (size_t k = 0; k < faceVerts.size(); k++)
 			{
-				faceMath.localVerts[k] = (faceMath.worldToLocal * vec4(faceVerts[k], 1)).xy();
+				faceMath.localVerts[k] = (faceMath.worldToLocal * vec4(faceVerts[k], 1)).xyz();
 			}
 
 			tfaceMaths.push_back(faceMath);
@@ -2009,10 +2009,10 @@ void BspRenderer::refreshFace(int faceIdx)
 
 	faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
 
-	faceMath.localVerts = std::vector<vec2>(allVerts.size());
+	faceMath.localVerts = std::vector<vec3>(allVerts.size());
 	for (size_t i = 0; i < allVerts.size(); i++)
 	{
-		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xy();
+		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xyz();
 	}
 }
 

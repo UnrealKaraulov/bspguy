@@ -1044,6 +1044,48 @@ void Gui::drawBspContexMenu()
 		}
 	}
 }
+// debug
+float distancex(const vec2& p1, const vec2& p2) {
+	float dx = p2.x - p1.x;
+	float dy = p2.y - p1.y;
+	return dx * dx + dy * dy;
+}
+
+float mix(float x, float y, float a) {
+	return x * (1 - a) + y * a;
+}
+
+float approximateZCoordinateOnPolygonPlane(const std::vector<vec3>& vertices, const vec2& localPos) {
+	float z = 0.0f;
+	size_t numVertices = vertices.size();
+	if (numVertices < 3) {
+		return z;
+	}
+
+	size_t index1 = 0;
+	size_t index2 = 1;
+	float minDistance1 = distancex(localPos, vec2(vertices[0].x, vertices[0].y));
+	float minDistance2 = distancex(localPos, vec2(vertices[1].x, vertices[1].y));
+
+	for (size_t i = 2; i < numVertices; ++i) {
+		float distance = distancex(localPos, vec2(vertices[i].x, vertices[i].y));
+		if (distance < minDistance1) {
+			index2 = index1;
+			minDistance2 = minDistance1;
+			index1 = i;
+			minDistance1 = distance;
+		}
+		else if (distance < minDistance2) {
+			index2 = i;
+			minDistance2 = distance;
+		}
+	}
+	float t = minDistance1 / (minDistance1 + minDistance2);
+	z = mix(vertices[index1].z, vertices[index2].z, t);
+
+	return z;
+}
+//
 
 void Gui::drawMenuBar()
 {
@@ -2450,7 +2492,7 @@ void Gui::drawMenuBar()
 				}
 			}
 			ImGui::EndMenu();
-		}
+				}
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
 		{
@@ -2665,10 +2707,62 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			/*if (ImGui::MenuItem("Do something bad", NULL, false, !map->is_protected))
+			if (DebugKeyPressed && ImGui::MenuItem("Do something bad", NULL, false))
 			{
-				map->resize_all_lightmaps();
-			}*/
+				memset(map->lightdata, 0, map->lightDataLength);
+				vec3 camerapos = cameraOrigin - rend->mapOffset;
+
+				print_log("Map offset {} {} {}\n", rend->mapOffset.x, rend->mapOffset.y, rend->mapOffset.z);
+
+				for (int faceIdx = 0; faceIdx < rend->numFaceMaths; faceIdx++) {
+					int bytes = GetFaceLightmapSizeBytes(map, faceIdx);
+					if (bytes <= 0)
+						continue;
+
+					FaceMath& faceMath = rend->faceMaths[faceIdx];
+					BSPFACE32& face = map->faces[faceIdx];
+					BSPPLANE& plane = map->planes[face.iPlane];
+					int size[2];
+					GetFaceLightmapSize(map, faceIdx, size);
+
+					vec3 minPoint;
+					vec3 maxPoint;
+					vec3 newPoint = (faceMath.worldToLocal.invert() * vec4(minPoint.x, minPoint.y, minPoint.z, 1.0f)).xyz();
+
+					vec3 face_center = getCenter(faceMath.localVerts);
+
+					getBoundingBox(faceMath.localVerts, minPoint, maxPoint);
+
+					for (int x = 0; x < size[0]; x++) {
+						for (int y = 0; y < size[1]; y++) {
+							float u = (static_cast<float>(x) / size[0]) * (maxPoint.x - minPoint.x) + minPoint.x;
+							float v = (static_cast<float>(y) / size[1]) * (maxPoint.y - minPoint.y) + minPoint.y;
+							vec2 textureCoord(u, v);
+
+							vec3 worldPos = (faceMath.worldToLocal.invert() * vec4(textureCoord.x, textureCoord.y, approximateZCoordinateOnPolygonPlane(faceMath.localVerts, textureCoord))).xyz();
+							float dist = worldPos.dist(camerapos);
+
+							float color = clamp(200.0f / dist, 0.0f, 1.0f);
+							unsigned char color_b = color * 255.0f;
+
+							for (int i = 0; i < MAX_LIGHTMAPS; i++)
+							{
+								if (face.nStyles[i] == 255)
+									continue;
+								int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
+								int offset = face.nLightmapOffset + i * lightmapSz;
+								COLOR3* light_data = (COLOR3*)(unsigned char*)(map->lightdata + offset);
+								light_data[ArrayXYtoId(size[0], x, y)] = COLOR3(color_b, color_b, color_b);
+							}
+						}
+					}
+				}
+
+				map->getBspRender()->loadLightmaps();
+				map->getBspRender()->calcFaceMaths();
+				map->getBspRender()->preRenderFaces();
+				map->getBspRender()->preRenderEnts();
+			}
 
 			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
 			{
@@ -3364,7 +3458,7 @@ void Gui::drawMenuBar()
 		}
 
 		ImGui::EndMainMenuBar();
-	}
+				}
 
 	if (ImGui::BeginViewportSideBar("BottomBar", ImGui::GetMainViewport(), ImGuiDir_Down, ImGui::GetTextLineHeightWithSpacing(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar))
 	{
@@ -3401,7 +3495,7 @@ void Gui::drawMenuBar()
 		ImGui::End();
 	}
 
-}
+			}
 
 void Gui::drawToolbar()
 {
@@ -8045,11 +8139,6 @@ bool ColorPicker4(ImGuiIO* imgui_io, float col[4])
 	return ColorPicker(imgui_io, col, true);
 }
 
-int ArrayXYtoId(int w, int x, int y)
-{
-	return x + (y * w);
-}
-
 std::vector<COLOR3> colordata;
 
 
@@ -8124,13 +8213,13 @@ void ImportOneBigLightmapFile(Bsp* map)
 			free(image_bytes);
 			for (size_t faceIdx : faces_to_export)
 			{
+				if (map->faces[faceIdx].nLightmapOffset < 0 || map->faces[faceIdx].nStyles[lightId] == 255)
+					continue;
+
 				int size[2];
 				GetFaceLightmapSize(map, (int)faceIdx, size);
 
 				int sizeX = size[0], sizeY = size[1];
-
-				if (map->faces[faceIdx].nLightmapOffset < 0 || map->faces[faceIdx].nStyles[lightId] == 255)
-					continue;
 
 				int lightmapSz = sizeX * sizeY * sizeof(COLOR3);
 
@@ -8238,13 +8327,14 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 		//print_log(get_localized_string(LANG_0411),lightId);
 		for (size_t faceIdx : faces_to_export)
 		{
+			if (map->faces[faceIdx].nLightmapOffset < 0 || map->faces[faceIdx].nStyles[lightId] == 255)
+				continue;
+
 			int size[2];
 			GetFaceLightmapSize(map, (int)faceIdx, size);
 
 			int sizeX = size[0], sizeY = size[1];
 
-			if (map->faces[faceIdx].nLightmapOffset < 0 || map->faces[faceIdx].nStyles[lightId] == 255)
-				continue;
 
 			int lightmapSz = sizeX * sizeY * sizeof(COLOR3);
 

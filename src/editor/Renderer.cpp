@@ -1754,7 +1754,6 @@ void Renderer::pickObject()
 
 	if (pickMode != PICK_OBJECT)
 	{
-
 		gui->showLightmapEditorUpdate = true;
 
 		if (!anyCtrlPressed)
