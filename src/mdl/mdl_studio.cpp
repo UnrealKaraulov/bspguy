@@ -922,7 +922,8 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 	//print_log("Texture name {} texture flags {}\n", ptexture->name, ptexture->flags);
 	// ptexture->width = outwidth;
 	// ptexture->height = outheight;
-	auto texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name, true);
+
+	auto texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name[0] != '\0' ? stripExt(ptexture->name) : "UNNAMED", true);
 	texture->setWadName("model_textures");
 	texture->upload();
 	ptexture->index = (int)mdl_textures.size();

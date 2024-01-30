@@ -2492,7 +2492,7 @@ void Gui::drawMenuBar()
 				}
 			}
 			ImGui::EndMenu();
-				}
+		}
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
 		{
@@ -2705,6 +2705,330 @@ void Gui::drawMenuBar()
 					app->clipnodeRenderHull = 3;
 				}
 				ImGui::EndMenu();
+			}
+
+			if (DebugKeyPressed && ImGui::MenuItem("Secret MDL to BSP", NULL, false, app && app->pickInfo.selectedEnts.size()))
+			{
+				int ent = app->pickInfo.selectedEnts[0];
+
+				std::set<Texture*> added_textures;
+				if (rend->renderEnts[ent].mdl)
+				{
+					auto mdl = rend->renderEnts[ent].mdl;
+					if (mdl->mdl_mesh_groups.size())
+					{
+						int modelFirstFace = map->faceCount;
+						int modelFirstPlane = map->planeCount;
+						int modelFaces = 0;
+
+						int lightOffset = map->lightDataLength;
+
+
+
+						unsigned char* testlightdata = new unsigned char[map->lightDataLength + (512*512*3)];
+						memcpy(testlightdata, map->lightdata, map->lightDataLength);
+						memset(testlightdata + map->lightDataLength,255, (512 * 512 * 3));
+						map->replace_lump(LUMP_LIGHTING, testlightdata, map->lightDataLength + (512 * 512 * 3));
+
+						vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+						vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+
+
+
+						for (size_t group = 0; group < mdl->mdl_mesh_groups.size(); group++)
+						{
+							for (size_t meshid = 0; meshid < mdl->mdl_mesh_groups[group].size(); meshid++)
+							{
+								auto mesh = mdl->mdl_mesh_groups[group][meshid];
+								modelVert* mdlVerts = (modelVert*)mesh.buffer->get_data();
+
+								std::vector<int> newVertIndexes;
+								vec3* newverts = new vec3[map->vertCount + mesh.buffer->numVerts];
+								memcpy(newverts, map->verts, map->vertCount * sizeof(vec3));
+								int v = 0;
+
+								std::vector<vec3> tmpMeshVerts;
+
+								for (v = map->vertCount; v < map->vertCount + mesh.buffer->numVerts; v++)
+								{
+									newverts[v] = mdlVerts[v - map->vertCount].pos.flipUV();
+									newVertIndexes.push_back(v);
+									expandBoundingBox(newverts[v], mins, maxs);
+									tmpMeshVerts.push_back(newverts[v]);
+								}
+
+								vec3 centroid = getCentroid(tmpMeshVerts);
+
+
+								int newdedgescount = map->edgeCount + mesh.buffer->numVerts;
+
+								BSPEDGE32* newedges = new BSPEDGE32[map->edgeCount + (mesh.buffer->numVerts + 1) / 2];
+								memcpy(newedges, map->edges, map->edgeCount * sizeof(BSPEDGE32));
+
+								std::map<int, int> vertToSurfedge;
+
+								bool inverse = false;
+
+								unsigned int startEdge = map->edgeCount;
+								{
+									unsigned int idx = 0;
+									for (unsigned int i = 0; i < mesh.buffer->numVerts; i += 2)
+									{
+										unsigned int v0 = i;
+										unsigned int v1 = (i + 1) % mesh.buffer->numVerts;
+										newedges[startEdge + idx] = BSPEDGE32((unsigned int)newVertIndexes[v0], (unsigned int)newVertIndexes[v1]);
+
+										vertToSurfedge[v0] = startEdge + idx;
+										if (v1 > 0)
+										{
+											vertToSurfedge[v1] = -((int)(startEdge + idx)); // negative = use second vert
+										}
+
+										idx++;
+									}
+								}
+
+								inverse = false;
+								int newsurfedges_count = map->surfedgeCount + mesh.buffer->numVerts;
+								int* newsurfedges = new int[newsurfedges_count + 1];
+								newsurfedges[newsurfedges_count] = map->edgeCount;
+								memcpy(newsurfedges, map->surfedges, map->surfedgeCount * sizeof(int));
+
+								for (v = map->surfedgeCount; v < newsurfedges_count; v++)
+								{
+									newsurfedges[v] = (int)vertToSurfedge[v - map->surfedgeCount];
+								}
+
+								int numTriangles = mesh.buffer->numVerts / 3;
+
+								modelFaces += numTriangles;
+
+								BSPFACE32* newfaces = new BSPFACE32[map->faceCount + numTriangles];
+								memcpy(newfaces, map->faces, map->faceCount * sizeof(BSPFACE32));
+
+								BSPPLANE* newplanes = new BSPPLANE[map->planeCount + numTriangles];
+								memcpy(newplanes, map->planes, map->planeCount * sizeof(BSPPLANE));
+
+								BSPTEXTUREINFO* newtexinfos = new BSPTEXTUREINFO[map->texinfoCount + numTriangles];
+								memcpy(newtexinfos, map->texinfos, map->texinfoCount * sizeof(BSPTEXTUREINFO));
+
+								int firstEdge = map->surfedgeCount;
+
+								for (v = map->faceCount; v < map->faceCount + numTriangles; v++)
+								{
+									newfaces[v].iFirstEdge = firstEdge;
+									newfaces[v].nEdges = 3;
+									newfaces[v].iPlane = (v - map->faceCount) + map->planeCount;
+									newfaces[v].iTextureInfo = (v - map->faceCount) + map->texinfoCount;
+									newfaces[v].nLightmapOffset = lightOffset;
+									memset(newfaces[v].nStyles, 255, MAX_LIGHTMAPS);
+									newfaces[v].nStyles[0] = 0;
+
+
+									BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[v].iTextureInfo];
+
+
+									if (!added_textures.count(mesh.texture))
+									{
+										COLOR4* tmpDataTex = (COLOR4*)mesh.texture->get_data();
+										COLOR3* tmpData = new COLOR3[mesh.texture->width * mesh.texture->height];
+										if (mesh.texture->format == GL_RGBA)
+										{
+											for (int i = 0; i < mesh.texture->width * mesh.texture->height; i++)
+											{
+												tmpData[i] = tmpDataTex[i].rgb();
+											}
+										}
+										else
+										{
+											memcpy(tmpData, tmpDataTex, mesh.texture->width * mesh.texture->height * sizeof(COLOR3));
+										}
+										added_textures.insert(mesh.texture);
+										texInfo.iMiptex = map->add_texture(mesh.texture->texName.c_str(), (unsigned char*)tmpData, mesh.texture->width,
+											mesh.texture->height);
+									}
+									else
+									{
+										map->find_embedded_texture(mesh.texture->texName.c_str(), texInfo.iMiptex);
+									}
+
+									BSPPLANE& plane = newplanes[newfaces[v].iPlane];
+
+									std::vector<vec3> planeverts;
+
+									planeverts.push_back(mdlVerts[v - map->faceCount].pos.flipUV());
+									planeverts.push_back(mdlVerts[(v - map->faceCount) + 1].pos.flipUV());
+									planeverts.push_back(mdlVerts[(v - map->faceCount) + 2].pos.flipUV());
+
+
+									vec3 orderedVertsNormal = getNormalFromVerts(planeverts);
+
+									if (!getPlaneFromVerts(planeverts, plane.vNormal, plane.fDist))
+									{
+										vec3 vertex1 = newsurfedges[firstEdge] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge])].iVertex[0]]
+											: newverts[newedges[abs(newsurfedges[firstEdge])].iVertex[1]];
+										vec3 vertex2 = newsurfedges[firstEdge] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge + 1])].iVertex[0]]
+											: newverts[newedges[abs(newsurfedges[firstEdge + 1])].iVertex[1]];
+										vec3 vertex3 = newsurfedges[firstEdge] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge + 2])].iVertex[0]]
+											: newverts[newedges[abs(newsurfedges[firstEdge + 2])].iVertex[1]];
+
+										// Calculate the normal vector using cross product
+										vec3 edge1 = vertex2 - vertex1;
+										vec3 edge2 = vertex3 - vertex1;
+										vec3 normal = crossProduct(edge1, edge2).normalize();
+
+										// Calculate the distance from the origin
+										float dist = dotProduct(normal, vertex1);
+
+										plane.vNormal = normal;
+										plane.fDist = dist;
+									}
+
+
+									// get plane normal, flipping if it points inside the solid
+									vec3 faceNormal = plane.vNormal;
+									vec3 planeDir = ((plane.vNormal * plane.fDist) - centroid).normalize();
+									newfaces[v].nPlaneSide = 1;
+
+									if (dotProduct(planeDir, plane.vNormal) > EPSILON)
+									{
+										faceNormal = faceNormal.invert();
+										newfaces[v].nPlaneSide = 0;
+									}
+
+									// reverse vert order if not CCW when viewed from outside the solid
+									if (dotProduct(orderedVertsNormal, faceNormal) < EPSILON)
+									{
+										std::reverse(planeverts.begin(), planeverts.end());
+										newverts[v - map->faceCount + map->vertCount] = planeverts[0];
+										newverts[(v - map->faceCount) + 1 + map->vertCount] = planeverts[1];
+										newverts[(v - map->faceCount) + 2 + map->vertCount] = planeverts[2];
+									}
+
+									plane.vNormal = planeDir;
+									plane.update(plane.vNormal, plane.fDist);
+									
+									vec3 xv, yv;
+									int bestplane = TextureAxisFromPlane(plane, xv, yv);
+									texInfo.shiftS = texInfo.shiftT = 0.0f;
+									texInfo.nFlags = 0;
+									texInfo.vS = xv;
+									texInfo.vT = yv;
+									texInfo.vS = texInfo.vS.normalize(1.0f);
+									texInfo.vT = texInfo.vT.normalize(1.0f);
+
+									firstEdge += 3;
+								}
+
+
+								map->replace_lump(LUMP_VERTICES, newverts, (map->vertCount + mesh.buffer->numVerts) * sizeof(vec3));
+								map->replace_lump(LUMP_EDGES, newedges, (map->edgeCount + (int)((mesh.buffer->numVerts + 1) / 2)) * sizeof(BSPEDGE32));
+								map->replace_lump(LUMP_SURFEDGES, newsurfedges, (map->surfedgeCount + mesh.buffer->numVerts + 1) * sizeof(int));
+								map->replace_lump(LUMP_FACES, newfaces, (map->faceCount + numTriangles) * sizeof(BSPFACE32));
+								map->replace_lump(LUMP_PLANES, newplanes, (map->planeCount + numTriangles) * sizeof(BSPPLANE));
+								map->replace_lump(LUMP_TEXINFO, newtexinfos, (map->texinfoCount + numTriangles) * sizeof(BSPTEXTUREINFO));
+							}
+						}
+
+						vec3 origin = getCenter(maxs, mins);
+
+						BSPMODEL* newmodels = new BSPMODEL[map->modelCount + 1];
+						memcpy(newmodels, map->models, map->modelCount * sizeof(BSPMODEL));
+						newmodels[map->modelCount].nMins = mins;
+						newmodels[map->modelCount].nMaxs = maxs;
+						newmodels[map->modelCount].vOrigin = origin;
+						newmodels[map->modelCount].iFirstFace = modelFirstFace;
+						newmodels[map->modelCount].nFaces = modelFaces;
+						newmodels[map->modelCount].nVisLeafs = 0;
+
+						unsigned int startNode = map->nodeCount;
+						{
+							BSPNODE32* newNodes = new BSPNODE32[map->nodeCount + modelFaces]{};
+							memcpy(newNodes, map->nodes, map->nodeCount * sizeof(BSPNODE32));
+
+							int sharedSolidLeaf = 0;
+							int anyEmptyLeaf = 0;
+							for (int i = 0; i < map->leafCount; i++)
+							{
+								if (map->leaves[i].nContents == CONTENTS_EMPTY)
+								{
+									anyEmptyLeaf = i;
+									break;
+								}
+							}
+							// If emptyLeaf is still 0 (SOLID), it means the map is fully solid, so the contents wouldn't matter.
+							// Anyway, still setting this in case someone wants to copy the model to another map
+							if (anyEmptyLeaf == 0)
+							{
+								anyEmptyLeaf = map->create_leaf(CONTENTS_EMPTY);
+								newmodels[map->modelCount].nVisLeafs = 1;
+							}
+							else
+							{
+								newmodels[map->modelCount].nVisLeafs = 0;
+							}
+
+
+							for (size_t k = 0; k < modelFaces; k++)
+							{
+								BSPNODE32& node = newNodes[map->nodeCount + k];
+
+								node.iFirstFace = (int)(modelFirstFace + k); // face required for decals
+								node.nFaces = 1;
+								node.iPlane = (int)(modelFirstPlane + k);
+								// node mins/maxs don't matter for submodels. Leave them at 0.
+
+								int insideContents = modelFaces && k == modelFaces - 1 ? ~sharedSolidLeaf : (int)(map->nodeCount + k + 1);
+								int outsideContents = ~anyEmptyLeaf;
+
+								// can't have negative normals on planes so children are swapped instead
+								if (map->faces[node.iFirstFace].nPlaneSide)
+								{
+									node.iChildren[0] = insideContents;
+									node.iChildren[1] = outsideContents;
+								}
+								else
+								{
+									node.iChildren[0] = outsideContents;
+									node.iChildren[1] = insideContents;
+								}
+							}
+
+							map->replace_lump(LUMP_NODES, newNodes, (map->nodeCount + modelFaces) * sizeof(BSPNODE32));
+						}
+							
+						map->models[map->modelCount].iHeadnodes[0] = startNode;
+
+						map->models[map->modelCount].iHeadnodes[1] = CONTENTS_EMPTY;
+						map->models[map->modelCount].iHeadnodes[2] = CONTENTS_EMPTY;
+						map->models[map->modelCount].iHeadnodes[3] = CONTENTS_EMPTY;
+
+						map->ents.push_back(new Entity("func_wall"));
+						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("model", "*" + std::to_string(map->modelCount));
+						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", vec3().toKeyvalueString());
+
+						map->replace_lump(LUMP_MODELS, newmodels, (map->modelCount + 1) * sizeof(BSPMODEL));
+
+						//print_log("11111111111111111111111\n");
+						//map->regenerate_clipnodes_from_nodes(startNode, 1);
+						//print_log("21111111111111111111111\n");
+						//map->regenerate_clipnodes_from_nodes(startNode, 2);
+						//print_log("31111111111111111111111\n");
+						//map->regenerate_clipnodes_from_nodes(startNode, 3);
+						//print_log("41111111111111111111111\n");
+
+						map->update_ent_lump();
+						map->save_undo_lightmaps();
+
+						rend->loadLightmaps();
+						rend->calcFaceMaths();
+						rend->preRenderFaces();
+						rend->preRenderEnts();
+						rend->loadTextures();
+						rend->reuploadTextures();
+						print_log("51111111111111111111111\n");
+					}
+				}
 			}
 
 			if (DebugKeyPressed && ImGui::MenuItem("Do something bad", NULL, false))
@@ -3458,7 +3782,7 @@ void Gui::drawMenuBar()
 		}
 
 		ImGui::EndMainMenuBar();
-				}
+	}
 
 	if (ImGui::BeginViewportSideBar("BottomBar", ImGui::GetMainViewport(), ImGuiDir_Down, ImGui::GetTextLineHeightWithSpacing(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar))
 	{
@@ -3495,7 +3819,7 @@ void Gui::drawMenuBar()
 		ImGui::End();
 	}
 
-			}
+}
 
 void Gui::drawToolbar()
 {

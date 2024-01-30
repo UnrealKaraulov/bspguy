@@ -5809,10 +5809,6 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 		BSPTEXTUREINFO* newTexinfos = new BSPTEXTUREINFO[texinfoCount + 6];
 		memcpy(newTexinfos, texinfos, texinfoCount * sizeof(BSPTEXTUREINFO));
 
-		vec3 up = vec3(0, 0, 1);
-		vec3 right = vec3(1, 0, 0);
-		vec3 forward = vec3(0, 1, 0);
-
 		vec3 faceNormals[6]{
 			vec3(-1, 0, 0),	// left
 			vec3(1, 0, 0), // right
@@ -6079,7 +6075,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 	// add new nodes
 	unsigned int startNode = nodeCount;
 	{
-		BSPNODE32* newNodes = new BSPNODE32[nodeCount + solid.faces.size() + 1]{};
+		BSPNODE32* newNodes = new BSPNODE32[nodeCount + solid.faces.size()]{};
 		memcpy(newNodes, nodes, nodeCount * sizeof(BSPNODE32));
 
 		for (size_t k = 0; k < solid.faces.size(); k++)
@@ -6245,11 +6241,8 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 
 int Bsp::create_clipnode()
 {
-	BSPCLIPNODE32* newNodes = new BSPCLIPNODE32[clipnodeCount + 1];
+	BSPCLIPNODE32* newNodes = new BSPCLIPNODE32[clipnodeCount + 1]{};
 	memcpy(newNodes, clipnodes, clipnodeCount * sizeof(BSPCLIPNODE32));
-
-	BSPCLIPNODE32* newNode = &newNodes[clipnodeCount];
-	memset(newNode, 0, sizeof(BSPCLIPNODE32));
 
 	replace_lump(LUMP_CLIPNODES, newNodes, (clipnodeCount + 1) * sizeof(BSPCLIPNODE32));
 
@@ -6260,9 +6253,6 @@ int Bsp::create_plane()
 {
 	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 1]{};
 	memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
-
-	newPlanes[planeCount] = BSPPLANE();
-	//BSPPLANE& newPlane = newPlanes[planeCount];
 
 	replace_lump(LUMP_PLANES, newPlanes, (planeCount + 1) * sizeof(BSPPLANE));
 
@@ -7308,6 +7298,10 @@ bool Bsp::is_worldspawn_ent(int entIdx)
 
 int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 {
+	if (iNode == 2269)
+	{
+		print_log("Regen {} of {}\n", iNode, nodeCount);
+	}
 	BSPNODE32& node = nodes[iNode];
 
 	switch (planes[node.iPlane].nType)

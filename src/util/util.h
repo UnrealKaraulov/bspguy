@@ -301,3 +301,5 @@ std::string getValueInQuotes(std::string s);
 std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& points);
 
 void removeColinearPoints(std::vector<vec3>& vertices, float epsilon);
+
+vec3 getCentroid(std::vector<vec3>& hullVerts);

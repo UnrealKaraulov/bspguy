@@ -2080,3 +2080,13 @@ void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
 		}
 	}
 }
+
+vec3 getCentroid(std::vector<vec3>& hullVerts)
+{
+	vec3 centroid;
+	for (size_t i = 0; i < hullVerts.size(); i++)
+	{
+		centroid += hullVerts[i];
+	}
+	return centroid / (float)hullVerts.size();
+}
