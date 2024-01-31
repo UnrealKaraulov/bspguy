@@ -179,7 +179,7 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 
 vec3 vec3::normalize(float length)
 {
-	if (abs(x) < EPSILON2 && abs(y) < EPSILON2 && abs(z) < EPSILON2)
+	if (::abs(x) < EPSILON2 && ::abs(y) < EPSILON2 && ::abs(z) < EPSILON2)
 		return vec3();
 	float d = length / sqrt((x * x) + (y * y) + (z * z));
 
@@ -219,6 +219,11 @@ vec3 vec3::swap_xz()
 	return vec3(z, y, x);
 }
 
+vec3 vec3::abs()
+{
+	return vec3(::abs(x), ::abs(y), ::abs(z));
+}
+
 vec3 vec3::invert()
 {
 	return vec3( -x , -y, -z );
@@ -231,7 +236,7 @@ float vec3::length()
 
 bool vec3::IsZero()
 {
-	return (abs(x) + abs(y) + abs(z)) < EPSILON;
+	return (::abs(x) + ::abs(y) + ::abs(z)) < EPSILON;
 }
 
 std::string vec3::toString()
@@ -246,10 +251,6 @@ std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, c
 	// remove trailing zeros to save some space
 	for (int i = 0; i < 3; i++)
 	{
-		if (truncate)
-		{
-			parts[i] = parts[i].substr(0, parts[i].find('.') + 3);
-		}
 
 		parts[i].erase(parts[i].find_last_not_of('0') + 1, std::string::npos);
 
@@ -258,6 +259,14 @@ std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, c
 		{
 			parts[i] = parts[i].substr(0, parts[i].size() - 1);
 		}
+		if (truncate)
+		{
+			size_t dotPosition = parts[i].find('.');
+			if (dotPosition != std::string::npos) {
+				parts[i] = parts[i].substr(0, dotPosition);
+			}
+		}
+
 	}
 
 	return parts[0] + suffix_x + parts[1] + suffix_y + parts[2] + suffix_z;
@@ -281,6 +290,17 @@ vec3 vec3::unflip()
 vec3 vec3::unflipUV()
 {
 	return flip();
+}
+
+
+float vec3::size_test()
+{
+	return (x + y) * (z / 256.0f);
+}
+
+float vec3::sizeXY_test()
+{
+	return x + y;
 }
 
 float vec3::dist(vec3 to)
@@ -456,7 +476,33 @@ vec4 operator+(vec4 v, float f)
 	return v;
 }
 
+std::string vec4::toKeyvalueString(bool truncate, const std::string& suffix_x, const std::string& suffix_y, const std::string& suffix_z, const std::string& suffix_w)
+{
+	std::string parts[4] = { std::to_string(x) ,std::to_string(y), std::to_string(z) , std::to_string(w) };
 
+
+	// remove trailing zeros to save some space
+	for (int i = 0; i < 4; i++)
+	{
+		parts[i].erase(parts[i].find_last_not_of('0') + 1, std::string::npos);
+
+		// strip dot if there's no fractional part
+		if (parts[i][parts[i].size() - 1] == '.')
+		{
+			parts[i] = parts[i].substr(0, parts[i].size() - 1);
+		}
+		if (truncate)
+		{
+			size_t dotPosition = parts[i].find('.');
+			if (dotPosition != std::string::npos) {
+				parts[i] = parts[i].substr(0, dotPosition);
+			}
+		}
+
+	}
+
+	return parts[0] + suffix_x + parts[1] + suffix_y + parts[2] + suffix_z + parts[3] + suffix_w;
+}
 
 vec4 operator*(vec4 v1, const vec4& v2)
 {

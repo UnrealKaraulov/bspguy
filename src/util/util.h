@@ -142,7 +142,7 @@ inline void print_log(unsigned short colors, const std::string& format, Args ...
 
 bool fileExists(const std::string& fileName);
 
-bool copyFile(const std::string& fileName, const std::string& fileName2);
+bool copyFile(const std::string& from, const std::string& to);
 
 char* loadFile(const std::string& fileName, int& length);
 
@@ -247,7 +247,7 @@ int GetImageColors(COLOR3* image, int size);
 int ColorDistance(COLOR3 color, COLOR3 other);
 void SimpeColorReduce(COLOR3* image, int size);
 
-bool FindPathInAssets(Bsp * map, const std::string& filename, std::string& outpath, bool tracesearch = false);
+bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpath, bool tracesearch = false);
 void FixupAllSystemPaths();
 
 int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p);
@@ -303,3 +303,26 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 void removeColinearPoints(std::vector<vec3>& vertices, float epsilon);
 
 vec3 getCentroid(std::vector<vec3>& hullVerts);
+
+bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2Mins, const vec3& obj2Maxs);
+
+
+// author https://gist.github.com/multiplemonomials/1d1806062a3809ffe26f7a232757ecb6
+
+
+#include <string>
+#include <vector>
+
+class Process
+{
+	std::string _program;
+	std::vector<std::string> _arguments;
+
+	std::string quoteIfNecessary(std::string toQuote);
+
+public:
+	Process(std::string program);
+	Process& arg(std::string arg);
+	std::string getCommandlineString();
+	int executeAndWait(int sin, int sout, int serr);
+};

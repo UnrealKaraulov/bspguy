@@ -85,13 +85,16 @@ bool removeFile(const std::string& fileName)
 	return fs::exists(fileName) && fs::remove(fileName);
 }
 
-bool copyFile(const std::string& fileName, const std::string& fileName2)
+bool copyFile(const std::string& from, const std::string& to)
 {
-	if (fileExists(fileName))
+	if (!fileExists(from))
 		return false;
-	if (!fileExists(fileName2))
-		return false;
-	return fs::copy_file(fileName, fileName2);
+	if (fileExists(to))
+	{
+		if (!removeFile(to))
+			return false;
+	}
+	return fs::copy_file(from, to);
 }
 
 size_t fileSize(const std::string& filePath)
@@ -1093,7 +1096,7 @@ int mkdir_p(const char* dir, const mode_t mode)
 	{
 		/* not a directory */
 		return -1;
-	}
+}
 	return 0;
 }
 #endif 
@@ -2029,7 +2032,7 @@ void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
 			{
 				if (i1 == i2 || i1 == i3 || i2 == i3)
 					continue;
-				
+
 				if (verts[i1].x == verts[i2].x &&
 					verts[i2].x == verts[i3].x)
 				{
@@ -2089,4 +2092,171 @@ vec3 getCentroid(std::vector<vec3>& hullVerts)
 		centroid += hullVerts[i];
 	}
 	return centroid / (float)hullVerts.size();
+}
+
+
+bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2Mins, const vec3& obj2Maxs) {
+	// Check for overlap in x dimension
+	if (obj1Maxs.x < obj2Mins.x || obj1Mins.x > obj2Maxs.x) {
+		return false; // No overlap, no collision
+	}
+
+	// Check for overlap in y dimension
+	if (obj1Maxs.y < obj2Mins.y || obj1Mins.y > obj2Maxs.y) {
+		return false; // No overlap, no collision
+	}
+
+	// Check for overlap in z dimension
+	if (obj1Maxs.z < obj2Mins.z || obj1Mins.z > obj2Maxs.z) {
+		return false; // No overlap, no collision
+	}
+
+	// If there is overlap in all dimensions, there is a collision
+	return true;
+}
+
+
+
+#ifdef WIN32
+#include <io.h>
+#define STDERR_FILENO 2
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#else
+#include <sys/wait.h>
+#endif
+
+std::string Process::quoteIfNecessary(std::string toQuote)
+{
+	if (toQuote.find(" ") != std::string::npos)
+	{
+		toQuote = '\"' + toQuote + '\"';
+	}
+
+	return toQuote;
+}
+
+Process::Process(std::string program) : _program(program), _arguments()
+{
+}
+
+Process& Process::arg(std::string arg)
+{
+	_arguments.push_back(arg);
+	return *this;
+}
+
+std::string Process::getCommandlineString()
+{
+	std::stringstream cmdline;
+	cmdline << quoteIfNecessary(_program);
+
+	for (std::vector<std::string>::iterator arg = _arguments.begin(); arg != _arguments.end(); ++arg)
+	{
+		cmdline << " " << quoteIfNecessary(*arg);
+	}
+
+	return cmdline.str();
+}
+
+int Process::executeAndWait(int sin, int sout, int serr)
+{
+#ifdef WIN32
+	STARTUPINFO startInfo;
+	ZeroMemory(&startInfo, sizeof(startInfo));
+	startInfo.cb = sizeof(startInfo);
+	startInfo.dwFlags = NULL;
+	// convert file descriptors to win32 handles
+	if (sin != 0)
+	{
+		startInfo.dwFlags = STARTF_USESTDHANDLES;
+		startInfo.hStdInput = (HANDLE)_get_osfhandle(sin);
+	}
+	if (sout != 0)
+	{
+		startInfo.dwFlags = STARTF_USESTDHANDLES;
+		startInfo.hStdOutput = (HANDLE)_get_osfhandle(sout);
+	}
+	if (serr != 0)
+	{
+		startInfo.dwFlags = STARTF_USESTDHANDLES;
+		startInfo.hStdError = (HANDLE)_get_osfhandle(serr);
+	}
+
+	PROCESS_INFORMATION procInfo;
+	if (CreateProcessA(NULL, const_cast<char*>(getCommandlineString().c_str()), NULL, NULL, true, 0, NULL, NULL, &startInfo, &procInfo) == 0)
+	{
+		int lasterror = GetLastError();
+		LPTSTR strErrorMessage = NULL;
+		FormatMessage(
+			FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ARGUMENT_ARRAY | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+			NULL,
+			lasterror,
+			0,
+			(LPTSTR)(&strErrorMessage),
+			0,
+			NULL);
+		print_log(PRINT_RED, "CreateProcess({}) failed with error {} = {}\n", getCommandlineString(), lasterror, strErrorMessage);
+		return -1;
+	}
+
+	// Wait until child process exits.
+	WaitForSingleObject(procInfo.hProcess, INFINITE);
+
+	DWORD exitCode;
+	GetExitCodeProcess(procInfo.hProcess, &exitCode);
+
+	// Close process and thread handles.
+	CloseHandle(procInfo.hProcess);
+	CloseHandle(procInfo.hThread);
+
+	return exitCode;
+#else
+	std::vector<char*> execvpArguments;
+
+	char* program_c_string = new char[_program.size() + 1];
+	strcpy(program_c_string, _program.c_str());
+	execvpArguments.push_back(program_c_string);
+
+	for (std::vector<std::string>::iterator arg = _arguments.begin(); arg != _arguments.end(); ++arg)
+	{
+		char* c_string = new char[(*arg).size() + 1];
+		strcpy(c_string, arg->c_str());
+		execvpArguments.push_back(c_string);
+	}
+
+	execvpArguments.push_back(NULL);
+
+	int status;
+	pid_t pid;
+
+	if ((pid = fork()) < 0) {
+		perror("fork");
+		return -1;
+	}
+
+	if (pid == 0) {
+		/*if (sin != 0) {
+			close(0);  dup(sin);
+		}
+		if (sout != 1) {
+			close(1);  dup(sout);
+		}
+		if (serr != 2) {
+			close(2);  dup(serr);
+		}*/
+
+		execvp(_program.c_str(), &execvpArguments[0]);
+		perror(("Error executing " + _program).c_str());
+		exit(1);
+	}
+
+	for (std::vector<char*>::iterator arg = execvpArguments.begin(); arg != execvpArguments.end(); ++arg)
+	{
+		delete[] * arg;
+	}
+
+	while (wait(&status) != pid);
+	return status;
+#endif
 }

@@ -105,6 +105,9 @@ struct AppSettings
 	bool stripWad;
 	bool defaultIsEmpty;
 
+	std::string rad_path;
+	std::string rad_options;
+
 	std::vector<PathToggleStruct> fgdPaths;
 	std::vector<PathToggleStruct> resPaths;
 

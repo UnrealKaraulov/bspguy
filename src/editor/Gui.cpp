@@ -1930,7 +1930,6 @@ void Gui::drawMenuBar()
 						app->selectMapId(0);
 					}
 				}
-
 			}
 
 
@@ -2058,7 +2057,8 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem(get_localized_string(LANG_0539).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
-					map->ExportExtFile(map->bsp_path);
+					std::string newpath;
+					map->ExportExtFile(map->bsp_path,newpath);
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -2725,9 +2725,9 @@ void Gui::drawMenuBar()
 
 
 
-						unsigned char* testlightdata = new unsigned char[map->lightDataLength + (512*512*3)];
+						unsigned char* testlightdata = new unsigned char[map->lightDataLength + (512 * 512 * 3)];
 						memcpy(testlightdata, map->lightdata, map->lightDataLength);
-						memset(testlightdata + map->lightDataLength,255, (512 * 512 * 3));
+						memset(testlightdata + map->lightDataLength, 255, (512 * 512 * 3));
 						map->replace_lump(LUMP_LIGHTING, testlightdata, map->lightDataLength + (512 * 512 * 3));
 
 						vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
@@ -2907,7 +2907,7 @@ void Gui::drawMenuBar()
 
 									plane.vNormal = planeDir;
 									plane.update(plane.vNormal, plane.fDist);
-									
+
 									vec3 xv, yv;
 									int bestplane = TextureAxisFromPlane(plane, xv, yv);
 									texInfo.shiftS = texInfo.shiftT = 0.0f;
@@ -2996,7 +2996,7 @@ void Gui::drawMenuBar()
 
 							map->replace_lump(LUMP_NODES, newNodes, (map->nodeCount + modelFaces) * sizeof(BSPNODE32));
 						}
-							
+
 						map->models[map->modelCount].iHeadnodes[0] = startNode;
 
 						map->models[map->modelCount].iHeadnodes[1] = CONTENTS_EMPTY;
@@ -3086,6 +3086,93 @@ void Gui::drawMenuBar()
 				map->getBspRender()->calcFaceMaths();
 				map->getBspRender()->preRenderFaces();
 				map->getBspRender()->preRenderEnts();
+			}
+
+			if (ImGui::MenuItem("Recompile lighting", NULL, false, g_settings.rad_path.size()))
+			{
+				std::string path = g_settings.rad_path;
+				FindPathInAssets(map, g_settings.rad_path, path);
+				if (!fileExists(path))
+				{
+					print_log(PRINT_RED, "No hlrad.exe found!\n");
+				}
+				else
+				{
+					g_settings.save_cam = true;
+					map->save_cam_pos = cameraOrigin;
+					map->save_cam_angles = cameraAngles;
+
+					map->update_ent_lump();
+					map->update_lump_pointers();
+					map->validate();
+					map->write(map->bsp_path);
+
+					Process* tmpProc = new Process(g_settings.rad_path);
+					std::string args = g_settings.rad_options;
+					std::string bsp_path;
+					std::string old_bsp_path = map->bsp_path;
+					map->ExportExtFile(old_bsp_path, bsp_path);
+
+					size_t old_bsp_size = fileSize(bsp_path);
+					if (old_bsp_size > 0)
+					{
+
+						if (bsp_path.find(' ') == std::string::npos)
+							replaceAll(args, "{map_path}", bsp_path);
+						else
+							replaceAll(args, "{map_path}", "\"" + bsp_path + "\"");
+
+						tmpProc->arg(args);
+						tmpProc->executeAndWait(0, 0, 0);
+
+						if (fileSize(bsp_path) == old_bsp_size)
+						{
+							print_log(PRINT_RED, "Failed rad compiler!!!\n");
+						}
+						else
+						{
+							// close current map render
+							int mapRenderId = map->getBspRenderId();
+							if (mapRenderId >= 0)
+							{
+								BspRenderer* mapRender = map->getBspRender();
+								if (mapRender)
+								{
+									map->setBspRender(NULL);
+									app->deselectObject();
+									app->clearSelection();
+									app->deselectMap();
+									mapRenderers.erase(mapRenderers.begin() + mapRenderId);
+									delete mapRender;
+									map = NULL;
+									app->selectMapId(0);
+								}
+							}
+							// remove old bsp 
+							removeFile(old_bsp_path);
+
+							// copy new bsp
+							copyFile(bsp_path, old_bsp_path);
+							map = new Bsp(old_bsp_path);
+							app->addMap(map);
+
+							// remove temporary files
+							std::string delfileprefix = bsp_path.substr(0, bsp_path.size() - 4);
+							removeFile(bsp_path);
+							removeFile(delfileprefix + ".wa_");
+							removeFile(delfileprefix + ".ext");
+							removeFile(delfileprefix + ".log");
+							removeFile(delfileprefix + ".err");
+
+							
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED, "Error exporting old rad lighting!!\n");
+					}
+					delete tmpProc;
+				}
 			}
 
 			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
@@ -3458,8 +3545,19 @@ void Gui::drawMenuBar()
 					{
 						totalLeaves += map->models[i].nVisLeafs;
 					}
-					while (totalLeaves > map->leafCount)
-						map->create_leaf(CONTENTS_EMPTY);
+					if (totalLeaves > map->leafCount)
+					{
+						while (totalLeaves > map->leafCount)
+							map->create_leaf(CONTENTS_EMPTY);
+					}
+					else if (map->leafCount < totalLeaves)
+					{
+						while (map->leafCount < totalLeaves)
+						{
+							map->models[0].nVisLeafs++;
+							totalLeaves++;
+						}
+					}
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -3554,6 +3652,134 @@ void Gui::drawMenuBar()
 					ImGui::BeginTooltip();
 					ImGui::TextUnformatted(get_localized_string(LANG_0585).c_str());
 					ImGui::TextUnformatted(get_localized_string(LANG_0586).c_str());
+					ImGui::EndTooltip();
+				}
+
+				ImGui::BeginDisabled();
+				if (ImGui::MenuItem("Fix light entities[+TEXTURE]"))
+				{
+
+
+				}
+				ImGui::EndDisabled();
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("Fill map with light entities for '+' textures");
+					ImGui::EndTooltip();
+				}
+
+
+				if (ImGui::MenuItem("Fix light entities"))
+				{
+					std::vector<int> modelLeafs;
+					map->modelLeafs(0, modelLeafs);
+
+					std::vector<vec3> ignore_mins;
+					std::vector<vec3> ignore_maxs;
+
+					std::vector<int> add_leafs;
+					std::vector<float> add_leafs_power;
+
+					for (auto i : modelLeafs)
+					{
+						if (map->leaves[i].nContents == CONTENTS_EMPTY)
+						{
+							if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 250.0 &&
+								(map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() < 1000.0f)
+							{
+								bool skip = false;
+								for (int v = 0; v < ignore_maxs.size(); v++)
+								{
+									if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
+									{
+										skip = true;
+										break;
+									}
+								}
+								if (!skip)
+								{
+									ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
+									ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
+									add_leafs.push_back(i);
+									add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
+								}
+							}
+						}
+					}
+
+					for (auto i : modelLeafs)
+					{
+						if (map->leaves[i].nContents == CONTENTS_EMPTY)
+						{
+							if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 250.0)
+							{
+								bool skip = false;
+								for (int v = 0; v < ignore_maxs.size(); v++)
+								{
+									if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
+									{
+										skip = true;
+										break;
+									}
+								}
+								if (!skip)
+								{
+									ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
+									ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
+									add_leafs.push_back(i);
+									add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
+								}
+							}
+						}
+					}
+					for (auto i : modelLeafs)
+					{
+						if (map->leaves[i].nContents == CONTENTS_EMPTY)
+						{
+							if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 175.0)
+							{
+								bool skip = false;
+								for (int v = 0; v < ignore_maxs.size(); v++)
+								{
+									if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
+									{
+										skip = true;
+										break;
+									}
+								}
+								if (!skip)
+								{
+									ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
+									ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
+									add_leafs.push_back(i);
+									add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
+								}
+							}
+						}
+					}
+
+
+
+					for (int i = 0; i < add_leafs.size(); i++)
+					{
+						print_log("Leaf {} power {}\n", add_leafs[i], add_leafs_power[i]);
+						map->ents.push_back(new Entity("light"));
+
+
+						vec3 lightPlace = getCenter(map->leaves[add_leafs[i]].nMaxs, map->leaves[add_leafs[i]].nMins);
+						lightPlace.z = std::max(map->leaves[i].nMins.z, map->leaves[i].nMaxs.z) - 16.0f;
+						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", getCenter(map->leaves[add_leafs[i]].nMaxs, map->leaves[add_leafs[i]].nMins).toKeyvalueString());
+						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("_light", vec4(255.0f, 255.0f, 255.0f, std::min(400.0f, add_leafs_power[i])).toKeyvalueString(true));
+					}
+
+					map->update_ent_lump();
+					g_app->updateEnts();
+				}
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted("Fill map with light entities");
 					ImGui::EndTooltip();
 				}
 
@@ -6370,6 +6596,17 @@ void Gui::drawSettings()
 			ifd::FileDialog::Instance().Close();
 		}
 
+		if (ifd::FileDialog::Instance().IsDone("radPath"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+			{
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				g_settings.rad_path = res.string();
+				g_settings.lastdir = stripFileName(res.string());
+			}
+			ifd::FileDialog::Instance().Close();
+		}
+
 		if (ifd::FileDialog::Instance().IsDone("resOpen"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
@@ -6541,6 +6778,32 @@ void Gui::drawSettings()
 				ImGui::EndCombo();
 			}
 			ImGui::Separator();
+
+
+			ImGui::TextUnformatted("RAD Executable:");
+			ImGui::SetNextItemWidth(pathWidth * 0.80f);
+			ImGui::InputText("##hl_rad", &g_settings.rad_path);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay && g_settings.rad_path.size())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(g_settings.rad_path.c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+
+			ImGui::SetNextItemWidth(delWidth);
+			if (ImGui::Button("...##hlrad_path"))
+			{
+				ifd::FileDialog::Instance().Open("radPath", "Select rad executable path", "*.*", false, g_settings.lastdir);
+			}
+
+			ImGui::Text("RAD options:");
+			ImGui::SetNextItemWidth(pathWidth);
+			ImGui::InputText("##hlrad_options", &g_settings.rad_options);
+
+			ImGui::Separator();
+
 			if (ImGui::Button(get_localized_string(LANG_0739).c_str()))
 			{
 				g_settings.reset();

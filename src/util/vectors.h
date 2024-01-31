@@ -76,15 +76,15 @@ struct vec3
 
 	vec3(float x, float y, float z) : x(x), y(y), z(z)
 	{
-		if (abs(x) < EPSILON2)
+		if (::abs(x) < EPSILON2)
 		{
 			x = +0.00f;
 		}
-		if (abs(y) < EPSILON2)
+		if (::abs(y) < EPSILON2)
 		{
 			y = +0.00f;
 		}
-		if (abs(z) < EPSILON2)
+		if (::abs(z) < EPSILON2)
 		{
 			z = +0.00f;
 		}
@@ -93,6 +93,9 @@ struct vec3
 	vec3 snap(float snapSize);
 	vec3 normalize_angles();
 	vec3 swap_xz();
+	float size_test();
+	float sizeXY_test();
+	vec3 abs();
 	float length();
 	bool IsZero();
 	vec3 invert();
@@ -287,6 +290,10 @@ struct vec4
 	}
 	vec3 xyz();
 	vec2 xy();
+
+
+	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = " "
+		, const std::string& suffix_w = "");
 
 	float operator [] (const int i) const
 	{

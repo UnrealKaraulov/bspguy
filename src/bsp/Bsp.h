@@ -315,7 +315,7 @@ public:
 	int merge_all_faces();
 
 	void ExportPortalFile(const std::string& path);
-	void ExportExtFile(const std::string& path);
+	void ExportExtFile(const std::string& path, std::string& out_map_path);
 	void ExportLightFile(const std::string& path);
 	void ImportLightFile(const std::string& path);
 

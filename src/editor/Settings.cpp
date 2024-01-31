@@ -74,6 +74,10 @@ void AppSettings::loadDefault()
 	fgdPaths.clear();
 	resPaths.clear();
 
+
+	rad_path = "hlrad.exe";
+	rad_options = "{map_path}";
+
 	conditionalPointEntTriggers.clear();
 	entsThatNeverNeedAnyHulls.clear();
 	entsThatNeverNeedCollision.clear();
@@ -428,6 +432,14 @@ void AppSettings::load()
 			g_settings.selected_lang = val;
 			set_localize_lang(g_settings.selected_lang);
 		}
+		else if (key == "hlrad_path")
+		{
+			g_settings.rad_path = val;
+		}
+		else if (key == "hlrad_options")
+		{
+			g_settings.rad_options = val;
+		}
 		else if (key == "palette")
 		{
 			g_settings.palette_name = val;
@@ -737,6 +749,9 @@ void AppSettings::save(std::string path)
 	file << "language=" << g_settings.selected_lang << std::endl;
 	file << "palette=" << g_settings.palette_name << std::endl;
 
+	file << "hlrad_path=" << g_settings.rad_path << std::endl;
+	file << "hlrad_options=" << g_settings.rad_options << std::endl;
+
 	for (size_t i = 0; i < fgdPaths.size(); i++)
 	{
 		file << "fgd=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].path << std::endl;
@@ -790,7 +805,7 @@ void AppSettings::save(std::string path)
 	for (size_t i = 0; i < transparentEntities.size(); i++)
 	{
 		file << "transparent_entities=" << transparentEntities[i] << std::endl;
-	}
+}
 
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << std::endl;

@@ -8081,7 +8081,7 @@ void Bsp::ImportLightFile(const std::string& path)
 	}
 }
 
-void Bsp::ExportExtFile(const std::string& path)
+void Bsp::ExportExtFile(const std::string& path, std::string & out_map_path)
 {
 	if (path.size() < 4)
 	{
@@ -8100,6 +8100,8 @@ void Bsp::ExportExtFile(const std::string& path)
 
 	print_log(get_localized_string(LANG_0210), targetFileName);
 	write(targetMapFileName + "_nolight.bsp");
+
+	out_map_path = targetMapFileName + "_nolight.bsp";
 
 	Bsp* tmpBsp = new Bsp(targetMapFileName + "_nolight.bsp");
 

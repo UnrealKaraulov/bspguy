@@ -1084,8 +1084,9 @@ int main(int argc, char* argv[])
 		}
 		else if (cli.command == "exportrad")
 		{
+			std::string newpath;
 			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ExportExtFile(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			tmpBsp->ExportExtFile(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile,newpath);
 			delete tmpBsp;
 			return 0;
 		}

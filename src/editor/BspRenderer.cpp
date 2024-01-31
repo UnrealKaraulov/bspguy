@@ -1722,6 +1722,12 @@ void BspRenderer::refreshEnt(int entIdx)
 				renderEnts[entIdx].angles.z = 0.0f;
 			}
 		}
+		if (ent->classname.size() && ent->classname.find("light") != std::string::npos && ent->keyOrder[i] == "pitch")
+		{
+			setAngles = true;
+			float x = (float)atof(ent->keyvalues["pitch"].c_str());
+			renderEnts[entIdx].angles.x = -x;
+		}
 	}
 
 	if (ent->hasKey("sequence") || g_app->fgd)
