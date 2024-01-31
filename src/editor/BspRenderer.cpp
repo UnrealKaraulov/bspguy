@@ -2654,15 +2654,12 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 				if (ent && ent->needAngles)
 				{
-					if (highlight)
-					{
-						glLineWidth(std::min(g_app->lineWidthRange[1], 3.0f));
-						g_app->matmodel = ent->modelMat4x4_calc;
-						g_app->colorShader->updateMatrixes();
-						rend_mdl.wireframeBuffer->drawFull();
-						rend_mdl.wireframeBuffer->frameId--;
-						glLineWidth(1.3f);
-					}
+					glLineWidth(std::min(g_app->lineWidthRange[1], 3.0f));
+					g_app->matmodel = ent->modelMat4x4_calc;
+					g_app->colorShader->updateMatrixes();
+					rend_mdl.wireframeBuffer->drawFull();
+					rend_mdl.wireframeBuffer->frameId--;
+					glLineWidth(1.3f);
 
 					g_app->matmodel = ent->modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
@@ -2765,7 +2762,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 				rgroup.buffer->drawFull();
 
-				if (ent && ent->needAngles && !highlight)
+				if (ent && ent->needAngles && highlight)
 				{
 					for (int s = 0; s < MAX_LIGHTMAPS; s++)
 					{
