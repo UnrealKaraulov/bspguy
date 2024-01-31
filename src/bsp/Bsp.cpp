@@ -45,6 +45,8 @@ void Bsp::init_empty_bsp()
 		bsp_header.lump[i].nLength = 4;
 	}
 
+
+	save_cam_pos = save_cam_angles = {};
 	bsp_name = "empty";
 	bsp_path = "empty.bsp";
 	bsp_valid = true;
@@ -181,6 +183,8 @@ Bsp::Bsp(std::string fpath)
 	bsp_header_ex = BSPHEADER_EX();
 	parentMap = NULL;
 
+	save_cam_pos = save_cam_angles = {};
+
 	if (fpath.empty())
 	{
 		fpath = "newmap.bsp";
@@ -307,6 +311,22 @@ Bsp::Bsp(std::string fpath)
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		replacedLump[i] = false;
+	}
+
+	if (g_settings.save_cam)
+	{
+		if (ents.size())
+		{
+			if (ents[0]->hasKey("camera_pos"))
+			{
+				save_cam_pos = parseVector(ents[0]->keyvalues["camera_pos"]);
+			}
+
+			if (ents[0]->hasKey("camera_angles"))
+			{
+				save_cam_angles = parseVector(ents[0]->keyvalues["camera_angles"]);
+			}
+		}
 	}
 
 	save_undo_lightmaps();
@@ -2570,7 +2590,7 @@ bool Bsp::is_invisible_solid(Entity* ent)
 
 void Bsp::update_ent_lump(bool stripNodes)
 {
-	std::stringstream ent_data = std::stringstream();
+	std::stringstream ent_data{};
 
 	for (size_t i = 0; i < ents.size(); i++)
 	{
@@ -2676,6 +2696,21 @@ void Bsp::write(const std::string& path)
 	//	is_bsp2 = true;
 	//	bsp_header.nVersion = 30;
 	//}
+
+
+
+	if (g_settings.save_cam)
+	{
+		if (ents.size())
+		{
+			if (!save_cam_pos.IsZero())
+				ents[0]->setOrAddKeyvalue("camera_pos", save_cam_pos.toKeyvalueString());
+			if (!save_cam_angles.IsZero())
+				ents[0]->setOrAddKeyvalue("camera_angles", save_cam_angles.toKeyvalueString());
+
+			update_ent_lump();
+		}
+	}
 
 	update_lump_pointers();
 
@@ -7073,7 +7108,7 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 	vec3 bmin = models[src_model].nMins + models[src_model].vOrigin;
 	vec3 bmax = models[src_model].nMaxs + models[src_model].vOrigin;
 
-	BSPPLANE separate_plane = getSeparatePlane(bmin, bmax,amin, amax);
+	BSPPLANE separate_plane = getSeparatePlane(bmin, bmax, amin, amax);
 
 	std::vector<vec3> veclist;
 	veclist.push_back(amin);

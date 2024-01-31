@@ -91,7 +91,7 @@ struct FgdClass
 		mins = vec3(-8, -8, -8);
 		maxs = vec3(8, 8, 8);
 		color = { 220, 0, 220 };
-		offset = vec3(0, 0, 0);
+		offset = vec3();
 		modelSkin = modelBody = modelSequence = 0;
 	}
 

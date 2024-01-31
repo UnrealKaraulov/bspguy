@@ -98,6 +98,7 @@ struct AppSettings
 	bool start_at_entity;
 	bool backUpMap;
 	bool preserveCrc32;
+	bool save_cam;
 	bool autoImportEnt;
 	bool sameDirForEnt;
 	bool entListReload;

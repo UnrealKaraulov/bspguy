@@ -62,6 +62,7 @@ void AppSettings::loadDefault()
 	start_at_entity = false;
 	backUpMap = true;
 	preserveCrc32 = false;
+	save_cam = false;
 	autoImportEnt = false;
 	sameDirForEnt = false;
 
@@ -472,6 +473,10 @@ void AppSettings::load()
 		{
 			g_settings.preserveCrc32 = atoi(val.c_str()) != 0;
 		}
+		else if (key == "save_cam")
+		{
+			g_settings.save_cam = atoi(val.c_str()) != 0;
+		}
 		else if (key == "auto_import_ent")
 		{
 			g_settings.autoImportEnt = atoi(val.c_str()) != 0;
@@ -803,6 +808,7 @@ void AppSettings::save(std::string path)
 	file << "undo_levels=" << g_settings.undoLevels << std::endl;
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
+	file << "save_cam=" << g_settings.save_cam << std::endl;
 	file << "auto_import_ent=" << g_settings.autoImportEnt << std::endl;
 	file << "same_dir_for_ent=" << g_settings.sameDirForEnt << std::endl;
 	file << "reload_ents_list=" << g_settings.entListReload << std::endl;

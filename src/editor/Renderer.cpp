@@ -356,7 +356,7 @@ Renderer::~Renderer()
 }
 
 void Renderer::updateWindowTitle(double _curTime)
-{ 
+{
 	static double lastTitleTime = 0.0f;
 	if (_curTime - lastTitleTime > 0.25)
 	{
@@ -513,7 +513,7 @@ void Renderer::renderLoop()
 		oldControl = canControl;
 
 		canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
-		
+
 		updateWindowTitle(curTime);
 
 		int modelIdx = -1;
@@ -2067,7 +2067,7 @@ vec3 Renderer::getMoveDir()
 	makeVectors(cameraAngles, forward, right, up);
 
 
-	vec3 wishdir(0, 0, 0);
+	vec3 wishdir{};
 	if (pressed[GLFW_KEY_A])
 	{
 		wishdir -= right;
@@ -2225,6 +2225,15 @@ void Renderer::setupView()
 	matview.rotateX(cameraAngles.x * PI / 180.0f);
 	matview.rotateY(cameraAngles.z * PI / 180.0f);
 	matview.translate(-cameraOrigin.x, -cameraOrigin.z, cameraOrigin.y);
+
+	if (g_settings.save_cam)
+	{
+		if (g_app->SelectedMap)
+		{
+			g_app->SelectedMap->save_cam_pos = cameraOrigin;
+			g_app->SelectedMap->save_cam_angles = cameraAngles;
+		}
+	}
 }
 
 void Renderer::reloadBspModels()

@@ -104,6 +104,8 @@ public:
 
 	bool replacedLump[32];
 
+	vec3 save_cam_pos, save_cam_angles;
+
 	bool bsp_valid;
 	bool is_bsp_model;
 	bool is_mdl_model;

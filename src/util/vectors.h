@@ -69,7 +69,7 @@ struct vec3
 		Copy(other);
 	}
 
-	vec3() : x(+0.0f), y(+0.0f), z(+0.0f)
+	vec3() : x(+0.00f), y(+0.00f), z(+0.00f)
 	{
 
 	}
@@ -78,15 +78,15 @@ struct vec3
 	{
 		if (abs(x) < EPSILON2)
 		{
-			x = +0.0f;
+			x = +0.00f;
 		}
 		if (abs(y) < EPSILON2)
 		{
-			y = +0.0f;
+			y = +0.00f;
 		}
 		if (abs(z) < EPSILON2)
 		{
-			z = +0.0f;
+			z = +0.00f;
 		}
 	}
 	vec3 normalize(float length = 1.0f);

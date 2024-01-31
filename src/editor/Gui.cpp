@@ -6501,6 +6501,17 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted(get_localized_string(LANG_0738).c_str());
 				ImGui::EndTooltip();
 			}
+
+
+			ImGui::Checkbox("Save map cam pos", &g_settings.save_cam);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Save camera position to map and load it at open.");
+				ImGui::EndTooltip();
+			}
+
+
 			ImGui::Separator();
 			ImGui::TextUnformatted("Language:");
 			ImGui::SameLine();
@@ -7524,7 +7535,6 @@ void Gui::drawImportMapWidget()
 							tmpEnt->setOrAddKeyvalue("gibmodel", std::string("models/") + basename(mapPath));
 							tmpEnt->setOrAddKeyvalue("model", std::string("models/") + basename(mapPath));
 							tmpEnt->setOrAddKeyvalue("spawnflags", "1");
-							tmpEnt->setOrAddKeyvalue("origin", cameraOrigin.toKeyvalueString());
 							map->ents.push_back(tmpEnt);
 							map->update_ent_lump();
 							print_log(get_localized_string(LANG_0402), std::string("models/") + basename(mapPath));

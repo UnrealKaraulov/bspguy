@@ -201,6 +201,20 @@ BspRenderer::BspRenderer(Bsp* _map)
 }*/
 	}
 
+
+	if (g_settings.save_cam)
+	{
+		if (!map->save_cam_pos.IsZero())
+		{
+			renderCameraOrigin = map->save_cam_pos;
+		}
+
+		if (!map->save_cam_angles.IsZero())
+		{
+			renderCameraAngles = map->save_cam_angles;
+		}
+	}
+
 	if (g_app->getSelectedMap() == NULL || map == g_app->getSelectedMap())
 	{
 		cameraOrigin = renderCameraOrigin;

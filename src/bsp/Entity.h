@@ -26,7 +26,7 @@ public:
 		renderamt = 0;
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
-		origin = vec3(0.0f, 0.0f, 0.0f);
+		origin = vec3();
 		originInited = false;
 		targetsCached = false;
 		hide = false;
@@ -84,11 +84,11 @@ public:
 
 	size_t getMemoryUsage(); // aproximate
 
-	bool originInited = false;
-	vec3 origin = vec3(0.0f, 0.0f, 0.0f);
-	int rendermode = kRenderNormal;
-	int renderamt = 0;
-	int renderfx = kRenderFxNone;
-	vec3 rendercolor = vec3(1.0f, 1.0f, 1.0f);
+	bool originInited;
+	vec3 origin;
+	int rendermode;
+	int renderamt;
+	int renderfx;
+	vec3 rendercolor;
 };
 
