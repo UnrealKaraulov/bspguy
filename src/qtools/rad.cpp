@@ -275,7 +275,6 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 		}
 	}
 
-	
 
 	for (int i = 0; i < 2; i++)
 	{
@@ -286,7 +285,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 		{
 			retval = false;
 			print_log(get_localized_string(LANG_0991),facenum,(int)((maxs_out[i] - mins_out[i]) * TEXTURE_STEP));
-			mins_out[i] = 0;
+			mins_out[i] = 1;
 			maxs_out[i] = 1;
 		}
 
@@ -294,7 +293,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 		{
 			retval = false;
 			print_log(PRINT_RED, "Face {} extents are bad. Map can crash.", facenum);
-			mins_out[i] = 0;
+			mins_out[i] = 1;
 			maxs_out[i] = 1;
 		}
 	}

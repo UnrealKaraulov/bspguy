@@ -2669,9 +2669,9 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (DebugKeyPressed && ImGui::MenuItem("MDL to BSP", NULL, false, app && app->pickInfo.selectedEnts.size()))
+			if (ImGui::MenuItem("MDL to BSP (WIP)", NULL, false, app && app->pickInfo.selectedEnts.size() == 1))
 			{
-				int ent = app->pickInfo.selectedEnts[0];
+				size_t ent = app->pickInfo.selectedEnts[0];
 
 				std::set<Texture*> added_textures;
 				if (rend->renderEnts[ent].mdl)
@@ -2704,7 +2704,7 @@ void Gui::drawMenuBar()
 								modelVert* mdlVerts = (modelVert*)mesh.buffer->get_data();
 
 								std::vector<int> newVertIndexes;
-								int newVertCount = map->vertCount + mesh.buffer->numVerts;
+								size_t newVertCount = map->vertCount + mesh.buffer->numVerts;
 								vec3* newverts = new vec3[newVertCount];
 								std::vector<vec2> newuv;
 								newuv.resize(newVertCount);
@@ -2721,7 +2721,7 @@ void Gui::drawMenuBar()
 								}
 
 
-								int newdedgescount = map->edgeCount + (mesh.buffer->numVerts + 1) / 2;
+								size_t newdedgescount = map->edgeCount + (mesh.buffer->numVerts + 1) / 2;
 
 								BSPEDGE32* newedges = new BSPEDGE32[newdedgescount];
 								memcpy(newedges, map->edges, map->edgeCount * sizeof(BSPEDGE32));
@@ -2750,7 +2750,7 @@ void Gui::drawMenuBar()
 								}
 
 								inverse = false;
-								int newsurfedges_count = map->surfedgeCount + mesh.buffer->numVerts;
+								size_t newsurfedges_count = map->surfedgeCount + mesh.buffer->numVerts;
 								int* newsurfedges = new int[newsurfedges_count];
 								memcpy(newsurfedges, map->surfedges, map->surfedgeCount * sizeof(int));
 
@@ -2759,7 +2759,7 @@ void Gui::drawMenuBar()
 									newsurfedges[v] = (int)vertToSurfedge[v - map->surfedgeCount];
 								}
 
-								int numTriangles = mesh.buffer->numVerts / 3;
+								size_t numTriangles = mesh.buffer->numVerts / 3;
 
 								modelFaces += numTriangles;
 
@@ -2929,8 +2929,8 @@ void Gui::drawMenuBar()
 									if (!GetFaceExtents(map, f, tmins, tmaxs))
 									{
 										BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[f].iTextureInfo];
-										texInfo.vS = texInfo.vS.normalize();
-										texInfo.vT = texInfo.vT.normalize(/*tex size?*/);
+										texInfo.vS = vec3(1.0f,0.0f, 0.0f);
+										texInfo.vT = vec3(1.0f, 0.0f, 1.0f);
 									}
 								}
 							}
@@ -3051,19 +3051,15 @@ void Gui::drawMenuBar()
 						rend->preRenderEnts();
 						rend->loadTextures();
 						rend->reuploadTextures();
-
-
-						/*print_log("11111111111111111111111\n");
-						map->regenerate_clipnodes(newModelIdx, -1);
-						print_log("21111111111111111111111\n");*/
-						//map->regenerate_clipnodes_from_nodes(startNode, 2);
-						//print_log("31111111111111111111111\n");
-						//map->regenerate_clipnodes_from_nodes(startNode, 3);
-						//print_log("41111111111111111111111\n");
 					}
 				}
 			}
-
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Convert selected ent .MDL model to .BSP and add to map.");
+				ImGui::EndTooltip();
+			}
 
 			if (ImGui::MenuItem("Recompile lighting", NULL, false, g_settings.rad_path.size()))
 			{
@@ -3149,7 +3145,12 @@ void Gui::drawMenuBar()
 					delete tmpProc;
 				}
 			}
-
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Recalculate lights using rad compiler. (From settings)");
+				ImGui::EndTooltip();
+			}
 			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
 			{
 				map->merge_all_verts(1.f);
