@@ -36,10 +36,10 @@ struct COLOR4
 	{}
 
 	COLOR3 rgb(COLOR3 background) {
-		float alpha = a / 255.0;
-		unsigned char r_new = clamp((1 - alpha) * r + alpha * background.r, 0.0, 255.0f);
-		unsigned char g_new = clamp((1 - alpha) * g + alpha * background.g, 0.0, 255.0f);
-		unsigned char b_new = clamp((1 - alpha) * b + alpha * background.b, 0.0, 255.0f);
+		float alpha = a / 255.0f;
+		unsigned char r_new = (unsigned char)clamp((1.0f - alpha) * r + alpha * background.r, 0.0f, 255.0f);
+		unsigned char g_new = (unsigned char)clamp((1.0f - alpha) * g + alpha * background.g, 0.0f, 255.0f);
+		unsigned char b_new = (unsigned char)clamp((1.0f - alpha) * b + alpha * background.b, 0.0f, 255.0f);
 		return COLOR3(r_new, g_new, b_new);
 	}
 	COLOR3 rgb() {

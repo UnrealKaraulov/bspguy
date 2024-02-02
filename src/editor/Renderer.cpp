@@ -538,6 +538,23 @@ void Renderer::renderLoop()
 				updateModelVerts();
 			}
 
+			if (pickMode != PICK_OBJECT)
+			{
+				pickInfo.selectedEnts.clear();
+				for (auto& f : pickInfo.selectedFaces)
+				{
+					int mdl = SelectedMap->get_model_from_face((int)f);
+					if (mdl > 0 && mdl < SelectedMap->modelCount)
+					{
+						int mdl_ent = SelectedMap->get_ent_from_model(mdl);
+						if (mdl_ent >= 0 && mdl_ent < SelectedMap->ents.size())
+						{
+							pickInfo.AddSelectedEnt(mdl_ent);
+						}
+					}
+				}
+			}
+
 			updatePickCount = true;
 			isTransformableSolid = modelIdx > 0 || (entIdx.size() && SelectedMap->ents[entIdx[0]]->getBspModelIdx() < 0);
 
@@ -836,19 +853,19 @@ void Renderer::clearMaps()
 	}
 	mapRenderers.clear();
 	clearSelection();
-	print_log(get_localized_string(LANG_0907));
 }
 
 void Renderer::reloadMaps()
 {
 	std::vector<std::string> reloadPaths;
+
 	for (size_t i = 0; i < mapRenderers.size(); i++)
 	{
 		reloadPaths.push_back(mapRenderers[i]->map->bsp_path);
-		delete mapRenderers[i];
 	}
-	mapRenderers.clear();
-	clearSelection();
+	
+	clearMaps();
+
 	for (size_t i = 0; i < reloadPaths.size(); i++)
 	{
 		addMap(new Bsp(reloadPaths[i]));
@@ -1425,6 +1442,7 @@ void Renderer::cameraRotationControls()
 			totalMouseDrag += vec2(abs(drag.x), abs(drag.y));
 
 			cameraAngles.x = clamp(cameraAngles.x, -90.0f, 90.0f);
+
 			if (cameraAngles.z > 180.0f)
 			{
 				cameraAngles.z -= 360.0f;
@@ -2273,6 +2291,7 @@ void Renderer::reloadBspModels()
 		else
 		{
 			delete mapRenderers[i];
+			mapRenderers[i] = NULL;
 		}
 	}
 
@@ -3422,7 +3441,7 @@ bool Renderer::splitModelFace()
 
 			int newPlaneIdx = map->create_plane();
 			BSPPLANE& plane = map->planes[newPlaneIdx];
-			plane.update(normal, getDistAlongAxis(normal, planeVerts[i][0]));
+			plane.update_plane(normal, getDistAlongAxis(normal, planeVerts[i][0]));
 			modelPlanes.push_back(newPlaneIdx);
 		}
 	}
@@ -3768,7 +3787,7 @@ void Renderer::deselectObject(bool onlyobject)
 {
 	filterNeeded = true;
 	pickInfo.selectedEnts.clear();
-	if (onlyobject)
+	if (!onlyobject)
 		pickInfo.selectedFaces.clear();
 	isTransformableSolid = false;
 	hoverVert = -1;
@@ -3867,11 +3886,47 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 		pickCount++; // force transform window update
 	}
 }
+
+float magnitude(vec3 vec) {
+	return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
+float Angle(vec3 from, vec3 to) {
+	//Find the scalar/dot product of the provided 2 Vectors
+	float dot = dotProduct(from, to);
+	//Find the product of both magnitudes of the vectors then divide dot from it
+	dot = dot / (magnitude(from) * magnitude(to));
+	//Get the arc cosin of the angle, you now have your angle in radians 
+	float arcAcos = acos(dot);
+	//Convert to degrees by Multiplying the arc cosin by 180/M_PI
+	float angle = arcAcos * 180.0 / PI;
+	return angle;
+}
+
+
 void Renderer::goToFace(Bsp* map, int faceIdx)
 {
+	if (faceIdx < 0 || faceIdx >= map->faceCount)
+		return;
 	BSPFACE32& face = map->faces[faceIdx];
 	if (face.iFirstEdge >= 0 && face.nEdges)
 	{
+		BSPPLANE plane = map->planes[face.iPlane];
+		vec3 planeNormal = face.nPlaneSide ? plane.vNormal * -1 : plane.vNormal;
+		float dist = plane.fDist;
+		int model = map->get_model_from_face(faceIdx);
+		vec3 offset = {};
+		if (model >= 0 && model < map->modelCount)
+		{
+			offset = map->models[model].vOrigin;
+
+			int ent = map->get_ent_from_model(model);
+			if (ent > 0 && ent < map->ents.size())
+			{
+				offset += map->ents[ent]->origin;
+			}
+		}
+
 		std::vector<vec3> edgeVerts;
 		for (int i = 0; i < face.nEdges; i++)
 		{
@@ -3880,8 +3935,17 @@ void Renderer::goToFace(Bsp* map, int faceIdx)
 			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 			edgeVerts.push_back(map->verts[vertIdx]);
 		}
-		vec3 center = getCenter(edgeVerts) + (map->planes[face.iPlane].vNormal.normalize() * -250.0f);
-		goToCoords(center.x, center.y, center.z);
+
+		vec3 center_object = getCenter(edgeVerts) + offset;
+		vec3 center_camera = center_object + (planeNormal * 250.0f * (face.nPlaneSide ? -1.0 : 1.0f));
+
+		goToCoords(center_camera.x, center_camera.y, center_camera.z);
+
+		vec3 direction = (center_object - center_camera).flip().normalize();
+		float pitch = asin(-direction.y) * 180.0 / PI;
+		float yaw = atan2(direction.x, direction.z) * 180.0 / PI;
+
+		cameraAngles = { pitch, 0.0f , yaw };
 	}
 }
 void Renderer::goToCoords(float x, float y, float z)

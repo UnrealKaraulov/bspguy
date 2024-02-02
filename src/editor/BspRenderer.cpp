@@ -956,8 +956,10 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 				opacity = ent->renderamt / 255.f;
 				if (opacity > 0.8f && isOpacity)
 					opacity = 0.8f;
-				else if (opacity < 0.25f)
-					opacity = 0.25f;
+				else if (opacity > 1.0f)
+					opacity = 1.0f;
+				else if (opacity < 0.35f)
+					opacity = 0.35f;
 			}
 		}
 
@@ -980,7 +982,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 				verts[e].g = 0.0f;
 			}
 			verts[e].b = 0.0f;
-			verts[e].a = isSky || isTrigger ? 1.0f - opacity : 0.0f;
+			verts[e].a = isSky || isTrigger || ent->rendermode == 5 ? 1.0f - opacity : 0.0f;
 
 			// texture coords
 			float tw = 1.0f;
@@ -1410,10 +1412,10 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 			faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
 
-			faceMath.localVerts = std::vector<vec3>(faceVerts.size());
+			faceMath.localVerts = std::vector<vec2>(faceVerts.size());
 			for (size_t k = 0; k < faceVerts.size(); k++)
 			{
-				faceMath.localVerts[k] = (faceMath.worldToLocal * vec4(faceVerts[k], 1)).xyz();
+				faceMath.localVerts[k] = (faceMath.worldToLocal * vec4(faceVerts[k], 1)).xy();
 			}
 
 			tfaceMaths.push_back(faceMath);
@@ -2029,10 +2031,10 @@ void BspRenderer::refreshFace(int faceIdx)
 
 	faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
 
-	faceMath.localVerts = std::vector<vec3>(allVerts.size());
+	faceMath.localVerts = std::vector<vec2>(allVerts.size());
 	for (size_t i = 0; i < allVerts.size(); i++)
 	{
-		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xyz();
+		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xy();
 	}
 }
 
@@ -2083,6 +2085,7 @@ BspRenderer::~BspRenderer()
 	if (g_app->SelectedMap == map)
 		g_app->selectMap(NULL);
 	map->setBspRender(NULL);
+
 	delete map;
 	map = NULL;
 }
@@ -2545,6 +2548,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	{
 		return; // nothing can be drawn
 	}
+
 	int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
 
 	if (hullIdx == 0)
@@ -2591,12 +2595,15 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	}
 	else
 	{
-		RenderClipnodes& clip = renderClipnodes[modelIdx];
-
-		if (clip.clipnodeBuffer[hullIdx])
+		if (modelIdx < renderClipnodes.size())
 		{
-			clip.clipnodeBuffer[hullIdx]->drawFull();
-			clip.wireframeClipnodeBuffer[hullIdx]->drawFull();
+			RenderClipnodes& clip = renderClipnodes[modelIdx];
+
+			if (clip.clipnodeBuffer[hullIdx])
+			{
+				clip.clipnodeBuffer[hullIdx]->drawFull();
+				clip.wireframeClipnodeBuffer[hullIdx]->drawFull();
+			}
 		}
 	}
 }
@@ -2652,18 +2659,39 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 				g_app->colorShader->pushMatrix();
 
-				if (ent && ent->needAngles)
+				if (g_app->pickMode != PICK_OBJECT && highlight)
 				{
-					glLineWidth(std::min(g_app->lineWidthRange[1], 3.0f));
-					g_app->matmodel = ent->modelMat4x4_calc;
-					g_app->colorShader->updateMatrixes();
-					rend_mdl.wireframeBuffer->drawFull();
-					rend_mdl.wireframeBuffer->frameId--;
-					glLineWidth(1.3f);
+					if (ent)
+					{
+						g_app->matmodel = ent->modelMat4x4_calc;
+						g_app->colorShader->updateMatrixes();
+					}
 
-					g_app->matmodel = ent->modelMat4x4_calc_angles;
-					g_app->colorShader->updateMatrixes();
 					rend_mdl.wireframeBuffer->drawFull();
+				}
+				else if (ent && ent->needAngles)
+				{
+					if (!highlight)
+					{
+						glLineWidth(std::min(g_app->lineWidthRange[1], 2.5f));
+						g_app->matmodel = ent->modelMat4x4_calc;
+						g_app->colorShader->updateMatrixes();
+						rend_mdl.wireframeBuffer->drawFull();
+						rend_mdl.wireframeBuffer->frameId--;
+						glLineWidth(1.3f);
+
+						g_app->matmodel = ent->modelMat4x4_calc_angles;
+						g_app->colorShader->updateMatrixes();
+						rend_mdl.wireframeBuffer->drawFull();
+					}
+					else
+					{
+						if (ent)
+						{
+							g_app->matmodel = ent->modelMat4x4_calc;
+							g_app->colorShader->updateMatrixes();
+						}
+					}
 				}
 				else
 				{
@@ -2721,7 +2749,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 				for (int s = 0; s < MAX_LIGHTMAPS; s++)
 				{
-					if (highlight)
+					if (highlight && g_app->pickMode == PICK_OBJECT)
 					{
 						redTex->bind(s + 1);
 					}
@@ -2754,27 +2782,40 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 					}
 				}
 
-				if (ent)
-				{
-					g_app->matmodel = ent->modelMat4x4_calc_angles;
-					g_app->bspShader->updateMatrixes();
-				}
 
-				rgroup.buffer->drawFull();
-
-				if (ent && ent->needAngles && highlight)
+				if (g_app->pickMode != PICK_OBJECT && highlight)
 				{
-					for (int s = 0; s < MAX_LIGHTMAPS; s++)
+					if (ent)
 					{
-						whiteTex->bind(s + 1);
+						g_app->matmodel = ent->modelMat4x4_calc;
+						g_app->bspShader->updateMatrixes();
 					}
 
-					g_app->matmodel = ent->modelMat4x4_calc;
-					g_app->bspShader->updateMatrixes();
-					rgroup.buffer->frameId--;
 					rgroup.buffer->drawFull();
 				}
+				else
+				{
+					if (ent && !highlight)
+					{
+						g_app->matmodel = ent->modelMat4x4_calc_angles;
+						g_app->bspShader->updateMatrixes();
+					}
 
+					rgroup.buffer->drawFull();
+
+					if (ent && ent->needAngles && highlight)
+					{
+						for (int s = 0; s < MAX_LIGHTMAPS; s++)
+						{
+							whiteTex->bind(s + 1);
+						}
+
+						g_app->matmodel = ent->modelMat4x4_calc;
+						g_app->bspShader->updateMatrixes();
+						rgroup.buffer->frameId--;
+						rgroup.buffer->drawFull();
+					}
+				}
 				g_app->bspShader->popMatrix();
 			}
 		}

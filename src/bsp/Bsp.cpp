@@ -875,8 +875,8 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		}
 
 		BSPPLANE testPlane;
-		bool expectedFlip = testPlane.update(planes[iPlane].vNormal, planes[iPlane].fDist);
-		bool flipped = newPlane.update(newPlane.vNormal, newPlane.fDist);
+		bool expectedFlip = testPlane.update_plane(planes[iPlane].vNormal, planes[iPlane].fDist);
+		bool flipped = newPlane.update_plane(newPlane.vNormal, newPlane.fDist);
 
 		testPlane = newPlane;
 
@@ -6276,9 +6276,9 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 
 int Bsp::create_clipnode()
 {
-	BSPCLIPNODE32* newNodes = new BSPCLIPNODE32[clipnodeCount + 1]{};
+	BSPCLIPNODE32* newNodes = new BSPCLIPNODE32[clipnodeCount + 1];
 	memcpy(newNodes, clipnodes, clipnodeCount * sizeof(BSPCLIPNODE32));
-
+	newNodes[clipnodeCount] = BSPCLIPNODE32();
 	replace_lump(LUMP_CLIPNODES, newNodes, (clipnodeCount + 1) * sizeof(BSPCLIPNODE32));
 
 	return clipnodeCount - 1;
@@ -6286,9 +6286,9 @@ int Bsp::create_clipnode()
 
 int Bsp::create_plane()
 {
-	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 1]{};
+	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 1];
 	memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
-
+	newPlanes[planeCount] = BSPPLANE();
 	replace_lump(LUMP_PLANES, newPlanes, (planeCount + 1) * sizeof(BSPPLANE));
 
 	return planeCount - 1;
@@ -6296,7 +6296,7 @@ int Bsp::create_plane()
 
 int Bsp::create_model()
 {
-	BSPMODEL* newModels = new BSPMODEL[modelCount + 1]{};
+	BSPMODEL* newModels = new BSPMODEL[modelCount + 1];
 	memcpy(newModels, models, modelCount * sizeof(BSPMODEL));
 
 	newModels[modelCount] = BSPMODEL();
@@ -6309,7 +6309,7 @@ int Bsp::create_model()
 
 int Bsp::create_texinfo()
 {
-	BSPTEXTUREINFO* newTexinfos = new BSPTEXTUREINFO[texinfoCount + 1]{};
+	BSPTEXTUREINFO* newTexinfos = new BSPTEXTUREINFO[texinfoCount + 1];
 	memcpy(newTexinfos, texinfos, texinfoCount * sizeof(BSPTEXTUREINFO));
 
 	newTexinfos[texinfoCount] = BSPTEXTUREINFO();
@@ -6733,7 +6733,7 @@ bool Bsp::leaf_del_face(int faceIdx, int leafIdx)
 		}
 
 		leaves[i].iFirstMarkSurface = surface_idx;
-		surface_idx = all_mark_surfaces.size();
+		surface_idx = (int)all_mark_surfaces.size();
 		leaves[i].nMarkSurfaces = surface_idx - leaves[i].iFirstMarkSurface;
 	}
 
@@ -7333,11 +7333,17 @@ bool Bsp::is_worldspawn_ent(int entIdx)
 
 int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 {
-	if (iNode == 2269)
-	{
-		print_log("Regen {} of {}\n", iNode, nodeCount);
+	if (iNode < 0 || iNode >= nodeCount) {
+		// Handle out-of-bounds index for nodes array
+		return -1;
 	}
+
 	BSPNODE32& node = nodes[iNode];
+
+	if (node.iPlane < 0 || node.iPlane >= planeCount) {
+		// Handle out-of-bounds index for planes array
+		return -1;
+	}
 
 	switch (planes[node.iPlane].nType)
 	{
@@ -7350,7 +7356,12 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 		{
 			if (node.iChildren[i] < 0)
 			{
-				BSPLEAF32& leaf = leaves[~node.iChildren[i]];
+				int leafIndex = ~node.iChildren[i];
+				if (leafIndex < 0 || leafIndex >= leafCount) {
+					// Handle out-of-bounds index for leaves array
+					return -1;
+				}
+				BSPLEAF32& leaf = leaves[leafIndex];
 				childContents[i] = leaf.nContents;
 			}
 		}
@@ -7374,6 +7385,10 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 	}
 
 	int newClipnodeIdx = create_clipnode();
+	if (newClipnodeIdx < 0 || newClipnodeIdx >= clipnodeCount) {
+		// Handle out-of-bounds index for clipnodes array
+		return -1;
+	}
 	clipnodes[newClipnodeIdx].iPlane = create_plane();
 
 	int solidChild = -1;
@@ -7382,12 +7397,21 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 		if (node.iChildren[i] >= 0)
 		{
 			int childIdx = regenerate_clipnodes_from_nodes(node.iChildren[i], hullIdx);
+			if (childIdx < 0 || childIdx >= clipnodeCount) {
+				// Handle out-of-bounds index for clipnodes array
+				return -1;
+			}
 			clipnodes[newClipnodeIdx].iChildren[i] = childIdx;
 			solidChild = solidChild == -1 ? i : -1;
 		}
 		else
 		{
-			BSPLEAF32& leaf = leaves[~node.iChildren[i]];
+			int leafIndex = ~node.iChildren[i];
+			if (leafIndex < 0 || leafIndex >= leafCount) {
+				// Handle out-of-bounds index for leaves array
+				return -1;
+			}
+			BSPLEAF32& leaf = leaves[leafIndex];
 			clipnodes[newClipnodeIdx].iChildren[i] = leaf.nContents;
 			if (leaf.nContents == CONTENTS_SOLID)
 			{
@@ -7396,7 +7420,15 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 		}
 	}
 
+	if (node.iPlane < 0 || node.iPlane >= planeCount) {
+		// Handle out-of-bounds index for planes array
+		return -1;
+	}
 	BSPPLANE& nodePlane = planes[node.iPlane];
+	if (clipnodes[newClipnodeIdx].iPlane < 0 || clipnodes[newClipnodeIdx].iPlane >= planeCount) {
+		// Handle out-of-bounds index for planes array
+		return -1;
+	}
 	BSPPLANE& clipnodePlane = planes[clipnodes[newClipnodeIdx].iPlane];
 	clipnodePlane = nodePlane;
 
@@ -7414,6 +7446,10 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 	// enough to "link" clipnode planes to node planes during scaling because BSP trees might not match.
 	if (solidChild != -1)
 	{
+		if (clipnodes[newClipnodeIdx].iPlane < 0 || clipnodes[newClipnodeIdx].iPlane >= planeCount) {
+			// Handle out-of-bounds index for planes array
+			return -1;
+		}
 		BSPPLANE& p = planes[clipnodes[newClipnodeIdx].iPlane];
 		vec3 planePoint = p.vNormal * p.fDist;
 		vec3 newPlanePoint = planePoint + p.vNormal * (solidChild == 0 ? -extent : extent);

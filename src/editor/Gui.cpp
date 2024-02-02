@@ -1044,48 +1044,8 @@ void Gui::drawBspContexMenu()
 		}
 	}
 }
-// debug
-float distancex(const vec2& p1, const vec2& p2) {
-	float dx = p2.x - p1.x;
-	float dy = p2.y - p1.y;
-	return dx * dx + dy * dy;
-}
 
-float mix(float x, float y, float a) {
-	return x * (1 - a) + y * a;
-}
 
-float approximateZCoordinateOnPolygonPlane(const std::vector<vec3>& vertices, const vec2& localPos) {
-	float z = 0.0f;
-	size_t numVertices = vertices.size();
-	if (numVertices < 3) {
-		return z;
-	}
-
-	size_t index1 = 0;
-	size_t index2 = 1;
-	float minDistance1 = distancex(localPos, vec2(vertices[0].x, vertices[0].y));
-	float minDistance2 = distancex(localPos, vec2(vertices[1].x, vertices[1].y));
-
-	for (size_t i = 2; i < numVertices; ++i) {
-		float distance = distancex(localPos, vec2(vertices[i].x, vertices[i].y));
-		if (distance < minDistance1) {
-			index2 = index1;
-			minDistance2 = minDistance1;
-			index1 = i;
-			minDistance1 = distance;
-		}
-		else if (distance < minDistance2) {
-			index2 = i;
-			minDistance2 = distance;
-		}
-	}
-	float t = minDistance1 / (minDistance1 + minDistance2);
-	z = mix(vertices[index1].z, vertices[index2].z, t);
-
-	return z;
-}
-//
 
 void Gui::drawMenuBar()
 {
@@ -1945,6 +1905,8 @@ void Gui::drawMenuBar()
 						app->deselectMap();
 						app->clearMaps();
 						app->selectMapId(0);
+
+						print_log(get_localized_string(LANG_0907));
 					}
 				}
 			}
@@ -2058,7 +2020,7 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem(get_localized_string(LANG_0539).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					std::string newpath;
-					map->ExportExtFile(map->bsp_path,newpath);
+					map->ExportExtFile(map->bsp_path, newpath);
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -2707,7 +2669,7 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (DebugKeyPressed && ImGui::MenuItem("Secret MDL to BSP", NULL, false, app && app->pickInfo.selectedEnts.size()))
+			if (DebugKeyPressed && ImGui::MenuItem("MDL to BSP", NULL, false, app && app->pickInfo.selectedEnts.size()))
 			{
 				int ent = app->pickInfo.selectedEnts[0];
 
@@ -2727,12 +2689,11 @@ void Gui::drawMenuBar()
 
 						unsigned char* testlightdata = new unsigned char[map->lightDataLength + (512 * 512 * 3)];
 						memcpy(testlightdata, map->lightdata, map->lightDataLength);
-						memset(testlightdata + map->lightDataLength, 255, (512 * 512 * 3));
+						memset(testlightdata + map->lightDataLength, 200, (512 * 512 * 3));
 						map->replace_lump(LUMP_LIGHTING, testlightdata, map->lightDataLength + (512 * 512 * 3));
 
 						vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 						vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-
 
 
 						for (size_t group = 0; group < mdl->mdl_mesh_groups.size(); group++)
@@ -2743,26 +2704,26 @@ void Gui::drawMenuBar()
 								modelVert* mdlVerts = (modelVert*)mesh.buffer->get_data();
 
 								std::vector<int> newVertIndexes;
-								vec3* newverts = new vec3[map->vertCount + mesh.buffer->numVerts];
+								int newVertCount = map->vertCount + mesh.buffer->numVerts;
+								vec3* newverts = new vec3[newVertCount];
+								std::vector<vec2> newuv;
+								newuv.resize(newVertCount);
+
 								memcpy(newverts, map->verts, map->vertCount * sizeof(vec3));
 								int v = 0;
 
-								std::vector<vec3> tmpMeshVerts;
-
-								for (v = map->vertCount; v < map->vertCount + mesh.buffer->numVerts; v++)
+								for (v = map->vertCount; v < newVertCount; v++)
 								{
 									newverts[v] = mdlVerts[v - map->vertCount].pos.flipUV();
+									newuv[v] = { mdlVerts[v - map->vertCount].u, mdlVerts[v - map->vertCount].v };
 									newVertIndexes.push_back(v);
 									expandBoundingBox(newverts[v], mins, maxs);
-									tmpMeshVerts.push_back(newverts[v]);
 								}
 
-								vec3 centroid = getCentroid(tmpMeshVerts);
 
+								int newdedgescount = map->edgeCount + (mesh.buffer->numVerts + 1) / 2;
 
-								int newdedgescount = map->edgeCount + mesh.buffer->numVerts;
-
-								BSPEDGE32* newedges = new BSPEDGE32[map->edgeCount + (mesh.buffer->numVerts + 1) / 2];
+								BSPEDGE32* newedges = new BSPEDGE32[newdedgescount];
 								memcpy(newedges, map->edges, map->edgeCount * sizeof(BSPEDGE32));
 
 								std::map<int, int> vertToSurfedge;
@@ -2771,27 +2732,26 @@ void Gui::drawMenuBar()
 
 								unsigned int startEdge = map->edgeCount;
 								{
-									unsigned int idx = 0;
+									v = 0;
 									for (unsigned int i = 0; i < mesh.buffer->numVerts; i += 2)
 									{
 										unsigned int v0 = i;
 										unsigned int v1 = (i + 1) % mesh.buffer->numVerts;
-										newedges[startEdge + idx] = BSPEDGE32((unsigned int)newVertIndexes[v0], (unsigned int)newVertIndexes[v1]);
+										newedges[startEdge + v] = BSPEDGE32((unsigned int)newVertIndexes[v0], (unsigned int)newVertIndexes[v1]);
 
-										vertToSurfedge[v0] = startEdge + idx;
+										vertToSurfedge[v0] = startEdge + v;
 										if (v1 > 0)
 										{
-											vertToSurfedge[v1] = -((int)(startEdge + idx)); // negative = use second vert
+											vertToSurfedge[v1] = -((int)(startEdge + v)); // negative = use second vert
 										}
 
-										idx++;
+										v++;
 									}
 								}
 
 								inverse = false;
 								int newsurfedges_count = map->surfedgeCount + mesh.buffer->numVerts;
-								int* newsurfedges = new int[newsurfedges_count + 1];
-								newsurfedges[newsurfedges_count] = map->edgeCount;
+								int* newsurfedges = new int[newsurfedges_count];
 								memcpy(newsurfedges, map->surfedges, map->surfedgeCount * sizeof(int));
 
 								for (v = map->surfedgeCount; v < newsurfedges_count; v++)
@@ -2803,18 +2763,22 @@ void Gui::drawMenuBar()
 
 								modelFaces += numTriangles;
 
-								BSPFACE32* newfaces = new BSPFACE32[map->faceCount + numTriangles];
+								int newFaceCount = map->faceCount + numTriangles;
+
+								BSPFACE32* newfaces = new BSPFACE32[newFaceCount];
 								memcpy(newfaces, map->faces, map->faceCount * sizeof(BSPFACE32));
 
-								BSPPLANE* newplanes = new BSPPLANE[map->planeCount + numTriangles];
+								int newPlaneCount = map->planeCount + numTriangles;
+								BSPPLANE* newplanes = new BSPPLANE[newPlaneCount];
 								memcpy(newplanes, map->planes, map->planeCount * sizeof(BSPPLANE));
 
-								BSPTEXTUREINFO* newtexinfos = new BSPTEXTUREINFO[map->texinfoCount + numTriangles];
+								int newTexinfosCount = map->texinfoCount + numTriangles;
+								BSPTEXTUREINFO* newtexinfos = new BSPTEXTUREINFO[newTexinfosCount];
 								memcpy(newtexinfos, map->texinfos, map->texinfoCount * sizeof(BSPTEXTUREINFO));
 
 								int firstEdge = map->surfedgeCount;
 
-								for (v = map->faceCount; v < map->faceCount + numTriangles; v++)
+								for (v = map->faceCount; v < newFaceCount; v++)
 								{
 									newfaces[v].iFirstEdge = firstEdge;
 									newfaces[v].nEdges = 3;
@@ -2826,11 +2790,17 @@ void Gui::drawMenuBar()
 
 
 									BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[v].iTextureInfo];
-
+									texInfo = BSPTEXTUREINFO();
+									int miptex = 0;
 
 									if (!added_textures.count(mesh.texture))
 									{
 										COLOR4* tmpDataTex = (COLOR4*)mesh.texture->get_data();
+
+										int newWidth = mesh.texture->width;
+										int newHeight = mesh.texture->height;
+										getTrueTexSize(newWidth, newHeight, MAX_TEXTURE_DIMENSION);
+
 										COLOR3* tmpData = new COLOR3[mesh.texture->width * mesh.texture->height];
 										if (mesh.texture->format == GL_RGBA)
 										{
@@ -2844,111 +2814,151 @@ void Gui::drawMenuBar()
 											memcpy(tmpData, tmpDataTex, mesh.texture->width * mesh.texture->height * sizeof(COLOR3));
 										}
 										added_textures.insert(mesh.texture);
-										texInfo.iMiptex = map->add_texture(mesh.texture->texName.c_str(), (unsigned char*)tmpData, mesh.texture->width,
-											mesh.texture->height);
+
+										if (newWidth != mesh.texture->width
+											|| newHeight != mesh.texture->height)
+										{
+											std::vector<COLOR3> newData;
+											scaleImage(tmpData, newData, mesh.texture->width, mesh.texture->height,
+												newWidth, newHeight);
+											delete[] tmpData;
+											tmpData = new COLOR3[newWidth * newHeight];
+											std::copy(newData.begin(), newData.end(), tmpData);
+
+											if (GetImageColors(tmpData, newWidth * newHeight) > 256)
+											{
+												Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+
+												/*if (ditheringEnabled)
+													tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
+												else*/
+													tmpCQuantizer->ApplyColorTable((COLOR3*)tmpData, newWidth * newHeight);
+
+												delete tmpCQuantizer;
+											}
+
+											//memcpy(tmpData, newData.data(), newData.size() * sizeof(COLOR3));
+										}
+
+										std::string trueTexName = mesh.texture->texName;
+										while (trueTexName.size() > 15)
+										{
+											trueTexName.erase(trueTexName.begin());
+										}
+
+										miptex = map->add_texture(trueTexName.c_str(), (unsigned char*)tmpData, newWidth,
+											newHeight);
+
+										delete[] tmpData;
 									}
 									else
 									{
-										map->find_embedded_texture(mesh.texture->texName.c_str(), texInfo.iMiptex);
+										std::string trueTexName = mesh.texture->texName;
+										while (trueTexName.size() > 15)
+										{
+											trueTexName.erase(trueTexName.begin());
+										}
+										map->find_embedded_texture(trueTexName.c_str(), miptex);
 									}
 
 									BSPPLANE& plane = newplanes[newfaces[v].iPlane];
 
-									std::vector<vec3> planeverts;
+									// Compute tangent and bitangent
+									vec3 vertex1 = newsurfedges[firstEdge] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge])].iVertex[0]]
+										: newverts[newedges[abs(newsurfedges[firstEdge])].iVertex[1]];
+									vec3 vertex2 = newsurfedges[firstEdge + 1] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge + 1])].iVertex[0]]
+										: newverts[newedges[abs(newsurfedges[firstEdge + 1])].iVertex[1]];
+									vec3 vertex3 = newsurfedges[firstEdge + 2] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge + 2])].iVertex[0]]
+										: newverts[newedges[abs(newsurfedges[firstEdge + 2])].iVertex[1]];
 
-									planeverts.push_back(mdlVerts[v - map->faceCount].pos.flipUV());
-									planeverts.push_back(mdlVerts[(v - map->faceCount) + 1].pos.flipUV());
-									planeverts.push_back(mdlVerts[(v - map->faceCount) + 2].pos.flipUV());
-
-
-									vec3 orderedVertsNormal = getNormalFromVerts(planeverts);
-
-									if (!getPlaneFromVerts(planeverts, plane.vNormal, plane.fDist))
+									std::vector<vec3> vertexes{};
+									vertexes.push_back(vertex1);
+									vertexes.push_back(vertex2);
+									vertexes.push_back(vertex3);
+									// Texture coordinates
+									std::vector<vec2> uvs{};
+									uvs.push_back(newsurfedges[firstEdge] > 0 ? newuv[newedges[abs(newsurfedges[firstEdge])].iVertex[0]]
+										: newuv[newedges[abs(newsurfedges[firstEdge])].iVertex[1]]);
+									uvs.push_back(newsurfedges[firstEdge + 1] > 0 ? newuv[newedges[abs(newsurfedges[firstEdge + 1])].iVertex[0]]
+										: newuv[newedges[abs(newsurfedges[firstEdge + 1])].iVertex[1]]);
+									uvs.push_back(newsurfedges[firstEdge + 2] > 0 ? newuv[newedges[abs(newsurfedges[firstEdge + 2])].iVertex[0]]
+										: newuv[newedges[abs(newsurfedges[firstEdge + 2])].iVertex[1]]);
+									/**/
+									for (auto& uv : uvs)
 									{
-										vec3 vertex1 = newsurfedges[firstEdge] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge])].iVertex[0]]
-											: newverts[newedges[abs(newsurfedges[firstEdge])].iVertex[1]];
-										vec3 vertex2 = newsurfedges[firstEdge] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge + 1])].iVertex[0]]
-											: newverts[newedges[abs(newsurfedges[firstEdge + 1])].iVertex[1]];
-										vec3 vertex3 = newsurfedges[firstEdge] > 0 ? newverts[newedges[abs(newsurfedges[firstEdge + 2])].iVertex[0]]
-											: newverts[newedges[abs(newsurfedges[firstEdge + 2])].iVertex[1]];
+										int newWidth = mesh.texture->width;
+										int newHeight = mesh.texture->height;
 
-										// Calculate the normal vector using cross product
-										vec3 edge1 = vertex2 - vertex1;
-										vec3 edge2 = vertex3 - vertex1;
-										vec3 normal = crossProduct(edge1, edge2).normalize();
-
-										// Calculate the distance from the origin
-										float dist = dotProduct(normal, vertex1);
-
-										plane.vNormal = normal;
-										plane.fDist = dist;
+										getTrueTexSize(newWidth, newHeight);
+										uv.x *= newWidth;
+										uv.y *= newHeight;
 									}
 
+									// Compute edges and delta UVs
+									vec3 edge1 = vertexes[1] - vertexes[0];
+									vec3 edge2 = vertexes[2] - vertexes[0];
 
-									// get plane normal, flipping if it points inside the solid
-									vec3 faceNormal = plane.vNormal;
-									vec3 planeDir = ((plane.vNormal * plane.fDist) - centroid).normalize();
-									newfaces[v].nPlaneSide = 1;
+									vec3 normal = crossProduct(edge1, edge2).normalize();
 
-									if (dotProduct(planeDir, plane.vNormal) > EPSILON)
-									{
-										faceNormal = faceNormal.invert();
-										newfaces[v].nPlaneSide = 0;
-									}
+									// Calculate the distance from the origin
+									float dist = getDistAlongAxis(normal, vertex1);
+									plane.vNormal = normal;
+									plane.fDist = dist;
 
-									// reverse vert order if not CCW when viewed from outside the solid
-									if (dotProduct(orderedVertsNormal, faceNormal) < EPSILON)
-									{
-										std::reverse(planeverts.begin(), planeverts.end());
-										newverts[v - map->faceCount + map->vertCount] = planeverts[0];
-										newverts[(v - map->faceCount) + 1 + map->vertCount] = planeverts[1];
-										newverts[(v - map->faceCount) + 2 + map->vertCount] = planeverts[2];
-									}
-
-									plane.vNormal = planeDir;
-									plane.update(plane.vNormal, plane.fDist);
-
-									vec3 xv, yv;
-									int bestplane = TextureAxisFromPlane(plane, xv, yv);
-									texInfo.shiftS = texInfo.shiftT = 0.0f;
-									texInfo.nFlags = 0;
-									texInfo.vS = xv;
-									texInfo.vT = yv;
-									texInfo.vS = texInfo.vS.normalize(1.0f);
-									texInfo.vT = texInfo.vT.normalize(1.0f);
+									newfaces[v].nPlaneSide = !plane.update_plane(plane.vNormal, plane.fDist);
+									
+									calculateTextureInfo(texInfo, vertexes, uvs);
+									texInfo.iMiptex = miptex;
 
 									firstEdge += 3;
 								}
 
+								int oldFaceCount = map->faceCount;
 
-								map->replace_lump(LUMP_VERTICES, newverts, (map->vertCount + mesh.buffer->numVerts) * sizeof(vec3));
-								map->replace_lump(LUMP_EDGES, newedges, (map->edgeCount + (int)((mesh.buffer->numVerts + 1) / 2)) * sizeof(BSPEDGE32));
-								map->replace_lump(LUMP_SURFEDGES, newsurfedges, (map->surfedgeCount + mesh.buffer->numVerts + 1) * sizeof(int));
-								map->replace_lump(LUMP_FACES, newfaces, (map->faceCount + numTriangles) * sizeof(BSPFACE32));
-								map->replace_lump(LUMP_PLANES, newplanes, (map->planeCount + numTriangles) * sizeof(BSPPLANE));
-								map->replace_lump(LUMP_TEXINFO, newtexinfos, (map->texinfoCount + numTriangles) * sizeof(BSPTEXTUREINFO));
+								map->replace_lump(LUMP_VERTICES, newverts, newVertCount * sizeof(vec3));
+								map->replace_lump(LUMP_EDGES, newedges, newdedgescount * sizeof(BSPEDGE32));
+								map->replace_lump(LUMP_SURFEDGES, newsurfedges, newsurfedges_count * sizeof(int));
+								map->replace_lump(LUMP_FACES, newfaces, newFaceCount * sizeof(BSPFACE32));
+								map->replace_lump(LUMP_PLANES, newplanes, newPlaneCount * sizeof(BSPPLANE));
+								map->replace_lump(LUMP_TEXINFO, newtexinfos, newTexinfosCount * sizeof(BSPTEXTUREINFO));
+
+								for (int f = oldFaceCount; f < map->faceCount; f++)
+								{
+									int tmins[2];
+									int tmaxs[2];
+									if (!GetFaceExtents(map, f, tmins, tmaxs))
+									{
+										BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[f].iTextureInfo];
+										texInfo.vS = texInfo.vS.normalize();
+										texInfo.vT = texInfo.vT.normalize(/*tex size?*/);
+									}
+								}
 							}
 						}
 
 						vec3 origin = getCenter(maxs, mins);
 
-						BSPMODEL* newmodels = new BSPMODEL[map->modelCount + 1];
-						memcpy(newmodels, map->models, map->modelCount * sizeof(BSPMODEL));
-						newmodels[map->modelCount].nMins = mins;
-						newmodels[map->modelCount].nMaxs = maxs;
-						newmodels[map->modelCount].vOrigin = origin;
-						newmodels[map->modelCount].iFirstFace = modelFirstFace;
-						newmodels[map->modelCount].nFaces = modelFaces;
-						newmodels[map->modelCount].nVisLeafs = 0;
+						int newModelIdx = map->modelCount;
+
+						BSPMODEL* newmodels = new BSPMODEL[newModelIdx + 1];
+						memcpy(newmodels, map->models, newModelIdx * sizeof(BSPMODEL));
+
+						newmodels[newModelIdx].nMins = mins;
+						newmodels[newModelIdx].nMaxs = maxs;
+						newmodels[newModelIdx].vOrigin = origin;
+						newmodels[newModelIdx].iFirstFace = modelFirstFace;
+						newmodels[newModelIdx].nFaces = modelFaces;
+						newmodels[newModelIdx].nVisLeafs = 0;
 
 						unsigned int startNode = map->nodeCount;
 						{
-							BSPNODE32* newNodes = new BSPNODE32[map->nodeCount + modelFaces]{};
+							int newnodecount = map->nodeCount + modelFaces + 2;
+							BSPNODE32* newNodes = new BSPNODE32[newnodecount];
 							memcpy(newNodes, map->nodes, map->nodeCount * sizeof(BSPNODE32));
 
 							int sharedSolidLeaf = 0;
 							int anyEmptyLeaf = 0;
-							for (int i = 0; i < map->leafCount; i++)
+							for (int i = map->leafCount - 1; i >= 0; i--)
 							{
 								if (map->leaves[i].nContents == CONTENTS_EMPTY)
 								{
@@ -2961,11 +2971,11 @@ void Gui::drawMenuBar()
 							if (anyEmptyLeaf == 0)
 							{
 								anyEmptyLeaf = map->create_leaf(CONTENTS_EMPTY);
-								newmodels[map->modelCount].nVisLeafs = 1;
+								newmodels[newModelIdx].nVisLeafs = 1;
 							}
 							else
 							{
-								newmodels[map->modelCount].nVisLeafs = 0;
+								newmodels[newModelIdx].nVisLeafs = 0;
 							}
 
 
@@ -2976,13 +2986,20 @@ void Gui::drawMenuBar()
 								node.iFirstFace = (int)(modelFirstFace + k); // face required for decals
 								node.nFaces = 1;
 								node.iPlane = (int)(modelFirstPlane + k);
+								node.nMins = node.nMaxs = vec3();
+								/*node.nMins = mins;
+								node.nMaxs = maxs;*/
 								// node mins/maxs don't matter for submodels. Leave them at 0.
 
-								int insideContents = modelFaces && k == modelFaces - 1 ? ~sharedSolidLeaf : (int)(map->nodeCount + k + 1);
+								int insideContents = modelFaces > 0 && k + 1 == modelFaces ? ~sharedSolidLeaf : (int)(map->nodeCount + k + 1);
 								int outsideContents = ~anyEmptyLeaf;
 
+								bool swapNodeChildren = map->planes[node.iPlane].vNormal.x < 0 || map->planes[node.iPlane].vNormal.y < 0 || map->planes[node.iPlane].vNormal.z < 0;
+								/*if (swapNodeChildren)
+									map->planes[node.iPlane].vNormal = map->planes[node.iPlane].vNormal.invert();*/
+
 								// can't have negative normals on planes so children are swapped instead
-								if (map->faces[node.iFirstFace].nPlaneSide)
+								if (swapNodeChildren)
 								{
 									node.iChildren[0] = insideContents;
 									node.iChildren[1] = outsideContents;
@@ -2992,33 +3009,41 @@ void Gui::drawMenuBar()
 									node.iChildren[0] = outsideContents;
 									node.iChildren[1] = insideContents;
 								}
+								if (k + 1 == modelFaces)
+								{
+									node.iChildren[0] = (int)(map->nodeCount + k + 1);
+									node.iChildren[1] = (int)(map->nodeCount + k + 2);
+
+									BSPNODE32& lastnode1 = newNodes[map->nodeCount + k + 1];
+									lastnode1 = node;
+									lastnode1.iChildren[0] = insideContents;
+									lastnode1.iChildren[1] = outsideContents;
+
+									BSPNODE32& lastnode2 = newNodes[map->nodeCount + k + 2];
+									lastnode2 = node;
+									lastnode2.iChildren[0] = outsideContents;
+									lastnode2.iChildren[1] = insideContents;
+								}
 							}
 
-							map->replace_lump(LUMP_NODES, newNodes, (map->nodeCount + modelFaces) * sizeof(BSPNODE32));
+							map->replace_lump(LUMP_NODES, newNodes, newnodecount * sizeof(BSPNODE32));
 						}
 
-						map->models[map->modelCount].iHeadnodes[0] = startNode;
+						newmodels[newModelIdx].iHeadnodes[0] = startNode;
 
-						map->models[map->modelCount].iHeadnodes[1] = CONTENTS_EMPTY;
-						map->models[map->modelCount].iHeadnodes[2] = CONTENTS_EMPTY;
-						map->models[map->modelCount].iHeadnodes[3] = CONTENTS_EMPTY;
+						newmodels[newModelIdx].iHeadnodes[1] = CONTENTS_EMPTY;
+						newmodels[newModelIdx].iHeadnodes[2] = CONTENTS_EMPTY;
+						newmodels[newModelIdx].iHeadnodes[3] = CONTENTS_EMPTY;
 
-						map->ents.push_back(new Entity("func_wall"));
-						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("model", "*" + std::to_string(map->modelCount));
-						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", vec3().toKeyvalueString());
+						map->replace_lump(LUMP_MODELS, newmodels, (newModelIdx + 1) * sizeof(BSPMODEL));
 
-						map->replace_lump(LUMP_MODELS, newmodels, (map->modelCount + 1) * sizeof(BSPMODEL));
-
-						//print_log("11111111111111111111111\n");
-						//map->regenerate_clipnodes_from_nodes(startNode, 1);
-						//print_log("21111111111111111111111\n");
-						//map->regenerate_clipnodes_from_nodes(startNode, 2);
-						//print_log("31111111111111111111111\n");
-						//map->regenerate_clipnodes_from_nodes(startNode, 3);
-						//print_log("41111111111111111111111\n");
+						map->ents[ent]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
+						map->ents[ent]->setOrAddKeyvalue("classname", "cycler_sprite");
+						rend->renderEnts[ent].mdl = NULL;
 
 						map->update_ent_lump();
 						map->save_undo_lightmaps();
+						map->resize_all_lightmaps();
 
 						rend->loadLightmaps();
 						rend->calcFaceMaths();
@@ -3026,67 +3051,19 @@ void Gui::drawMenuBar()
 						rend->preRenderEnts();
 						rend->loadTextures();
 						rend->reuploadTextures();
-						print_log("51111111111111111111111\n");
+
+
+						/*print_log("11111111111111111111111\n");
+						map->regenerate_clipnodes(newModelIdx, -1);
+						print_log("21111111111111111111111\n");*/
+						//map->regenerate_clipnodes_from_nodes(startNode, 2);
+						//print_log("31111111111111111111111\n");
+						//map->regenerate_clipnodes_from_nodes(startNode, 3);
+						//print_log("41111111111111111111111\n");
 					}
 				}
 			}
 
-			if (DebugKeyPressed && ImGui::MenuItem("Do something bad", NULL, false))
-			{
-				memset(map->lightdata, 0, map->lightDataLength);
-				vec3 camerapos = cameraOrigin - rend->mapOffset;
-
-				print_log("Map offset {} {} {}\n", rend->mapOffset.x, rend->mapOffset.y, rend->mapOffset.z);
-
-				for (int faceIdx = 0; faceIdx < rend->numFaceMaths; faceIdx++) {
-					int bytes = GetFaceLightmapSizeBytes(map, faceIdx);
-					if (bytes <= 0)
-						continue;
-
-					FaceMath& faceMath = rend->faceMaths[faceIdx];
-					BSPFACE32& face = map->faces[faceIdx];
-					BSPPLANE& plane = map->planes[face.iPlane];
-					int size[2];
-					GetFaceLightmapSize(map, faceIdx, size);
-
-					vec3 minPoint;
-					vec3 maxPoint;
-					vec3 newPoint = (faceMath.worldToLocal.invert() * vec4(minPoint.x, minPoint.y, minPoint.z, 1.0f)).xyz();
-
-					vec3 face_center = getCenter(faceMath.localVerts);
-
-					getBoundingBox(faceMath.localVerts, minPoint, maxPoint);
-
-					for (int x = 0; x < size[0]; x++) {
-						for (int y = 0; y < size[1]; y++) {
-							float u = (static_cast<float>(x) / size[0]) * (maxPoint.x - minPoint.x) + minPoint.x;
-							float v = (static_cast<float>(y) / size[1]) * (maxPoint.y - minPoint.y) + minPoint.y;
-							vec2 textureCoord(u, v);
-
-							vec3 worldPos = (faceMath.worldToLocal.invert() * vec4(textureCoord.x, textureCoord.y, approximateZCoordinateOnPolygonPlane(faceMath.localVerts, textureCoord))).xyz();
-							float dist = worldPos.dist(camerapos);
-
-							float color = clamp(200.0f / dist, 0.0f, 1.0f);
-							unsigned char color_b = color * 255.0f;
-
-							for (int i = 0; i < MAX_LIGHTMAPS; i++)
-							{
-								if (face.nStyles[i] == 255)
-									continue;
-								int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
-								int offset = face.nLightmapOffset + i * lightmapSz;
-								COLOR3* light_data = (COLOR3*)(unsigned char*)(map->lightdata + offset);
-								light_data[ArrayXYtoId(size[0], x, y)] = COLOR3(color_b, color_b, color_b);
-							}
-						}
-					}
-				}
-
-				map->getBspRender()->loadLightmaps();
-				map->getBspRender()->calcFaceMaths();
-				map->getBspRender()->preRenderFaces();
-				map->getBspRender()->preRenderEnts();
-			}
 
 			if (ImGui::MenuItem("Recompile lighting", NULL, false, g_settings.rad_path.size()))
 			{
@@ -3163,8 +3140,6 @@ void Gui::drawMenuBar()
 							removeFile(delfileprefix + ".ext");
 							removeFile(delfileprefix + ".log");
 							removeFile(delfileprefix + ".err");
-
-							
 						}
 					}
 					else
@@ -3269,7 +3244,8 @@ void Gui::drawMenuBar()
 						}
 						for (int i = 0; i < map->planeCount; i++)
 						{
-							map->planes[i].update(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
+							//map->planes[i].update_plane(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
+							map->planes[i].fDist *= scale_val;
 						}
 
 						map->update_ent_lump();
@@ -3763,14 +3739,11 @@ void Gui::drawMenuBar()
 
 					for (int i = 0; i < add_leafs.size(); i++)
 					{
-						print_log("Leaf {} power {}\n", add_leafs[i], add_leafs_power[i]);
 						map->ents.push_back(new Entity("light"));
-
-
 						vec3 lightPlace = getCenter(map->leaves[add_leafs[i]].nMaxs, map->leaves[add_leafs[i]].nMins);
 						lightPlace.z = std::max(map->leaves[i].nMins.z, map->leaves[i].nMaxs.z) - 16.0f;
 						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", getCenter(map->leaves[add_leafs[i]].nMaxs, map->leaves[add_leafs[i]].nMins).toKeyvalueString());
-						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("_light", vec4(255.0f, 255.0f, 255.0f, std::min(400.0f, add_leafs_power[i])).toKeyvalueString(true));
+						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("_light", vec4(255.0f, 255.0f, 255.0f, std::min(300.0f, add_leafs_power[i] * 0.5f)).toKeyvalueString(true));
 					}
 
 					map->update_ent_lump();
@@ -4101,7 +4074,7 @@ void Gui::drawToolbar()
 		ImGui::SameLine();
 		if (ImGui::ImageButton("##pickface", (ImTextureID)(uint64_t)faceIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1)))
 		{
-			if (app->pickMode == PICK_OBJECT)
+			if (app->pickMode == PICK_OBJECT && app->pickInfo.selectedEnts.size() > 1)
 			{
 				app->deselectObject(true);
 				pickCount++;
@@ -4122,7 +4095,7 @@ void Gui::drawToolbar()
 		ImGui::SameLine();
 		if (ImGui::ImageButton("##pickleaf", (void*)(uint64_t)leafIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1)))
 		{
-			if (app->pickMode == PICK_OBJECT)
+			if (app->pickMode == PICK_OBJECT && app->pickInfo.selectedEnts.size() > 1)
 			{
 				app->deselectObject(true);
 				pickCount++;
@@ -6655,7 +6628,7 @@ void Gui::drawSettings()
 			if (ImGui::Button(get_localized_string(LANG_0718).c_str()))
 			{
 				ifd::FileDialog::Instance().Open("WorkingDir", "Select working dir", std::string(), false, g_settings.lastdir);
-			}
+		}
 			if (ImGui::DragFloat(get_localized_string(LANG_0719).c_str(), &fontSize, 0.1f, 8, 48, get_localized_string(LANG_0720).c_str()))
 			{
 				shouldReloadFonts = true;
@@ -6814,7 +6787,7 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted(get_localized_string(LANG_0740).c_str());
 				ImGui::EndTooltip();
 			}
-		}
+	}
 		else if (settingsTab == 1)
 		{
 			for (size_t i = 0; i < g_settings.fgdPaths.size(); i++)
@@ -7326,7 +7299,7 @@ void Gui::drawSettings()
 		ImGui::EndChild();
 
 		ImGui::EndGroup();
-	}
+}
 	ImGui::End();
 
 

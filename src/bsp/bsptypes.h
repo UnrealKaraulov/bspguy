@@ -3,6 +3,7 @@
 #include "vectors.h"
 #include "bsplimits.h"
 #include <vector>
+#include <array>
 
 #pragma pack(push, 1)
 
@@ -166,7 +167,7 @@ struct BSPPLANE
 	int nType;
 
 	// returns true if the plane was flipped
-	bool update(vec3 newNormal, float fdist);
+	bool update_plane(vec3 newNormal, float fdist);
 
 	BSPPLANE() :vNormal(vec3())
 	{
@@ -189,6 +190,14 @@ struct BSPTEXTUREINFO
 	float shiftT;
 	int iMiptex;
 	int nFlags;
+
+	BSPTEXTUREINFO()
+	{
+		vS = vec3(1.0f, 0.0f, 0.0f);
+		vT = vec3(0.0f, 0.0f, -1.0f);
+		shiftS = shiftT = 0.0f;
+		iMiptex = nFlags = 0;
+	}
 };
 
 
@@ -209,6 +218,13 @@ struct BSPFACE32
 	int iTextureInfo;    // Index of the texture info structure
 	unsigned char nStyles[MAX_LIGHTMAPS];       // Specify lighting styles
 	int nLightmapOffset; // Offsets into the raw lightmap data
+	BSPFACE32()
+	{
+		iPlane = nPlaneSide = iFirstEdge = nEdges = iTextureInfo = 0;
+		nLightmapOffset = -1;
+		nStyles[0] = nStyles[1] =
+			nStyles[2] = nStyles[3] = 255;
+	}
 };
 
 
@@ -221,7 +237,16 @@ struct BSPLEAF32
 	int	iFirstMarkSurface;
 	int nMarkSurfaces;
 	unsigned char nAmbientLevels[MAX_AMBIENTS];
-
+	BSPLEAF32()
+	{
+		nContents = CONTENTS_EMPTY;
+		nVisOffset = -1;
+		nMins = nMaxs = vec3();
+		iFirstMarkSurface = 0;
+		nMarkSurfaces = 0;
+		nAmbientLevels[0] = nAmbientLevels[1] =
+			nAmbientLevels[2] = nAmbientLevels[3] = 0;
+	}
 	bool isEmpty();
 };
 
@@ -241,8 +266,15 @@ struct BSPMODEL
 	int iHeadnodes[MAX_MAP_HULLS]; // Index into nodes array
 	int nVisLeafs;                 // ???
 	int iFirstFace, nFaces;        // Index and count into faces
-};
 
+	BSPMODEL()
+	{
+		nMins = nMaxs = vOrigin = vec3();
+		iHeadnodes[0] = iHeadnodes[1] =
+			iHeadnodes[2] =	iHeadnodes[3] = -1;
+		nVisLeafs = iFirstFace = nFaces = 0;
+	}
+};
 struct BSPNODE32
 {
 	int	iPlane;
@@ -251,12 +283,40 @@ struct BSPNODE32
 	vec3 nMaxs;
 	int	iFirstFace;
 	int	nFaces;			// counting both sides
+	BSPNODE32()
+	{
+		iPlane = 0;
+		iChildren[0] = iChildren[1] = 0;
+		nMins = nMaxs = vec3();
+		iFirstFace = nFaces = 0;
+	}
+	BSPNODE32(int plane, std::array<int,2> childs, vec3 mins, vec3 maxs, int firstface, int faces)
+	{
+		iPlane = plane;
+		iChildren[0] = childs[0];
+		iChildren[1] = childs[1];
+		nMins = mins;
+		nMaxs = maxs;
+		iFirstFace = firstface;
+		nFaces = faces;
+	}
 };
 
 struct BSPCLIPNODE32
 {
 	int iPlane;       // Index into planes
 	int iChildren[2]; // negative numbers are contents
+	BSPCLIPNODE32()
+	{
+		iPlane = 0;
+		iChildren[0] = iChildren[1] = -1;
+	}
+	BSPCLIPNODE32(int plane, std::array<int,2> childs)
+	{
+		iPlane = plane;
+		iChildren[0] = childs[0];
+		iChildren[1] = childs[1];
+	}
 };
 
 /* other */

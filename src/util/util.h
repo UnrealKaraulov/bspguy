@@ -221,7 +221,7 @@ std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts);
 
 std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts);
 
-bool pointInsidePolygon(std::vector<vec3>& poly, vec2 p);
+bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p);
 
 int ArrayXYtoId(int w, int x, int y);
 
@@ -243,7 +243,7 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type);
 
 size_t strlen(std::string str);
 
-int GetImageColors(COLOR3* image, int size);
+int GetImageColors(COLOR3* image, int size, int max_colors = 256);
 int ColorDistance(COLOR3 color, COLOR3 other);
 void SimpeColorReduce(COLOR3* image, int size);
 
@@ -326,3 +326,6 @@ public:
 	std::string getCommandlineString();
 	int executeAndWait(int sin, int sout, int serr);
 };
+
+void calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vertices, const std::vector<vec2>& uvs);
+void getTrueTexSize(int& width, int& height, int maxsize = 512);

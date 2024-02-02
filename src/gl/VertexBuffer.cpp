@@ -137,10 +137,16 @@ void VertexBuffer::drawRange(int _primitive, size_t start, size_t end, bool hide
 
 void VertexBuffer::draw(int _primitive)
 {
-	drawRange(_primitive, 0, numVerts);
+	if (numVerts > 0)
+	{
+		drawRange(_primitive, 0, numVerts);
+	}
 }
 
 void VertexBuffer::drawFull()
 {
-	drawRange(primitive, 0, numVerts);
+	if (numVerts > 0)
+	{
+		drawRange(primitive, 0, numVerts);
+	}
 }

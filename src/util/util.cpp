@@ -520,8 +520,8 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 
 vec2 getCenter(const std::vector<vec2>& verts)
 {
-	vec2 maxs = vec2(-FLT_MAX_COORD, -FLT_MAX_COORD);
-	vec2 mins = vec2(FLT_MAX_COORD, FLT_MAX_COORD);
+	vec2 maxs = vec2(-FLT_MAX, -FLT_MAX);
+	vec2 mins = vec2(FLT_MAX, FLT_MAX);
 
 	for (size_t i = 0; i < verts.size(); i++)
 	{
@@ -533,8 +533,8 @@ vec2 getCenter(const std::vector<vec2>& verts)
 
 vec3 getCenter(const std::vector<vec3>& verts)
 {
-	vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-	vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+	vec3 maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	vec3 mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 
 	for (size_t i = 0; i < verts.size(); i++)
 	{
@@ -546,8 +546,8 @@ vec3 getCenter(const std::vector<vec3>& verts)
 
 vec3 getCenter(const std::vector<cVert>& verts)
 {
-	vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-	vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+	vec3 maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	vec3 mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 
 	for (size_t i = 0; i < verts.size(); i++)
 	{
@@ -565,8 +565,8 @@ vec3 getCenter(const vec3& maxs, const vec3& mins)
 
 void getBoundingBox(const std::vector<vec3>& verts, vec3& mins, vec3& maxs)
 {
-	maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-	mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+	maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 
 	for (size_t i = 0; i < verts.size(); i++)
 	{
@@ -878,7 +878,7 @@ std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 	for (size_t k = 0, sz = remainingVerts.size(); k < sz; k++)
 	{
 		size_t bestIdx = 0;
-		float bestAngle = FLT_MAX_COORD;
+		float bestAngle = FLT_MAX;
 
 		for (size_t i = 0; i < remainingVerts.size(); i++)
 		{
@@ -922,15 +922,15 @@ std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts)
 	return outVerts;
 }
 
-bool pointInsidePolygon(std::vector<vec3>& poly, vec2 p)
+bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 {
 	// https://stackoverflow.com/a/34689268
 	bool inside = true;
 	float lastd = 0;
 	for (size_t i = 0; i < poly.size(); i++)
 	{
-		vec3& v1 = poly[i];
-		vec3& v2 = poly[(i + 1) % poly.size()];
+		vec2& v1 = poly[i];
+		vec2& v2 = poly[(i + 1) % poly.size()];
 
 		if (abs(v1.x - p.x) < EPSILON && abs(v1.y - p.y) < EPSILON)
 		{
@@ -1096,7 +1096,7 @@ int mkdir_p(const char* dir, const mode_t mode)
 	{
 		/* not a directory */
 		return -1;
-}
+	}
 	return 0;
 }
 #endif 
@@ -1338,12 +1338,12 @@ int ColorDistance(COLOR3 color, COLOR3 other)
 	return (int)std::hypot(std::hypot(color.r - other.r, color.b - other.b), color.g - other.g);
 }
 
-int GetImageColors(COLOR3* image, int size)
+int GetImageColors(COLOR3* image, int size, int max_colors)
 {
 	int colorCount = 0;
 	COLOR3* palette = new COLOR3[size];
 	memset(palette, 0, size * sizeof(COLOR3));
-	for (int y = 0; y < size / 2; y++)
+	for (int y = 0; y < size; y++)
 	{
 		int paletteIdx = -1;
 		for (int k = 0; k < colorCount; k++)
@@ -1356,7 +1356,7 @@ int GetImageColors(COLOR3* image, int size)
 		}
 		if (paletteIdx == -1)
 		{
-			if (colorCount >= 300)
+			if (colorCount > max_colors + 2)
 				break; // Just for speed reason
 			palette[colorCount] = image[y];
 			paletteIdx = colorCount;
@@ -1716,6 +1716,11 @@ void scaleImage(const COLOR4* inputImage, std::vector<COLOR4>& outputImage,
 
 void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 	int inputWidth, int inputHeight, int outputWidth, int outputHeight) {
+	if (inputWidth <= 0 || inputHeight <= 0 || outputWidth <= 0 || outputHeight <= 0) {
+		// Invalid input dimensions
+		return;
+	}
+
 	outputImage.resize(outputWidth * outputHeight);
 
 	float xScale = static_cast<float>(inputWidth) / outputWidth;
@@ -1735,6 +1740,13 @@ void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 			int srcX2 = std::min(srcX1 + 1, inputWidth - 1);
 
 			float xWeight = srcX - srcX1;
+
+			if (srcY1 < 0 || srcY1 >= inputHeight || srcY2 < 0 || srcY2 >= inputHeight ||
+				srcX1 < 0 || srcX1 >= inputWidth || srcX2 < 0 || srcX2 >= inputWidth) {
+				// Invalid source coordinates
+				continue;
+			}
+
 			COLOR3 pixel1 = inputImage[srcY1 * inputWidth + srcX1];
 			COLOR3 pixel2 = inputImage[srcY1 * inputWidth + srcX2];
 			COLOR3 pixel3 = inputImage[srcY2 * inputWidth + srcX1];
@@ -2259,4 +2271,130 @@ int Process::executeAndWait(int sin, int sout, int serr)
 	while (wait(&status) != pid);
 	return status;
 #endif
+}
+
+
+
+std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& matrix, const std::vector<float>& vector)
+{
+	// Construct the augmented matrix
+	std::vector<std::vector<float>> augmentedMatrix(3, std::vector<float>(5));
+	for (size_t i = 0; i < 3; ++i) {
+		for (size_t j = 0; j < 4; ++j) {
+			augmentedMatrix[i][j] = matrix[i][j];
+		}
+		augmentedMatrix[i][4] = vector[i];
+	}
+
+	// Perform Gaussian elimination
+	for (size_t i = 0; i < 3; ++i) {
+		// Find the row with the largest pivot element
+		size_t maxRow = i;
+		float maxPivot = std::abs(augmentedMatrix[i][i]);
+		for (size_t j = i + 1; j < 3; ++j) {
+			if (std::abs(augmentedMatrix[j][i]) > maxPivot) {
+				maxRow = j;
+				maxPivot = std::abs(augmentedMatrix[j][i]);
+			}
+		}
+
+		// Swap the current row with the row with the largest pivot element
+		if (maxRow != i) {
+			std::swap(augmentedMatrix[i], augmentedMatrix[maxRow]);
+		}
+
+		// Perform row operations to eliminate the lower triangular elements
+		for (size_t j = i + 1; j < 3; ++j) {
+			float factor = augmentedMatrix[j][i] / augmentedMatrix[i][i];
+			for (size_t k = i; k < 5; ++k) {
+				augmentedMatrix[j][k] -= factor * augmentedMatrix[i][k];
+			}
+		}
+	}
+
+	// Perform back substitution to solve for the solution vector
+	std::vector<float> solution(4);
+	for (int i = 2; i >= 0; --i) {
+		float sum = augmentedMatrix[i][4];
+		for (size_t j = i + 1; j < 3; ++j) {
+			sum -= augmentedMatrix[i][j] * solution[j];
+		}
+		solution[i] = sum / augmentedMatrix[i][i];
+	}
+
+	return solution;
+}
+
+void calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vertices, const std::vector<vec2>& uvs)
+{
+	// Check if the number of vertices and UVs is valid
+	if (vertices.size() != 3 || uvs.size() != 3) {
+		throw std::invalid_argument("Exactly 3 vertices and 3 UVs are required");
+	}
+
+	// Construct the vertices matrix with 3 rows, 4 columns
+	std::vector<std::vector<float>> verticesMat(3, std::vector<float>(4));
+	for (size_t i = 0; i < 3; ++i) {
+		verticesMat[i][0] = vertices[i].x;
+		verticesMat[i][1] = vertices[i].y;
+		verticesMat[i][2] = vertices[i].z;
+		verticesMat[i][3] = 1.0f;
+	}
+
+	// Split the UV coordinates
+	std::vector<float> uvsU(3);
+	std::vector<float> uvsV(3);
+	for (size_t i = 0; i < 3; ++i) {
+		uvsU[i] = uvs[i].x;
+		uvsV[i] = uvs[i].y;
+	}
+
+	std::vector<float> solU = solve_uv_matrix_svd(verticesMat, uvsU);
+	vec3 vS(solU[0], solU[1], solU[2]); // Extract vS vector
+	float shiftS = solU[3]; // Extract shiftS value
+
+	std::vector<float> solV = solve_uv_matrix_svd(verticesMat, uvsV);
+	vec3 vT(solV[0], solV[1], solV[2]); // Extract vT vector
+	float shiftT = solV[3]; // Extract shiftT value
+
+	texinfo.vS = vS;
+	texinfo.vT = vT;
+	texinfo.shiftS = shiftS;
+	texinfo.shiftT = shiftT;
+}
+
+void getTrueTexSize(int& width, int& height, int maxsize)
+{
+	float aspectRatio = static_cast<float>(width) / height;
+
+	int newWidth = width;
+	int newHeight = height;
+
+	if (newWidth > maxsize) {
+		newWidth = maxsize;
+		newHeight = static_cast<int>(newWidth / aspectRatio);
+	}
+
+	if (newHeight > maxsize) {
+		newHeight = maxsize;
+		newWidth = static_cast<int>(newHeight * aspectRatio);
+	}
+
+	if (newWidth % 16 != 0) {
+		newWidth = ((newWidth + 15) / 16) * 16;
+	}
+
+	if (newHeight % 16 != 0) {
+		newHeight = ((newHeight + 15) / 16) * 16;
+	}
+
+	if (newWidth == 0)
+		newWidth = 16;
+
+	if (newHeight == 0)
+		newHeight = 16;
+
+
+	width = newWidth;
+	height = newHeight;
 }

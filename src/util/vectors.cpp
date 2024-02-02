@@ -305,7 +305,7 @@ float vec3::sizeXY_test()
 
 float vec3::dist(vec3 to)
 {
-	return sqrt(pow(x - to.x, 2) + pow(y - to.y, 2) + pow(z - to.z, 2));
+	return sqrt(pow(x - to.x, 2.0f) + pow(y - to.y, 2.0f) + pow(z - to.z, 2.0f));
 }
 
 bool operator==(const vec2& v1, const vec2& v2)

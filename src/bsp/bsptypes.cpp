@@ -30,7 +30,7 @@ BSPEDGE32::BSPEDGE32(unsigned int v1, unsigned int v2)
 	iVertex[1] = v2;
 }
 
-bool BSPPLANE::update(vec3 newNormal, float fdist)
+bool BSPPLANE::update_plane(vec3 newNormal, float fdist)
 {
 	double fx = abs(newNormal.x);
 	double fy = abs(newNormal.y);
