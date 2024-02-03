@@ -37,7 +37,6 @@ vs-project/glfw/src/glfw.dir/Release/glfw.vcxproj.FileListAbsolute.txt
 vs-project/Release/log.txt
 *.enc
 *.sarif
-*.xml
 *.lastcodeanalysissucceeded
 vs-project/glfw/src/glfw.dir/Debug/CodeAnalysisResultManifest.txt
 *.dmp
