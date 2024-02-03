@@ -2040,7 +2040,7 @@ void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
 		bool colinear = false;
 		for (int i2 = 0; !colinear && i2 < verts.size(); i2++)
 		{
-			for (int i3 = 0; !colinear && i3 < verts.size(); i3++)
+			for (int i3 = 0; i3 < verts.size(); i3++)
 			{
 				if (i1 == i2 || i1 == i3 || i2 == i3)
 					continue;

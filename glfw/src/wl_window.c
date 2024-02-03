@@ -23,8 +23,6 @@
 //    distribution.
 //
 //========================================================================
-// It is fine to use C99 in this file because it will not be built with VS
-//========================================================================
 
 #define _GNU_SOURCE
 
@@ -42,14 +40,16 @@
 #include <sys/mman.h>
 #include <sys/timerfd.h>
 #include <poll.h>
+#include <linux/input-event-codes.h>
 
 #include "wayland-client-protocol.h"
-#include "wayland-xdg-shell-client-protocol.h"
-#include "wayland-xdg-decoration-client-protocol.h"
-#include "wayland-viewporter-client-protocol.h"
-#include "wayland-relative-pointer-unstable-v1-client-protocol.h"
-#include "wayland-pointer-constraints-unstable-v1-client-protocol.h"
-#include "wayland-idle-inhibit-unstable-v1-client-protocol.h"
+#include "xdg-shell-client-protocol.h"
+#include "xdg-decoration-unstable-v1-client-protocol.h"
+#include "viewporter-client-protocol.h"
+#include "relative-pointer-unstable-v1-client-protocol.h"
+#include "pointer-constraints-unstable-v1-client-protocol.h"
+#include "xdg-activation-v1-client-protocol.h"
+#include "idle-inhibit-unstable-v1-client-protocol.h"
 
 #define GLFW_BORDER_SIZE    4
 #define GLFW_CAPTION_HEIGHT 24
@@ -1503,24 +1503,14 @@ static void pointerHandleAxis(void* userData,
                               wl_fixed_t value)
 {
     _GLFWwindow* window = _glfw.wl.pointerFocus;
-    double x = 0.0, y = 0.0;
-    // Wayland scroll events are in pointer motion coordinate space (think two
-    // finger scroll).  The factor 10 is commonly used to convert to "scroll
-    // step means 1.0.
-    const double scrollFactor = 1.0 / 10.0;
-
     if (!window)
         return;
 
-    assert(axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL ||
-           axis == WL_POINTER_AXIS_VERTICAL_SCROLL);
-
+    // NOTE: 10 units of motion per mouse wheel step seems to be a common ratio
     if (axis == WL_POINTER_AXIS_HORIZONTAL_SCROLL)
-        x = -wl_fixed_to_double(value) * scrollFactor;
+        _glfwInputScroll(window, -wl_fixed_to_double(value) / 10.0, 0.0);
     else if (axis == WL_POINTER_AXIS_VERTICAL_SCROLL)
-        y = -wl_fixed_to_double(value) * scrollFactor;
-
-    _glfwInputScroll(window, x, y);
+        _glfwInputScroll(window, 0.0, -wl_fixed_to_double(value) / 10.0);
 }
 
 static const struct wl_pointer_listener pointerListener =
@@ -1756,7 +1746,6 @@ static void keyboardHandleModifiers(void* userData,
     }
 }
 
-#ifdef WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION
 static void keyboardHandleRepeatInfo(void* userData,
                                      struct wl_keyboard* keyboard,
                                      int32_t rate,
@@ -1768,7 +1757,6 @@ static void keyboardHandleRepeatInfo(void* userData,
     _glfw.wl.keyRepeatRate = rate;
     _glfw.wl.keyRepeatDelay = delay;
 }
-#endif
 
 static const struct wl_keyboard_listener keyboardListener =
 {
@@ -1777,9 +1765,7 @@ static const struct wl_keyboard_listener keyboardListener =
     keyboardHandleLeave,
     keyboardHandleKey,
     keyboardHandleModifiers,
-#ifdef WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION
     keyboardHandleRepeatInfo,
-#endif
 };
 
 static void seatHandleCapabilities(void* userData,
@@ -1994,6 +1980,25 @@ const struct wl_data_device_listener dataDeviceListener =
     dataDeviceHandleSelection,
 };
 
+static void xdgActivationHandleDone(void* userData,
+                                    struct xdg_activation_token_v1* activationToken,
+                                    const char* token)
+{
+    _GLFWwindow* window = userData;
+
+    if (activationToken != window->wl.activationToken)
+        return;
+
+    xdg_activation_v1_activate(_glfw.wl.activationManager, token, window->wl.surface);
+    xdg_activation_token_v1_destroy(window->wl.activationToken);
+    window->wl.activationToken = NULL;
+}
+
+static const struct xdg_activation_token_v1_listener xdgActivationListener =
+{
+    xdgActivationHandleDone
+};
+
 void _glfwAddSeatListenerWayland(struct wl_seat* seat)
 {
     wl_seat_add_listener(seat, &seatListener, NULL);
@@ -2068,6 +2073,9 @@ void _glfwDestroyWindowWayland(_GLFWwindow* window)
 
     if (window == _glfw.wl.keyboardFocus)
         _glfw.wl.keyboardFocus = NULL;
+
+    if (window->wl.activationToken)
+        xdg_activation_token_v1_destroy(window->wl.activationToken);
 
     if (window->wl.idleInhibitor)
         zwp_idle_inhibitor_v1_destroy(window->wl.idleInhibitor);
@@ -2352,9 +2360,20 @@ void _glfwHideWindowWayland(_GLFWwindow* window)
 
 void _glfwRequestWindowAttentionWayland(_GLFWwindow* window)
 {
-    // TODO
-    _glfwInputError(GLFW_FEATURE_UNIMPLEMENTED,
-                    "Wayland: Window attention request not implemented yet");
+    if (!_glfw.wl.activationManager)
+        return;
+
+    // We're about to overwrite this with a new request
+    if (window->wl.activationToken)
+        xdg_activation_token_v1_destroy(window->wl.activationToken);
+
+    window->wl.activationToken =
+        xdg_activation_v1_get_activation_token(_glfw.wl.activationManager);
+    xdg_activation_token_v1_add_listener(window->wl.activationToken,
+                                         &xdgActivationListener,
+                                         window);
+
+    xdg_activation_token_v1_commit(window->wl.activationToken);
 }
 
 void _glfwFocusWindowWayland(_GLFWwindow* window)
@@ -2551,8 +2570,7 @@ void _glfwSetCursorModeWayland(_GLFWwindow* window, int mode)
 
 const char* _glfwGetScancodeNameWayland(int scancode)
 {
-    if (scancode < 0 || scancode > 255 ||
-        _glfw.wl.keycodes[scancode] == GLFW_KEY_UNKNOWN)
+    if (scancode < 0 || scancode > 255)
     {
         _glfwInputError(GLFW_INVALID_VALUE,
                         "Wayland: Invalid scancode %i",
@@ -2561,6 +2579,9 @@ const char* _glfwGetScancodeNameWayland(int scancode)
     }
 
     const int key = _glfw.wl.keycodes[scancode];
+    if (key == GLFW_KEY_UNKNOWN)
+        return NULL;
+
     const xkb_keycode_t keycode = scancode + 8;
     const xkb_layout_index_t layout =
         xkb_state_key_get_layout(_glfw.wl.xkb.state, keycode);

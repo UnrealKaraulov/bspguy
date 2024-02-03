@@ -18,10 +18,9 @@
 #  include <io.h>
 #endif
 
-#include "format.h"
+#include "chrono.h"  // formatbuf
 
 FMT_BEGIN_NAMESPACE
-
 namespace detail {
 
 // Generate a unique explicit instantion in every translation unit using a tag
@@ -40,7 +39,8 @@ template class file_access<file_access_tag, std::filebuf,
 auto get_file(std::filebuf&) -> FILE*;
 #endif
 
-inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
+inline auto write_ostream_unicode(std::ostream& os, fmt::string_view data)
+    -> bool {
   FILE* f = nullptr;
 #if FMT_MSC_VERSION
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
@@ -69,8 +69,8 @@ inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
 #endif
   return false;
 }
-inline bool write_ostream_unicode(std::wostream&,
-                                  fmt::basic_string_view<wchar_t>) {
+inline auto write_ostream_unicode(std::wostream&,
+                                  fmt::basic_string_view<wchar_t>) -> bool {
   return false;
 }
 
@@ -112,9 +112,8 @@ template <typename Char>
 struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
   void set_debug_format() = delete;
 
-  template <typename T, typename OutputIt>
-  auto format(const T& value, basic_format_context<OutputIt, Char>& ctx) const
-      -> OutputIt {
+  template <typename T, typename Context>
+  auto format(const T& value, Context& ctx) const -> decltype(ctx.out()) {
     auto buffer = basic_memory_buffer<Char>();
     detail::format_value(buffer, value);
     return formatter<basic_string_view<Char>, Char>::format(
@@ -127,9 +126,9 @@ using ostream_formatter = basic_ostream_formatter<char>;
 template <typename T, typename Char>
 struct formatter<detail::streamed_view<T>, Char>
     : basic_ostream_formatter<Char> {
-  template <typename OutputIt>
-  auto format(detail::streamed_view<T> view,
-              basic_format_context<OutputIt, Char>& ctx) const -> OutputIt {
+  template <typename Context>
+  auto format(detail::streamed_view<T> view, Context& ctx) const
+      -> decltype(ctx.out()) {
     return basic_ostream_formatter<Char>::format(view.value, ctx);
   }
 };
@@ -163,7 +162,7 @@ inline void vprint_directly(std::ostream& os, string_view format_str,
 FMT_EXPORT template <typename Char>
 void vprint(std::basic_ostream<Char>& os,
             basic_string_view<type_identity_t<Char>> format_str,
-            basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+            typename detail::vformat_args<Char>::type args) {
   auto buffer = basic_memory_buffer<Char>();
   detail::vformat_to(buffer, format_str, args);
   if (detail::write_ostream_unicode(os, {buffer.data(), buffer.size()})) return;
@@ -193,7 +192,7 @@ template <typename... Args>
 void print(std::wostream& os,
            basic_format_string<wchar_t, type_identity_t<Args>...> fmt,
            Args&&... args) {
-  vprint(os, fmt, fmt::make_format_args<buffer_context<wchar_t>>(args...));
+  vprint(os, fmt, fmt::make_format_args<buffered_context<wchar_t>>(args...));
 }
 
 FMT_EXPORT template <typename... T>

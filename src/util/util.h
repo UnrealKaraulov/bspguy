@@ -78,12 +78,9 @@ inline void print_log(const std::string& format, Args ...args) noexcept
 #endif
 
 	if (splitstr.size() == 1)
-	{
-		if (splitstr.size())
-		{
-			g_log_buffer.push_back(line);
-			g_color_buffer.push_back(g_console_colors);
-		}
+{
+		g_log_buffer.push_back(line);
+		g_color_buffer.push_back(g_console_colors);
 	}
 	else
 	{
@@ -119,11 +116,8 @@ inline void print_log(unsigned short colors, const std::string& format, Args ...
 
 	if (splitstr.size() == 1)
 	{
-		if (splitstr.size())
-		{
-			g_log_buffer.push_back(line);
-			g_color_buffer.push_back(g_console_colors);
-		}
+		g_log_buffer.push_back(line);
+		g_color_buffer.push_back(g_console_colors);
 	}
 	else
 	{

@@ -146,6 +146,8 @@ Bsp::Bsp()
 	is_blue_shift = false;
 	is_colored_lightmap = true;
 
+	is_texture_pal = true;
+
 	extralumps = NULL;
 
 	force_skip_crc = false;
@@ -5393,7 +5395,6 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			tmpCQuantizer->SetColorTable(palette, 256);
 			tmpCQuantizer->ApplyColorTable((COLOR3*)data, width * height);
 			delete tmpCQuantizer;
-			colorCount = 256;
 		}
 
 		// create pallete and full-rez mipmap
@@ -6122,7 +6123,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 			node.iPlane = (int)(startPlane + k);
 			// node mins/maxs don't matter for submodels. Leave them at 0.
 
-			int insideContents = solid.faces.size() && k == solid.faces.size() - 1 ? ~sharedSolidLeaf : (int)(nodeCount + k + 1);
+			int insideContents = k == solid.faces.size() - 1 ? ~sharedSolidLeaf : (int)(nodeCount + k + 1);
 			int outsideContents = ~anyEmptyLeaf;
 
 			// can't have negative normals on planes so children are swapped instead
@@ -6988,10 +6989,7 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 		if (leaves[oldleafIdx].iFirstMarkSurface >= 0 && leaves[oldleafIdx].nMarkSurfaces > 0)
 		{
 			outLeafs[outLeafs.size() - 1].iFirstMarkSurface = marksurfCount;
-		}
 
-		if (leaves[oldleafIdx].iFirstMarkSurface >= 0 && leaves[oldleafIdx].nMarkSurfaces > 0)
-		{
 			int* newMarkSurfs = new int[marksurfCount + leaves[oldleafIdx].nMarkSurfaces];
 			memcpy(newMarkSurfs, marksurfs, marksurfCount * sizeof(int));
 			memcpy(newMarkSurfs + marksurfCount, &marksurfs[leaves[oldleafIdx].iFirstMarkSurface],
@@ -7357,7 +7355,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 			if (node.iChildren[i] < 0)
 			{
 				int leafIndex = ~node.iChildren[i];
-				if (leafIndex < 0 || leafIndex >= leafCount) {
+				if (leafIndex >= leafCount) {
 					// Handle out-of-bounds index for leaves array
 					return -1;
 				}
@@ -7407,7 +7405,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 		else
 		{
 			int leafIndex = ~node.iChildren[i];
-			if (leafIndex < 0 || leafIndex >= leafCount) {
+			if (leafIndex >= leafCount) {
 				// Handle out-of-bounds index for leaves array
 				return -1;
 			}
@@ -7420,7 +7418,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 		}
 	}
 
-	if (node.iPlane < 0 || node.iPlane >= planeCount) {
+	if (node.iPlane >= planeCount) {
 		// Handle out-of-bounds index for planes array
 		return -1;
 	}
@@ -8435,17 +8433,14 @@ std::vector<int> Bsp::getLeafFaces(BSPLEAF32& leaf)
 		return retFaces;
 	}
 
-	if (leaf.nMarkSurfaces > 0)
+	retFaces.reserve(leaf.nMarkSurfaces);
+	for (int i = 0; i < leaf.nMarkSurfaces; i++)
 	{
-		retFaces.reserve(leaf.nMarkSurfaces);
-		for (int i = 0; i < leaf.nMarkSurfaces; i++)
-		{
-			retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
-		}
-
-		std::sort(retFaces.begin(), retFaces.end());
-		retFaces.erase(std::unique(retFaces.begin(), retFaces.end()), retFaces.end());
+		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
 	}
+
+	std::sort(retFaces.begin(), retFaces.end());
+	retFaces.erase(std::unique(retFaces.begin(), retFaces.end()), retFaces.end());
 
 	return retFaces;
 }
@@ -8464,17 +8459,14 @@ std::vector<int> Bsp::getLeafFaces(int leafIdx)
 		return retFaces;
 	}
 
-	if (leaf.nMarkSurfaces > 0)
+	retFaces.reserve(leaf.nMarkSurfaces);
+	for (int i = 0; i < leaf.nMarkSurfaces; i++)
 	{
-		retFaces.reserve(leaf.nMarkSurfaces);
-		for (int i = 0; i < leaf.nMarkSurfaces; i++)
-		{
-			retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
-		}
-
-		std::sort(retFaces.begin(), retFaces.end());
-		retFaces.erase(std::unique(retFaces.begin(), retFaces.end()), retFaces.end());
+		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
 	}
+
+	std::sort(retFaces.begin(), retFaces.end());
+	retFaces.erase(std::unique(retFaces.begin(), retFaces.end()), retFaces.end());
 	return retFaces;
 }
 

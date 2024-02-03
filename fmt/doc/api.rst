@@ -6,7 +6,7 @@ API Reference
 
 The {fmt} library API consists of the following parts:
 
-* :ref:`fmt/core.h <core-api>`: the core API providing main formatting functions
+* :ref:`fmt/base.h <base-api>`: the base API providing main formatting functions
   for ``char``/UTF-8 with C++20 compile-time checks and minimal dependencies
 * :ref:`fmt/format.h <format-api>`: the full format API providing additional
   formatting functions and locale support
@@ -24,12 +24,12 @@ The {fmt} library API consists of the following parts:
 All functions and types provided by the library reside in namespace ``fmt`` and
 macros have prefix ``FMT_``.
 
-.. _core-api:
+.. _base-api:
 
-Core API
+Base API
 ========
 
-``fmt/core.h`` defines the core API which provides main formatting functions
+``fmt/base.h`` defines the base API which provides main formatting functions
 for ``char``/UTF-8 with C++20 compile-time checks. It has minimal include
 dependencies for better compile times. This header is only beneficial when
 using {fmt} as a library (the default) and not in the header-only mode.
@@ -53,10 +53,18 @@ I/O errors are reported as `std::system_error
 <https://en.cppreference.com/w/cpp/error/system_error>`_ exceptions unless
 specified otherwise.
 
-.. _format:
+.. _print:
 
-.. doxygenfunction:: format(format_string<T...> fmt, T&&... args) -> std::string
-.. doxygenfunction:: vformat(string_view fmt, format_args args) -> std::string
+.. doxygenfunction:: fmt::print(format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: fmt::vprint(string_view fmt, format_args args)
+
+.. doxygenfunction:: print(FILE *f, format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: vprint(FILE *f, string_view fmt, format_args args)
+
+.. doxygenfunction:: println(format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: println(FILE *f, format_string<T...> fmt, T&&... args)
+
+.. _format:
 
 .. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&&... args) -> OutputIt
 .. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, T&&... args) -> format_to_n_result<OutputIt>
@@ -64,14 +72,6 @@ specified otherwise.
 
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
-
-.. _print:
-
-.. doxygenfunction:: fmt::print(format_string<T...> fmt, T&&... args)
-.. doxygenfunction:: fmt::vprint(string_view fmt, format_args args)
-
-.. doxygenfunction:: print(std::FILE *f, format_string<T...> fmt, T&&... args)
-.. doxygenfunction:: vprint(std::FILE *f, string_view fmt, format_args args)
 
 Compile-Time Format String Checks
 ---------------------------------
@@ -132,21 +132,23 @@ inheritance or composition. This way you can support standard format specifiers
 without implementing them yourself. For example::
 
   // color.h:
-  #include <fmt/core.h>
+  #include <fmt/base.h>
 
   enum class color {red, green, blue};
 
   template <> struct fmt::formatter<color>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
 
-    auto format(color c, format_context& ctx) const;
+    auto format(color c, format_context& ctx) const
+      -> format_parse_context::iterator;
   };
 
   // color.cc:
   #include "color.h"
   #include <fmt/format.h>
 
-  auto fmt::formatter<color>::format(color c, format_context& ctx) const {
+  auto fmt::formatter<color>::format(color c, format_context& ctx) const
+      -> format_parse_context::iterator {
     string_view name = "unknown";
     switch (c) {
     case color::red:   name = "red"; break;
@@ -167,8 +169,8 @@ for example
 
 will return ``"      blue"``.
 
-The experimental ``nested_formatter`` provides an easy way applying a formatter
-to one or more subobjects.
+The experimental ``nested_formatter`` provides an easy way of applying a
+formatter to one or more subobjects.
 
 For example::
 
@@ -182,7 +184,8 @@ For example::
   struct fmt::formatter<point> : nested_formatter<double> {
     auto format(point p, format_context& ctx) const {
       return write_padded(ctx, [=](auto out) {
-        return format_to(out, "({}, {})", nested(p.x), nested(p.y));
+        return format_to(out, "({}, {})", this->nested(p.x),
+                         this->nested(p.y));
       });
     }
   };
@@ -276,7 +279,7 @@ binary footprint, for example (https://godbolt.org/z/vajfWEG4b):
 
 .. code:: c++
 
-    #include <fmt/core.h>
+    #include <fmt/base.h>
 
     void vlog(const char* file, int line, fmt::string_view format,
               fmt::format_args args) {
@@ -296,10 +299,7 @@ binary footprint, for example (https://godbolt.org/z/vajfWEG4b):
 Note that ``vlog`` is not parameterized on argument types which improves compile
 times and reduces binary code size compared to a fully parameterized version.
 
-.. doxygenfunction:: fmt::make_format_args(const Args&...)
-
-.. doxygenclass:: fmt::format_arg_store
-   :members:
+.. doxygenfunction:: make_format_args(T&... args)
 
 .. doxygenclass:: fmt::basic_format_args
    :members:
@@ -312,7 +312,7 @@ times and reduces binary code size compared to a fully parameterized version.
 .. doxygenclass:: fmt::basic_format_parse_context
    :members:
 
-.. doxygenclass:: fmt::basic_format_context
+.. doxygenclass:: fmt::context
    :members:
 
 .. doxygentypedef:: fmt::format_context
@@ -344,6 +344,9 @@ Format API
 ``fmt/format.h`` defines the full format API providing additional formatting
 functions and locale support.
 
+.. doxygenfunction:: format(format_string<T...> fmt, T&&... args) -> std::string
+.. doxygenfunction:: vformat(string_view fmt, format_args args) -> std::string
+
 Literal-Based API
 -----------------
 
@@ -361,10 +364,6 @@ Utilities
 .. doxygenfunction:: fmt::underlying(Enum e) -> typename std::underlying_type<Enum>::type
 
 .. doxygenfunction:: fmt::to_string(const T &value) -> std::string
-
-.. doxygenfunction:: fmt::join(Range &&range, string_view sep) -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>>
-
-.. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel>
 
 .. doxygenfunction:: fmt::group_digits(T value) -> group_digits_view<T>
 
@@ -469,10 +468,6 @@ The library also supports convenient formatting of ranges and tuples::
   // Prints "('a', 1, 2.0)"
   fmt::print("{}", t);
 
-
-NOTE: currently, the overload of ``fmt::join`` for iterables exists in the main
-``format.h`` header, but expect this to change in the future.
-
 Using ``fmt::join``, you can separate tuple elements with a custom separator::
 
   #include <fmt/ranges.h>
@@ -480,6 +475,9 @@ Using ``fmt::join``, you can separate tuple elements with a custom separator::
   std::tuple<int, char> t = {1, 'a'};
   // Prints "1, a"
   fmt::print("{}", fmt::join(t, ", "));
+
+.. doxygenfunction:: fmt::join(Range &&range, string_view sep) -> join_view<decltype(std::begin(range)), decltype(std::end(range))>
+.. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel>
 
 .. _chrono-api:
 
@@ -516,7 +514,7 @@ The format syntax is described in :ref:`chrono-specs`.
 
 .. doxygenfunction:: localtime(std::time_t time)
 
-.. doxygenfunction:: gmtime(std::time_t time)
+.. doxygenfunction:: gmtime(std::time_t time) -> std::tm
 
 .. _std-api:
 
@@ -525,11 +523,16 @@ Standard Library Types Formatting
 
 ``fmt/std.h`` provides formatters for:
 
+* `std::atomic <https://en.cppreference.com/w/cpp/atomic/atomic>`_
+* `std::atomic_flag <https://en.cppreference.com/w/cpp/atomic/atomic_flag>`_
+* `std::bitset <https://en.cppreference.com/w/cpp/utility/bitset>`_
+* `std::error_code <https://en.cppreference.com/w/cpp/error/error_code>`_
 * `std::filesystem::path <https://en.cppreference.com/w/cpp/filesystem/path>`_
-* `std::thread::id <https://en.cppreference.com/w/cpp/thread/thread/id>`_
 * `std::monostate <https://en.cppreference.com/w/cpp/utility/variant/monostate>`_
-* `std::variant <https://en.cppreference.com/w/cpp/utility/variant/variant>`_
 * `std::optional <https://en.cppreference.com/w/cpp/utility/optional>`_
+* `std::source_location <https://en.cppreference.com/w/cpp/utility/source_location>`_
+* `std::thread::id <https://en.cppreference.com/w/cpp/thread/thread/id>`_
+* `std::variant <https://en.cppreference.com/w/cpp/utility/variant/variant>`_
 
 Formatting Variants
 -------------------
@@ -583,7 +586,7 @@ Terminal Color and Text Style
 
 ``fmt/color.h`` provides support for terminal color and text style output.
 
-.. doxygenfunction:: print(const text_style &ts, const S &format_str, const Args&... args)
+.. doxygenfunction:: print(const text_style &ts, format_string<T...> fmt, T&&... args)
 
 .. doxygenfunction:: fg(detail::color_type)
 
@@ -600,7 +603,6 @@ System APIs
    :members:
 
 .. doxygenfunction:: fmt::windows_error
-   :members:
 
 .. _ostream-api:
 

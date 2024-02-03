@@ -12,25 +12,25 @@
 ;
 */
 
-inih::INIReader* ft = NULL;
+inih::INIReader* lang_ini = NULL;
 
 std::map<int, std::string> lang_db;
 std::map<std::string, std::string> lang_db_str;
 
 std::string get_localized_string(int id)
 {
-	if (ft == NULL)
+	if (lang_ini == NULL)
 	{
 		// Init language if needed
 		set_localize_lang("EN");
 	}
-	if (ft != NULL)
+	if (lang_ini != NULL)
 	{
 		std::map<int, std::string>::iterator itr = lang_db.find(id);
 
 		if (itr == lang_db.end())
 		{
-			std::string value = ft->Get<std::string>(g_settings.selected_lang, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
+			std::string value = lang_ini->Get<std::string>(g_settings.selected_lang, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
 			replaceAll(value, "\\n", "\n");
 			lang_db[id] = value;
 			return value;
@@ -43,18 +43,18 @@ std::string get_localized_string(int id)
 
 std::string get_localized_string(const std::string& str_id)
 {
-	if (ft == NULL)
+	if (lang_ini == NULL)
 	{
 		// Init language if needed
 		set_localize_lang("EN");
 	}
-	if (ft != NULL)
+	if (lang_ini != NULL)
 	{
 		std::map<std::string, std::string>::iterator itr = lang_db_str.find(str_id);
 
 		if (itr == lang_db_str.end())
 		{
-			std::string value = ft->Get<std::string>(g_settings.selected_lang, str_id, fmt::format("NO {}", str_id));
+			std::string value = lang_ini->Get<std::string>(g_settings.selected_lang, str_id, fmt::format("NO {}", str_id));
 			replaceAll(value, "\\n", "\n");
 			lang_db_str[str_id] = value;
 			return value;
@@ -71,10 +71,10 @@ void set_localize_lang(std::string lang)
 
 	if (last_lang != lang)
 	{
-		if (ft != NULL)
+		if (lang_ini != NULL)
 		{
-			delete ft;
-			ft = NULL;
+			delete lang_ini;
+			lang_ini = NULL;
 		}
 		// Search lang file in config/current directories
 		std::string langfile = "./languages/language_" + toLowerCase(lang) + ".ini";
@@ -90,7 +90,7 @@ void set_localize_lang(std::string lang)
 		{
 			try
 			{
-				ft = new inih::INIReader(langfile);
+				lang_ini = new inih::INIReader(langfile);
 			}
 			catch (std::runtime_error & runtime)
 			{

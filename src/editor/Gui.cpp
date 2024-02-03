@@ -243,19 +243,18 @@ void Gui::copyTexture()
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0314));
 		return;
 	}
-	else if (app->pickInfo.selectedFaces.size() >= 1)
+
+	std::string outfaces;
+	for (const auto& f : app->pickInfo.selectedFaces)
 	{
-		std::string outfaces;
-		for (const auto& f : app->pickInfo.selectedFaces)
-		{
-			outfaces += std::to_string(f) + " ";
-		}
-		if (outfaces.size())
-		{
-			outfaces.pop_back();
-			ImGui::SetClipboardText(outfaces.c_str());
-		}
+		outfaces += std::to_string(f) + " ";
 	}
+	if (outfaces.size())
+	{
+		outfaces.pop_back();
+		ImGui::SetClipboardText(outfaces.c_str());
+	}
+
 	BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[app->pickInfo.selectedFaces[0]].iTextureInfo];
 	copiedMiptex = texinfo.iMiptex == -1 || texinfo.iMiptex >= map->textureCount ? 0 : texinfo.iMiptex;
 }
@@ -2057,33 +2056,33 @@ void Gui::drawMenuBar()
 					{
 						if (ImGui::BeginMenu(((modelIdx != i ? "Export Model" : "+ Export Model") + std::to_string(i) + ".bsp").c_str()))
 						{
-							if (ImGui::BeginMenu(get_localized_string(LANG_1077).c_str(), i >= 0))
+							if (ImGui::BeginMenu(get_localized_string(LANG_1077).c_str(), true))
 							{
-								if (ImGui::MenuItem(get_localized_string(LANG_1154).c_str(), 0, false, i >= 0))
+								if (ImGui::MenuItem(get_localized_string(LANG_1154).c_str(), 0, false, true))
 								{
 									ExportModel(map, i, 0, false);
 								}
-								if (ImGui::MenuItem(get_localized_string(LANG_1155).c_str(), 0, false, i >= 0))
+								if (ImGui::MenuItem(get_localized_string(LANG_1155).c_str(), 0, false, true))
 								{
 									ExportModel(map, i, 2, false);
 								}
-								if (ImGui::MenuItem(get_localized_string(LANG_1156).c_str(), 0, false, i >= 0))
+								if (ImGui::MenuItem(get_localized_string(LANG_1156).c_str(), 0, false, true))
 								{
 									ExportModel(map, i, 1, false);
 								}
 								ImGui::EndMenu();
 							}
-							if (ImGui::BeginMenu(get_localized_string(LANG_1078).c_str(), i >= 0))
+							if (ImGui::BeginMenu(get_localized_string(LANG_1078).c_str(), true))
 							{
-								if (ImGui::MenuItem(get_localized_string(LANG_1173).c_str(), 0, false, i >= 0))
+								if (ImGui::MenuItem(get_localized_string(LANG_1173).c_str(), 0, false, true))
 								{
 									ExportModel(map, i, 0, true);
 								}
-								if (ImGui::MenuItem(get_localized_string(LANG_1174).c_str(), 0, false, i >= 0))
+								if (ImGui::MenuItem(get_localized_string(LANG_1174).c_str(), 0, false, true))
 								{
 									ExportModel(map, i, 2, true);
 								}
-								if (ImGui::MenuItem(get_localized_string(LANG_1175).c_str(), 0, false, i >= 0))
+								if (ImGui::MenuItem(get_localized_string(LANG_1175).c_str(), 0, false, true))
 								{
 									ExportModel(map, i, 1, true);
 								}
@@ -2189,14 +2188,7 @@ void Gui::drawMenuBar()
 
 				if (map && ImGui::MenuItem(get_localized_string(LANG_1079).c_str(), NULL))
 				{
-					if (map)
-					{
-						map->ImportLightFile(map->bsp_path);
-					}
-					else
-					{
-						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0347));
-					}
+					map->ImportLightFile(map->bsp_path);
 				}
 
 				if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -2441,7 +2433,7 @@ void Gui::drawMenuBar()
 				if (fileSize(g_settings_path) == 0)
 				{
 					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0359));
-				}
+			}
 				else
 				{
 					glfwTerminate();
@@ -2832,7 +2824,7 @@ void Gui::drawMenuBar()
 												/*if (ditheringEnabled)
 													tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
 												else*/
-													tmpCQuantizer->ApplyColorTable((COLOR3*)tmpData, newWidth * newHeight);
+												tmpCQuantizer->ApplyColorTable((COLOR3*)tmpData, newWidth * newHeight);
 
 												delete tmpCQuantizer;
 											}
@@ -2906,7 +2898,7 @@ void Gui::drawMenuBar()
 									plane.fDist = dist;
 
 									newfaces[v].nPlaneSide = !plane.update_plane(plane.vNormal, plane.fDist);
-									
+
 									calculateTextureInfo(texInfo, vertexes, uvs);
 									texInfo.iMiptex = miptex;
 
@@ -2929,7 +2921,7 @@ void Gui::drawMenuBar()
 									if (!GetFaceExtents(map, f, tmins, tmaxs))
 									{
 										BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[f].iTextureInfo];
-										texInfo.vS = vec3(1.0f,0.0f, 0.0f);
+										texInfo.vS = vec3(1.0f, 0.0f, 0.0f);
 										texInfo.vT = vec3(1.0f, 0.0f, 1.0f);
 									}
 								}
@@ -2945,7 +2937,7 @@ void Gui::drawMenuBar()
 
 						newmodels[newModelIdx].nMins = mins;
 						newmodels[newModelIdx].nMaxs = maxs;
-						newmodels[newModelIdx].vOrigin = origin;
+						newmodels[newModelIdx].vOrigin = vec3();
 						newmodels[newModelIdx].iFirstFace = modelFirstFace;
 						newmodels[newModelIdx].nFaces = modelFaces;
 						newmodels[newModelIdx].nVisLeafs = 0;
@@ -2986,9 +2978,9 @@ void Gui::drawMenuBar()
 								node.iFirstFace = (int)(modelFirstFace + k); // face required for decals
 								node.nFaces = 1;
 								node.iPlane = (int)(modelFirstPlane + k);
-								node.nMins = node.nMaxs = vec3();
-								/*node.nMins = mins;
-								node.nMaxs = maxs;*/
+								//node.nMins = node.nMaxs = vec3();
+								node.nMins = mins;
+								node.nMaxs = maxs;
 								// node mins/maxs don't matter for submodels. Leave them at 0.
 
 								int insideContents = modelFaces > 0 && k + 1 == modelFaces ? ~sharedSolidLeaf : (int)(map->nodeCount + k + 1);
@@ -2998,7 +2990,7 @@ void Gui::drawMenuBar()
 								/*if (swapNodeChildren)
 									map->planes[node.iPlane].vNormal = map->planes[node.iPlane].vNormal.invert();*/
 
-								// can't have negative normals on planes so children are swapped instead
+									// can't have negative normals on planes so children are swapped instead
 								if (swapNodeChildren)
 								{
 									node.iChildren[0] = insideContents;
@@ -3011,18 +3003,26 @@ void Gui::drawMenuBar()
 								}
 								if (k + 1 == modelFaces)
 								{
-									node.iChildren[0] = (int)(map->nodeCount + k + 1);
-									node.iChildren[1] = (int)(map->nodeCount + k + 2);
+									if (swapNodeChildren)
+									{
+										node.iChildren[0] = (int)(map->nodeCount + k + 1);
+										node.iChildren[1] = (int)(map->nodeCount + k + 2);
+									}
+									else
+									{
+										node.iChildren[0] = (int)(map->nodeCount + k + 2);
+										node.iChildren[1] = (int)(map->nodeCount + k + 1);
+									}
 
 									BSPNODE32& lastnode1 = newNodes[map->nodeCount + k + 1];
 									lastnode1 = node;
-									lastnode1.iChildren[0] = insideContents;
+									lastnode1.iChildren[0] = ~sharedSolidLeaf;
 									lastnode1.iChildren[1] = outsideContents;
 
 									BSPNODE32& lastnode2 = newNodes[map->nodeCount + k + 2];
 									lastnode2 = node;
 									lastnode2.iChildren[0] = outsideContents;
-									lastnode2.iChildren[1] = insideContents;
+									lastnode2.iChildren[1] = ~sharedSolidLeaf;
 								}
 							}
 
@@ -3051,6 +3051,8 @@ void Gui::drawMenuBar()
 						rend->preRenderEnts();
 						rend->loadTextures();
 						rend->reuploadTextures();
+
+						map->regenerate_clipnodes(newModelIdx, -1);
 					}
 				}
 			}
@@ -3527,9 +3529,9 @@ void Gui::drawMenuBar()
 						while (totalLeaves > map->leafCount)
 							map->create_leaf(CONTENTS_EMPTY);
 					}
-					else if (map->leafCount < totalLeaves)
+					else if (totalLeaves < map->leafCount)
 					{
-						while (map->leafCount < totalLeaves)
+						while (totalLeaves < map->leafCount)
 						{
 							map->models[0].nVisLeafs++;
 							totalLeaves++;
@@ -3982,7 +3984,7 @@ void Gui::drawMenuBar()
 		}
 
 		ImGui::EndMainMenuBar();
-	}
+		}
 
 	if (ImGui::BeginViewportSideBar("BottomBar", ImGui::GetMainViewport(), ImGuiDir_Down, ImGui::GetTextLineHeightWithSpacing(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar))
 	{
@@ -4019,7 +4021,7 @@ void Gui::drawMenuBar()
 		ImGui::End();
 	}
 
-}
+	}
 
 void Gui::drawToolbar()
 {
@@ -5110,30 +5112,27 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 									needrefreshmodel = true;
 								}
 							}
-							if (map)
+							BspRenderer* render = map->getBspRender();
+							if (render)
 							{
-								BspRenderer* render = map->getBspRender();
-								if (render)
+								if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
 								{
-									if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
+									for (auto selected_entId : g_app->pickInfo.selectedEnts)
 									{
-										for (auto selected_entId : g_app->pickInfo.selectedEnts)
+										Entity* selected_ent = map->ents[selected_entId];
+										selected_ent->setOrAddKeyvalue(key, choice.svalue);
+										map->getBspRender()->refreshEnt((int)selected_entId);
+
+										if (needrefreshmodel)
 										{
-											Entity* selected_ent = map->ents[selected_entId];
-											selected_ent->setOrAddKeyvalue(key, choice.svalue);
-											map->getBspRender()->refreshEnt((int)selected_entId);
-
-											if (needrefreshmodel)
+											if (selected_ent->getBspModelIdx() > 0)
 											{
-												if (map && selected_ent->getBspModelIdx() > 0)
-												{
-													map->getBspRender()->refreshModel(selected_ent->getBspModelIdx());
-													map->getBspRender()->preRenderEnts();
-												}
+												map->getBspRender()->refreshModel(selected_ent->getBspModelIdx());
+												map->getBspRender()->preRenderEnts();
 											}
-
-											map->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", (int)selected_entId, selected_ent);
 										}
+
+										map->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", (int)selected_entId, selected_ent);
 									}
 								}
 							}
@@ -5262,7 +5261,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 										if (needRefreshModel)
 										{
 											needRefreshModel2 = true;
-											if (map2 && ent->getBspModelIdx() > 0)
+											if (ent->getBspModelIdx() > 0)
 											{
 												map2->getBspRender()->refreshModel(ent->getBspModelIdx());
 											}
@@ -6011,11 +6010,6 @@ void Gui::drawTransformWidget()
 					lastVertPickCount != vertPickCount;
 			}
 
-			if (shouldUpdateUi)
-			{
-				shouldUpdateUi = true;
-			}
-
 			TransformAxes& activeAxes = *(app->transformMode == TRANSFORM_MODE_SCALE ? &app->scaleAxes : &app->moveAxes);
 
 			if (shouldUpdateUi)
@@ -6629,7 +6623,7 @@ void Gui::drawSettings()
 			if (ImGui::Button(get_localized_string(LANG_0718).c_str()))
 			{
 				ifd::FileDialog::Instance().Open("WorkingDir", "Select working dir", std::string(), false, g_settings.lastdir);
-		}
+			}
 			if (ImGui::DragFloat(get_localized_string(LANG_0719).c_str(), &fontSize, 0.1f, 8, 48, get_localized_string(LANG_0720).c_str()))
 			{
 				shouldReloadFonts = true;
@@ -6788,7 +6782,7 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted(get_localized_string(LANG_0740).c_str());
 				ImGui::EndTooltip();
 			}
-	}
+		}
 		else if (settingsTab == 1)
 		{
 			for (size_t i = 0; i < g_settings.fgdPaths.size(); i++)
@@ -7300,7 +7294,7 @@ void Gui::drawSettings()
 		ImGui::EndChild();
 
 		ImGui::EndGroup();
-}
+	}
 	ImGui::End();
 
 

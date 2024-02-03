@@ -3,7 +3,7 @@
 #include <string>
 #include "ini.h"
 
-extern inih::INIReader * ft;
+extern inih::INIReader * lang_ini;
 
 extern std::map<int, std::string> lang_db;
 extern std::string lang_selected;

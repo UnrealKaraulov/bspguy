@@ -47,6 +47,7 @@ video tutorials.
  - Bailey Cosier
  - Noel Cower
  - CuriouserThing
+ - Bill Currie
  - Jason Daly
  - danhambleton
  - Jarrod Davis
@@ -120,6 +121,7 @@ video tutorials.
  - Rokas Kupstys
  - Konstantin Käfer
  - Eric Larson
+ - Guillaume Lebrun
  - Francis Lecavalier
  - Jong Won Lee
  - Robin Leffmann
@@ -131,6 +133,7 @@ video tutorials.
  - lo-v-ol
  - Eyal Lotem
  - Aaron Loucks
+ - Ned Loynd
  - Luflosi
  - lukect
  - Tristam MacDonald
@@ -164,6 +167,7 @@ video tutorials.
  - Pascal Muetschard
  - James Murphy
  - Julian Møller
+ - NateIsStalling
  - ndogxj
  - F. Nedelec
  - n3rdopolis
@@ -191,6 +195,7 @@ video tutorials.
  - Stanislav Podgorskiy
  - Konstantin Podsvirov
  - Nathan Poirier
+ - Pokechu22
  - Alexandre Pretyman
  - Pablo Prietz
  - przemekmirek
@@ -214,6 +219,7 @@ video tutorials.
  - Brandon Schaefer
  - Sebastian Schuberth
  - Scr3amer
+ - Jan Schuerkamp
  - Christian Sdunek
  - Matt Sealey
  - Steve Sexton

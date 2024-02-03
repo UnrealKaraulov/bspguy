@@ -333,7 +333,6 @@ void Quantizer::FloydSteinbergDither256(COLOR3* image, int width, int height, un
 					image[j - 1].g = FixBounds(image[j - 1].g + (diff[1] * 7) / 16);
 					image[j - 1].b = FixBounds(image[j - 1].b + (diff[2] * 7) / 16);
 				}
-
 			}
 		}
 	}
@@ -362,7 +361,6 @@ void Quantizer::AddColor(Node** ppNode, COLOR3 c, int nLevel, unsigned int* pLea
 void* Quantizer::CreateNode(int nLevel, unsigned int* pLeafCount, Node** pReducibleNodes)
 {
 	Node* pNode = new Node();
-	if (!pNode) return 0;
 	pNode->bIsLeaf = ((unsigned int)nLevel == m_nColorBits) ? true : false;
 	pNode->nIndex = 0;
 	if (pNode->bIsLeaf) (*pLeafCount)++;

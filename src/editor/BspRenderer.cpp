@@ -2666,7 +2666,6 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 						g_app->matmodel = ent->modelMat4x4_calc;
 						g_app->colorShader->updateMatrixes();
 					}
-
 					rend_mdl.wireframeBuffer->drawFull();
 				}
 				else if (ent && ent->needAngles)
@@ -2686,11 +2685,9 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 					}
 					else
 					{
-						if (ent)
-						{
-							g_app->matmodel = ent->modelMat4x4_calc;
-							g_app->colorShader->updateMatrixes();
-						}
+						g_app->matmodel = ent->modelMat4x4_calc_angles;
+						g_app->colorShader->updateMatrixes();
+						rend_mdl.wireframeBuffer->drawFull();
 					}
 				}
 				else
@@ -2795,24 +2792,22 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 				}
 				else
 				{
-					if (ent && !highlight)
+					if (highlight)
 					{
-						g_app->matmodel = ent->modelMat4x4_calc_angles;
-						g_app->bspShader->updateMatrixes();
-					}
-
-					rgroup.buffer->drawFull();
-
-					if (ent && ent->needAngles && highlight)
-					{
-						for (int s = 0; s < MAX_LIGHTMAPS; s++)
+						if (ent)
 						{
-							whiteTex->bind(s + 1);
+							g_app->matmodel = ent->modelMat4x4_calc;
+							g_app->bspShader->updateMatrixes();
 						}
-
-						g_app->matmodel = ent->modelMat4x4_calc;
-						g_app->bspShader->updateMatrixes();
-						rgroup.buffer->frameId--;
+						rgroup.buffer->drawFull();
+					}
+					else
+					{
+						if (ent)
+						{
+							g_app->matmodel = ent->modelMat4x4_calc_angles;
+							g_app->bspShader->updateMatrixes();
+						}
 						rgroup.buffer->drawFull();
 					}
 				}

@@ -1273,7 +1273,7 @@ void Renderer::cameraPickingControls()
 		last_face_idx = -1;
 	}
 
-	if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS || (curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
+	if (oldLeftMouse == GLFW_PRESS || (curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
 	{
 		bool transforming = transformAxisControls();
 

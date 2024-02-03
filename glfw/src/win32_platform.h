@@ -457,6 +457,10 @@ typedef struct _GLFWlibraryWin32
     RAWINPUT*           rawInput;
     int                 rawInputSize;
     UINT                mouseTrailSize;
+    // Indicate if the process was started behind Remote Destop
+    BOOL                isRemoteSession;
+    // An invisible cursor, needed for special cases (see WM_INPUT handler)
+    HCURSOR             blankCursor;
 
     struct {
         HINSTANCE                       instance;
