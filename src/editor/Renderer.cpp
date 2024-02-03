@@ -575,16 +575,21 @@ void Renderer::renderLoop()
 				|| (isTransformableSolid && isScalingObject);
 			isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
 
-			invalidSolid = !modelVerts.size() || !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
-			if (!invalidSolid)
+			if (ent && ent->getBspModelIdx() < 0)
+				invalidSolid = false; 
+			else
 			{
-				std::vector<TransformVert> tmpVerts;
-				SelectedMap->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
-
-				Solid modelSolid;
-				if (!getModelSolid(tmpVerts, SelectedMap, modelSolid))
+				invalidSolid = !modelVerts.size() || !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
+				if (!invalidSolid)
 				{
-					invalidSolid = true;
+					std::vector<TransformVert> tmpVerts;
+					SelectedMap->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+
+					Solid modelSolid;
+					if (!getModelSolid(tmpVerts, SelectedMap, modelSolid))
+					{
+						invalidSolid = true;
+					}
 				}
 			}
 		}
@@ -1273,7 +1278,7 @@ void Renderer::cameraPickingControls()
 		last_face_idx = -1;
 	}
 
-	if (oldLeftMouse == GLFW_PRESS || (curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
+	if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS || (curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
 	{
 		bool transforming = transformAxisControls();
 

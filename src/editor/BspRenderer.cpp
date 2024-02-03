@@ -2678,14 +2678,10 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 						rend_mdl.wireframeBuffer->drawFull();
 						rend_mdl.wireframeBuffer->frameId--;
 						glLineWidth(1.3f);
-
-						g_app->matmodel = ent->modelMat4x4_calc_angles;
-						g_app->colorShader->updateMatrixes();
-						rend_mdl.wireframeBuffer->drawFull();
 					}
 					else
 					{
-						g_app->matmodel = ent->modelMat4x4_calc_angles;
+						g_app->matmodel = ent->modelMat4x4_calc;
 						g_app->colorShader->updateMatrixes();
 						rend_mdl.wireframeBuffer->drawFull();
 					}

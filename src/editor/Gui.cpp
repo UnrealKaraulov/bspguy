@@ -3052,7 +3052,7 @@ void Gui::drawMenuBar()
 						rend->loadTextures();
 						rend->reuploadTextures();
 
-						map->regenerate_clipnodes(newModelIdx, -1);
+						//map->regenerate_clipnodes(newModelIdx, -1);
 					}
 				}
 			}
