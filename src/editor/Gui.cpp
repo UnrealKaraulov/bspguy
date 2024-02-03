@@ -10204,6 +10204,70 @@ void Gui::drawFaceEditorWidget()
 				ImGui::EndChild();
 			}
 
+			bool updatedLeafVec = false;
+
+			vec3 mins = vec3();
+			vec3 maxs = vec3();
+
+			int vertIdx = 0;
+
+			if (last_faces.size() == 1)
+			{
+				BSPFACE32 face = map->faces[last_faces[0]];
+
+				BSPPLANE& tmpPlane = map->planes[face.iPlane];
+				ImGui::PushItemWidth(105);
+				ImGui::TextUnformatted(fmt::format("Plane [{}] side [{}] type [{}]", face.iPlane, face.nPlaneSide, tmpPlane.nType).c_str());
+
+				maxs = tmpPlane.vNormal;
+				float dist = tmpPlane.fDist;
+
+				vertIdx++;
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0423)), vertIdx).c_str(), &maxs.x, 0.0f, 0, 0, "X:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				ImGui::SameLine();
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &maxs.y, 0.0f, 0, 0, "Y:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				ImGui::SameLine();
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &maxs.z, 0.0f, 0, 0, "Z:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &dist, 0.0f, 0, 0, "DIST:%.2f"))
+				{
+					updatedLeafVec = true;
+				}
+
+				vertIdx++;
+				if (updatedLeafVec)
+				{
+					tmpPlane.vNormal = maxs;
+					tmpPlane.fDist = dist;
+
+					/*mapRenderer->nodePlaneCube->mins = { -32,-32,-32 };
+					mapRenderer->nodePlaneCube->maxs = { 32, 32, 32 };
+
+					mapRenderer->nodePlaneCube->mins += tmpPlane.vNormal;
+					mapRenderer->nodePlaneCube->maxs += tmpPlane.vNormal;
+
+					g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodePlaneCube);*/
+					updatedLeafVec = false;
+					mapRenderer->pushModelUndoState("UPDATE MODEL PLANE MINS/MAXS", FL_NODES);
+				}
+				ImGui::PopItemWidth();
+			}
+
+
 			ImGui::Separator();
 
 			ImVec4 errorColor = { 1.0, 0.0, 0.0, 1.0 };
@@ -10556,12 +10620,9 @@ void Gui::drawFaceEditorWidget()
 			if (last_leaf == 0)
 				ImGui::EndDisabled();
 
-			int vertIdx = 0;
-			bool updatedLeafVec = false;
-
 			BSPLEAF32& tmpLeaf = map->leaves[last_leaf];
-			vec3 mins = tmpLeaf.nMins;
-			vec3 maxs = tmpLeaf.nMaxs;
+			mins = tmpLeaf.nMins;
+			maxs = tmpLeaf.nMaxs;
 
 			ImGui::TextUnformatted("Leaf mins/maxs");
 			ImGui::PushItemWidth(105);
@@ -10699,7 +10760,6 @@ void Gui::drawFaceEditorWidget()
 				}
 			}
 
-			map->get_leaf_nodes(last_leaf, leafNodes);
 			if (leafNodes.size())
 			{
 				int nodeIdx = leafNodes[0];
