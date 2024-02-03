@@ -87,7 +87,7 @@
       <AdditionalIncludeDirectories>.\..\..\src;.\..\..\src\bsp;.\..\..\src\cli;.\..\..\src\data;.\..\..\src\editor;.\..\..\src\filedialog;.\..\..\src\gl;.\..\..\src\qtools;.\..\..\src\util;.\..\..\src\mdl;.\..\..\imgui;.\..\..\imgui\examples;.\..\..\imgui\misc\cpp;.\..\..\imgui\backends;.\..\..\fmt;.\..\..\fmt\include;.\..\..\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <Optimization>Disabled</Optimization>

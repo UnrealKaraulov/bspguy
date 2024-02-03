@@ -2697,11 +2697,13 @@ void Gui::drawMenuBar()
 
 								std::vector<int> newVertIndexes;
 								size_t newVertCount = map->vertCount + mesh.buffer->numVerts;
+
 								vec3* newverts = new vec3[newVertCount];
+								memcpy(newverts, map->verts, map->vertCount * sizeof(vec3));
+
 								std::vector<vec2> newuv;
 								newuv.resize(newVertCount);
 
-								memcpy(newverts, map->verts, map->vertCount * sizeof(vec3));
 								int v = 0;
 
 								for (v = map->vertCount; v < newVertCount; v++)
@@ -2867,6 +2869,7 @@ void Gui::drawMenuBar()
 									vertexes.push_back(vertex1);
 									vertexes.push_back(vertex2);
 									vertexes.push_back(vertex3);
+
 									// Texture coordinates
 									std::vector<vec2> uvs{};
 									uvs.push_back(newsurfedges[firstEdge] > 0 ? newuv[newedges[abs(newsurfedges[firstEdge])].iVertex[0]]
