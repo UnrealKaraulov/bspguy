@@ -177,31 +177,33 @@ void Gui::draw()
 
 	if (app->pickMode == PICK_OBJECT)
 	{
-		if (contextMenuEnt != -1)
+		if (openEntityContext != -1)
 		{
 			ImGui::OpenPopup("ent_context");
-			contextMenuEnt = -1;
+			openEntityContext = -1;
 		}
 		else
 		{
-			if (emptyContextMenu)
+			if (openEmptyContext)
 			{
-				emptyContextMenu = 0;
+				openEmptyContext = false;
 				ImGui::OpenPopup("empty_context");
 			}
 		}
 	}
 	else
 	{
-		if (contextMenuEnt != -1 || emptyContextMenu)
+		if (openEntityContext != -1 || openEmptyContext)
 		{
-			emptyContextMenu = 0;
-			contextMenuEnt = -1;
+			openEmptyContext = 0;
+			openEntityContext = -1;
 			ImGui::OpenPopup("face_context");
 		}
 	}
 
 	drawBspContexMenu();
+
+	app->anyPopupOpened = imgui_io->WantCaptureMouse;
 
 	ImGui::PopFont();
 
@@ -228,9 +230,9 @@ void Gui::openContextMenu(int entIdx)
 {
 	if (entIdx < 0)
 	{
-		emptyContextMenu = 1;
+		openEmptyContext = 1;
 	}
-	contextMenuEnt = entIdx;
+	openEntityContext = entIdx;
 }
 
 void Gui::copyTexture()
@@ -491,7 +493,7 @@ void Gui::drawBspContexMenu()
 
 	auto entIdx = app->pickInfo.GetSelectedEnts();
 
-	if ((app->originHovered || app->hoverAxis == 3) && entIdx.size())
+	if (app->originHovered && entIdx.size())
 	{
 		Entity* ent = map->ents[entIdx[0]];
 		int modelIdx = ent->getBspModelIdx();
@@ -557,7 +559,7 @@ void Gui::drawBspContexMenu()
 			{
 				ImGui::BeginDisabled();
 				ImGui::MenuItem("No selected model");
-				ImGui::EndDisabled;
+				ImGui::EndDisabled();
 			}
 			ImGui::EndPopup();
 		}
@@ -658,7 +660,7 @@ void Gui::drawBspContexMenu()
 	}
 	else /*if (app->pickMode == PICK_OBJECT)*/
 	{
-		if (ImGui::BeginPopup("ent_context") && entIdx.size())
+		if (!app->originHovered && ImGui::BeginPopup("ent_context") && entIdx.size())
 		{
 			Entity* ent = map->ents[entIdx[0]];
 			int modelIdx = ent->getBspModelIdx();

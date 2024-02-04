@@ -111,8 +111,9 @@ private:
 	bool anyHullValid[MAX_MAP_HULLS] = {false};
 
 	int guiHoverAxis; // axis being hovered in the transform menu
-	int contextMenuEnt = -1; // open entity context menu if >= 0
-	int emptyContextMenu = 0; // open context menu for rightclicking world/void
+
+	int openEntityContext = -1; // open entity context menu if >= 0
+	bool openEmptyContext = false; // open context menu for rightclicking world/void
 
 	int copiedMiptex = -1;
 	LIGHTMAP copiedLightmap = LIGHTMAP();

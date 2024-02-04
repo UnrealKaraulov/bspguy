@@ -1108,11 +1108,11 @@ void Renderer::drawModelOrigin(int modelIdx)
 	COLOR4 color;
 	if (originSelected)
 	{
-		color = originHovered || hoverAxis == 3? hoverSelectColor : selectColor;
+		color = originHovered? hoverSelectColor : selectColor;
 	}
 	else
 	{
-		color = originHovered || hoverAxis == 3 ? vertHoverColor : vertDimColor;
+		color = originHovered ? vertHoverColor : vertDimColor;
 	}
 	modelOriginCube = cCube(min, max, color);
 
@@ -1348,7 +1348,7 @@ void Renderer::cameraPickingControls()
 			transforming = true;
 		}
 
-		if (transformTarget == TRANSFORM_ORIGIN && (originHovered || hoverAxis == 3))
+		if (transformTarget == TRANSFORM_ORIGIN && originHovered)
 		{
 			if (oldLeftMouse != GLFW_PRESS)
 			{
@@ -1455,7 +1455,7 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 void Renderer::cameraRotationControls()
 {
 	// camera rotation
-	if (hoverAxis == -1 && curRightMouse == GLFW_PRESS)
+	if (curRightMouse == GLFW_PRESS)
 	{
 		if (!cameraIsRotating)
 		{
@@ -1498,9 +1498,9 @@ void Renderer::cameraRotationControls()
 
 void Renderer::cameraObjectHovering()
 {
-	originHovered = false;
 	Bsp* map = SelectedMap;
-	if (!map || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT && transformTarget != TRANSFORM_ORIGIN))
+	if (!map || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT && transformTarget != TRANSFORM_ORIGIN)
+		|| anyPopupOpened)
 		return;
 
 	int modelIdx = -1;
@@ -1513,6 +1513,8 @@ void Renderer::cameraObjectHovering()
 	BspRenderer* rend = map->getBspRender();
 	if (!rend)
 		return;
+
+	originHovered = false;
 
 	vec3 mapOffset = rend->mapOffset;
 	vec3 localCameraOrigin = rend->localCameraOrigin;
@@ -1575,8 +1577,8 @@ void Renderer::cameraObjectHovering()
 		vec3 max = vec3(s, s, s) + ori;
 
 		originHovered = pickAABB(pickStart, pickDir, min, max, vertPick.bestDist);
-		if (originHovered)
-			hoverAxis = -1;
+		if (!originHovered)
+			originHovered = hoverAxis == 3;
 	}
 
 	if (originHovered || (transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_SCALE))
