@@ -6358,16 +6358,16 @@ void Gui::drawTransformWidget()
 			ImGui::Text(("Size: " + app->selectionSize.toKeyvalueString(false, "w ", "l ", "h")).c_str());
 			ImGui::Separator();
 
-			ImGui::Text(fmt::format("Entity origin: {} {} {}", ent->origin.x, ent->origin.y, ent->origin.z).c_str());
+			ImGui::Text(fmt::format("Entity origin: {:.2f} {:.2f} {:.2f}", ent->origin.x, ent->origin.y, ent->origin.z).c_str());
 
 			int modelIdx = ent->getBspModelIdx();
 
 			if (modelIdx >= 0)
 			{
-				ImGui::Text(fmt::format("Model origin: {} {} {}", map->models[modelIdx].vOrigin.x, map->models[modelIdx].vOrigin.y, map->models[modelIdx].vOrigin.z).c_str());
+				ImGui::Text(fmt::format("Model origin: {:.2f} {:.2f} {:.2f}", map->models[modelIdx].vOrigin.x, map->models[modelIdx].vOrigin.y, map->models[modelIdx].vOrigin.z).c_str());
 				vec3 modelCenter = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
-				ImGui::Text(fmt::format("Model center: {} {} {}", modelCenter.x, modelCenter.y, modelCenter.z).c_str());
-				ImGui::Text(fmt::format("Model bounds: \n{} {} {} / {} {} {}", map->models[modelIdx].nMins.x, map->models[modelIdx].nMins.y, map->models[modelIdx].nMins.z, map->models[modelIdx].nMaxs.x, map->models[modelIdx].nMaxs.y, map->models[modelIdx].nMaxs.z).c_str());
+				ImGui::Text(fmt::format("Model center: {:.2f} {:.2f} {:.2f}", modelCenter.x, modelCenter.y, modelCenter.z).c_str());
+				ImGui::Text(fmt::format("Model bounds: \n{:.2f} {:.2f} {:.2f} / {:.2f} {:.2f} {:.2f}", map->models[modelIdx].nMins.x, map->models[modelIdx].nMins.y, map->models[modelIdx].nMins.z, map->models[modelIdx].nMaxs.x, map->models[modelIdx].nMaxs.y, map->models[modelIdx].nMaxs.z).c_str());
 			}
 
 			if (transformingEnt)

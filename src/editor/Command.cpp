@@ -539,7 +539,7 @@ void EditBspModelCommand::execute()
 		return;
 
 	map->replace_lumps(newLumps);
-	if (entIdx >= 0)
+	if (entIdx >= 0 && entIdx < map->ents.size())
 	{
 		map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 		map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());

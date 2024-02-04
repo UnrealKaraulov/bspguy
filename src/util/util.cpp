@@ -1862,7 +1862,7 @@ std::vector<cVert> stretch_model(const std::vector<cVert>& vertices, float stret
 	return stretched_vertices;
 }
 
-BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax)
+BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force)
 {
 	BSPPLANE separationPlane = BSPPLANE();
 
@@ -1905,14 +1905,44 @@ BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax)
 	}
 	else
 	{
-		separationPlane.nType = -1; // no simple separating axis
+		if (force)
+		{
+			// Calculate the separation distances for each axis
+			float dx = std::min(amax.x - bmin.x, bmax.x - amin.x);
+			float dy = std::min(amax.y - bmin.y, bmax.y - amin.y);
+			float dz = std::min(amax.z - bmin.z, bmax.z - amin.z);
 
-		print_log(get_localized_string(LANG_0239));
-		print_log("({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
-		print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
+			// Find the axis with the largest separation
+			if (dx > dy && dx > dz)
+			{
+				separationPlane.nType = PLANE_ANYX;
+				separationPlane.vNormal = { dx > 0 ? 1.0f : -1.0f, 0, 0 };
+				separationPlane.fDist = dx > 0 ? amax.x : amin.x;
+			}
+			else if (dy > dx && dy > dz)
+			{
+				separationPlane.nType = PLANE_ANYY;
+				separationPlane.vNormal = { 0, dy > 0 ? 1.0f : -1.0f, 0 };
+				separationPlane.fDist = dy > 0 ? amax.y : amin.y;
+			}
+			else
+			{
+				separationPlane.nType = PLANE_ANYZ;
+				separationPlane.vNormal = { 0, 0, dz > 0 ? 1.0f : -1.0f };
+				separationPlane.fDist = dz > 0 ? amax.z : amin.z;
+			}
+		}
+		else
+		{
+			separationPlane.nType = -1; // no simple separating axis
 
-		print_log("({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
-		print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, "MODEL2");
+			print_log(get_localized_string(LANG_0239));
+			print_log("({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
+			print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
+
+			print_log("({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
+			print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, "MODEL2");
+		}
 	}
 
 	return separationPlane;

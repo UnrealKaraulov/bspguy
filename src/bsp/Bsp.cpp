@@ -7076,13 +7076,14 @@ int Bsp::merge_two_models(int src_model, int dst_model)
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
 
-	vec3 amin = models[dst_model].nMins + models[dst_model].vOrigin;
-	vec3 amax = models[dst_model].nMaxs + models[dst_model].vOrigin;
-	vec3 bmin = models[src_model].nMins + models[src_model].vOrigin;
-	vec3 bmax = models[src_model].nMaxs + models[src_model].vOrigin;
+	vec3 amin = models[src_model].nMins;
+	vec3 amax = models[src_model].nMaxs;
+	vec3 bmin = models[dst_model].nMins;
+	vec3 bmax = models[dst_model].nMaxs;
 
-	BSPPLANE separate_plane = getSeparatePlane(bmin, bmax, amin, amax);
+	BSPPLANE separate_plane = getSeparatePlane(amin, amax, bmin, bmax,true);
 
+	print_log(PRINT_GREEN, "SeparatePlane : {:4f} {:4f} {:4f} -> {:4f}", separate_plane.vNormal.x, separate_plane.vNormal.y, separate_plane.vNormal.z, separate_plane.fDist);
 	std::vector<vec3> veclist;
 	veclist.push_back(amin);
 	veclist.push_back(amax);
