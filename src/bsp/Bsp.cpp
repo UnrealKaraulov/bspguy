@@ -113,10 +113,10 @@ void Bsp::selectModelEnt()
 		{
 			g_app->clearSelection();
 			g_app->selectMap(map);
-			vec3 worldOrigin = map->ents[0]->getOrigin();
+			vec3 worldOrigin = map->ents[0]->origin;
 			for (size_t n = 1; n < map->ents.size(); n++)
 			{
-				if (map->ents[n]->hasKey("model") && (map->ents[n]->getOrigin() + worldOrigin) == ents[0]->getOrigin())
+				if (map->ents[n]->hasKey("model") && (map->ents[n]->origin + worldOrigin) == ents[0]->origin)
 				{
 					g_app->pickInfo.SetSelectedEnt((int)n);
 					return;
@@ -966,7 +966,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 			if (logged)
 				g_progress.tick();
 
-			vec3 ori = ents[i]->getOrigin();
+			vec3 ori = ents[i]->origin;
 			ori += offset;
 
 			if (ents[i]->hasKey("spawnorigin"))
@@ -6959,7 +6959,7 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 				newThisNodes[nodeCount].iChildren[0] = nodeCount + 1;
 				newThisNodes[nodeCount + 1] = node;
 				newThisNodes[nodeCount + 1].iChildren[0] = ~leafCount;
-				newThisNodes[nodeCount + 1].iChildren[1] = ~leafCount;;
+				newThisNodes[nodeCount + 1].iChildren[1] = ~leafCount;
 
 				if (newThisNodes[nodeCount + 1].iPlane >= 0)
 				{
@@ -7921,7 +7921,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 			{
 				size_t tmpentid = entIds[e];
 				Entity* ent = ents[tmpentid];
-				vec3 origin_offset = ent->getOrigin().flip();
+				vec3 origin_offset = ent->origin.flip();
 
 				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
 				{

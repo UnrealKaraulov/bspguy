@@ -439,7 +439,7 @@ enum RenderMode : int
 	kRenderNormal = 0,		// src
 	kRenderTransColor,		// c*a+dest*(1-a)
 	kRenderTransTexture,	// src*a+dest*(1-a)
-	kRenderGlow,		// src*a+dest -- No Z buffer checks
+	kRenderGlow,			// src*a+dest -- No Z buffer checks
 	kRenderTransAlpha,		// src*srca+dest*(1-srca)
 	kRenderTransAdd,		// src*a+dest
 	kRenderWorldGlow		// Same as kRenderGlow but not fixed size in screen space

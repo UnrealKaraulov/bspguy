@@ -27,7 +27,6 @@ public:
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
 		origin = vec3();
-		originInited = false;
 		targetsCached = false;
 		hide = false;
 	}
@@ -41,7 +40,6 @@ public:
 		renderamt = 0;
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
-		originInited = false;
 		targetsCached = false;
 		setOrAddKeyvalue("classname", classname);
 	}
@@ -70,8 +68,6 @@ public:
 
 	bool isWorldSpawn();
 
-	vec3 getOrigin();
-
 	bool hasKey(const std::string key);
 
 	std::vector<std::string> getTargets();
@@ -84,7 +80,6 @@ public:
 
 	size_t getMemoryUsage(); // aproximate
 
-	bool originInited;
 	vec3 origin;
 	int rendermode;
 	int renderamt;

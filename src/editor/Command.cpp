@@ -513,7 +513,7 @@ EditBspModelCommand::EditBspModelCommand(std::string desc, int entIdx, LumpState
 	if (map && entIdx >= 0)
 	{
 		this->modelIdx = map->ents[entIdx]->getBspModelIdx();
-		this->newOrigin = map->ents[entIdx]->getOrigin();
+		this->newOrigin = map->ents[entIdx]->origin;
 	}
 	else
 	{
@@ -544,7 +544,6 @@ void EditBspModelCommand::execute()
 		map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 		map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 	}
-
 
 	refresh();
 }

@@ -11,7 +11,7 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 		return;
 
 	if (key == "origin")
-		originInited = false;
+		origin = parseVector(value);
 	if (key == "classname")
 		classname = value;
 
@@ -79,7 +79,7 @@ void Entity::removeKeyvalue(const std::string key)
 		return;
 
 	if (key == "origin")
-		originInited = false;
+		origin = vec3();
 	if (key == "classname")
 		classname = "";
 
@@ -103,12 +103,6 @@ bool Entity::renameKey(int idx, const std::string& newName)
 
 	std::string keyName = keyOrder[idx];
 
-	if (keyName.starts_with("render"))
-		updateRenderModes();
-
-	if (keyName == "origin" || newName == "origin")
-		originInited = false;
-
 	for (size_t i = 0; i < keyOrder.size(); i++)
 	{
 		if (keyOrder[i] == newName)
@@ -117,6 +111,20 @@ bool Entity::renameKey(int idx, const std::string& newName)
 		}
 	}
 
+	if (keyName.starts_with("render"))
+		updateRenderModes();
+
+	if (keyName == "origin" || newName == "origin")
+	{
+		if (keyName == "origin")
+		{
+			origin = vec3();
+		}
+		else
+		{
+			origin = parseVector(keyvalues[keyOrder[idx]]);
+		}
+	}
 
 	keyvalues[newName] = keyvalues[keyOrder[idx]];
 	keyvalues.erase(keyOrder[idx]);
@@ -139,11 +147,7 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 	{
 		return false;
 	}
-	if (oldName == "origin" || newName == "origin")
-		originInited = false;
 
-	if (oldName.starts_with("render") || newName.starts_with("render"))
-		updateRenderModes();
 	int idx = -1;
 	for (size_t i = 0; i < keyOrder.size(); i++)
 	{
@@ -156,8 +160,25 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 			idx = (int)i;
 		}
 	}
+
 	if (idx == -1)
 		return false;
+
+	if (oldName.starts_with("render") || newName.starts_with("render"))
+		updateRenderModes();
+
+	if (oldName == "origin" || newName == "origin")
+	{
+		if (oldName == "origin")
+		{
+			origin = vec3();
+		}
+		else
+		{
+			origin = parseVector(keyvalues[keyOrder[idx]]);
+		}
+	}
+
 	keyvalues[newName] = keyvalues[keyOrder[idx]];
 	keyvalues.erase(keyOrder[idx]);
 	keyOrder[idx] = newName;
@@ -260,15 +281,6 @@ bool Entity::isBspModel()
 bool Entity::isWorldSpawn()
 {
 	return hasKey("classname") && keyvalues["classname"] == "worldspawn";
-}
-
-vec3 Entity::getOrigin()
-{
-	if (originInited)
-		return origin;
-	originInited = true;
-	origin = hasKey("origin") ? parseVector(keyvalues["origin"]) : vec3();
-	return origin;
 }
 
 // TODO: maybe store this in a text file or something

@@ -625,7 +625,11 @@ void AppSettings::load()
 	if (lines_readed > 0)
 		g_settings.settingLoaded = true;
 	else
+	{
 		print_log(get_localized_string(LANG_0928), g_settings_path);
+		removeFile(g_settings_path + ".bak");
+		copyFile(g_settings_path, g_settings_path + ".bak");
+	}
 
 	if (defaultIsEmpty && fgdPaths.empty())
 	{

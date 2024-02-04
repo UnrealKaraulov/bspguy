@@ -185,8 +185,8 @@ public:
 	TransformAxes moveAxes = TransformAxes();
 	TransformAxes scaleAxes = TransformAxes();
 	int hoverAxis; // axis being hovered
-	int draggingAxis = -1; // axis currently being dragged by the mouse
-	bool gridSnappingEnabled = true;
+	//int draggingAxis = -1; // axis currently being dragged by the mouse
+	bool gridSnappingEnabled = false;
 	int gridSnapLevel = 0;
 	int transformMode = TRANSFORM_MODE_MOVE;
 	int transformTarget = TRANSFORM_OBJECT;
@@ -194,9 +194,9 @@ public:
 	int last_face_idx = 0;
 	bool blockMoving = false;
 	bool showDragAxes = true;
+	bool saveTranformResult = false;
 	bool pickClickHeld = true; // true if the mouse button is still held after picking an object
 	vec3 axisDragStart;
-	vec3 dragDelta;
 	vec3 axisDragEntOriginStart;
 	std::vector<ScalableTexinfo> scaleTexinfos; // texture coordinates to scale
 	bool textureLock = false;
@@ -215,11 +215,9 @@ public:
 	VertexBuffer* modelOriginBuff = NULL;
 	bool originSelected = false;
 	bool originHovered = false;
-	vec3 oldOrigin;
-	vec3 transformedOrigin;
 	int hoverVert = -1;
 	int hoverEdge = -1;
-	float vertExtentFactor = 0.01f;
+	float vertExtentFactor = 0.012f;
 	bool modelUsesSharedStructures = false;
 	vec3 selectionSize;
 
@@ -280,7 +278,7 @@ public:
 	void revertInvalidSolid(Bsp* map, int modelIdx);
 
 	void drawModelVerts();
-	void drawModelOrigin();
+	void drawModelOrigin(int modelIdx);
 	void drawTransformAxes();
 	void drawEntConnections();
 	void drawLine(vec3& start, vec3& end, COLOR4 color);

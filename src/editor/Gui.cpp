@@ -182,10 +182,13 @@ void Gui::draw()
 			ImGui::OpenPopup("ent_context");
 			contextMenuEnt = -1;
 		}
-		if (emptyContextMenu)
+		else
 		{
-			emptyContextMenu = 0;
-			ImGui::OpenPopup("empty_context");
+			if (emptyContextMenu)
+			{
+				emptyContextMenu = 0;
+				ImGui::OpenPopup("empty_context");
+			}
 		}
 	}
 	else
@@ -481,63 +484,80 @@ void Gui::drawBspContexMenu()
 	if (!map)
 		return;
 
+	BspRenderer* rend = map->getBspRender();
+
+	if (!rend)
+		return;
+
 	auto entIdx = app->pickInfo.GetSelectedEnts();
 
-	if (app->originHovered && entIdx.size())
+	if ((app->originHovered || app->hoverAxis == 3) && entIdx.size())
 	{
 		Entity* ent = map->ents[entIdx[0]];
+		int modelIdx = ent->getBspModelIdx();
+
 		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
 		{
-			if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
+			if (modelIdx > 0)
 			{
-				app->transformedOrigin = app->getEntOrigin(map, ent);
-				app->applyTransform(map);
-				pickCount++; // force gui refresh
+				BSPMODEL& model = map->models[modelIdx];
+
+				if (ImGui::MenuItem(get_localized_string(LANG_0430).c_str(), ""))
+				{
+					map->models[modelIdx].vOrigin = getCenter(map->models[modelIdx].nMins, 
+						map->models[modelIdx].nMaxs);
+					rend->refreshModel(modelIdx);
+					pickCount++; // force gui refresh
+				}
+
+				if (ImGui::BeginMenu(get_localized_string(LANG_0431).c_str()))
+				{
+					if (ImGui::MenuItem(get_localized_string(LANG_0432).c_str()))
+					{
+						map->models[modelIdx].vOrigin.z = model.nMaxs.z;
+						rend->refreshModel(modelIdx);
+						pickCount++;
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_0433).c_str()))
+					{
+						map->models[modelIdx].vOrigin.z = model.nMins.z;
+						rend->refreshModel(modelIdx);
+						pickCount++;
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem(get_localized_string(LANG_0434).c_str()))
+					{
+						map->models[modelIdx].vOrigin.x = model.nMins.x;
+						rend->refreshModel(modelIdx);
+						pickCount++;
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_0435).c_str()))
+					{
+						map->models[modelIdx].vOrigin.z = model.nMaxs.z;
+						rend->refreshModel(modelIdx);
+						pickCount++;
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem(get_localized_string(LANG_0436).c_str()))
+					{
+						map->models[modelIdx].vOrigin.z = model.nMins.y;
+						rend->refreshModel(modelIdx);
+						pickCount++;
+					}
+					if (ImGui::MenuItem(get_localized_string(LANG_0437).c_str()))
+					{
+						map->models[modelIdx].vOrigin.z = model.nMaxs.z;
+						rend->refreshModel(modelIdx);
+						pickCount++;
+					}
+					ImGui::EndMenu();
+				}
 			}
-
-			if (ent && ImGui::BeginMenu(get_localized_string(LANG_0431).c_str()))
+			else
 			{
-				BSPMODEL& model = map->models[ent->getBspModelIdx()];
-
-				if (ImGui::MenuItem(get_localized_string(LANG_0432).c_str()))
-				{
-					app->transformedOrigin.z = app->oldOrigin.z + model.nMaxs.z;
-					app->applyTransform(map);
-					pickCount++;
-				}
-				if (ImGui::MenuItem(get_localized_string(LANG_0433).c_str()))
-				{
-					app->transformedOrigin.z = app->oldOrigin.z + model.nMins.z;
-					app->applyTransform(map);
-					pickCount++;
-				}
-				ImGui::Separator();
-				if (ImGui::MenuItem(get_localized_string(LANG_0434).c_str()))
-				{
-					app->transformedOrigin.x = app->oldOrigin.x + model.nMins.x;
-					app->applyTransform(map);
-					pickCount++;
-				}
-				if (ImGui::MenuItem(get_localized_string(LANG_0435).c_str()))
-				{
-					app->transformedOrigin.x = app->oldOrigin.x + model.nMaxs.x;
-					app->applyTransform(map);
-					pickCount++;
-				}
-				ImGui::Separator();
-				if (ImGui::MenuItem(get_localized_string(LANG_0436).c_str()))
-				{
-					app->transformedOrigin.y = app->oldOrigin.y + model.nMins.y;
-					app->applyTransform(map);
-					pickCount++;
-				}
-				if (ImGui::MenuItem(get_localized_string(LANG_0437).c_str()))
-				{
-					app->transformedOrigin.y = app->oldOrigin.y + model.nMaxs.y;
-					app->applyTransform(map);
-					pickCount++;
-				}
-				ImGui::EndMenu();
+				ImGui::BeginDisabled();
+				ImGui::MenuItem("No selected model");
+				ImGui::EndDisabled;
 			}
 			ImGui::EndPopup();
 		}
@@ -593,7 +613,7 @@ void Gui::drawBspContexMenu()
 						BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 						if (texinfo.iMiptex == seltexinfo.iMiptex)
 						{
-							map->getBspRender()->highlightFace(i, 1);
+							rend->highlightFace(i, 1);
 							g_app->pickInfo.selectedFaces.push_back(i);
 						}
 					}
@@ -615,12 +635,11 @@ void Gui::drawBspContexMenu()
 					int modelIdx = map->get_model_from_face((int)g_app->pickInfo.selectedFaces[0]);
 					if (modelIdx >= 0)
 					{
-						BspRenderer* mapRenderer = map->getBspRender();
 						BSPMODEL& model = map->models[modelIdx];
 						for (int i = 0; i < model.nFaces; i++)
 						{
 							int faceIdx = model.iFirstFace + i;
-							mapRenderer->highlightFace(faceIdx, 1);
+							rend->highlightFace(faceIdx, 1);
 							app->pickInfo.selectedFaces.push_back(faceIdx);
 						}
 					}
@@ -639,7 +658,7 @@ void Gui::drawBspContexMenu()
 	}
 	else /*if (app->pickMode == PICK_OBJECT)*/
 	{
-		if (ImGui::BeginPopup(get_localized_string(LANG_1151).c_str()) && entIdx.size())
+		if (ImGui::BeginPopup("ent_context") && entIdx.size())
 		{
 			Entity* ent = map->ents[entIdx[0]];
 			int modelIdx = ent->getBspModelIdx();
@@ -685,7 +704,7 @@ void Gui::drawBspContexMenu()
 				if (ImGui::MenuItem(get_localized_string(LANG_0453).c_str(), get_localized_string(LANG_0454).c_str()))
 				{
 					map->ents[entIdx[0]]->hide = false;
-					map->getBspRender()->preRenderEnts();
+					rend->preRenderEnts();
 					app->updateEntConnections();
 				}
 			}
@@ -693,7 +712,7 @@ void Gui::drawBspContexMenu()
 			{
 				map->hideEnts();
 				app->clearSelection();
-				map->getBspRender()->preRenderEnts();
+				rend->preRenderEnts();
 				app->updateEntConnections();
 				pickCount++;
 			}
@@ -737,7 +756,7 @@ void Gui::drawBspContexMenu()
 								map->delete_hull(1, modelIdx, -1);
 								map->delete_hull(2, modelIdx, -1);
 								map->delete_hull(3, modelIdx, -1);
-								map->getBspRender()->refreshModel(modelIdx);
+								rend->refreshModel(modelIdx);
 								checkValidHulls();
 								print_log(get_localized_string(LANG_0330), modelIdx);
 							}
@@ -746,7 +765,7 @@ void Gui::drawBspContexMenu()
 								map->delete_hull(1, modelIdx, -1);
 								map->delete_hull(2, modelIdx, -1);
 								map->delete_hull(3, modelIdx, -1);
-								map->getBspRender()->refreshModelClipnodes(modelIdx);
+								rend->refreshModelClipnodes(modelIdx);
 								checkValidHulls();
 								print_log(get_localized_string(LANG_0331), modelIdx);
 							}
@@ -762,9 +781,9 @@ void Gui::drawBspContexMenu()
 									map->delete_hull(i, modelIdx, -1);
 									checkValidHulls();
 									if (i == 0)
-										map->getBspRender()->refreshModel(modelIdx);
+										rend->refreshModel(modelIdx);
 									else
-										map->getBspRender()->refreshModelClipnodes(modelIdx);
+										rend->refreshModelClipnodes(modelIdx);
 									print_log(get_localized_string(LANG_0332), i, modelIdx);
 								}
 							}
@@ -779,7 +798,7 @@ void Gui::drawBspContexMenu()
 								map->simplify_model_collision(modelIdx, 1);
 								map->simplify_model_collision(modelIdx, 2);
 								map->simplify_model_collision(modelIdx, 3);
-								map->getBspRender()->refreshModelClipnodes(modelIdx);
+								rend->refreshModelClipnodes(modelIdx);
 								print_log(get_localized_string(LANG_0333), modelIdx);
 							}
 
@@ -792,7 +811,7 @@ void Gui::drawBspContexMenu()
 								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
 								{
 									map->simplify_model_collision(modelIdx, 1);
-									map->getBspRender()->refreshModelClipnodes(modelIdx);
+									rend->refreshModelClipnodes(modelIdx);
 									print_log(get_localized_string(LANG_0334), i, modelIdx);
 								}
 							}
@@ -819,7 +838,7 @@ void Gui::drawBspContexMenu()
 										if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
 										{
 											map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
-											map->getBspRender()->refreshModelClipnodes(modelIdx);
+											rend->refreshModelClipnodes(modelIdx);
 											checkValidHulls();
 											print_log(get_localized_string(LANG_0335), i, k, modelIdx);
 										}
@@ -873,7 +892,7 @@ void Gui::drawBspContexMenu()
 							if (map->ents[tmpEntIdx]->isBspModel())
 							{
 								DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), (int)tmpEntIdx);
-								map->getBspRender()->pushUndoCommand(command);
+								rend->pushUndoCommand(command);
 							}
 						}
 					}
@@ -897,11 +916,20 @@ void Gui::drawBspContexMenu()
 						{
 							if (map->ents[tmpEntIdx]->isBspModel())
 							{
-								pickCount++;
 								map->duplicate_model_structures(map->ents[tmpEntIdx]->getBspModelIdx());
-								map->getBspRender()->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
+								rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 							}
 						}
+						map->update_ent_lump();
+
+						map->resize_all_lightmaps();
+
+						if (rend)
+						{
+							rend->loadLightmaps();
+						}
+
+						pickCount++;
 					}
 
 					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1028,7 +1056,7 @@ void Gui::drawBspContexMenu()
 			ImGui::EndPopup();
 		}
 
-		if (ImGui::BeginPopup(get_localized_string(LANG_1153).c_str()))
+		if (ImGui::BeginPopup("empty_context"))
 		{
 			if (ImGui::MenuItem(get_localized_string(LANG_1073).c_str(), get_localized_string(LANG_1074).c_str(), false, app->copiedEnts.size()))
 			{
@@ -1876,21 +1904,20 @@ void Gui::drawMenuBar()
 				int mapRenderId = map->getBspRenderId();
 				if (mapRenderId >= 0)
 				{
-					BspRenderer* mapRender = map->getBspRender();
-					if (mapRender)
+					if (rend)
 					{
 						map->setBspRender(NULL);
 						app->deselectObject();
 						app->clearSelection();
 						app->deselectMap();
 						mapRenderers.erase(mapRenderers.begin() + mapRenderId);
-						delete mapRender;
+						delete rend;
+						rend = NULL;
 						map = NULL;
 						app->selectMapId(0);
 					}
 				}
 			}
-
 
 			if (mapRenderers.size() > 1)
 			{
@@ -4596,6 +4623,8 @@ void Gui::drawDebugWidget()
 			ImGui::Text(fmt::format("showDragAxes {}\nmovingEnt {}\nanyAltPressed {}",
 				app->showDragAxes, app->movingEnt, app->anyAltPressed).c_str());
 
+			ImGui::Text(fmt::format("hoverAxis:{}", app->hoverAxis).c_str());
+
 			ImGui::Checkbox(get_localized_string(LANG_0640).c_str(), &app->showDragAxes);
 		}
 
@@ -4608,7 +4637,7 @@ void Gui::drawDebugWidget()
 					if (ent->hasKey("classname") && ent->keyvalues["classname"] == "infodecal"
 						&& ent->hasKey("texture"))
 					{
-						map->decalShoot(ent->getOrigin(), ent->keyvalues["texture"]);
+						map->decalShoot(ent->origin, ent->keyvalues["texture"]);
 					}
 				}
 			}
@@ -5979,7 +6008,7 @@ void Gui::drawTransformWidget()
 		transformingEnt = true;
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(440.f, 380.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(440.f, 450.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(430, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 
 
@@ -6007,7 +6036,7 @@ void Gui::drawTransformWidget()
 			if (!shouldUpdateUi)
 			{
 				shouldUpdateUi = lastPickCount != pickCount ||
-					app->draggingAxis != -1 ||
+					app->hoverAxis != -1 ||
 					app->movingEnt ||
 					oldSnappingEnabled != app->gridSnappingEnabled ||
 					lastVertPickCount != vertPickCount;
@@ -6027,11 +6056,7 @@ void Gui::drawTransformWidget()
 					}
 					else
 					{
-						vec3 ori = ent->getOrigin();
-						if (app->originSelected)
-						{
-							ori = app->transformedOrigin;
-						}
+						vec3 ori = ent->origin;
 						x = fx = ori.x;
 						y = fy = ori.y;
 						z = fz = ori.z;
@@ -6151,7 +6176,7 @@ void Gui::drawTransformWidget()
 						z = last_fz = fz;
 					}
 				}
-				if (map->getBspRender()->undoEntityStateMap[entIdx[0]].getOrigin() != ent->getOrigin())
+				if (map->getBspRender()->undoEntityStateMap[entIdx[0]].origin != ent->origin)
 				{
 					map->getBspRender()->pushEntityUndoStateDelay("Move Entity", (int)entIdx[0], ent);
 				}
@@ -6227,7 +6252,7 @@ void Gui::drawTransformWidget()
 
 			const int grid_snap_modes = 11;
 			const char* element_names[grid_snap_modes] = { "0", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512" };
-			static int current_element = app->gridSnapLevel + 1;
+			static int current_element = app->gridSnapLevel;
 
 			ImGui::Columns(2, 0, false);
 			ImGui::SetColumnWidth(0, inputWidth4);
@@ -6261,9 +6286,8 @@ void Gui::drawTransformWidget()
 			ImGui::Checkbox(get_localized_string(LANG_0703).c_str(), &app->moveOrigin);
 			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT)
 				ImGui::EndDisabled();
-			ImGui::SameLine();
-			ImGui::Text(get_localized_string(LANG_0704).c_str());
-			if (ImGui::IsItemHovered())
+
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenDisabled))
 			{
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -6271,12 +6295,26 @@ void Gui::drawTransformWidget()
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
+
 			ImGui::PopItemWidth();
 
 			ImGui::Dummy(ImVec2(0, style.FramePadding.y * 2));
 			ImGui::Separator();
 			ImGui::Dummy(ImVec2(0, style.FramePadding.y * 2));
 			ImGui::Text(("Size: " + app->selectionSize.toKeyvalueString(false, "w ", "l ", "h")).c_str());
+			ImGui::Separator();
+
+			ImGui::Text(fmt::format("Entity origin: {} {} {}", ent->origin.x, ent->origin.y, ent->origin.z).c_str());
+
+			int modelIdx = ent->getBspModelIdx();
+			
+			if (modelIdx >= 0)
+			{
+				ImGui::Text(fmt::format("Model origin: {} {} {}", map->models[modelIdx].vOrigin.x, map->models[modelIdx].vOrigin.y, map->models[modelIdx].vOrigin.z).c_str());
+				vec3 modelCenter = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
+				ImGui::Text(fmt::format("Model center: {} {} {}", modelCenter.x, modelCenter.y, modelCenter.z).c_str());
+				ImGui::Text(fmt::format("Model bounds: \n{} {} {} / {} {} {}", map->models[modelIdx].nMins.x, map->models[modelIdx].nMins.y, map->models[modelIdx].nMins.z, map->models[modelIdx].nMaxs.x, map->models[modelIdx].nMaxs.y, map->models[modelIdx].nMaxs.z).c_str());
+			}
 
 			if (transformingEnt)
 			{
@@ -6322,8 +6360,6 @@ void Gui::drawTransformWidget()
 					{
 						vec3 newOrigin = app->gridSnappingEnabled ? vec3(x, y, z) : vec3(fx, fy, fz);
 						newOrigin = app->gridSnappingEnabled ? app->snapToGrid(newOrigin) : newOrigin;
-
-						app->transformedOrigin = newOrigin;
 					}
 				}
 				if (scaled && ent->isBspModel() && app->isTransformableSolid && !app->modelUsesSharedStructures)
@@ -6334,7 +6370,6 @@ void Gui::drawTransformWidget()
 					}
 					else if (app->transformTarget == TRANSFORM_OBJECT)
 					{
-						int modelIdx = ent->getBspModelIdx();
 						app->scaleSelectedObject(sx, sy, sz);
 						map->getBspRender()->refreshModel(modelIdx);
 					}
@@ -8248,7 +8283,7 @@ void Gui::drawEntityReport()
 						if (isForceOpen)
 						{
 							needhover = false;
-							ImGui::OpenPopup(get_localized_string(LANG_1178).c_str());
+							ImGui::OpenPopup("ent_context");
 						}
 						if (isCtrlPressed)
 						{

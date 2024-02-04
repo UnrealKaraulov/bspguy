@@ -95,7 +95,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 
 		if (foundEnt)
 		{
-			renderCameraOrigin = foundEnt->getOrigin();
+			renderCameraOrigin = foundEnt->origin;
 			renderCameraOrigin.z += 32;
 			for (unsigned int i = 0; i < foundEnt->keyOrder.size(); i++)
 			{
@@ -137,7 +137,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 		{
 			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
 			{
-				renderCameraOrigin = ent->getOrigin();
+				renderCameraOrigin = ent->origin;
 
 				/*for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
 				{
@@ -175,7 +175,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 
 //if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
 //{
-//	this->renderCameraOrigin = ent->getOrigin();
+//	this->renderCameraOrigin = ent->origin;
 	/*
 	auto targets = ent->getTargets();
 	bool found = false;
@@ -912,9 +912,10 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		bool isSpecial = texinfo.nFlags & TEX_SPECIAL;
 		bool hasLighting = face.nStyles[0] != 255 && face.nLightmapOffset >= 0 && !isSpecial;
+
 		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
-			lightmapAtlas[s] = lmap ? glLightmapTextures[lmap->atlasId[s]] : NULL;
+			lightmapAtlas[s] = hasLighting && lmap ? glLightmapTextures[lmap->atlasId[s]] : NULL;
 		}
 
 		if (isSpecial)
@@ -973,7 +974,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			verts[e].pos = vert.flip();
 
 			verts[e].r = 0.0f;
-			if (ent && ent->rendermode == 5)
+			if (ent && ent->rendermode > 0)
 			{
 				verts[e].g = 1.001f + abs((float)ent->rendermode);
 			}
@@ -982,7 +983,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 				verts[e].g = 0.0f;
 			}
 			verts[e].b = 0.0f;
-			verts[e].a = isSky || isTrigger || ( ent && ent->rendermode == 5 ) ? 1.0f - opacity : 0.0f;
+			verts[e].a = isSky || isTrigger || ( ent && ent->rendermode > 0) ? 1.0f - opacity : 0.0f;
 
 			// texture coords
 			float tw = 1.0f;
@@ -1688,7 +1689,7 @@ void BspRenderer::refreshEnt(int entIdx)
 	renderEnts[entIdx].pointEntCube = g_app->pointEntRenderer->getEntCube(ent);
 	bool setAngles = false;
 
-	vec3 origin = ent->getOrigin();
+	vec3 origin = ent->origin;
 	renderEnts[entIdx].modelMat4x4.loadIdentity();
 	renderEnts[entIdx].modelMat4x4.translate(origin.x, origin.z, -origin.y);
 	renderEnts[entIdx].modelMat4x4_angles.loadIdentity();
@@ -2275,7 +2276,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 
 void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 {
-	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
+	mapOffset = map->ents.size() ? map->ents[0]->origin : vec3();
 	renderOffset = mapOffset.flip();
 	localCameraOrigin = cameraOrigin - mapOffset;
 
@@ -3367,7 +3368,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 		}
 	}
 
-	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, (int)entIdx[0], undoLumpState, newLumps, undoEntityStateMap[entIdx[0]].getOrigin(), targetLumps);
+	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, (int)entIdx[0], undoLumpState, newLumps, undoEntityStateMap[entIdx[0]].origin, targetLumps);
 	pushUndoCommand(editCommand);
 
 	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
