@@ -475,6 +475,8 @@ void Renderer::renderLoop()
 	double fpsTime = 0.0;
 	double mouseTime = 0.0;
 
+	double framerateTime = 0.0;
+
 	double xpos = 0.0, ypos = 0.0;
 
 	if (SelectedMap && SelectedMap->is_mdl_model)
@@ -485,178 +487,182 @@ void Renderer::renderLoop()
 
 	while (!glfwWindowShouldClose(window))
 	{
-		oldTime = curTime;
 		curTime = glfwGetTime();
-		g_drawFrameId++;
-		frame_fps++;
-
-		if (abs(curTime - fpsTime) >= 0.50)
+		if (vsync != 0 || abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
 		{
-			fpsTime = curTime;
-			current_fps = frame_fps * 2;
-			frame_fps = 0;
-		}
 
-		mousePos = vec2((float)xpos, (float)ypos);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		//Update keyboard / mouse state 
-		oldLeftMouse = curLeftMouse;
-		curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-		oldRightMouse = curRightMouse;
-		curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-
-		DebugKeyPressed = pressed[GLFW_KEY_F1];
-
-		anyCtrlPressed = pressed[GLFW_KEY_LEFT_CONTROL] || pressed[GLFW_KEY_RIGHT_CONTROL];
-		anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
-		anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
-
-		oldControl = canControl;
-
-		canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
-
-		updateWindowTitle(curTime);
-
-		int modelIdx = -1;
-		auto entIdx = pickInfo.GetSelectedEnts();
-		Entity* ent = NULL;
-		if (SelectedMap && entIdx.size() && entIdx[0] < (int)SelectedMap->ents.size())
-		{
-			ent = SelectedMap->ents[entIdx[0]];
-			modelIdx = ent->getBspModelIdx();
-		}
-
-		bool updatePickCount = false;
-
-		if (SelectedMap && (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount || transformTarget != tmpTransformTarget || tmpModelIdx != modelIdx))
-		{
-			if (transformTarget != tmpTransformTarget && transformTarget == TRANSFORM_VERTEX)
+			if (abs(curTime - fpsTime) >= 0.50)
 			{
-				updateModelVerts();
-			}
-			else if (!modelVerts.size() || tmpModelIdx != modelIdx)
-			{
-				updateModelVerts();
+				fpsTime = curTime;
+				current_fps = frame_fps * 2;
+				frame_fps = 0;
 			}
 
-			if (pickMode != PICK_OBJECT)
+			mousePos = vec2((float)xpos, (float)ypos);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			//Update keyboard / mouse state 
+			oldLeftMouse = curLeftMouse;
+			curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+			oldRightMouse = curRightMouse;
+			curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+
+			DebugKeyPressed = pressed[GLFW_KEY_F1];
+
+			anyCtrlPressed = pressed[GLFW_KEY_LEFT_CONTROL] || pressed[GLFW_KEY_RIGHT_CONTROL];
+			anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
+			anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
+
+			oldControl = canControl;
+
+			canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
+
+			updateWindowTitle(curTime);
+
+			int modelIdx = -1;
+			auto entIdx = pickInfo.GetSelectedEnts();
+			Entity* ent = NULL;
+			if (SelectedMap && entIdx.size() && entIdx[0] < (int)SelectedMap->ents.size())
 			{
-				pickInfo.selectedEnts.clear();
-				for (auto& f : pickInfo.selectedFaces)
+				ent = SelectedMap->ents[entIdx[0]];
+				modelIdx = ent->getBspModelIdx();
+			}
+
+			bool updatePickCount = false;
+
+			framerateTime = curTime;
+			g_drawFrameId++;
+			frame_fps++;
+
+			if (SelectedMap && (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount || transformTarget != tmpTransformTarget || tmpModelIdx != modelIdx))
+			{
+				if (transformTarget != tmpTransformTarget && transformTarget == TRANSFORM_VERTEX)
 				{
-					int mdl = SelectedMap->get_model_from_face((int)f);
-					if (mdl > 0 && mdl < SelectedMap->modelCount)
+					updateModelVerts();
+				}
+				else if (!modelVerts.size() || tmpModelIdx != modelIdx)
+				{
+					updateModelVerts();
+				}
+
+				if (pickMode != PICK_OBJECT)
+				{
+					pickInfo.selectedEnts.clear();
+					for (auto& f : pickInfo.selectedFaces)
 					{
-						int mdl_ent = SelectedMap->get_ent_from_model(mdl);
-						if (mdl_ent >= 0 && mdl_ent < SelectedMap->ents.size())
+						int mdl = SelectedMap->get_model_from_face((int)f);
+						if (mdl > 0 && mdl < SelectedMap->modelCount)
 						{
-							pickInfo.AddSelectedEnt(mdl_ent);
+							int mdl_ent = SelectedMap->get_ent_from_model(mdl);
+							if (mdl_ent >= 0 && mdl_ent < SelectedMap->ents.size())
+							{
+								pickInfo.AddSelectedEnt(mdl_ent);
+							}
+						}
+					}
+				}
+
+				updatePickCount = true;
+				isTransformableSolid = modelIdx > 0 || (entIdx.size() && SelectedMap->ents[entIdx[0]]->getBspModelIdx() < 0);
+
+				if (!isTransformableSolid && pickInfo.selectedEnts.size())
+				{
+					if (SelectedMap && ent && ent->hasKey("classname") &&
+						ent->keyvalues["classname"] == "worldspawn")
+					{
+						isTransformableSolid = true;
+					}
+				}
+
+				modelUsesSharedStructures = modelIdx >= 0 && SelectedMap->does_model_use_shared_structures(modelIdx);
+
+				isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
+				isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
+				isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
+					|| (isTransformableSolid && isScalingObject);
+				isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
+
+				if (ent && ent->getBspModelIdx() < 0)
+					invalidSolid = false;
+				else
+				{
+					invalidSolid = !modelVerts.size() || !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
+					if (!invalidSolid)
+					{
+						std::vector<TransformVert> tmpVerts;
+						SelectedMap->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+
+						Solid modelSolid;
+						if (!getModelSolid(tmpVerts, SelectedMap, modelSolid))
+						{
+							invalidSolid = true;
 						}
 					}
 				}
 			}
 
-			updatePickCount = true;
-			isTransformableSolid = modelIdx > 0 || (entIdx.size() && SelectedMap->ents[entIdx[0]]->getBspModelIdx() < 0);
+			setupView();
 
-			if (!isTransformableSolid && pickInfo.selectedEnts.size())
+			drawEntConnections();
+
+			isLoading = reloading;
+
+			for (size_t i = 0; i < mapRenderers.size(); i++)
 			{
-				if (SelectedMap && ent && ent->hasKey("classname") &&
-					ent->keyvalues["classname"] == "worldspawn")
+				if (!mapRenderers[i])
 				{
-					isTransformableSolid = true;
+					continue;
 				}
-			}
 
-			modelUsesSharedStructures = modelIdx >= 0 && SelectedMap->does_model_use_shared_structures(modelIdx);
+				mapRenderers[i]->clearDrawCache();
 
-			isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
-			isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
-			isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
-				|| (isTransformableSolid && isScalingObject);
-			isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
+				Bsp* curMap = mapRenderers[i]->map;
+				if (!curMap || !curMap->bsp_name.size())
+					continue;
 
-			if (ent && ent->getBspModelIdx() < 0)
-				invalidSolid = false;
-			else
-			{
-				invalidSolid = !modelVerts.size() || !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
-				if (!invalidSolid)
+				if (SelectedMap && getSelectedMap() != curMap && (!curMap->is_bsp_model || curMap->parentMap != SelectedMap))
 				{
-					std::vector<TransformVert> tmpVerts;
-					SelectedMap->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
-
-					Solid modelSolid;
-					if (!getModelSolid(tmpVerts, SelectedMap, modelSolid))
-					{
-						invalidSolid = true;
-					}
+					continue;
 				}
-			}
-		}
 
-		setupView();
-
-		drawEntConnections();
-
-		isLoading = reloading;
-
-		for (size_t i = 0; i < mapRenderers.size(); i++)
-		{
-			if (!mapRenderers[i])
-			{
-				continue;
-			}
-
-			mapRenderers[i]->clearDrawCache();
-
-			Bsp* curMap = mapRenderers[i]->map;
-			if (!curMap || !curMap->bsp_name.size())
-				continue;
-
-			if (SelectedMap && getSelectedMap() != curMap && (!curMap->is_bsp_model || curMap->parentMap != SelectedMap))
-			{
-				continue;
-			}
-
-			if (SelectedMap->is_mdl_model && SelectedMap->mdl)
-			{
-				matmodel.loadIdentity();
-				modelShader->bind();
-				modelShader->updateMatrixes();
-				SelectedMap->mdl->DrawMDL();
-				continue;
-			}
-
-			std::set<int> modelidskip;
-
-			if (curMap->ents.size() && !isLoading)
-			{
-				if (curMap->is_bsp_model)
+				if (SelectedMap->is_mdl_model && SelectedMap->mdl)
 				{
-					for (size_t n = 0; n < mapRenderers.size(); n++)
-					{
-						if (n == i)
-							continue;
+					matmodel.loadIdentity();
+					modelShader->bind();
+					modelShader->updateMatrixes();
+					SelectedMap->mdl->DrawMDL();
+					continue;
+				}
 
-						Bsp* anotherMap = mapRenderers[n]->map;
-						if (anotherMap && anotherMap->ents.size())
+				std::set<int> modelidskip;
+
+				if (curMap->ents.size() && !isLoading)
+				{
+					if (curMap->is_bsp_model)
+					{
+						for (size_t n = 0; n < mapRenderers.size(); n++)
 						{
-							vec3 anotherMapOrigin = anotherMap->ents[0]->origin;
-							for (int s = 0; s < (int)anotherMap->ents.size(); s++)
+							if (n == i)
+								continue;
+
+							Bsp* anotherMap = mapRenderers[n]->map;
+							if (anotherMap && anotherMap->ents.size())
 							{
-								Entity* tmpEnt = anotherMap->ents[s];
-								if (tmpEnt && tmpEnt->hasKey("model"))
+								vec3 anotherMapOrigin = anotherMap->ents[0]->origin;
+								for (int s = 0; s < (int)anotherMap->ents.size(); s++)
 								{
-									if (!modelidskip.count(s))
+									Entity* tmpEnt = anotherMap->ents[s];
+									if (tmpEnt && tmpEnt->hasKey("model"))
 									{
-										if (basename(tmpEnt->keyvalues["model"]) == basename(curMap->bsp_path))
+										if (!modelidskip.count(s))
 										{
-											modelidskip.insert(s);
-											curMap->ents[0]->setOrAddKeyvalue("origin", (tmpEnt->origin + anotherMapOrigin).toKeyvalueString());
-											break;
+											if (basename(tmpEnt->keyvalues["model"]) == basename(curMap->bsp_path))
+											{
+												modelidskip.insert(s);
+												curMap->ents[0]->setOrAddKeyvalue("origin", (tmpEnt->origin + anotherMapOrigin).toKeyvalueString());
+												break;
+											}
 										}
 									}
 								}
@@ -664,168 +670,171 @@ void Renderer::renderLoop()
 						}
 					}
 				}
-			}
 
-			mapRenderers[i]->render(transformTarget == TRANSFORM_VERTEX, clipnodeRenderHull);
-
-
-			if (!mapRenderers[i]->isFinishedLoading())
-			{
-				isLoading = true;
-			}
-		}
-
-		if (SelectedMap)
-		{
-			if (debugClipnodes && modelIdx > 0)
-			{
-				matmodel.loadIdentity();
-				vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx.size() ? SelectedMap->ents[entIdx[0]]->origin : vec3())).flip();
-				matmodel.translate(offset.x, offset.y, offset.z);
-				colorShader->updateMatrixes();
-				BSPMODEL& pickModel = SelectedMap->models[modelIdx];
-				int currentPlane = 0;
-				glDisable(GL_CULL_FACE);
-				drawClipnodes(SelectedMap, pickModel.iHeadnodes[1], currentPlane, debugInt, pickModel.vOrigin);
-				glEnable(GL_CULL_FACE);
-				debugIntMax = currentPlane - 1;
-			}
-
-			if (debugNodes && modelIdx > 0)
-			{
-				matmodel.loadIdentity();
-				vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx.size() > 0 ? SelectedMap->ents[entIdx[0]]->origin : vec3())).flip();
-				matmodel.translate(offset.x, offset.y, offset.z);
-				colorShader->updateMatrixes();
-				BSPMODEL& pickModel = SelectedMap->models[modelIdx];
-				int currentPlane = 0;
-				glDisable(GL_CULL_FACE);
-				drawNodes(SelectedMap, pickModel.iHeadnodes[0], currentPlane, debugNode, pickModel.vOrigin);
-				glEnable(GL_CULL_FACE);
-				debugNodeMax = currentPlane - 1;
-			}
-
-			if (g_render_flags & RENDER_ORIGIN)
-			{
-				glDisable(GL_CULL_FACE);
-				matmodel.loadIdentity();
-				vec3 offset = SelectedMap->getBspRender()->mapOffset;
-				colorShader->updateMatrixes();
-				vec3 p1 = offset + vec3(-10240.0f, 0.0f, 0.0f);
-				vec3 p2 = offset + vec3(10240.0f, 0.0f, 0.0f);
-				drawLine(p1, p2, { 128, 128, 255, 255 });
-				vec3 p3 = offset + vec3(0.0f, -10240.0f, 0.0f);
-				vec3 p4 = offset + vec3(0.0f, 10240.0f, 0.0f);
-				drawLine(p3, p4, { 0, 255, 0, 255 });
-				vec3 p5 = offset + vec3(0.0f, 0.0f, -10240.0f);
-				vec3 p6 = offset + vec3(0.0f, 0.0f, 10240.0f);
-				drawLine(p5, p6, { 0, 0, 255, 255 });
-				glEnable(GL_CULL_FACE);
-			}
-		}
+				mapRenderers[i]->render(transformTarget == TRANSFORM_VERTEX, clipnodeRenderHull);
 
 
-		glDepthMask(GL_FALSE);
-		glDepthFunc(GL_ALWAYS);
-
-		if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS))
-		{
-			matmodel.loadIdentity();
-			colorShader->updateMatrixes();
-			entConnectionPoints->drawFull();
-		}
-
-		if (!entIdx.size())
-		{
-			if (SelectedMap && SelectedMap->is_bsp_model)
-			{
-				SelectedMap->selectModelEnt();
-			}
-		}
-
-		if (showDragAxes && pickMode == pick_modes::PICK_OBJECT)
-		{
-			if (!movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin))
-			{
-				drawTransformAxes();
-			}
-		}
-
-		if (modelIdx > 0 && pickMode == PICK_OBJECT)
-		{
-			if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid)
-			{
-				glDisable(GL_CULL_FACE);
-				drawModelVerts();
-				glEnable(GL_CULL_FACE);
-			}
-			if (transformTarget == TRANSFORM_ORIGIN)
-			{
-				drawModelOrigin(modelIdx);
-			}
-		}
-
-		glDepthMask(GL_TRUE);
-		glDepthFunc(GL_LESS);
-		vec3 forward, right, up;
-		makeVectors(cameraAngles, forward, right, up);
-		if (!hideGui)
-			gui->draw();
-
-		controls();
-
-		if (reloading && fgdFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-		{
-			postLoadFgds();
-			for (size_t i = 0; i < mapRenderers.size(); i++)
-			{
-				mapRenderers[i]->preRenderEnts();
-				if (reloadingGameDir)
+				if (!mapRenderers[i]->isFinishedLoading())
 				{
-					mapRenderers[i]->reloadTextures();
+					isLoading = true;
 				}
 			}
-			reloading = reloadingGameDir = false;
-		}
 
-		if (is_minimized || !is_focused)
-		{
-			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(25ms);
-		}
-
-		int glerror = glGetError();
-		while (glerror != GL_NO_ERROR)
-		{
-			gl_errors++;
-#ifndef NDEBUG
-			std::cout << fmt::format(fmt::runtime(get_localized_string(LANG_0905)), glerror) << std::endl;
-#endif 
-			glerror = glGetError();
-		}
-
-		if (updatePickCount)
-		{
-			tmpModelIdx = modelIdx;
-			tmpTransformTarget = transformTarget;
-			tmpPickIdx = pickCount;
-			tmpVertPickIdx = vertPickCount;
-		}
-
-		memcpy(oldPressed, pressed, sizeof(pressed));
-
-		glfwSwapBuffers(window);
-		if (abs(curTime - mouseTime) >= 0.016)
-		{
-			if (vsync != (g_settings.vsync ? 1 : 0))
+			if (SelectedMap)
 			{
-				glfwSwapInterval(g_settings.vsync);
-				vsync = (g_settings.vsync ? 1 : 0);
+				if (debugClipnodes && modelIdx > 0)
+				{
+					matmodel.loadIdentity();
+					vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx.size() ? SelectedMap->ents[entIdx[0]]->origin : vec3())).flip();
+					matmodel.translate(offset.x, offset.y, offset.z);
+					colorShader->updateMatrixes();
+					BSPMODEL& pickModel = SelectedMap->models[modelIdx];
+					int currentPlane = 0;
+					glDisable(GL_CULL_FACE);
+					drawClipnodes(SelectedMap, pickModel.iHeadnodes[1], currentPlane, debugInt, pickModel.vOrigin);
+					glEnable(GL_CULL_FACE);
+					debugIntMax = currentPlane - 1;
+				}
+
+				if (debugNodes && modelIdx > 0)
+				{
+					matmodel.loadIdentity();
+					vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx.size() > 0 ? SelectedMap->ents[entIdx[0]]->origin : vec3())).flip();
+					matmodel.translate(offset.x, offset.y, offset.z);
+					colorShader->updateMatrixes();
+					BSPMODEL& pickModel = SelectedMap->models[modelIdx];
+					int currentPlane = 0;
+					glDisable(GL_CULL_FACE);
+					drawNodes(SelectedMap, pickModel.iHeadnodes[0], currentPlane, debugNode, pickModel.vOrigin);
+					glEnable(GL_CULL_FACE);
+					debugNodeMax = currentPlane - 1;
+				}
+
+				if (g_render_flags & RENDER_ORIGIN)
+				{
+					glDisable(GL_CULL_FACE);
+					matmodel.loadIdentity();
+					vec3 offset = SelectedMap->getBspRender()->mapOffset;
+					colorShader->updateMatrixes();
+					vec3 p1 = offset + vec3(-10240.0f, 0.0f, 0.0f);
+					vec3 p2 = offset + vec3(10240.0f, 0.0f, 0.0f);
+					drawLine(p1, p2, { 128, 128, 255, 255 });
+					vec3 p3 = offset + vec3(0.0f, -10240.0f, 0.0f);
+					vec3 p4 = offset + vec3(0.0f, 10240.0f, 0.0f);
+					drawLine(p3, p4, { 0, 255, 0, 255 });
+					vec3 p5 = offset + vec3(0.0f, 0.0f, -10240.0f);
+					vec3 p6 = offset + vec3(0.0f, 0.0f, 10240.0f);
+					drawLine(p5, p6, { 0, 0, 255, 255 });
+					glEnable(GL_CULL_FACE);
+				}
 			}
 
-			mouseTime = curTime;
+
+			glDepthMask(GL_FALSE);
+			glDepthFunc(GL_ALWAYS);
+
+			if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS))
+			{
+				matmodel.loadIdentity();
+				colorShader->updateMatrixes();
+				entConnectionPoints->drawFull();
+			}
+
+			if (!entIdx.size())
+			{
+				if (SelectedMap && SelectedMap->is_bsp_model)
+				{
+					SelectedMap->selectModelEnt();
+				}
+			}
+
+			if (showDragAxes && pickMode == pick_modes::PICK_OBJECT)
+			{
+				if (!movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin))
+				{
+					drawTransformAxes();
+				}
+			}
+
+			if (modelIdx > 0 && pickMode == PICK_OBJECT)
+			{
+				if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid)
+				{
+					glDisable(GL_CULL_FACE);
+					drawModelVerts();
+					glEnable(GL_CULL_FACE);
+				}
+				if (transformTarget == TRANSFORM_ORIGIN)
+				{
+					drawModelOrigin(modelIdx);
+				}
+			}
+
+			glDepthMask(GL_TRUE);
+			glDepthFunc(GL_LESS);
+			vec3 forward, right, up;
+			makeVectors(cameraAngles, forward, right, up);
+			if (!hideGui)
+				gui->draw();
+
+			controls();
+
+			if (reloading && fgdFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+			{
+				postLoadFgds();
+				for (size_t i = 0; i < mapRenderers.size(); i++)
+				{
+					mapRenderers[i]->preRenderEnts();
+					if (reloadingGameDir)
+					{
+						mapRenderers[i]->reloadTextures();
+					}
+				}
+				reloading = reloadingGameDir = false;
+			}
+
+			int glerror = glGetError();
+			while (glerror != GL_NO_ERROR)
+			{
+				gl_errors++;
+#ifndef NDEBUG
+				std::cout << fmt::format(fmt::runtime(get_localized_string(LANG_0905)), glerror) << std::endl;
+#endif 
+				glerror = glGetError();
+			}
+
+			if (updatePickCount)
+			{
+				tmpModelIdx = modelIdx;
+				tmpTransformTarget = transformTarget;
+				tmpPickIdx = pickCount;
+				tmpVertPickIdx = vertPickCount;
+			}
+
+			memcpy(oldPressed, pressed, sizeof(pressed));
+
+			glfwSwapBuffers(window);
 			glfwPollEvents();
-			glfwGetCursorPos(window, &xpos, &ypos);
+
+			if (abs(curTime - mouseTime) >= 0.016)
+			{
+				if (vsync != (g_settings.vsync ? 1 : 0))
+				{
+					glfwSwapInterval(g_settings.vsync);
+					vsync = (g_settings.vsync ? 1 : 0);
+				}
+
+				mouseTime = curTime;
+				glfwGetCursorPos(window, &xpos, &ypos);
+			}
+
+
+			if (is_minimized || !is_focused)
+			{
+				using namespace std::chrono_literals;
+				std::this_thread::sleep_for(25ms);
+			}
+			oldTime = curTime;
 		}
 	}
 
@@ -1108,7 +1117,7 @@ void Renderer::drawModelOrigin(int modelIdx)
 	COLOR4 color;
 	if (originSelected)
 	{
-		color = originHovered? hoverSelectColor : selectColor;
+		color = originHovered ? hoverSelectColor : selectColor;
 	}
 	else
 	{
@@ -2103,7 +2112,7 @@ bool Renderer::transformAxisControls()
 						int tmpmodelidx = tmpent->getBspModelIdx();
 
 						if (tmpent->getBspModelIdx() >= 0)
-						{	
+						{
 							vec3 neworigin = gridSnappingEnabled ? snapToGrid(map->models[tmpmodelidx].vOrigin) : map->models[tmpmodelidx].vOrigin;
 							map->models[tmpmodelidx].vOrigin = neworigin;
 							map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
@@ -2575,9 +2584,22 @@ void Renderer::updateDragAxes(vec3 delta)
 	// set origin of the axes
 	if (transformMode == TRANSFORM_MODE_SCALE)
 	{
-		if (ent && ent->isBspModel())
+		if (ent && modelIdx >= 0)
 		{
-			map->get_model_vertex_bounds(ent->getBspModelIdx(), entMin, entMax);
+			entMin = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+			entMax = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD,-FLT_MAX_COORD);
+
+			if (modelVerts.size())
+			{
+				for (auto & vert : modelVerts)
+				{
+					expandBoundingBox(vert.pos, entMin, entMax);
+				}
+			}
+			else
+			{
+				map->get_model_vertex_bounds(modelIdx, entMin, entMax);
+			}
 			vec3 modelOrigin = entMin + (entMax - entMin) * 0.5f;
 
 			entMax -= modelOrigin;

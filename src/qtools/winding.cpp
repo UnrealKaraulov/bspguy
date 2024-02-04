@@ -141,6 +141,23 @@ void Winding::getPlane(BSPPLANE& plane)
 	}
 }
 
+Winding::Winding(const std::vector<vec3>& points, float epsilon)
+{
+	m_NumPoints = points.size();
+	m_MaxPoints = (m_NumPoints + 3) & ~3;
+	m_Points = new vec3[m_NumPoints];
+
+	unsigned i;
+	for (i = 0; i < m_NumPoints && i < points.size(); i++)
+	{
+		m_Points[i] = points[i];
+	}
+
+	RemoveColinearPoints(
+		epsilon
+	);
+}
+
 Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 {
 	int             se;
@@ -152,7 +169,7 @@ Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 	m_Points = new vec3[m_NumPoints];
 
 	unsigned i;
-	for (i = 0; i < face.nEdges; i++)
+	for (i = 0; i < m_NumPoints && i < face.nEdges; i++)
 	{
 		se = bsp->surfedges[face.iFirstEdge + i];
 		if (se < 0)

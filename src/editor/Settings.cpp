@@ -36,6 +36,7 @@ void AppSettings::loadDefault()
 	languages.push_back("EN");
 
 	undoLevels = 64;
+	fpslimit = 100;
 
 	verboseLogs = false;
 #ifndef NDEBUG
@@ -414,6 +415,14 @@ void AppSettings::load()
 		else if (key == "undo_levels")
 		{
 			g_settings.undoLevels = atoi(val.c_str());
+		}
+		else if (key == "fpslimit")
+		{
+			g_settings.fpslimit = atoi(val.c_str());
+			if (g_settings.fpslimit < 30)
+				g_settings.fpslimit = 30;
+			if (g_settings.fpslimit > 1000)
+				g_settings.fpslimit = 1000;
 		}
 		else if (key == "gamedir")
 		{
@@ -809,7 +818,7 @@ void AppSettings::save(std::string path)
 	for (size_t i = 0; i < transparentEntities.size(); i++)
 	{
 		file << "transparent_entities=" << transparentEntities[i] << std::endl;
-}
+	}
 
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << std::endl;
@@ -825,6 +834,7 @@ void AppSettings::save(std::string path)
 	file << "renders_flags=" << g_settings.render_flags << std::endl;
 	file << "font_size=" << g_settings.fontSize << std::endl;
 	file << "undo_levels=" << g_settings.undoLevels << std::endl;
+	file << "fpslimit=" << g_settings.fpslimit << std::endl;
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
 	file << "save_cam=" << g_settings.save_cam << std::endl;

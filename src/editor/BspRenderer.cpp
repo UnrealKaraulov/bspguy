@@ -3099,7 +3099,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 			{
 				int edgeIdx = map->surfedges[e];
 				BSPEDGE32 edge = map->edges[abs(edgeIdx)];
-				vec3& v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+				vec3& v = edgeIdx < 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
 				if (vectest != vec3() && vectest == v)
 				{
 					badface = true;

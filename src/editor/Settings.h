@@ -59,6 +59,7 @@ struct AppSettings
 	int windowY;
 	int maximized;
 	int undoLevels;
+	int fpslimit;
 	size_t settings_tab;
 	int render_flags;
 

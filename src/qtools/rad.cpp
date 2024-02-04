@@ -275,7 +275,6 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 		}
 	}
 
-
 	for (int i = 0; i < 2; i++)
 	{
 		mins_out[i] = (int)floor(mins[i] / TEXTURE_STEP);

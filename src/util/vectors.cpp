@@ -186,6 +186,17 @@ vec3 vec3::normalize(float length)
 	return vec3(x * d, y * d, z * d);
 }
 
+bool vec3::equal(vec3 to, float epsilon)
+{
+	if (::abs(x - to.x) >= epsilon)
+		return false;
+	if (::abs(y - to.y) >= epsilon)
+		return false;
+	if (::abs(z - to.z) >= epsilon)
+		return false;
+	return true;
+}
+
 vec3 vec3::snap(float snapSize)
 {
 	float _x = std::round(x / snapSize) * snapSize;

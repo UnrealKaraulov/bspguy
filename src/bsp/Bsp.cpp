@@ -388,37 +388,13 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 	maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
 	BSPMODEL& model = models[modelIdx];
-	/*auto verts = getModelVerts(modelIdx);
-	for (auto const& s : verts)
+	auto rndverts = getModelVerts(modelIdx);
+	for (auto const& s : rndverts)
 	{
-		if (s.pos.x < mins.x)
-		{
-			mins.x = s.pos.x;
-		}
-		if (s.pos.y < mins.y)
-		{
-			mins.y = s.pos.y;
-		}
-		if (s.pos.z < mins.z)
-		{
-			mins.z = s.pos.z;
-		}
-
-		if (s.pos.x > maxs.x)
-		{
-			maxs.x = s.pos.x;
-		}
-		if (s.pos.y > maxs.y)
-		{
-			maxs.y = s.pos.y;
-		}
-		if (s.pos.z > maxs.z)
-		{
-			maxs.z = s.pos.z;
-		}
+		expandBoundingBox(s.pos, mins, maxs);
 	}
-	*/
-	for (int i = 0; i < model.nFaces; i++)
+	
+	/*for (int i = 0; i < model.nFaces; i++)
 	{
 		BSPFACE32& face = faces[model.iFirstFace + i];
 
@@ -426,11 +402,11 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 		{
 			int edgeIdx = surfedges[face.iFirstEdge + e];
 			BSPEDGE32& edge = edges[abs(edgeIdx)];
-			int vertIdx = edgeIdx >= 0 ? edge.iVertex[1] : edge.iVertex[0];
+			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 
 			expandBoundingBox(verts[vertIdx], mins, maxs);
 		}
-	}
+	}*/
 }
 
 std::vector<TransformVert> Bsp::getModelVerts(int modelIdx)
@@ -448,7 +424,7 @@ std::vector<TransformVert> Bsp::getModelVerts(int modelIdx)
 		{
 			int edgeIdx = surfedges[face.iFirstEdge + e];
 			BSPEDGE32& edge = edges[abs(edgeIdx)];
-			int vertIdx = edgeIdx >= 0 ? edge.iVertex[1] : edge.iVertex[0];
+			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 
 			if (!visited.count(vertIdx))
 			{
@@ -558,7 +534,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 			{
 				int edgeIdx = surfedges[face.iFirstEdge + e];
 				BSPEDGE32& edge = edges[abs(edgeIdx)];
-				int vertIdx = edgeIdx >= 0 ? edge.iVertex[1] : edge.iVertex[0];
+				int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 
 				if (verts[vertIdx] != v)
 				{
@@ -4857,7 +4833,7 @@ void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 	{
 		int edgeIdx = surfedges[face.iFirstEdge + e];
 		BSPEDGE32& edge = edges[abs(edgeIdx)];
-		int vertIdx = edgeIdx >= 0 ? edge.iVertex[1] : edge.iVertex[0];
+		int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 
 		usage->surfEdges[face.iFirstEdge + e] = true;
 		usage->edges[abs(edgeIdx)] = true;
@@ -6676,7 +6652,6 @@ bool Bsp::leaf_add_face(int faceIdx, int leafIdx)
 		return false;
 	}
 
-
 	std::vector<int> all_mark_surfaces;
 	int surface_idx = 0;
 	for (int i = 0; i < leafCount; i++)
@@ -7629,7 +7604,7 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 				{
 					int edgeIdx = surfedges[e];
 					BSPEDGE32& edge = edges[abs(edgeIdx)];
-					vec3 v = edgeIdx >= 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
+					vec3 v = edgeIdx < 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
 					fprintf(polyfile, "%5.8f %5.8f %5.8f\n", v.x, v.y, v.z);
 				}
 			}
@@ -7639,7 +7614,7 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 				{
 					int edgeIdx = surfedges[e];
 					BSPEDGE32& edge = edges[abs(edgeIdx)];
-					vec3 v = edgeIdx >= 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
+					vec3 v = edgeIdx < 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
 					fprintf(polyfile, "%5.8f %5.8f %5.8f\n", v.x, v.y, v.z);
 				}
 			}

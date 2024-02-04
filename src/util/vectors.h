@@ -93,6 +93,7 @@ struct vec3
 	vec3 snap(float snapSize);
 	vec3 normalize_angles();
 	vec3 swap_xz();
+	bool equal(vec3 to, float epsilon = EPSILON);
 	float size_test();
 	float sizeXY_test();
 	vec3 abs();
