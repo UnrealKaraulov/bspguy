@@ -72,7 +72,7 @@ bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 	}
 
 	// TODO: negative normals seem to be working for submodels. Just doesn't work for head nodes?
-	if (shouldFlip)
+	if (shouldFlip && flip)
 	{
 		newNormal *= -1;
 		fdist = -fdist;

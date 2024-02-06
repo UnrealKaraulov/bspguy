@@ -19,7 +19,7 @@ Winding& Winding::operator=(const Winding& other)
 	return *this;
 }
 
-Winding::Winding(int numpoints)
+Winding::Winding(size_t numpoints)
 {
 	m_NumPoints = numpoints;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
@@ -271,7 +271,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 		return true;
 	}
 
-	unsigned maxpts = m_NumPoints + 4;                            // can't use counts[0]+2 because of fp grouping errors
+	size_t maxpts = m_NumPoints + 4; // can't use counts[0]+2 because of fp grouping errors
 	unsigned newNumPoints = 0;
 	vec3* newPoints = new vec3[maxpts];
 	memset(newPoints, 0, sizeof(vec3) * maxpts);

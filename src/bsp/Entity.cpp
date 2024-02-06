@@ -10,11 +10,6 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 	if (!strlen(key))
 		return;
 
-	if (key == "origin")
-		origin = parseVector(value);
-	if (key == "classname")
-		classname = value;
-
 	int dup = 1;
 	if (keyvalues.find(key) == keyvalues.end())
 	{
@@ -55,8 +50,14 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 		}
 	}
 
-	cachedModelIdx = -2;
 	targetsCached = false;
+
+	if (key == "origin")
+		origin = parseVector(value);
+	if (key == "classname")
+		classname = value;
+	if (key == "model")
+		cachedModelIdx = -2;
 
 	if (key.starts_with("render"))
 		updateRenderModes();
@@ -66,9 +67,6 @@ void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
 {
 	if (!key.size())
 		return;
-
-	cachedModelIdx = -2;
-	targetsCached = false;
 
 	addKeyvalue(key, value);
 }
@@ -82,12 +80,15 @@ void Entity::removeKeyvalue(const std::string key)
 		origin = vec3();
 	if (key == "classname")
 		classname = "";
+	if (key == "model")
+		cachedModelIdx = -2;
+
 
 	if (std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end())
 		keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
 
 	keyvalues.erase(key);
-	cachedModelIdx = -2;
+
 	targetsCached = false;
 
 	if (key.starts_with("render"))
@@ -129,7 +130,11 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	keyvalues[newName] = keyvalues[keyOrder[idx]];
 	keyvalues.erase(keyOrder[idx]);
 	keyOrder[idx] = newName;
-	cachedModelIdx = -2;
+
+	if (keyName == "model" || newName == "model")
+	{
+		cachedModelIdx = -2;
+	}
 	targetsCached = false;
 
 
@@ -182,7 +187,12 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 	keyvalues[newName] = keyvalues[keyOrder[idx]];
 	keyvalues.erase(keyOrder[idx]);
 	keyOrder[idx] = newName;
-	cachedModelIdx = -2;
+
+	if (oldName == "model" || newName == "model")
+	{
+		cachedModelIdx = -2;
+	}
+
 	targetsCached = false;
 
 
@@ -200,6 +210,7 @@ void Entity::clearAllKeyvalues()
 	keyOrder.clear();
 	keyvalues.clear();
 	cachedModelIdx = -2;
+	targetsCached = false;
 }
 
 void Entity::clearEmptyKeyvalues()
@@ -213,8 +224,6 @@ void Entity::clearEmptyKeyvalues()
 		}
 	}
 	keyOrder = std::move(newKeyOrder);
-	cachedModelIdx = -2;
-	targetsCached = false;
 }
 
 bool Entity::hasKey(const std::string key)
@@ -227,6 +236,12 @@ int Entity::getBspModelIdx()
 	if (cachedModelIdx != -2)
 	{
 		return cachedModelIdx;
+	}
+
+	if (hasKey("classname") && keyvalues["classname"] == "worldspawn")
+	{
+		cachedModelIdx = 0;
+		return 0;
 	}
 
 	if (!hasKey("model"))
@@ -254,6 +269,11 @@ int Entity::getBspModelIdx()
 
 int Entity::getBspModelIdxForce()
 {
+	if (hasKey("classname") && keyvalues["classname"] == "worldspawn")
+	{
+		return 0;
+	}
+
 	if (!hasKey("model"))
 	{
 		return -1;
@@ -280,7 +300,7 @@ bool Entity::isBspModel()
 
 bool Entity::isWorldSpawn()
 {
-	return hasKey("classname") && keyvalues["classname"] == "worldspawn";
+	return getBspModelIdx() == 0;
 }
 
 // TODO: maybe store this in a text file or something

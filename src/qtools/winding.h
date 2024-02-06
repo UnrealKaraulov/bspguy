@@ -16,12 +16,12 @@ struct BSPFACE32;
 class Winding
 {
 public:
-	int  m_NumPoints;
+	size_t m_NumPoints;
 	vec3* m_Points;
 
 	Winding(Bsp* bsp, const BSPFACE32& face, float epsilon = ON_EPSILON);
 	Winding(const std::vector<vec3> & points, float epsilon = ON_EPSILON);
-	Winding(int numpoints);
+	Winding(size_t numpoints);
 	Winding(const BSPPLANE& plane, float epsilon = ON_EPSILON);
 	Winding();
 	Winding(const Winding& other);

@@ -2,7 +2,7 @@
 
 #include <string>
 
-#define PI 3.141592f
+#define HL_PI 3.141592f
 
 #define EPSILON 0.0001f // EPSILON from rad.h / 10
 

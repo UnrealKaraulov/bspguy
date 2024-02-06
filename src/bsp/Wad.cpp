@@ -556,7 +556,7 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 }
 
 
-COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette)
+COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette, int colors)
 {
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0261),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
@@ -571,7 +571,7 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette)
 
 	for (int k = 0; k < sz; k++)
 	{
-		if (wadTex->szName[0] == '{' && (255 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
+		if (wadTex->szName[0] == '{' && (colors - 1 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
 		{
 			imageData[k] = COLOR4(255, 255, 255, 0);
 		}
@@ -586,7 +586,7 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette)
 	return imageData;
 }
 
-COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette)
+COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
 {
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0263),tex->szName,tex->nWidth,tex->nHeight);
@@ -601,7 +601,7 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette)
 
 	for (int k = 0; k < sz; k++)
 	{
-		if (tex->szName[0] == '{'  && (255 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
+		if (tex->szName[0] == '{'  && (colors - 1 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
 		{
 			imageData[k] = COLOR4(0, 0, 0, 0);
 		}

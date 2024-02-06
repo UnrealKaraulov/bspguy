@@ -307,7 +307,7 @@ public:
 	void cutEnt();
 	void copyEnt();
 	void pasteEnt(bool noModifyOrigin);
-	void deleteEnt(int entIdx = 0);
+	void deleteEnt(size_t entIdx = 0);
 	void deleteEnts();
 	void scaleSelectedObject(float x, float y, float z);
 	void scaleSelectedObject(vec3 dir, const vec3& fromDir, bool logging = false);
@@ -317,8 +317,8 @@ public:
 	void deselectObject(bool onlyobject = false); // keep map selected but unselect all objects
 	void selectFace(Bsp* map, int face, bool add = false);
 	void deselectFaces();
-	void selectEnt(Bsp* map, int entIdx, bool add = false);
-	void goToEnt(Bsp* map, int entIdx);
+	void selectEnt(Bsp* map, size_t entIdx, bool add = false);
+	void goToEnt(Bsp* map, size_t entIdx);
 	void goToCoords(float x, float y, float z);
 	void goToCoords(const vec3& pos);
 	void goToFace(Bsp* map, int faceIdx);

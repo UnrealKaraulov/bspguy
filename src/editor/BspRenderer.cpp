@@ -395,7 +395,18 @@ void BspRenderer::loadTextures()
 		}
 		else
 		{
-			imageData = ConvertMipTexToRGB(tex, map->is_texture_with_pal(i) ? NULL : (COLOR3*)g_settings.palette_data);
+			COLOR3 palette[256];
+			if (g_settings.pal_id >= 0)
+			{
+				memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+			}
+			else
+			{
+				memcpy(palette, g_settings.palette_default,
+					256 * sizeof(COLOR3));
+			}
+
+			imageData = ConvertMipTexToRGB(tex, map->is_texture_with_pal(i) ? NULL : (COLOR3*)palette);
 			embedCount++;
 		}
 
@@ -1557,7 +1568,7 @@ void BspRenderer::preRenderEnts()
 	}
 }
 
-void BspRenderer::refreshPointEnt(int entIdx)
+void BspRenderer::refreshPointEnt(size_t entIdx)
 {
 	//int skipIdx = 0;
 
@@ -1585,13 +1596,13 @@ void BspRenderer::refreshPointEnt(int entIdx)
 	//}
 }
 
-void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
+void BspRenderer::setRenderAngles(size_t entIdx, vec3 angles)
 {
 	if (!map->ents[entIdx]->hasKey("classname"))
 	{
-		renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (PI / 180.0f)));
-		renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
-		renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (HL_PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
+		renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
 		renderEnts[entIdx].needAngles = false;
 	}
 	else
@@ -1602,8 +1613,8 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		{
 			renderEnts[entIdx].angles.y = 0.0f;
 			renderEnts[entIdx].modelMat4x4_angles.rotateY(0.0f);
-			renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
-			renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
+			renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
+			renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
 		}
 		else if (IsEntNotSupportAngles(entClassName))
 		{
@@ -1615,14 +1626,14 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 			{
 				renderEnts[entIdx].angles.z = 0.0f;
 				renderEnts[entIdx].modelMat4x4_angles.rotateY(0.0);
-				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.y * (HL_PI / 180.0f)));
 			}
 			else
 			{
-				renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (HL_PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
 			}
 		}
 		else
@@ -1632,18 +1643,18 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 			{
 				if (entClassName.starts_with(prefix))
 				{
-					renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (PI / 180.0f)));
-					renderEnts[entIdx].modelMat4x4_angles.rotateZ((angles.x * (PI / 180.0f)));
-					renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (HL_PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4_angles.rotateZ((angles.x * (HL_PI / 180.0f)));
+					renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
 					foundAngles = true;
 					break;
 				}
 			}
 			if (!foundAngles)
 			{
-				renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (HL_PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
+				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
 			}
 		}
 	}
@@ -1654,7 +1665,7 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 	}
 }
 
-void BspRenderer::refreshEnt(int entIdx)
+void BspRenderer::refreshEnt(size_t entIdx)
 {
 	if (entIdx < 0 || !g_app->pointEntRenderer)
 		return;
@@ -2347,11 +2358,11 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	bool need_refresh_mat = true;
 
-	if ((old_rend_offs - renderOffset).length() > 0.01)
+	/*if ((old_rend_offs - renderOffset).length() > 0.01)
 	{
 		need_refresh_mat = true;
 		old_rend_offs = renderOffset;
-	}
+	}*/
 
 	if (need_refresh_mat)
 	{
@@ -2470,7 +2481,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		}
 	}
 
-	if (highlightEnts.size())
+	if (highlightEnts.size() && map == g_app->SelectedMap)
 	{
 		if (g_render_flags & RENDER_SELECTED_AT_TOP && !modelVertsDraw)
 		{
@@ -3061,11 +3072,11 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 		return false;
 
 
-	int entidx = map->get_ent_from_model(modelIdx);
+	int entIdx = map->get_ent_from_model(modelIdx);
 
-	if (entidx >= 0)
+	if (entIdx >= 0)
 	{
-		if (map->ents[entidx]->hide)
+		if (map->ents[entIdx]->hide)
 			return false;
 	}
 
@@ -3227,11 +3238,8 @@ int BspRenderer::getBestClipnodeHull(int modelIdx)
 }
 
 
-void BspRenderer::saveEntityState(int entIdx)
+void BspRenderer::saveEntityState(size_t entIdx)
 {
-	if (entIdx < 0)
-		return;
-
 	undoEntityStateMap[entIdx] = *map->ents[entIdx];
 }
 
@@ -3246,17 +3254,17 @@ void BspRenderer::saveLumpState()
 	}
 }
 
-void BspRenderer::pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity* ent)
+void BspRenderer::pushEntityUndoStateDelay(const std::string& actionDesc, size_t entIdx, Entity* ent)
 {
 	delayEntUndoList.push_back({ actionDesc,entIdx,ent });
 }
 
 
-void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
+void BspRenderer::pushEntityUndoState(const std::string& actionDesc, size_t entIdx)
 {
 	if (g_verbose)
 		print_log("SAVE ENT STATES TO BACKUP\n");
-	if (entIdx < 0)
+	if (entIdx >= map->ents.size())
 	{
 		print_log(get_localized_string(LANG_0287));
 		return;
@@ -3315,11 +3323,15 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 		return;
 	}
 
-	auto entIdx = g_app->pickInfo.GetSelectedEnts();
+	auto entIdx = g_app->pickInfo.selectedEnts;
 	if (!entIdx.size() && g_app->pickInfo.selectedFaces.size())
 	{
 		int modelIdx = map->get_model_from_face((int)g_app->pickInfo.selectedFaces[0]);
-		entIdx.push_back(map->get_ent_from_model(modelIdx));
+		if (modelIdx >= 0)
+		{
+			int entid = map->get_ent_from_model(modelIdx);
+			entIdx.push_back(entid);
+		}
 	}
 	if (!entIdx.size())
 	{
@@ -3479,43 +3491,6 @@ PickInfo::PickInfo()
 	selectedEnts.clear();
 	selectedFaces.clear();
 	bestDist = 0.0f;
-}
-
-std::vector<size_t> PickInfo::GetSelectedEnts()
-{
-	return selectedEnts;
-}
-
-void PickInfo::AddSelectedEnt(int entIdx)
-{
-	if (entIdx >= 0)
-	{
-		if (!IsSelectedEnt(entIdx))
-		{
-			selectedEnts.push_back(entIdx);
-		}
-	}
-	pickCount++;
-}
-
-void PickInfo::SetSelectedEnt(int entIdx)
-{
-	selectedEnts.clear();
-	AddSelectedEnt(entIdx);
-}
-
-void PickInfo::DelSelectedEnt(int entIdx)
-{
-	if (IsSelectedEnt(entIdx))
-	{
-		pickCount++;
-		selectedEnts.erase(std::find(selectedEnts.begin(), selectedEnts.end(), (size_t)entIdx));
-	}
-}
-
-bool PickInfo::IsSelectedEnt(int entIdx)
-{
-	return entIdx >= 0 && selectedEnts.size() && std::find(selectedEnts.begin(), selectedEnts.end(), (size_t)entIdx) != selectedEnts.end();
 }
 
 void PickInfo::AddSelectedEnt(size_t entIdx)

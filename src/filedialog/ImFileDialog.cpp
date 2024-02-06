@@ -27,7 +27,7 @@
 #define ICON_SIZE ImGui::GetFont()->FontSize + 3
 #define GUI_ELEMENT_SIZE std::max(GImGui->FontSize + 10.f, 24.f)
 #define DEFAULT_ICON_SIZE 32
-#define PI 3.141592f
+#define HL_PI 3.141592f
 
 namespace ifd
 {
@@ -258,7 +258,7 @@ namespace ifd
 		int numPoints = 5;
 		float innerRadius = size / 4;
 		float outerRadius = size / 2;
-		float angle = PI / numPoints;
+		float angle = HL_PI / numPoints;
 		ImVec2 center = ImVec2(pos.x + size / 2, pos.y + size / 2);
 
 		// fill

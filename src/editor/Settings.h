@@ -48,6 +48,7 @@ struct PathToggleStruct
 struct PaletteData
 {
 	std::string name;
+	unsigned int colors;
 	unsigned char data[0x300];
 };
 
@@ -80,7 +81,9 @@ struct AppSettings
 	std::vector<PaletteData> palettes;
 	std::string palette_name;
 
-	unsigned char palette_data[0x300];
+	unsigned char palette_default[256 * sizeof(COLOR3)];
+
+	int pal_id;
 
 	bool settingLoaded; // Settings loaded
 	bool verboseLogs;

@@ -387,7 +387,7 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 	mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
-	BSPMODEL& model = models[modelIdx];
+	//BSPMODEL& model = models[modelIdx];
 	auto rndverts = getModelVerts(modelIdx);
 	for (auto const& s : rndverts)
 	{
@@ -2100,12 +2100,12 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	delete[] usedModels;
 
 	if (target & CLEAN_TEXTURES)
-		remove_unused_wad_files(this, this);
+		update_unused_wad_files(this, this);
 
 	return removeCount;
 }
 
-void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
+void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 {
 	if (!baseMap || !targetMap || !baseMap->getBspRender() || baseMap->getBspRender()->wads.empty())
 		return;
@@ -2141,26 +2141,32 @@ void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 					{
 						if (wad->hasTexture(tex->szName) && texNames.count(tex->szName) == 0)
 						{
-							WADTEX* wadTex = wad->readTexture(tex->szName);
+							unsigned int colorCount = 256;
+							COLOR3 palette[256];
+							if (g_settings.pal_id >= 0)
+							{
+								colorCount = g_settings.palettes[g_settings.pal_id].colors;
+								memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+							}
+							else
+							{
+								colorCount = 256;
+								memcpy(palette, g_settings.palette_default,
+									256 * sizeof(COLOR3));
+							}
 
+							WADTEX* wadTex = wad->readTexture(tex->szName);
 							texNames.insert(tex->szName);
 
 							if (tex_type == 1)
 							{
-								int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
-								COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-								unsigned char* src = wadTex->data;
-								COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
-
-								int sz = wadTex->nWidth * wadTex->nHeight;
-								for (int n = 0; n < sz; n++)
-								{
-									imageData[n] = palette[src[n]];
-								}
-
-								targetMap->add_texture(tex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight, NULL, true);
-
-								delete[] imageData;
+								COLOR3* newTex = ConvertWadTexToRGB(wadTex);
+								Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+								tmpCQuantizer->SetColorTable(palette, 256);
+								tmpCQuantizer->ApplyColorTable((COLOR3*) newTex, wadTex->nWidth *  wadTex->nHeight);
+								delete tmpCQuantizer;
+								targetMap->add_texture(tex->szName, (unsigned char*)newTex, wadTex->nWidth, wadTex->nHeight, true);
+								delete[] newTex;
 							}
 							else
 							{
@@ -4590,7 +4596,7 @@ std::vector<size_t> Bsp::get_model_ents_ids(int modelIdx)
 	std::vector<size_t> uses;
 	for (size_t i = 0; i < ents.size(); i++)
 	{
-		if (ents[i]->getBspModelIdxForce() == modelIdx)
+		if (ents[i]->getBspModelIdx() == modelIdx)
 		{
 			uses.push_back(i);
 		}
@@ -5217,7 +5223,7 @@ BSPMIPTEX* Bsp::find_embedded_wad_texture(const char* name, int& texid)
 	return NULL;
 }
 
-int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int height, const unsigned char* custompal, bool force_quake_pal)
+int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int height, bool force_custompal)
 {
 	if (!oldname || oldname[0] == '\0' || strlen(oldname) >= MAXTEXTURENAME)
 	{
@@ -5339,7 +5345,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	int colorCount = 0;
 
 
-	if (is_texture_pal && !force_quake_pal)
+	if (is_texture_pal && !force_custompal)
 	{
 		texDataSize += width * height + sizeof(short) /* palette count */ + sizeof(COLOR3) * 256;
 	}
@@ -5356,19 +5362,21 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		COLOR3* src = (COLOR3*)data;
 
 		// If custom pal || quake || force quake
-		if (!is_texture_pal || force_quake_pal)
+		if (!is_texture_pal || force_custompal)
 		{
-			colorCount = 256;
-			if (custompal)
+			if (g_settings.pal_id >= 0)
 			{
-				memcpy(palette, custompal, 256 * sizeof(COLOR3));
+				colorCount = g_settings.palettes[g_settings.pal_id].colors;
+				memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
 			}
 			else
 			{
-				memcpy(palette, g_settings.palette_data, 256 * sizeof(COLOR3));
+				colorCount = 256;
+				memcpy(palette,g_settings.palette_default,
+					256 * sizeof(COLOR3));
 			}
-			Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-			tmpCQuantizer->SetColorTable(palette, 256);
+			Quantizer* tmpCQuantizer = new Quantizer(colorCount, 8);
+			tmpCQuantizer->SetColorTable(palette, colorCount);
 			tmpCQuantizer->ApplyColorTable((COLOR3*)data, width * height);
 			delete tmpCQuantizer;
 		}
@@ -5459,7 +5467,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 		size_t palleteOffset = oldtex->nOffsets[3] + (width >> 3) * (height >> 3);
 
-		if (is_texture_pal && !force_quake_pal)
+		if (is_texture_pal && !force_custompal)
 		{
 			palleteOffset += sizeof(short) /* pal count */;
 			memcpy(textures + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
@@ -5539,13 +5547,13 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + sizeof(short);
 		unsigned char* paletteCount = newTexData + newTexOffset + (palleteOffset - sizeof(short));
 
-		if (is_texture_pal && !force_quake_pal)
+		if (is_texture_pal && !force_custompal)
 		{
 			memcpy(newTexData + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
 		}
 		// 256 palette
 		paletteCount[0] = 0x00;
-		paletteCount[1] = 0x01;
+		paletteCount[1] = force_custompal ? 0x00 : 0x01;
 
 		for (int i = 0; i < MIPLEVELS; i++)
 		{
@@ -5848,7 +5856,6 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 			info.vT = faceUp[i];
 			info.vS = crossProduct(faceUp[i], faceNormals[i]);
 			// TODO: fit texture to face
-
 		}
 
 		replace_lump(LUMP_TEXINFO, newTexinfos, (texinfoCount + 6) * sizeof(BSPTEXTUREINFO));
@@ -7295,7 +7302,7 @@ int Bsp::get_model_from_leaf(int leafIdx)
 	return -1;
 }
 
-bool Bsp::is_worldspawn_ent(int entIdx)
+bool Bsp::is_worldspawn_ent(size_t entIdx)
 {
 	if (entIdx < 0 || entIdx >= (int)ents.size())
 		return true;
@@ -7844,7 +7851,21 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 				{
 					if (texOffset >= 0)
 					{
-						COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)), is_texture_with_pal(texinfo.iMiptex) ? NULL : (COLOR3*)g_settings.palette_data);
+						int colorCount = 256;
+						COLOR3 palette[256];
+						if (g_settings.pal_id >= 0)
+						{
+							colorCount = g_settings.palettes[g_settings.pal_id].colors;
+							memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+						}
+						else
+						{
+							colorCount = 256;
+							memcpy(palette, g_settings.palette_default,
+								256 * sizeof(COLOR3));
+						}
+
+						COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)), is_texture_with_pal(texinfo.iMiptex) ? NULL : palette);
 
 						for (int k = 0; k < tex.nHeight * tex.nWidth; k++)
 						{
@@ -8312,7 +8333,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 		bsprend->reload();
 
-		for (unsigned int entIdx = 0; entIdx < ents.size(); entIdx++)
+		for (size_t entIdx = 0; entIdx < ents.size(); entIdx++)
 		{
 			int modelIdx = is_worldspawn_ent(entIdx) ? 0 : bsprend->renderEnts[entIdx].modelIdx;
 			if (modelIdx < 0 || modelIdx > bsprend->numRenderModels)
@@ -8509,9 +8530,9 @@ int Bsp::getBspTextureSize(int textureid)
 	int sz = sizeof(BSPMIPTEX);
 	if (tex->nOffsets[0] > 0)
 	{
-		sz += sizeof(short); /* pal size */
 		if (is_texture_with_pal(textureid))
 		{
+			sz += sizeof(short); /* pal size */
 			sz += sizeof(COLOR3) * 256; // pallette
 		}
 		for (int i = 0; i < MIPLEVELS; i++)

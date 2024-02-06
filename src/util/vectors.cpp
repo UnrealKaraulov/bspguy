@@ -164,9 +164,9 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 {
 	mat4x4 rotMat;
 	rotMat.loadIdentity();
-	rotMat.rotateX(PI * angles.x / 180.0f);
-	rotMat.rotateY(PI * angles.y / 180.0f);
-	rotMat.rotateZ(PI * angles.z / 180.0f);
+	rotMat.rotateX(HL_PI * angles.x / 180.0f);
+	rotMat.rotateY(HL_PI * angles.y / 180.0f);
+	rotMat.rotateZ(HL_PI * angles.z / 180.0f);
 
 	vec4 f = rotMat * vec4(0.0f, 1.0f, 0.0f, 1.0f);
 	vec4 r = rotMat * vec4(1.0f, 0.0f, 0.0f, 1.0f);
@@ -669,8 +669,8 @@ void QuaternionSlerp(const vec4& p, vec4& q, float t, vec4& qt)
 		qt[1] = p[0];
 		qt[2] = -p[3];
 		qt[3] = p[2];
-		sclp = sin((1.0f - t) * 0.5f * PI);
-		sclq = sin(t * 0.5f * PI);
+		sclp = sin((1.0f - t) * 0.5f * HL_PI);
+		sclq = sin(t * 0.5f * HL_PI);
 		for (i = 0; i < 3; i++)
 		{
 			qt[i] = sclp * p[i] + sclq * qt[i];

@@ -53,8 +53,7 @@ public:
 	void init();
 	void draw();
 
-	// -1 for empty selection
-	void openContextMenu(int entIdx);
+	void openContextMenu(bool empty);
 	void copyTexture();
 	void pasteTexture();
 	void copyLightmap();
@@ -112,8 +111,7 @@ private:
 
 	int guiHoverAxis; // axis being hovered in the transform menu
 
-	int openEntityContext = -1; // open entity context menu if >= 0
-	bool openEmptyContext = false; // open context menu for rightclicking world/void
+	int openEmptyContext = -2; // open context menu for rightclicking world/void
 
 	int copiedMiptex = -1;
 	LIGHTMAP copiedLightmap = LIGHTMAP();
@@ -127,9 +125,9 @@ private:
 	void drawDebugWidget();
 	void drawTextureBrowser();
 	void drawKeyvalueEditor();
-	void drawKeyvalueEditor_SmartEditTab(int entIdx);
-	void drawKeyvalueEditor_FlagsTab(int entIdx);
-	void drawKeyvalueEditor_RawEditTab(int entIdx);
+	void drawKeyvalueEditor_SmartEditTab(size_t entIdx);
+	void drawKeyvalueEditor_FlagsTab(size_t entIdx);
+	void drawKeyvalueEditor_RawEditTab(size_t entIdx);
 	void drawGOTOWidget();
 	void drawMDLWidget();
 	void drawTransformWidget();

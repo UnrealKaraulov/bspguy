@@ -27,11 +27,11 @@ public:
 class EditEntityCommand : public Command
 {
 public:
-	int entIdx;
+	size_t entIdx;
 	Entity oldEntData;
 	Entity newEntData;
 
-	EditEntityCommand(std::string desc, int entIdx, Entity oldEntData, Entity newEntData);
+	EditEntityCommand(std::string desc, size_t entIdx, Entity oldEntData, Entity newEntData);
 	~EditEntityCommand();
 
 	void execute() override;
@@ -45,10 +45,10 @@ public:
 class DeleteEntityCommand : public Command
 {
 public:
-	int entIdx;
+	size_t entIdx;
 	Entity* entData;
 
-	DeleteEntityCommand(std::string desc, int entIdx);
+	DeleteEntityCommand(std::string desc, size_t entIdx);
 	~DeleteEntityCommand();
 
 	void execute() override;
@@ -78,9 +78,9 @@ class DuplicateBspModelCommand : public Command
 public:
 	int oldModelIdx;
 	int newModelIdx; // TODO: could break redos if this is ever not deterministic
-	int entIdx;
+	size_t entIdx;
 	LumpState oldLumps{};
-	DuplicateBspModelCommand(std::string desc, int entIdx);
+	DuplicateBspModelCommand(std::string desc, size_t entIdx);
 	~DuplicateBspModelCommand();
 
 	void execute() override;
@@ -114,14 +114,14 @@ class EditBspModelCommand : public Command
 {
 public:
 	int modelIdx;
-	int entIdx;
+	size_t entIdx;
 	unsigned int targetLumps;
 	vec3 oldOrigin;
 	vec3 newOrigin;
 	LumpState oldLumps{};
 	LumpState newLumps{};
 
-	EditBspModelCommand(std::string desc, int entIdx, LumpState oldLumps, LumpState newLumps, vec3 oldOrigin, unsigned int targetLumps);
+	EditBspModelCommand(std::string desc, size_t entIdx, LumpState oldLumps, LumpState newLumps, vec3 oldOrigin, unsigned int targetLumps);
 	~EditBspModelCommand();
 
 	void execute() override;

@@ -232,7 +232,7 @@ public:
 
 	// create a new texture from raw RGB data, and embeds into the bsp. 
 	// Returns -1 on failure, else the new texture index
-	int add_texture(const char* name, unsigned char* data, int width, int height, const unsigned char* custompal = NULL, bool force_quake_pal = false);
+	int add_texture(const char* name, unsigned char* data, int width, int height, bool force_custompal = false);
 	int add_texture(WADTEX* tex);
 
 	void replace_lump(int lumpIdx, void* newData, size_t newLength);
@@ -277,7 +277,7 @@ public:
 	int get_model_from_leaf(int leafIdx);
 
 
-	bool is_worldspawn_ent(int entIdx);
+	bool is_worldspawn_ent(size_t entIdx);
 
 	int get_ent_from_model(int modelIdx);
 
@@ -378,4 +378,4 @@ private:
 	unsigned int originCrc32 = 0;
 };
 
-void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type = 0);
+void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type = 0);

@@ -161,12 +161,6 @@ public:
 	float bestDist;
 	PickInfo();
 
-	std::vector<size_t> GetSelectedEnts();
-	void AddSelectedEnt(int entIdx);
-	void SetSelectedEnt(int entIdx);
-	void DelSelectedEnt(int entIdx);
-	bool IsSelectedEnt(int entIdx);
-
 	void AddSelectedEnt(size_t entIdx);
 	void SetSelectedEnt(size_t entIdx);
 	void DelSelectedEnt(size_t entIdx);
@@ -201,12 +195,12 @@ public:
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
 	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
 
-	void setRenderAngles(int entIdx, vec3 angles);
-	void refreshEnt(int entIdx);
+	void setRenderAngles(size_t entIdx, vec3 angles);
+	void refreshEnt(size_t entIdx);
 	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool noTriangulate = false);
 	bool refreshModelClipnodes(int modelIdx);
 	void refreshFace(int faceIdx);
-	void refreshPointEnt(int entIdx);
+	void refreshPointEnt(size_t entIdx);
 	void updateClipnodeOpacity(unsigned char newValue);
 
 	void reload(); // reloads all geometry, textures, and lightmaps
@@ -293,22 +287,22 @@ public:
 	struct DelayEntUndo
 	{
 		std::string description;
-		int entIdx;
+		size_t entIdx;
 		Entity* ent;
 	};
 
 	std::vector<DelayEntUndo> delayEntUndoList;
 
 	void pushModelUndoState(const std::string& actionDesc, unsigned int targets);
-	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
-	void pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity* ent);
+	void pushEntityUndoState(const std::string& actionDesc, size_t entIdx);
+	void pushEntityUndoStateDelay(const std::string& actionDesc, size_t entIdx, Entity* ent);
 	void pushUndoCommand(Command* cmd);
 	void undo();
 	void redo();
 	void clearUndoCommands();
 	void clearRedoCommands();
 	void calcUndoMemoryUsage();
-	void saveEntityState(int entIdx);
+	void saveEntityState(size_t entIdx);
 	void saveLumpState();
 	void clearDrawCache();
 

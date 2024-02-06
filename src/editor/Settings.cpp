@@ -147,7 +147,8 @@ void AppSettings::loadDefault()
 	 0x00, 0xFF, 0x00, 0x00, 0xFF, 0xF3, 0x93, 0xFF, 0xF7, 0xC7, 0xFF, 0xFF, 0xFF, 0x9F, 0x5B, 0x53,
 	};
 
-	memcpy(palette_data, default_data, 0x300);
+	pal_id = -1;
+	memcpy(palette_default, default_data, 0x300);
 
 	ResetBspLimits();
 }
@@ -254,10 +255,17 @@ void AppSettings::fillPalettes(const std::string& folderPath)
 				char* data = loadFile(entry.path().string(), len);
 				if (data)
 				{
-					filename.pop_back(); filename.pop_back(); filename.pop_back(); filename.pop_back();
-					palettes.push_back({ toUpperCase(filename), NULL });
-					memcpy(palettes[palettes.size() - 1].data, data, std::min(len, 0x300));
-					delete[] data;
+					if (len > 256 * sizeof(COLOR3))
+					{
+						print_log(PRINT_RED, "Bad palette \"{}\" size : {} bytes!", entry.path().string(), len);
+					}
+					else
+					{
+						filename.pop_back(); filename.pop_back(); filename.pop_back(); filename.pop_back();
+						palettes.push_back({ toUpperCase(filename), (unsigned int)(len / sizeof(COLOR3)), NULL});
+						memcpy(palettes[palettes.size() - 1].data, data, len);
+						delete[] data;
+					}
 				}
 			}
 		}
@@ -452,11 +460,12 @@ void AppSettings::load()
 		else if (key == "palette")
 		{
 			g_settings.palette_name = val;
-			for (auto pal : palettes)
+			pal_id = -1;
+			for(size_t i = 0; i < palettes.size();i++)
 			{
-				if (toLowerCase(pal.name) == toLowerCase(g_settings.palette_name))
+				if (toLowerCase(palettes[i].name) == toLowerCase(g_settings.palette_name))
 				{
-					memcpy(palette_data, pal.data, sizeof(palette_data));
+					pal_id = (int)i;
 				}
 			}
 		}
@@ -868,11 +877,4 @@ void AppSettings::save()
 	FixupAllSystemPaths();
 	g_app->saveSettings();
 	save(g_settings_path);
-	for (auto pal : palettes)
-	{
-		if (toLowerCase(pal.name) == toLowerCase(g_settings.palette_name))
-		{
-			memcpy(palette_data, pal.data, sizeof(palette_data));
-		}
-	}
 }

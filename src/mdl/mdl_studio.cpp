@@ -98,7 +98,7 @@ void StudioModel::CalcBoneAdj()
 		case STUDIO_XR:
 		case STUDIO_YR:
 		case STUDIO_ZR:
-			m_adj[j] = value * (PI / 180.0f);
+			m_adj[j] = value * (HL_PI / 180.0f);
 			break;
 		case STUDIO_X:
 		case STUDIO_Y:

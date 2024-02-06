@@ -43,7 +43,7 @@ void mat4x4::perspective(float fov, float aspect, float near, float far)
 {
 	loadIdentity();
 	float ymax, xmax;
-	ymax = near * tanf(fov * (PI / 360.0f));
+	ymax = near * tanf(fov * (HL_PI / 360.0f));
 	xmax = ymax * aspect;
 	glhFrustumf2(m, -xmax, xmax, -ymax, ymax, near, far);
 }
@@ -140,13 +140,13 @@ void mat4x4::rotate(float pitch, float yaw, float roll)
 	float angle;
 	float sr, sp, sy, cr, cp, cy;
 
-	angle = yaw * (PI * 2.0f / 360.0f);
+	angle = yaw * (HL_PI * 2.0f / 360.0f);
 	sy = sin(angle);
 	cy = cos(angle);
-	angle = pitch * (PI * 2.0f / 360.0f);
+	angle = pitch * (HL_PI * 2.0f / 360.0f);
 	sp = sin(angle);
 	cp = cos(angle);
-	angle = roll * (PI * 2.0f / 360.0f);
+	angle = roll * (HL_PI * 2.0f / 360.0f);
 	sr = sin(angle);
 	cr = cos(angle);
 

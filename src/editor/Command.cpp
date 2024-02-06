@@ -36,7 +36,7 @@ BspRenderer* Command::getBspRenderer()
 //
 // Edit entity
 //
-EditEntityCommand::EditEntityCommand(std::string desc, int entIdx, Entity oldEntData, Entity newEntData)
+EditEntityCommand::EditEntityCommand(std::string desc, size_t entIdx, Entity oldEntData, Entity newEntData)
 	: Command(desc, g_app->getSelectedMapId())
 {
 	this->entIdx = entIdx;
@@ -104,7 +104,7 @@ size_t EditEntityCommand::memoryUsage()
 //
 // Delete entity
 //
-DeleteEntityCommand::DeleteEntityCommand(std::string desc, int entIdx)
+DeleteEntityCommand::DeleteEntityCommand(std::string desc, size_t entIdx)
 	: Command(desc, g_app->getSelectedMapId())
 {
 	this->entIdx = entIdx;
@@ -121,9 +121,6 @@ DeleteEntityCommand::~DeleteEntityCommand()
 
 void DeleteEntityCommand::execute()
 {
-	if (entIdx < 0)
-		return;
-
 	Bsp* map = getBsp();
 
 	if (!map)
@@ -241,11 +238,11 @@ size_t CreateEntityCommand::memoryUsage()
 //
 // Duplicate BSP Model command
 //
-DuplicateBspModelCommand::DuplicateBspModelCommand(std::string desc, int entIdx)
+DuplicateBspModelCommand::DuplicateBspModelCommand(std::string desc, size_t entIdx)
 	: Command(desc, g_app->getSelectedMapId())
 {
-	int tmpentIdx = entIdx;
-	int modelIdx = 0;
+	size_t tmpentIdx = entIdx;
+	int modelIdx = -1;
 	Bsp* map = g_app->getSelectedMap();
 	if (map && tmpentIdx >= 0)
 	{
@@ -355,7 +352,10 @@ CreateBspModelCommand::CreateBspModelCommand(std::string desc, int mapIdx, Entit
 	*this->entData = *entData;
 	this->mdl_size = size;
 	this->empty = empty;
-	oldLumps.lumps->clear();
+	for (int i = 0; i < HEADER_LUMPS; i++)
+	{
+		oldLumps.lumps[i].clear();
+	}
 }
 
 CreateBspModelCommand::~CreateBspModelCommand()
@@ -498,7 +498,7 @@ int CreateBspModelCommand::addDefaultTexture()
 //
 // Edit BSP model
 //
-EditBspModelCommand::EditBspModelCommand(std::string desc, int entIdx, LumpState oldLumps, LumpState newLumps,
+EditBspModelCommand::EditBspModelCommand(std::string desc, size_t entIdx, LumpState oldLumps, LumpState newLumps,
 	vec3 oldOrigin, unsigned int targetLumps) : Command(desc, g_app->getSelectedMapId())
 {
 
@@ -539,13 +539,12 @@ void EditBspModelCommand::execute()
 		return;
 
 	map->replace_lumps(newLumps);
-	if (entIdx >= 0 && entIdx < map->ents.size())
+	if (entIdx < map->ents.size())
 	{
 		map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 		map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
+		refresh();
 	}
-
-	refresh();
 }
 
 void EditBspModelCommand::undo()
@@ -555,11 +554,8 @@ void EditBspModelCommand::undo()
 		return;
 
 	map->replace_lumps(oldLumps);
-	if (entIdx >= 0)
-	{
-		map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
-		map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
-	}
+	map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
+	map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
 	refresh();
 
 	BspRenderer* renderer = getBspRenderer();
@@ -603,7 +599,7 @@ void EditBspModelCommand::refresh()
 	{
 		if (i == LUMP_LIGHTING && newLumps.lumps[i].size())
 		{
-		//	renderer->updateLightmapInfos();
+			//	renderer->updateLightmapInfos();
 			map->getBspRender()->loadLightmaps();
 		}
 		else if (i == LUMP_ENTITIES && newLumps.lumps[i].size())
@@ -656,7 +652,7 @@ void CleanMapCommand::execute()
 	BspRenderer* renderer = getBspRenderer();
 	if (!renderer)
 		return;
-	print_log(get_localized_string(LANG_0296),map->bsp_name);
+	print_log(get_localized_string(LANG_0296), map->bsp_name);
 	map->remove_unused_model_structures().print_delete_stats(1);
 
 	refresh();
@@ -724,7 +720,7 @@ void OptimizeMapCommand::execute()
 		return;
 	map->update_ent_lump();
 
-	print_log(get_localized_string(LANG_0297),map->bsp_name);
+	print_log(get_localized_string(LANG_0297), map->bsp_name);
 	if (!map->has_hull2_ents())
 	{
 		print_log(get_localized_string(LANG_0298));

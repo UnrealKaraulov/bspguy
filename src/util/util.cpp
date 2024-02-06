@@ -433,6 +433,7 @@ bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist)
 	/* Check final candidate actually inside box */
 	if (maxT[whichPlane] < 0.0f)
 		return false;
+
 	for (i = 0; i < 3; i++)
 	{
 		if (whichPlane != i)
@@ -888,7 +889,7 @@ std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 			float a2 = atan2(b.x - center.x, b.y - center.y);
 			float angle = a2 - a1;
 			if (angle < 0)
-				angle += PI * 2;
+				angle += HL_PI * 2;
 
 			if (angle < bestAngle)
 			{
@@ -1235,11 +1236,11 @@ float AngleFromTextureAxis(vec3 axis, bool x, int type)
 	{
 		if (x)
 		{
-			return -1.f * atan2(axis.y, axis.x) * (180.f / PI);
+			return -1.f * atan2(axis.y, axis.x) * (180.f / HL_PI);
 		}
 		else
 		{
-			return atan2(axis.x, axis.y) * (180.f / PI);
+			return atan2(axis.x, axis.y) * (180.f / HL_PI);
 		}
 	}
 
@@ -1248,11 +1249,11 @@ float AngleFromTextureAxis(vec3 axis, bool x, int type)
 	{
 		if (x)
 		{
-			return -1.f * atan2(axis.z, axis.y) * (180.f / PI);
+			return -1.f * atan2(axis.z, axis.y) * (180.f / HL_PI);
 		}
 		else
 		{
-			return atan2(axis.y, axis.z) * (180.f / PI);
+			return atan2(axis.y, axis.z) * (180.f / HL_PI);
 		}
 	}
 
@@ -1260,11 +1261,11 @@ float AngleFromTextureAxis(vec3 axis, bool x, int type)
 	{
 		if (x)
 		{
-			return -1.f * atan2(axis.z, axis.x) * (180.f / PI);
+			return -1.f * atan2(axis.z, axis.x) * (180.f / HL_PI);
 		}
 		else
 		{
-			return atan2(axis.x, axis.z) * (180.f / PI);
+			return atan2(axis.x, axis.z) * (180.f / HL_PI);
 		}
 	}
 
@@ -1282,13 +1283,13 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 	{
 		if (x)
 		{
-			retval.y = -1.f * sin(angle / 180.f * PI);
-			retval.x = cos(angle / 180.f * PI);
+			retval.y = -1.f * sin(angle / 180.f * HL_PI);
+			retval.x = cos(angle / 180.f * HL_PI);
 		}
 		else
 		{
-			retval.x = -1.f * sin((angle + 180.f) / 180.f * PI);
-			retval.y = -1.f * cos((angle + 180.f) / 180.f * PI);
+			retval.x = -1.f * sin((angle + 180.f) / 180.f * HL_PI);
+			retval.y = -1.f * cos((angle + 180.f) / 180.f * HL_PI);
 		}
 		return retval;
 	}
@@ -1297,13 +1298,13 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 	{
 		if (x)
 		{
-			retval.z = -1.f * sin(angle / 180.f * PI);
-			retval.y = cos(angle / 180.f * PI);
+			retval.z = -1.f * sin(angle / 180.f * HL_PI);
+			retval.y = cos(angle / 180.f * HL_PI);
 		}
 		else
 		{
-			retval.y = -1.f * sin((angle + 180.f) / 180.f * PI);
-			retval.z = -1.f * cos((angle + 180.f) / 180.f * PI);
+			retval.y = -1.f * sin((angle + 180.f) / 180.f * HL_PI);
+			retval.z = -1.f * cos((angle + 180.f) / 180.f * HL_PI);
 		}
 		return retval;
 	}
@@ -1313,13 +1314,13 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 	{
 		if (x)
 		{
-			retval.z = -1.f * sin(angle / 180.f * PI);
-			retval.x = cos(angle / 180.f * PI);
+			retval.z = -1.f * sin(angle / 180.f * HL_PI);
+			retval.x = cos(angle / 180.f * HL_PI);
 		}
 		else
 		{
-			retval.x = -1.f * sin((angle + 180.f) / 180.f * PI);
-			retval.z = -1.f * cos((angle + 180.f) / 180.f * PI);
+			retval.x = -1.f * sin((angle + 180.f) / 180.f * HL_PI);
+			retval.z = -1.f * cos((angle + 180.f) / 180.f * HL_PI);
 		}
 		return retval;
 	}
