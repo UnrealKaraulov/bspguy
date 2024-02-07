@@ -256,7 +256,7 @@ public:
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 		std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 		std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures);
+		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32> & newLeafs, std::vector<int>& newMarkSurfs, bool skipLeafs = false);
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);
@@ -363,7 +363,7 @@ private:
 
 	// marks all structures that this model uses
 	// TODO: don't mark faces in submodel leaves (unused)
-	void mark_model_structures(int modelIdx, STRUCTUSAGE* STRUCTUSAGE, bool skipLeaves, bool makeSomething = false);
+	void mark_model_structures(int modelIdx, STRUCTUSAGE* STRUCTUSAGE, bool skipLeaves);
 	void mark_face_structures(int iFace, STRUCTUSAGE* usage);
 	void mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves);
 	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);

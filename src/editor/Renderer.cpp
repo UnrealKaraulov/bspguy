@@ -575,7 +575,7 @@ void Renderer::renderLoop()
 					}
 				}
 
-				modelUsesSharedStructures = modelIdx >= 0 && SelectedMap->does_model_use_shared_structures(modelIdx);
+				modelUsesSharedStructures = modelIdx == 0 || modelIdx > 0 && SelectedMap->does_model_use_shared_structures(modelIdx);
 
 				isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
 				isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN && modelIdx >= 0;

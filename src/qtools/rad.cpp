@@ -291,7 +291,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 		if (maxs_out[i] - mins_out[i] < 0)
 		{
 			retval = false;
-			print_log(PRINT_RED, "Face {} extents are bad. Map can crash.", facenum);
+			print_log(PRINT_RED, "Face {} extents are bad. Map can crash.\n", facenum);
 			mins_out[i] = 1;
 			maxs_out[i] = 1;
 		}

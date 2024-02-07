@@ -317,192 +317,394 @@ void Gui::pasteLightmap()
 	dst.nLightmapOffset = src.nLightmapOffset;
 }
 
-void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
+void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 {
-	print_log(get_localized_string(LANG_0315));
-	src_map->update_ent_lump();
-	src_map->update_lump_pointers();
-	src_map->validate();
-	src_map->write(src_map->bsp_path + ".tmp.bsp");
+	Bsp* bspModel = new Bsp();
+	bspModel->setBspRender(bspModel->getBspRender());
+	bspModel->bsp_valid = true;
 
-
-	print_log(get_localized_string(LANG_0316));
-
-	Bsp* tmpMap = new Bsp(src_map->bsp_path + ".tmp.bsp");
-
-	tmpMap->force_skip_crc = true;
-
-	if (ExportType == 1)
+	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
-		tmpMap->is_bsp29 = true;
-		tmpMap->is_texture_pal = false;
-		tmpMap->bsp_header.nVersion = 29;
-	}
-	else
-	{
-		tmpMap->is_bsp29 = false;
-		tmpMap->is_texture_pal = true;
-		tmpMap->bsp_header.nVersion = 30;
+		bspModel->bsp_header.lump[i].nOffset = 0;
+		bspModel->bsp_header.lump[i].nLength = 0;
+		bspModel->replacedLump[i] = false;
 	}
 
-	print_log(get_localized_string(LANG_0317));
-	removeFile(src_map->bsp_path + ".tmp.bsp");
+	bspModel->update_ent_lump();
 
-	vec3 modelOrigin = tmpMap->get_model_center(id);
-
-	BSPMODEL tmpModel = src_map->models[id];
-
-	while (tmpMap->modelCount < 2)
 	{
-		print_log(get_localized_string(LANG_0318));
-		tmpMap->create_model();
+		unsigned char* texcount = new unsigned char[4];
+		memset(texcount, 0, 4);
+		bspModel->replace_lump(LUMP_TEXTURES, texcount, 4);
+		bspModel->bsp_header.lump[LUMP_TEXTURES].nLength = 4;
 	}
 
-	tmpMap->models[1] = tmpModel;
-	print_log(get_localized_string(LANG_0319));
-	tmpMap->models[0] = tmpModel;
-	tmpMap->models[0].nVisLeafs = 0;
-	tmpMap->models[0].iHeadnodes[0] = tmpMap->models[0].iHeadnodes[1] =
-		tmpMap->models[0].iHeadnodes[2] = tmpMap->models[0].iHeadnodes[3] = CONTENTS_EMPTY;
+	bspModel->create_leaf(CONTENTS_SOLID);
+	bspModel->ents.clear();
+	bspModel->ents.push_back(new Entity("worldspawn"));
 
-	for (size_t i = 1; i < tmpMap->ents.size(); i++)
+	int src_entId = src_map->get_ent_from_model(0);
+
+	if (src_entId >= 0)
 	{
-		delete tmpMap->ents[i];
+		if (src_map->ents[src_entId]->hasKey("wad"))
+		{
+			bspModel->ents[bspModel->ents.size() - 1]->setOrAddKeyvalue("wad", src_map->ents[src_entId]->keyvalues["wad"]);
+		}
 	}
-	print_log(get_localized_string(LANG_0320));
+	bspModel->update_ent_lump();
 
-	Entity* tmpEnt = new Entity("worldspawn");
-	Entity* tmpEnt2 = new Entity("func_wall");
+	std::vector<BSPPLANE> newPlanes;
+	std::vector<vec3> newVerts;
+	std::vector<BSPEDGE32> newEdges;
+	std::vector<int> newSurfedges;
+	std::vector<BSPTEXTUREINFO> newTexinfo;
+	std::vector<BSPFACE32> newFaces;
+	std::vector<COLOR3> newLightmaps;
+	std::vector<BSPNODE32> newNodes;
+	std::vector<BSPCLIPNODE32> newClipnodes;
+	std::vector<WADTEX*> newTextures;
+	std::vector<BSPLEAF32> newLeaves;
+	std::vector<int> newMarkSurfaces;
 
-	tmpEnt->setOrAddKeyvalue("compiler", g_version_string);
-	tmpEnt->setOrAddKeyvalue("message", "bsp model");
+	STRUCTREMAP remap = STRUCTREMAP(src_map);
+	src_map->copy_bsp_model(model_id, bspModel, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, 
+		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
 
-	tmpEnt2->setOrAddKeyvalue("model", "*1");
+	if (newClipnodes.size())
+	{
+		bspModel->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE32) * newClipnodes.size());
+	}
+	if (newEdges.size())
+	{
+		bspModel->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
+	}
+	if (newFaces.size())
+	{
+		bspModel->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
+	}
+	if (newLeaves.size())
+	{
+		bspModel->append_lump(LUMP_LEAVES, &newLeaves[0], sizeof(BSPLEAF32) * newLeaves.size());
+	}
+	if (newMarkSurfaces.size())
+	{
+		bspModel->append_lump(LUMP_MARKSURFACES, &newMarkSurfaces[0], sizeof(int) * newMarkSurfaces.size());
+	}
+	if (newNodes.size())
+	{
+		bspModel->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
+	}
+	if (newPlanes.size())
+	{
+		bspModel->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
+	}
+	if (newSurfedges.size())
+	{
+		bspModel->append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
+	}
 
-	print_log(get_localized_string(LANG_0321));
-	tmpMap->modelCount = 2;
-	tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
-	tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL) * 2;
-	tmpMap->ents.clear();
+	if (newTextures.size())
+	{
+		while (newTextures.size())
+		{
+			auto& tex = newTextures[newTextures.size() - 1];
+			if (tex->data)
+			{
+				auto data = ConvertWadTexToRGB(tex);
+				bspModel->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+				delete[]data;
+			}
+			else
+			{
+				bspModel->add_texture(tex->szName, NULL, tex->nWidth, tex->nHeight);
+			}
+			delete tex;
+			newTextures.pop_back();
+		}
+	}
 
-	tmpMap->ents.push_back(tmpEnt);
-	tmpMap->ents.push_back(tmpEnt2);
+	bspModel->update_lump_pointers();
 
-	tmpMap->update_ent_lump();
-	tmpMap->update_lump_pointers();
+	if (newTexinfo.size())
+	{
+		for (auto& texinfo : newTexinfo)
+		{
+			if (texinfo.iMiptex < 0 || texinfo.iMiptex >= src_map->textureCount)
+			{
+				texinfo.iMiptex = 0;
+				texinfo.nFlags = TEX_SPECIAL;
+				continue;
+			}
+			int newMiptex = -1;
+			int texOffset = ((int*)src_map->textures)[texinfo.iMiptex + 1];
+			if (texOffset < 0)
+			{
+				texinfo.iMiptex = 0;
+				texinfo.nFlags = TEX_SPECIAL;
+				continue;
+			}
+			BSPMIPTEX& tex = *((BSPMIPTEX*)(src_map->textures + texOffset));
+			for (int i = bspModel->textureCount - 1; i >= 0; i--)
+			{
+				int tex2Offset = ((int*)bspModel->textures)[i + 1];
+				if (tex2Offset >= 0)
+				{
+					BSPMIPTEX* tex2 = ((BSPMIPTEX*)(bspModel->textures + tex2Offset));
+					if (strcasecmp(tex.szName, tex2->szName) == 0)
+					{
+						newMiptex = i;
+						break;
+					}
+				}
+			}
+			if (newMiptex < 0 && src_map->getBspRender() && src_map->getBspRender()->wads.size())
+			{
+				for (auto& s : src_map->getBspRender()->wads)
+				{
+					if (s->hasTexture(tex.szName))
+					{
+						WADTEX* wadTex = s->readTexture(tex.szName);
+						COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
-	print_log(get_localized_string(LANG_0322));
-	STRUCTCOUNT removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
+						newMiptex = src_map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+
+						delete wadTex;
+						delete[] imageData;
+						break;
+					}
+				}
+			}
+			texinfo.iMiptex = newMiptex;
+			if (newMiptex < 0)
+			{
+				texinfo.iMiptex = 0;
+				texinfo.nFlags = TEX_SPECIAL;
+			}
+		}
+		bspModel->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
+	}
+
+	if (newVerts.size())
+	{
+		bspModel->append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
+	}
+	if (newLightmaps.size())
+	{
+		bspModel->append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
+	}
+
+	int newModelIdx = bspModel->create_model();
+	bspModel->models[newModelIdx] = src_map->models[model_id];
+
+	bspModel->models[newModelIdx].iFirstFace = remap.faces[bspModel->models[newModelIdx].iFirstFace];
+	bspModel->models[newModelIdx].iHeadnodes[0] = bspModel->models[newModelIdx].iHeadnodes[0] < 0 ? -1 : remap.nodes[bspModel->models[newModelIdx].iHeadnodes[0]];
+
+	for (int i = 1; i < MAX_MAP_HULLS; i++)
+	{
+		bspModel->models[newModelIdx].iHeadnodes[i] = bspModel->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
+	}
+
+	//app->deselectObject();
+
+	STRUCTCOUNT removed = bspModel->remove_unused_model_structures();
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
-
-	print_log(get_localized_string(LANG_0323));
-	tmpMap->modelCount = 1;
-	tmpMap->models[0] = tmpMap->models[1];
-	tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
-	tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL);
-
-	print_log(get_localized_string(LANG_0324));
-	tmpMap->ents.clear();
-	tmpMap->ents.push_back(tmpEnt);
-	tmpMap->update_ent_lump();
-	tmpMap->update_lump_pointers();
-
-
-	/*int markid = 0;
-	for (int i = 0; i < tmpMap->leafCount; i++)
-	{
-		BSPLEAF32& tmpLeaf = tmpMap->leaves[i];
-		if (tmpLeaf.nMarkSurfaces > 0)
-		{
-			tmpLeaf.iFirstMarkSurface = markid;
-			markid += tmpLeaf.nMarkSurfaces;
-		}
-	}*/
-
-	//tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
 
 	if (movemodel)
 	{
+		vec3 modelOrigin = src_map->get_model_center(model_id);
 		print_log(get_localized_string(LANG_0325));
-		tmpMap->move(-modelOrigin, 0, true, true);
+		bspModel->move(-modelOrigin, 0, true, true);
 	}
 
-
-	print_log(get_localized_string(LANG_0326));
-	tmpMap->update_lump_pointers();
-	update_unused_wad_files(src_map, tmpMap, ExportType);
-
-	if (!removed.allZero())
-		removed.print_delete_stats(1);
-
-	int totalLeaves = 1;
-	totalLeaves += tmpMap->models[0].nVisLeafs;
-	if (totalLeaves > tmpMap->leafCount)
+	if (ExportType != 0)
 	{
-		while (totalLeaves > tmpMap->leafCount)
-			tmpMap->create_leaf(CONTENTS_EMPTY);
+		print_log(get_localized_string(LANG_0326));
+		bspModel->update_lump_pointers();
+		update_unused_wad_files(src_map, bspModel, ExportType);
 	}
-	else if (totalLeaves < tmpMap->leafCount)
+	if (ExportType == 1)
 	{
-		while (totalLeaves < tmpMap->leafCount)
-		{
-			tmpMap->models[0].nVisLeafs++;
-			totalLeaves++;
-		}
+		bspModel->is_bsp29 = true;
+		bspModel->is_texture_pal = false;
+		bspModel->bsp_header.nVersion = 29;
 	}
-
-	if (id != 0)
+	else
 	{
-		for (int i = 0; i < tmpMap->leafCount; i++)
-		{
-			tmpMap->leaves[i].nVisOffset = 0;
-		}
-		unsigned char* newVisLump = new unsigned char[MAX_MAP_LEAVES / 8];
-		memset(newVisLump, 255, MAX_MAP_LEAVES / 8);
-		tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, MAX_MAP_LEAVES / 8);
+		bspModel->is_bsp29 = false;
+		bspModel->is_texture_pal = true;
+		bspModel->bsp_header.nVersion = 30;
 	}
 
-	print_log(get_localized_string(LANG_0327));
-	removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MARKSURFACES);
+	bspModel->bsp_path = g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp";
+	bspModel->write(bspModel->bsp_path);
 
-	if (id == 0)
-	{
-		int rowSize = (((tmpMap->leafCount - 1) + 63) & ~63) >> 3;
-		unsigned char* tmpVisData = new unsigned char[rowSize];
-		unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
+	bspModel->setBspRender(NULL);
+	delete bspModel;
 
-		for (int i = 1; i < tmpMap->leafCount; i++)
-		{
-			if (tmpMap->leaves[i].nVisOffset >= 0)
-			{
-				memset(tmpVisData, 0, rowSize);
 
-				if (tmpMap->visdata)
-					DecompressVis(tmpMap->visdata + tmpMap->leaves[i].nVisOffset, tmpVisData, rowSize, tmpMap->leafCount - 1, tmpMap->visDataLength - tmpMap->leaves[i].nVisOffset);
-				else
-					memset(tmpVisData, 255, rowSize);
 
-				int size = CompressVis(tmpVisData, rowSize, tmpCompressed, MAX_MAP_LEAVES / 8);
+	//print_log(get_localized_string(LANG_0315));
+	//src_map->update_ent_lump();
+	//src_map->update_lump_pointers();
+	//src_map->validate();
+	//src_map->write(src_map->bsp_path + ".tmp.bsp");
 
-				tmpMap->leaves[i].nVisOffset = tmpMap->visDataLength;
 
-				unsigned char* newVisLump = new unsigned char[tmpMap->visDataLength + size];
-				if (tmpMap->visdata)
-					memcpy(newVisLump, tmpMap->visdata, tmpMap->visDataLength);
-				memcpy(newVisLump + tmpMap->visDataLength, tmpCompressed, size);
-				tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, tmpMap->visDataLength + size);
-			}
-		}
+	//print_log(get_localized_string(LANG_0316));
 
-		delete[] tmpVisData;
-		delete[] tmpCompressed;
-	}
+	//Bsp* tmpMap = new Bsp(src_map->bsp_path + ".tmp.bsp");
 
-	tmpMap->update_ent_lump();
-	tmpMap->update_lump_pointers();
+	//tmpMap->force_skip_crc = true;
+
+	//if (ExportType == 1)
+	//{
+	//	tmpMap->is_bsp29 = true;
+	//	tmpMap->is_texture_pal = false;
+	//	tmpMap->bsp_header.nVersion = 29;
+	//}
+	//else
+	//{
+	//	tmpMap->is_bsp29 = false;
+	//	tmpMap->is_texture_pal = true;
+	//	tmpMap->bsp_header.nVersion = 30;
+	//}
+
+	//print_log(get_localized_string(LANG_0317));
+	//removeFile(src_map->bsp_path + ".tmp.bsp");
+
+	//vec3 modelOrigin = tmpMap->get_model_center(model_id);
+
+	//BSPMODEL tmpModel = src_map->models[model_id];
+
+	//if (tmpMap->modelCount < 1)
+	//{
+	//	print_log(get_localized_string(LANG_0318));
+	//	tmpMap->create_model();
+	//}
+
+	//print_log(get_localized_string(LANG_0319));
+	//tmpMap->models[0] = tmpModel;
+
+	//for (size_t i = 1; i < tmpMap->ents.size(); i++)
+	//{
+	//	delete tmpMap->ents[i];
+	//}
+	//print_log(get_localized_string(LANG_0320));
+
+	//Entity* tmpEnt = new Entity("worldspawn");
+
+	//tmpEnt->setOrAddKeyvalue("compiler", g_version_string);
+	//tmpEnt->setOrAddKeyvalue("message", "bsp model");
+
+	//print_log(get_localized_string(LANG_0321));
+	//tmpMap->modelCount = 1;
+	//tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
+	//tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL);
+
+	//tmpMap->ents.clear();
+	//tmpMap->ents.push_back(tmpEnt);
+
+	//tmpMap->update_ent_lump();
+	//tmpMap->update_lump_pointers();
+
+	//print_log(get_localized_string(LANG_0322));
+	//STRUCTCOUNT removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
+	//	CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
+	//if (!removed.allZero())
+	//	removed.print_delete_stats(1);
+
+
+	//int markid = 0;
+	//for (int i = 0; i < tmpMap->leafCount; i++)
+	//{
+	//	BSPLEAF32& tmpLeaf = tmpMap->leaves[i];
+	//	if (tmpLeaf.nMarkSurfaces > 0)
+	//	{
+	//		tmpLeaf.iFirstMarkSurface = markid;
+	//		markid += tmpLeaf.nMarkSurfaces;
+	//	}
+	//}
+
+	//tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
+
+	//int totalLeaves = 1;
+	//totalLeaves += tmpMap->models[0].nVisLeafs;
+	//if (totalLeaves > tmpMap->leafCount)
+	//{
+	//	while (totalLeaves > tmpMap->leafCount)
+	//		tmpMap->create_leaf(CONTENTS_EMPTY);
+	//}
+	//else if (totalLeaves < tmpMap->leafCount)
+	//{
+	//	while (totalLeaves < tmpMap->leafCount)
+	//	{
+	//		tmpMap->models[0].nVisLeafs++;
+	//		totalLeaves++;
+	//	}
+	//}
+
+	//if (movemodel)
+	//{
+	//	print_log(get_localized_string(LANG_0325));
+	//	tmpMap->move(-modelOrigin, 0, true, true);
+	//}
+
+	//print_log(get_localized_string(LANG_0326));
+	//tmpMap->update_lump_pointers();
+	//update_unused_wad_files(src_map, tmpMap, ExportType);
+
+	//if (model_id != 0)
+	//{
+	//	for (int i = 0; i < tmpMap->leafCount; i++)
+	//	{
+	//		tmpMap->leaves[i].nVisOffset = 0;
+	//	}
+	//	unsigned char* newVisLump = new unsigned char[MAX_MAP_LEAVES / 8];
+	//	memset(newVisLump, 255, MAX_MAP_LEAVES / 8);
+	//	tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, MAX_MAP_LEAVES / 8);
+	//}
+
+	//print_log(get_localized_string(LANG_0327));
+	//removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
+	//	CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MARKSURFACES);
+
+	//if (model_id == 0)
+	//{
+	//	int rowSize = (((tmpMap->leafCount - 1) + 63) & ~63) >> 3;
+	//	unsigned char* tmpVisData = new unsigned char[rowSize];
+	//	unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
+
+	//	for (int i = 1; i < tmpMap->leafCount; i++)
+	//	{
+	//		if (tmpMap->leaves[i].nVisOffset >= 0)
+	//		{
+	//			memset(tmpVisData, 0, rowSize);
+
+	//			if (tmpMap->visdata)
+	//				DecompressVis(tmpMap->visdata + tmpMap->leaves[i].nVisOffset, tmpVisData, rowSize, tmpMap->leafCount - 1, tmpMap->visDataLength - tmpMap->leaves[i].nVisOffset);
+	//			else
+	//				memset(tmpVisData, 255, rowSize);
+
+	//			int size = CompressVis(tmpVisData, rowSize, tmpCompressed, MAX_MAP_LEAVES / 8);
+
+	//			tmpMap->leaves[i].nVisOffset = tmpMap->visDataLength;
+
+	//			unsigned char* newVisLump = new unsigned char[tmpMap->visDataLength + size];
+	//			if (tmpMap->visdata)
+	//				memcpy(newVisLump, tmpMap->visdata, tmpMap->visDataLength);
+	//			memcpy(newVisLump + tmpMap->visDataLength, tmpCompressed, size);
+	//			tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, tmpMap->visDataLength + size);
+	//		}
+	//	}
+
+	//	delete[] tmpVisData;
+	//	delete[] tmpCompressed;
+	//}
+
+	//tmpMap->update_ent_lump();
+	//tmpMap->update_lump_pointers();
 
 	//print_log("NODE FACES: {}\n", tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nFaces);
 	//print_log("NODE MINS/MAXS: {} {} {} / {} {} {}\n", tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMins.x, 
@@ -510,19 +712,18 @@ void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 	//	tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMaxs.x, tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMaxs.y,
 	//	tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMaxs.z);
 
-	if (tmpMap->validate())
-	{
-		createDir(g_working_dir);
-		removeFile(g_working_dir + src_map->bsp_name + "_model" + std::to_string(id) + ".bsp");
-		tmpMap->write(g_working_dir + src_map->bsp_name + "_model" + std::to_string(id) + ".bsp");
-	}
-	else
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
-	}
+	//if (tmpMap->validate())
+	//{
+	//	createDir(g_working_dir);
+	//	removeFile(g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp");
+	//	tmpMap->write(g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp");
+	//}
+	//else
+	//{
+	//	print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
+	//}
 
-	delete tmpMap;
-	delete tmpEnt2;
+	//delete tmpMap;
 }
 
 
@@ -3106,21 +3307,19 @@ void Gui::drawMenuBar()
 									//plane.vNormal = normal;
 									//plane.fDist = dist;
 
-									if (!getPlaneFromVerts(vertexes, plane.vNormal, plane.fDist))
-									{
+
 										// Compute edges and delta UVs
-										vec3 edge1 = vertexes[1] - vertexes[0];
-										vec3 edge2 = vertexes[2] - vertexes[0];
+									vec3 edge1 = vertexes[1] - vertexes[0];
+									vec3 edge2 = vertexes[2] - vertexes[0];
 
-										vec3 normal = crossProduct(edge1, edge2).normalize();
+									vec3 normal = crossProduct(edge1, edge2).normalize().invert();
 
-										// Calculate the distance from the origin
-										float dist = getDistAlongAxis(normal, vertex1);
-										plane.vNormal = normal;
-										plane.fDist = dist;
-									}
+									// Calculate the distance from the origin
+									float dist = getDistAlongAxis(normal, vertex1);
+									plane.vNormal = normal;
+									plane.fDist = dist;
 
-									newfaces[v].nPlaneSide = !plane.update_plane(plane.vNormal, plane.fDist);
+									newfaces[v].nPlaneSide = plane.update_plane(plane.vNormal, plane.fDist);
 
 									calculateTextureInfo(texInfo, vertexes, uvs);
 									texInfo.iMiptex = miptex;
@@ -7855,8 +8054,7 @@ void Gui::drawImportMapWidget()
 					Bsp* map = app->getSelectedMap();
 
 					Bsp* bspModel = new Bsp(mapPath);
-
-					BspRenderer* mapRenderer = new BspRenderer(bspModel);
+					bspModel->setBspRender(map->getBspRender());
 
 					std::vector<BSPPLANE> newPlanes;
 					std::vector<vec3> newVerts;
@@ -7868,9 +8066,12 @@ void Gui::drawImportMapWidget()
 					std::vector<BSPNODE32> newNodes;
 					std::vector<BSPCLIPNODE32> newClipnodes;
 					std::vector<WADTEX*> newTextures;
+					std::vector<BSPLEAF32> newLeaves;
+					std::vector<int> newMarkSurfaces;
 
 					STRUCTREMAP remap = STRUCTREMAP(map);
-					bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes, newTextures);
+					bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
+						newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
 
 					if (newClipnodes.size())
 					{
@@ -7883,6 +8084,14 @@ void Gui::drawImportMapWidget()
 					if (newFaces.size())
 					{
 						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
+					}
+					if (newLeaves.size())
+					{
+						map->append_lump(LUMP_LEAVES, &newLeaves[0], sizeof(BSPLEAF32) * newLeaves.size());
+					}
+					if (newMarkSurfaces.size())
+					{
+						map->append_lump(LUMP_MARKSURFACES, &newMarkSurfaces[0], sizeof(int) * newMarkSurfaces.size());
 					}
 					if (newNodes.size())
 					{
@@ -7902,10 +8111,17 @@ void Gui::drawImportMapWidget()
 						while (newTextures.size())
 						{
 							auto& tex = newTextures[newTextures.size() - 1];
-							auto data = ConvertWadTexToRGB(tex);
-							map->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+							if (tex->data)
+							{
+								auto data = ConvertWadTexToRGB(tex);
+								map->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+								delete[]data;
+							}
+							else
+							{
+								map->add_texture(tex->szName, NULL, tex->nWidth, tex->nHeight);
+							}
 							delete tex;
-							delete[]data;
 							newTextures.pop_back();
 						}
 					}
@@ -7916,15 +8132,20 @@ void Gui::drawImportMapWidget()
 					{
 						for (auto& texinfo : newTexinfo)
 						{
-							if (texinfo.iMiptex < 0 || texinfo.iMiptex >= map->textureCount)
+							if (texinfo.iMiptex < 0 || texinfo.iMiptex >= bspModel->textureCount)
 							{
-								texinfo.iMiptex = -1;
+								texinfo.iMiptex = 0;
+								texinfo.nFlags = TEX_SPECIAL;
 								continue;
 							}
 							int newMiptex = -1;
 							int texOffset = ((int*)bspModel->textures)[texinfo.iMiptex + 1];
 							if (texOffset < 0)
+							{
+								texinfo.iMiptex = 0;
+								texinfo.nFlags = TEX_SPECIAL;
 								continue;
+							}
 							BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
 							for (int i = map->textureCount - 1; i >= 0; i--)
 							{
@@ -7950,9 +8171,6 @@ void Gui::drawImportMapWidget()
 
 										newMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
-										if (texinfo.iMiptex == -1)
-											texinfo.iMiptex = 0;
-
 										delete wadTex;
 										delete[] imageData;
 										break;
@@ -7960,6 +8178,11 @@ void Gui::drawImportMapWidget()
 								}
 							}
 							texinfo.iMiptex = newMiptex;
+							if (newMiptex < 0)
+							{
+								texinfo.iMiptex = 0;
+								texinfo.nFlags = TEX_SPECIAL;
+							}
 						}
 						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
 					}
@@ -7974,19 +8197,18 @@ void Gui::drawImportMapWidget()
 					}
 
 					int newModelIdx = map->create_model();
-					BSPMODEL& oldModel = bspModel->models[0];
-					BSPMODEL& newModel = map->models[newModelIdx];
-					memcpy(&newModel, &oldModel, sizeof(BSPMODEL));
+					map->models[newModelIdx] = bspModel->models[0];
 
-					newModel.iFirstFace = remap.faces[oldModel.iFirstFace];
-					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap.nodes[oldModel.iHeadnodes[0]];
+					map->models[newModelIdx].iFirstFace = remap.faces[map->models[newModelIdx].iFirstFace];
+					map->models[newModelIdx].iHeadnodes[0] = map->models[newModelIdx].iHeadnodes[0] < 0 ? -1 : remap.nodes[map->models[newModelIdx].iHeadnodes[0]];
 
 					for (int i = 1; i < MAX_MAP_HULLS; i++)
 					{
-						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
+						map->models[newModelIdx].iHeadnodes[i] = map->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[map->models[newModelIdx].iHeadnodes[i]];
 					}
 
-					newModel.nVisLeafs = 0;
+					bspModel->setBspRender(NULL);
+					delete bspModel;
 
 					app->deselectObject();
 
@@ -7997,7 +8219,6 @@ void Gui::drawImportMapWidget()
 					app->updateEnts();
 					map->update_lump_pointers();
 					map->getBspRender()->reload();
-					delete mapRenderer;
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_ENTITY)
 				{

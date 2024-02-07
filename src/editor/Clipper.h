@@ -8,12 +8,16 @@
 struct CVertex
 {
 	vec3 pos;
-	float distance = 0;
-	int occurs = 0;
-	bool visible = true;
+	float distance;
+	int occurs;
+	bool visible;
 
 	CVertex(vec3 pos) : pos(pos)
-	{}
+	{
+		visible = true;
+		occurs = 0;
+		distance = 0.0f;
+	}
 };
 
 struct CEdge

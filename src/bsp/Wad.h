@@ -60,6 +60,7 @@ struct WADTEX
 			data = NULL;
 			return;
 		}
+
 		int w = tex->nWidth;
 		int h = tex->nHeight;
 		int sz = w * h;	   // miptex 0

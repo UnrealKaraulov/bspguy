@@ -399,7 +399,7 @@ struct BSPEDGE16
 struct BSPNODE16
 {
 	int iPlane;            // Index into Planes lump
-	short iChildren[2];       // If > 0, then indices into Nodes // otherwise bitwise inverse indices into Leafs
+	short iChildren[2];       // If < 0, then bitwise inverse indices into Leafs. For example ~(-1) == 0  // otherwise indices into Nodes
 	short nMins[3], nMaxs[3]; // Defines bounding box
 	unsigned short firstFace, nFaces; // Index and count into Faces
 };
