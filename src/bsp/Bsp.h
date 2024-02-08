@@ -159,7 +159,8 @@ public:
 
 	// get all verts used by this model
 	// TODO: split any verts shared with other models!
-	std::vector<TransformVert> getModelVerts(int modelIdx);
+	std::vector<TransformVert> getModelTransformVerts(int modelIdx);
+	std::vector<int> getModelVertsIds(int modelIdx);
 
 	// gets verts formed by plane intersections with the nodes in this model
 	bool getModelPlaneIntersectVerts(int modelIdx, std::vector<TransformVert>& outVerts);
@@ -185,7 +186,7 @@ public:
 	// fixes up the model planes/nodes after vertex posisions have been modified
 	// returns false if the model has non-planar faces
 	// TODO: split any planes shared with other models
-	bool vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hullVerts, bool convexCheckOnly);
+	bool vertex_manipulation_sync(int modelIdx, const std::vector<TransformVert>& hullVerts, bool convexCheckOnly);
 
 	void load_ents();
 
@@ -248,7 +249,8 @@ public:
 	void regenerate_clipnodes(int modelIdx, int hullIdx);
 	int regenerate_clipnodes_from_nodes(int iNode, int hullIdx);
 
-	int create_clipnode();
+	int create_node(bool force_reversed = false, int reversed_id = 0);
+	int create_clipnode(bool force_reversed = false, int reversed_id = 0);
 	int create_plane();
 	int create_model();
 	int create_texinfo();
@@ -266,7 +268,7 @@ public:
 	bool remove_face(int faceid);
 	void remove_faces_by_content(int content);
 	int clone_world_leaf(int oldleafIdx);
-	int merge_two_models(int src_model, int dst_model);
+	int merge_two_models(size_t src_ent, size_t dst_ent, int &try_again);
 
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
 	BSPTEXTUREINFO* get_unique_texinfo(int faceIdx);
@@ -339,6 +341,12 @@ public:
 	void resize_all_lightmaps(bool logged = false);
 	bool should_resize_lightmap(LIGHTMAP& oldLightmap, LIGHTMAP& newLightmap);
 
+	// marks all structures that this model uses
+	// TODO: don't mark faces in submodel leaves (unused)
+	void mark_model_structures(int modelIdx, STRUCTUSAGE* STRUCTUSAGE, bool skipLeaves);
+	void mark_face_structures(int iFace, STRUCTUSAGE* usage);
+	void mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves);
+	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
@@ -361,12 +369,6 @@ private:
 
 	void write_csg_polys(int nodeIdx, FILE* fout, int flipPlaneSkip, bool debug);
 
-	// marks all structures that this model uses
-	// TODO: don't mark faces in submodel leaves (unused)
-	void mark_model_structures(int modelIdx, STRUCTUSAGE* STRUCTUSAGE, bool skipLeaves);
-	void mark_face_structures(int iFace, STRUCTUSAGE* usage);
-	void mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves);
-	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);
 
 	// remaps structure indexes to new locations
 	void remap_face_structures(int faceIdx, STRUCTREMAP* remap);

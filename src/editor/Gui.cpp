@@ -1277,43 +1277,92 @@ void Gui::drawBspContexMenu()
 					{
 						ImGui::EndDisabled();
 					}
-					if (ImGui::MenuItem("MERGE TWO BSPMODELS (WIP) (!WARN!)", 0, false, !app->isLoading && allowDuplicate &&
-						app->pickInfo.selectedEnts.size() == 2 &&
-						map->ents[app->pickInfo.selectedEnts[0]]->isBspModel() && map->ents[app->pickInfo.selectedEnts[1]]->isBspModel()))
+
+					bool IsValidForMerge = false;
+
+					if (app->pickInfo.selectedEnts.size() > 1)
 					{
-						size_t ent1 = app->pickInfo.selectedEnts[0];
-						size_t ent2 = app->pickInfo.selectedEnts[1];
-
-						print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
-
-						int newmodelid =
-							map->merge_two_models(map->ents[ent1]->getBspModelIdx(), map->ents[ent2]->getBspModelIdx());
-
-						if (map->ents[ent1]->getBspModelIdx() != newmodelid)
+						IsValidForMerge = true;
+						for (auto& tmpentIdx : app->pickInfo.selectedEnts)
 						{
-							map->ents[ent1]->clearAllKeyvalues();
-							map->ents[ent1]->setOrAddKeyvalue("classname", "info_target");
+							if (!map->ents[tmpentIdx]->isBspModel())
+							{
+								IsValidForMerge = false;
+								break;
+							}
 						}
-						else
+					}
+
+					if (ImGui::MenuItem("MERGE BSPMODELS (WIP)", 0, false, !app->isLoading &&
+						IsValidForMerge))
+					{
+						std::vector<size_t> toMerge = app->pickInfo.selectedEnts;
+
+						std::vector<size_t> ents_to_erase;
+
+						app->deselectObject();
+
+						int merge_errors = 0;
+
+						while (toMerge.size() > 1)
 						{
-							map->ents[ent2]->clearAllKeyvalues();
-							map->ents[ent2]->setOrAddKeyvalue("classname", "info_target");
+							size_t ent1 = toMerge[toMerge.size() - 2];
+							size_t ent2 = toMerge[toMerge.size() - 1];
+
+							print_log(get_localized_string(LANG_1054), app->pickInfo.selectedEnts.size());
+
+							int try_again = false;
+							int newmodelid =
+								map->merge_two_models(ent1, ent2, try_again);
+
+							if (try_again > 1)
+							{
+								merge_errors++;
+							}
+
+							if (map->ents[ent1]->getBspModelIdx() != newmodelid)
+							{
+								ents_to_erase.push_back(ent1);
+								toMerge.erase(std::find(toMerge.begin(), toMerge.end(), ent1));
+							}
+							else
+							{
+								ents_to_erase.push_back(ent2);
+								toMerge.erase(std::find(toMerge.begin(), toMerge.end(), ent2));
+							}
+
+							map->getBspRender()->refreshModel(newmodelid);
+							map->getBspRender()->refreshModelClipnodes(newmodelid);
 						}
+
+
+						std::sort(ents_to_erase.begin(), ents_to_erase.end());
+						while (ents_to_erase.size())
+						{
+							map->ents.erase(map->ents.begin() + ents_to_erase[ents_to_erase.size() - 1]);
+							ents_to_erase.pop_back();
+						}
+
+						map->update_ent_lump();
+						map->update_lump_pointers();
 
 						map->getBspRender()->loadLightmaps();
 						map->getBspRender()->calcFaceMaths();
 						map->getBspRender()->preRenderFaces();
 						map->getBspRender()->preRenderEnts();
-						map->update_ent_lump();
-						map->update_lump_pointers();
 
+						map->getBspRender()->pushModelUndoState("MERGE {} and {} SELECTED BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
 
-						map->getBspRender()->pushModelUndoState("MERGE MODEL [DEBUG]", EDIT_MODEL_LUMPS);
+						if (merge_errors > 0)
+						{
+							print_log(PRINT_RED, "Found {} errors in models merging! Possible one model overlapped another!\n",merge_errors);
+						}
+
 					}
 					if (ImGui::IsItemHovered())
 					{
 						ImGui::BeginTooltip();
-						ImGui::TextUnformatted("CAUSE MAP ERROR WHEN LOOKING AT THIS MODEL IN 50% CASES!!");
+						ImGui::TextUnformatted("CAN CAUSE SOMETHING PROBLEMS WITH MAP");
 						ImGui::EndTooltip();
 					}
 				}
@@ -3024,7 +3073,8 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::MenuItem("MDL to BSP (WIP)", NULL, false, app->pickInfo.selectedEnts.size() == 1))
+			if (ImGui::MenuItem("MDL to BSP (WIP)", NULL, false, app->pickInfo.selectedEnts.size() == 1 &&
+				rend->renderEnts[app->pickInfo.selectedEnts[0]].mdl))
 			{
 				size_t ent = app->pickInfo.selectedEnts[0];
 				std::set<Texture*> added_textures;
@@ -3604,49 +3654,133 @@ void Gui::drawMenuBar()
 
 			if (ImGui::BeginMenu("Scale map (WIP)", map))
 			{
+				static bool ScaleOnlySelected = false;
+
+				if (ImGui::MenuItem("Scale selected", NULL, &ScaleOnlySelected))
+				{
+					//ScaleOnlySelected = !ScaleOnlySelected;
+				}
+
 				for (float scale_val = 0.25f; scale_val <= 2.0f; scale_val += 0.25f)
 				{
-					if (ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
+					if (abs(scale_val - 1.0f) > EPSILON && ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
 					{
-						for (int i = 0; i < map->modelCount; i++)
+						if (ScaleOnlySelected)
 						{
-							map->models[i].nMaxs *= scale_val;
-							map->models[i].nMins *= scale_val;
+							STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
+							std::set<int> models;
 
-							vec3 neworigin = map->models[i].vOrigin * scale_val;
-							map->models[i].vOrigin = neworigin;
-						}
-						for (int i = 0; i < map->vertCount; i++)
-						{
-							map->verts[i] *= scale_val;
-						}
-						for (int i = 0; i < map->texinfoCount; i++)
-						{
-							map->texinfos[i].vS /= scale_val;
-							map->texinfos[i].vT /= scale_val;
-						}
-						for (size_t i = 0; i < map->ents.size(); i++)
-						{
-							vec3 neworigin = map->ents[i]->origin * scale_val;
-							neworigin.z += abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
-							map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
-						}
-						for (int i = 0; i < map->nodeCount; i++)
-						{
-							map->nodes[i].nMaxs *= scale_val;
-							map->nodes[i].nMins *= scale_val;
-						}
-						for (int i = 0; i < map->leafCount; i++)
-						{
-							map->leaves[i].nMaxs *= scale_val;
-							map->leaves[i].nMins *= scale_val;
-						}
-						for (int i = 0; i < map->planeCount; i++)
-						{
-							//map->planes[i].update_plane(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
-							map->planes[i].fDist *= scale_val;
-						}
+							for (auto s : app->pickInfo.selectedEnts)
+							{
+								int modelIdx = map->ents[s]->getBspModelIdx();
+								if (modelIdx >= 0)
+								{
+									models.insert(modelIdx);
+									map->mark_model_structures(modelIdx, &modelUsage, true);
+								}
+							}
 
+							for (int i = 0; i < map->modelCount; i++)
+							{
+								if (models.count(i))
+								{
+									map->models[i].nMaxs *= scale_val;
+									map->models[i].nMins *= scale_val;
+
+									vec3 neworigin = map->models[i].vOrigin * scale_val;
+									map->models[i].vOrigin = neworigin;
+								}
+							}
+							for (int i = 0; i < map->vertCount; i++)
+							{
+								if (modelUsage.verts[i])
+								{
+									map->verts[i] *= scale_val;
+								}
+							}
+							for (int i = 0; i < map->texinfoCount; i++)
+							{
+								if (modelUsage.texInfo[i])
+								{
+									map->texinfos[i].vS /= scale_val;
+									map->texinfos[i].vT /= scale_val;
+								}
+							}
+							for (size_t i = 0; i < map->ents.size(); i++)
+							{
+								if (app->pickInfo.IsSelectedEnt(i))
+								{
+									vec3 neworigin = map->ents[i]->origin * scale_val;
+									neworigin.z += abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
+									map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
+								}
+							}
+							for (int i = 0; i < map->nodeCount; i++)
+							{
+								if (modelUsage.nodes[i])
+								{
+									map->nodes[i].nMaxs *= scale_val;
+									map->nodes[i].nMins *= scale_val;
+								}
+							}
+							for (int i = 0; i < map->leafCount; i++)
+							{
+								if (modelUsage.leaves[i])
+								{
+									map->leaves[i].nMaxs *= scale_val;
+									map->leaves[i].nMins *= scale_val;
+								}
+							}
+							for (int i = 0; i < map->planeCount; i++)
+							{
+								//map->planes[i].update_plane(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
+								if (modelUsage.planes[i])
+								{
+									map->planes[i].fDist *= scale_val;
+								}
+							}
+						}
+						else
+						{
+							for (int i = 0; i < map->modelCount; i++)
+							{
+								map->models[i].nMaxs *= scale_val;
+								map->models[i].nMins *= scale_val;
+
+								vec3 neworigin = map->models[i].vOrigin * scale_val;
+								map->models[i].vOrigin = neworigin;
+							}
+							for (int i = 0; i < map->vertCount; i++)
+							{
+								map->verts[i] *= scale_val;
+							}
+							for (int i = 0; i < map->texinfoCount; i++)
+							{
+								map->texinfos[i].vS /= scale_val;
+								map->texinfos[i].vT /= scale_val;
+							}
+							for (size_t i = 0; i < map->ents.size(); i++)
+							{
+								vec3 neworigin = map->ents[i]->origin * scale_val;
+								neworigin.z += abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
+								map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
+							}
+							for (int i = 0; i < map->nodeCount; i++)
+							{
+								map->nodes[i].nMaxs *= scale_val;
+								map->nodes[i].nMins *= scale_val;
+							}
+							for (int i = 0; i < map->leafCount; i++)
+							{
+								map->leaves[i].nMaxs *= scale_val;
+								map->leaves[i].nMins *= scale_val;
+							}
+							for (int i = 0; i < map->planeCount; i++)
+							{
+								//map->planes[i].update_plane(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
+								map->planes[i].fDist *= scale_val;
+							}
+						}
 						map->update_ent_lump();
 						map->update_lump_pointers();
 
@@ -4375,6 +4509,25 @@ void Gui::drawMenuBar()
 		{
 			if (ImGui::BeginMenu(get_localized_string(LANG_0605).c_str()))
 			{
+				if (ImGui::MenuItem("Print textures offsets"))
+				{
+					for (int i = 0; i < map->textureCount; i++)
+					{
+						int mip_offset = ((int*)map->textures)[i + 1];
+						const char* name = "";
+						int data_offset = 0;
+						if (mip_offset >= 0)
+						{
+							BSPMIPTEX* oldTex = (BSPMIPTEX*)(map->textures + mip_offset);
+							data_offset = oldTex->nOffsets[0];
+							name = oldTex->szName;
+						}
+
+						print_log("mip name \"{}\" offset {} data offset {}\n", name, mip_offset, data_offset);
+					}
+
+				}
+
 				ImGui::EndMenu();
 			}
 		}
@@ -6549,8 +6702,6 @@ void Gui::drawTransformWidget()
 			{
 				if (transformingEnt)
 				{
-					app->applyTransform(map, true);
-
 					if (app->gridSnappingEnabled)
 					{
 						fx = last_fx = x;
@@ -6563,6 +6714,8 @@ void Gui::drawTransformWidget()
 						y = last_fy = fy;
 						z = last_fz = fz;
 					}
+					app->applyTransform(map, true);
+
 				}
 				if (map->getBspRender()->undoEntityStateMap[entIdx[0]].origin != ent->origin)
 				{
@@ -10364,16 +10517,21 @@ void Gui::drawFaceEditorWidget()
 				targetLumps = FL_PLANES | FL_TEXTURES | FL_VERTICES | FL_NODES | FL_TEXINFO | FL_FACES | FL_LIGHTING | FL_CLIPNODES | FL_LEAVES | FL_EDGES | FL_SURFEDGES | FL_MODELS;
 			}
 
-			mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
-				textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
-
 			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
 			map->resize_all_lightmaps(true);
 			mapRenderer->loadLightmaps();
 			mapRenderer->calcFaceMaths();
-			app->updateModelVerts();
 
 			reloadLimits();
+
+			if (updatedTexVec)
+			{
+				app->updateModelVerts();
+			}
+
+			mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
+				textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
+
 		}
 
 		pasteTextureNow = false;

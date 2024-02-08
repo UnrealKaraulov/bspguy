@@ -61,6 +61,8 @@ void set_console_colors(unsigned short colors = 0);
 std::vector<std::string> splitStringIgnoringQuotes(const std::string& s, const std::string& delimitter);
 std::vector<std::string> splitString(const std::string& s, const std::string& delimiter, int maxParts = 0);
 
+void replaceAll(std::string& str, const std::string& from, const std::string& to);
+
 
 template<class ...Args>
 inline void print_log(const std::string& format, Args ...args) noexcept
@@ -77,8 +79,11 @@ inline void print_log(const std::string& format, Args ...args) noexcept
 	std::cout << line;
 #endif
 
+	replaceAll(line, "\r", "");/*
+	replaceAll(line, "\n", "");*/
+
 	if (splitstr.size() == 1)
-{
+	{
 		g_log_buffer.push_back(line);
 		g_color_buffer.push_back(g_console_colors);
 	}
@@ -163,6 +168,7 @@ bool createDir(const std::string& dirName);
 void removeDir(const std::string& dirName);
 
 std::string toLowerCase(const std::string& s);
+
 std::string toUpperCase(const std::string& s);
 
 std::string trimSpaces(const std::string& str);
@@ -183,6 +189,7 @@ float getDistAlongAxis(const vec3& axis, const vec3& p);
 bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& outDist);
 
 void getBoundingBox(const std::vector<vec3>& verts, vec3& mins, vec3& maxs);
+void getBoundingBox(const std::vector<TransformVert>& verts, vec3& mins, vec3& maxs);
 
 vec2 getCenter(const std::vector<vec2>& verts);
 
@@ -227,8 +234,6 @@ enum class FIXUPPATH_SLASH
 };
 void fixupPath(char* path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash);
 void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash);
-void replaceAll(std::string& str, const std::string& from, const std::string& to);
-
 void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int height, int bytesPerPixel);
 
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv);

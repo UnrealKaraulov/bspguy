@@ -575,6 +575,17 @@ void getBoundingBox(const std::vector<vec3>& verts, vec3& mins, vec3& maxs)
 	}
 }
 
+void getBoundingBox(const std::vector<TransformVert>& verts, vec3& mins, vec3& maxs)
+{
+	maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+
+	for (size_t i = 0; i < verts.size(); i++)
+	{
+		expandBoundingBox(verts[i].pos, mins, maxs);
+	}
+}
+
 void expandBoundingBox(const vec3& v, vec3& mins, vec3& maxs)
 {
 	if (v.x > maxs.x) maxs.x = v.x;
@@ -1906,43 +1917,43 @@ BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force
 	}
 	else
 	{
-		if (force)
+		if (force) // Tried generate valid, but overlapped plane
 		{
 			// Calculate the separation distances for each axis
-			float dx = std::min(amax.x - bmin.x, bmax.x - amin.x);
-			float dy = std::min(amax.y - bmin.y, bmax.y - amin.y);
-			float dz = std::min(amax.z - bmin.z, bmax.z - amin.z);
+			float dx = std::max(amax.x - bmin.x, bmax.x - amin.x);
+			float dy = std::max(amax.y - bmin.y, bmax.y - amin.y);
+			float dz = std::max(amax.z - bmin.z, bmax.z - amin.z);
 
 			// Find the axis with the largest separation
 			if (dx > dy && dx > dz)
 			{
 				separationPlane.nType = PLANE_ANYX;
 				separationPlane.vNormal = { dx > 0 ? 1.0f : -1.0f, 0, 0 };
-				separationPlane.fDist = dx > 0 ? amax.x : amin.x;
+				separationPlane.fDist = dx > 0 ? amax.x + (bmin.x - amax.x) * 0.5f : amin.x + (bmax.x - amin.x) * 0.5f;
 			}
 			else if (dy > dx && dy > dz)
 			{
 				separationPlane.nType = PLANE_ANYY;
 				separationPlane.vNormal = { 0, dy > 0 ? 1.0f : -1.0f, 0 };
-				separationPlane.fDist = dy > 0 ? amax.y : amin.y;
+				separationPlane.fDist = dy > 0 ? amax.y + (bmin.y - amax.y) * 0.5f : amin.y + (bmax.y - amin.y) * 0.5f;
 			}
 			else
 			{
 				separationPlane.nType = PLANE_ANYZ;
 				separationPlane.vNormal = { 0, 0, dz > 0 ? 1.0f : -1.0f };
-				separationPlane.fDist = dz > 0 ? amax.z : amin.z;
+				separationPlane.fDist = dz > 0 ? amax.z + (bmin.z - amax.z) * 0.5f : amin.z + (bmax.z - amin.z) * 0.5f;
 			}
 		}
 		else
 		{
 			separationPlane.nType = -1; // no simple separating axis
 
-			print_log(get_localized_string(LANG_0239));
-			print_log("({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
-			print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
+			print_log(PRINT_RED,get_localized_string(LANG_0239));
+			print_log(PRINT_RED, "({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
+			print_log(PRINT_RED, " - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
 
-			print_log("({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
-			print_log(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, "MODEL2");
+			print_log(PRINT_RED, "({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
+			print_log(PRINT_RED, " - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, "MODEL2");
 		}
 	}
 

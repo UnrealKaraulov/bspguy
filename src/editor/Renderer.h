@@ -207,6 +207,7 @@ public:
 	bool anyEdgeSelected = false;
 	bool anyVertSelected = false;
 
+	int modelTransform = -1;
 	std::vector<TransformVert> modelVerts; // control points for invisible plane intersection verts in HULL 0
 	std::vector<TransformVert> modelFaceVerts; // control points for visible face verts
 	std::vector<HullEdge> modelEdges;
@@ -312,7 +313,7 @@ public:
 	void scaleSelectedObject(float x, float y, float z);
 	void scaleSelectedObject(vec3 dir, const vec3& fromDir, bool logging = false);
 	void scaleSelectedVerts(float x, float y, float z);
-	vec3 getEdgeControlPoint(std::vector<TransformVert>& hullVerts, HullEdge& edge);
+	vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge);
 	vec3 getCentroid(std::vector<TransformVert>& hullVerts);
 	void deselectObject(bool onlyobject = false); // keep map selected but unselect all objects
 	void selectFace(Bsp* map, int face, bool add = false);

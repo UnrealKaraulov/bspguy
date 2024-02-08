@@ -293,13 +293,6 @@ void DuplicateBspModelCommand::execute()
 	vertPickCount++;
 
 	g_app->gui->refresh();
-
-	/*
-	if (g_app->pickInfo.entIdx[0] == entIdx) {
-		g_modelIdx = newModelIdx;
-		g_app->updateModelVerts();
-	}
-	*/
 }
 
 void DuplicateBspModelCommand::undo()
@@ -321,13 +314,6 @@ void DuplicateBspModelCommand::undo()
 	renderer->preRenderEnts();
 	renderer->reloadTextures();
 	g_app->gui->refresh();
-
-	/*
-	if (g_app->pickInfo.entIdx[0] == entIdx) {
-		g_modelIdx = oldModelIdx;
-		g_app->updateModelVerts();
-	}
-	*/
 }
 
 size_t DuplicateBspModelCommand::memoryUsage()

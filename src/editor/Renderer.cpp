@@ -1372,10 +1372,10 @@ void Renderer::cameraPickingControls()
 		if (!transforming && (oldLeftMouse == GLFW_RELEASE || (facePickTime > 0.0 && curTime - facePickTime > 0.05)))
 		{
 			facePickTime = -1.0;
-			if (map && entIdx.size() && oldLeftMouse == GLFW_RELEASE)
+		/*	if (map && entIdx.size() && oldLeftMouse == GLFW_RELEASE)
 			{
 				applyTransform(map);
-			}
+			}*/
 			if (hoverAxis == -1)
 				pickObject();
 		}
@@ -1396,17 +1396,20 @@ void Renderer::revertInvalidSolid(Bsp* map, int modelIdx)
 	for (size_t i = 0; i < modelVerts.size(); i++)
 	{
 		modelVerts[i].pos = modelVerts[i].startPos = modelVerts[i].undoPos;
+		if (modelVerts[i].ptr)
+			*modelVerts[i].ptr = modelVerts[i].pos;
 	}
 	for (size_t i = 0; i < modelFaceVerts.size(); i++)
 	{
 		modelFaceVerts[i].pos = modelFaceVerts[i].startPos = modelFaceVerts[i].undoPos;
-		if (modelFaceVerts[i].ptr) {
+		if (modelFaceVerts[i].ptr)
 			*modelFaceVerts[i].ptr = modelFaceVerts[i].pos;
-		}
 	}
 	if (map && modelIdx >= 0)
 	{
 		map->vertex_manipulation_sync(modelIdx, modelVerts, false);
+		BSPMODEL& model = map->models[modelIdx];
+		map->get_model_vertex_bounds(modelIdx, model.nMins, model.nMaxs);
 		map->getBspRender()->refreshModel(modelIdx);
 	}
 	gui->reloadLimits();
@@ -1427,10 +1430,20 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 		}
 	}
 
-	if (anyVertsChanged && (transformingVerts || scalingObject || forceUpdate))
+	for (size_t i = 0; i < modelFaceVerts.size(); i++)
+	{
+		if (modelFaceVerts[i].pos != modelFaceVerts[i].startPos || modelFaceVerts[i].pos != modelFaceVerts[i].undoPos)
+		{
+			anyVertsChanged = true;
+		}
+	}
+
+	if ((anyVertsChanged && (transformingVerts || scalingObject)) || forceUpdate)
 	{
 		for (size_t i = 0; i < modelVerts.size(); i++)
 		{
+			/*if (modelVerts[i].ptr)
+				modelVerts[i].pos = *modelVerts[i].ptr;*/
 			modelVerts[i].startPos = modelVerts[i].pos;
 			if (!invalidSolid)
 			{
@@ -1439,6 +1452,8 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 		}
 		for (size_t i = 0; i < modelFaceVerts.size(); i++)
 		{
+			/*if (modelFaceVerts[i].ptr)
+				modelFaceVerts[i].pos = *modelFaceVerts[i].ptr;*/
 			modelFaceVerts[i].startPos = modelFaceVerts[i].pos;
 			if (!invalidSolid)
 			{
@@ -1456,6 +1471,12 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 				scaleTexinfos[i].oldS = info.vS;
 				scaleTexinfos[i].oldT = info.vT;
 			}
+		}
+
+		if (modelTransform >= 0)
+		{
+			BSPMODEL& model = map->models[modelTransform];
+			map->get_model_vertex_bounds(modelTransform, model.nMins, model.nMaxs);
 		}
 
 		gui->reloadLimits();
@@ -1593,7 +1614,7 @@ void Renderer::cameraObjectHovering()
 	{
 		vec3 pickStart, pickDir;
 		getPickRay(pickStart, pickDir);
-		
+
 		float s = (activeAxes.origin - localCameraOrigin).length() * vertExtentFactor;
 		s *= 1.2f;
 		vec3 ori = activeAxes.origin.flip();
@@ -1907,7 +1928,7 @@ void Renderer::pickObject()
 			{
 				pickInfo.selectedEnts.clear();
 				pickCount++;
-			}	
+			}
 		}
 	}
 }
@@ -2136,7 +2157,7 @@ bool Renderer::transformAxisControls()
 					if (updateModels)
 					{
 						map->resize_all_lightmaps();
-						map->getBspRender()->pushModelUndoState("Move model [all]", EDIT_MODEL_LUMPS | FL_ENTITIES);
+						map->getBspRender()->pushModelUndoState("Move model [vOrigin]", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 				}
 			}
@@ -2145,6 +2166,7 @@ bool Renderer::transformAxisControls()
 				if (ent->isBspModel())
 				{
 					saveTranformResult = false;
+					applyTransform(map, true);
 					map->regenerate_clipnodes(modelIdx, -1);
 					if (invalidSolid)
 					{
@@ -2157,7 +2179,6 @@ bool Renderer::transformAxisControls()
 					}
 					map->getBspRender()->refreshModel(modelIdx);
 					map->getBspRender()->refreshModelClipnodes(modelIdx);
-					applyTransform(map, true);
 				}
 			}
 		}
@@ -2589,11 +2610,11 @@ void Renderer::updateDragAxes(vec3 delta)
 		if (ent && modelIdx >= 0)
 		{
 			entMin = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-			entMax = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD,-FLT_MAX_COORD);
+			entMax = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
 			if (modelVerts.size())
 			{
-				for (auto & vert : modelVerts)
+				for (auto& vert : modelVerts)
 				{
 					expandBoundingBox(vert.pos, entMin, entMax);
 				}
@@ -2857,23 +2878,36 @@ void Renderer::updateModelVerts()
 	Entity* ent = NULL;
 	auto entIdx = pickInfo.selectedEnts;
 
-	if (entIdx.size())
-	{
-		modelIdx = map->ents[entIdx[0]]->getBspModelIdx();
-		ent = map->ents[entIdx[0]];
-	}
 
 	if (modelVertBuff)
 	{
 		delete modelVertBuff;
-		delete[] modelVertCubes;
 		modelVertBuff = NULL;
-		modelVertCubes = NULL;
-		scaleTexinfos.clear();
-		modelEdges.clear();
-		modelVerts.clear();
-		modelFaceVerts.clear();
 	}
+
+	if (modelVertCubes)
+	{
+		delete[] modelVertCubes;
+		modelVertCubes = NULL;
+	}
+
+	scaleTexinfos.clear();
+	modelEdges.clear();
+	modelVerts.clear();
+	modelFaceVerts.clear();
+
+	if (entIdx.size())
+	{
+		ent = map->ents[entIdx[0]];
+		modelIdx = ent->getBspModelIdx();
+	}
+	else
+	{
+		modelTransform = -1;
+		return;
+	}
+
+	modelTransform = modelIdx;
 
 	if (!modelOriginBuff)
 	{
@@ -2904,20 +2938,31 @@ void Renderer::updateModelVerts()
 
 	map->getModelPlaneIntersectVerts(modelIdx, modelVerts); // for vertex manipulation + scaling
 
-	modelFaceVerts = map->getModelVerts(modelIdx); // for scaling only
+	modelFaceVerts = map->getModelTransformVerts(modelIdx); // for scaling only
 
 	Solid modelSolid;
 	if (!getModelSolid(modelVerts, map, modelSolid))
 	{
+		scaleTexinfos.clear();
+		modelEdges.clear();
 		modelVerts.clear();
 		modelFaceVerts.clear();
-		scaleTexinfos.clear();
 		return;
 	}
 
 	modelEdges = modelSolid.hullEdges;
 
 	size_t numCubes = modelVerts.size() + modelEdges.size();
+
+	if (numCubes == 0)
+	{
+		scaleTexinfos.clear();
+		modelEdges.clear();
+		modelVerts.clear();
+		modelFaceVerts.clear();
+		return;
+	}
+
 	modelVertCubes = new cCube[numCubes];
 	modelVertBuff = new VertexBuffer(colorShader, modelVertCubes, (6 * 6 * numCubes), GL_TRIANGLES);
 	//print_log(get_localized_string(LANG_0913),modelVerts.size());
@@ -2941,7 +2986,7 @@ void Renderer::updateSelectionSize()
 		modelIdx = map->ents[entIdx[0]]->getBspModelIdx();
 	}
 
-	if (!entIdx.size())
+	if (!entIdx.size() || modelIdx <= 0)
 	{
 		vec3 mins, maxs;
 		map->get_bounding_box(mins, maxs);
@@ -3298,6 +3343,8 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir, bool logging)
 		{
 			modelVerts[i].pos = snapToGrid(modelVerts[i].pos);
 		}
+		if (modelVerts[i].ptr)
+			*modelVerts[i].ptr = modelVerts[i].pos;
 	}
 
 	// scale visible faces
@@ -3310,16 +3357,10 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir, bool logging)
 			modelFaceVerts[i].pos = snapToGrid(modelFaceVerts[i].pos);
 		}
 		if (modelFaceVerts[i].ptr)
-		{
 			*modelFaceVerts[i].ptr = modelFaceVerts[i].pos;
-		}
 	}
-	int modelIdx = -1;
-
-	modelIdx = map->ents[entIdx[0]]->getBspModelIdx();
 
 	updateSelectionSize();
-
 	//
 	// TODO: I have no idea what I'm doing but this code scales axis-aligned texture coord axes correctly.
 	//       Rewrite all of this after understanding texture axes.
@@ -3717,7 +3758,7 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 	}
 }
 
-vec3 Renderer::getEdgeControlPoint(std::vector<TransformVert>& hullVerts, HullEdge& edge)
+vec3 Renderer::getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge)
 {
 	vec3 v0 = hullVerts[edge.verts[0]].pos;
 	vec3 v1 = hullVerts[edge.verts[1]].pos;
