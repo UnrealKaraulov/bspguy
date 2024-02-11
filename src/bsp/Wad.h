@@ -36,16 +36,19 @@ struct WADTEX
 	int nWidth, nHeight;
 	int nOffsets[MIPLEVELS];
 	unsigned char* data; // all mip-maps and pallete
+	int dataLen;
 	bool needclean;
 	WADTEX()
 	{
+		dataLen = 0;
 		needclean = false;
 		szName[0] = '\0';
 		data = NULL;
 		nWidth = nHeight = 0;
 		nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
 	}
-	WADTEX(BSPMIPTEX* tex)
+
+	WADTEX(BSPMIPTEX* tex, unsigned char* palette = NULL, unsigned short colors = 256)
 	{
 		memcpy(szName, tex->szName, MAXTEXTURENAME);
 
@@ -56,6 +59,7 @@ struct WADTEX
 
 		if (nOffsets[0] <= 0)
 		{
+			dataLen = 0;
 			needclean = false;
 			data = NULL;
 			return;
@@ -67,18 +71,20 @@ struct WADTEX
 		int sz2 = sz / 4;  // miptex 1
 		int sz3 = sz2 / 4; // miptex 2
 		int sz4 = sz3 / 4; // miptex 3
-		int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) /* pal num */ + sizeof(COLOR3) * 256;
+		int szAll = sz + sz2 + sz3 + sz4;
 
-		//szAll = (szAll + 3) & ~3; // 4 bytes padding
+		dataLen = szAll + sizeof(short) + sizeof(COLOR3) * 256;
+		data = new unsigned char[dataLen];
+		memset(data, 0, dataLen);
 
-		data = new unsigned char[szAll];
+		unsigned char* texdata = ((unsigned char*)tex) + tex->nOffsets[0];
 
-		unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
-		memcpy(data, texdata, szAll);
-
-		// 256 palette
-		((unsigned char*)data)[sz + sz2 + sz3 + sz4] = 0x00;
-		((unsigned char*)data)[sz + sz2 + sz3 + sz4 + 1] = 0x01;
+		memcpy(data, texdata, palette ? szAll : dataLen);
+		if (palette)
+		{
+			*(unsigned short*)(data + szAll) = colors;
+			memcpy(data + szAll + sizeof(short), palette, sizeof(COLOR3) * colors);
+		}
 
 		needclean = true;
 	}

@@ -234,7 +234,7 @@ public:
 	// create a new texture from raw RGB data, and embeds into the bsp. 
 	// Returns -1 on failure, else the new texture index
 	int add_texture(const char* name, unsigned char* data, int width, int height, bool force_custompal = false);
-	int add_texture(WADTEX* tex);
+	int add_texture(WADTEX* tex, bool embedded = false);
 
 	void replace_lump(int lumpIdx, void* newData, size_t newLength);
 	void append_lump(int lumpIdx, void* newData, size_t appendLength);

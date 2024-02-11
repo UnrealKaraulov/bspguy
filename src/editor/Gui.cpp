@@ -329,15 +329,24 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->bsp_header.lump[i].nLength = 0;
 		bspModel->replacedLump[i] = false;
 	}
-
 	bspModel->update_ent_lump();
-
-	{
-		unsigned char* texcount = new unsigned char[4];
-		memset(texcount, 0, 4);
-		bspModel->replace_lump(LUMP_TEXTURES, texcount, 4);
-		bspModel->bsp_header.lump[LUMP_TEXTURES].nLength = 4;
-	}
+	//unsigned char* texLump = new unsigned char[sizeof(int) * 2 + sizeof(BSPMIPTEX)];
+	//*(int*)texLump = 1;
+	//*(int*)(texLump + 4) = 8;
+	//BSPMIPTEX tmpTex;
+	//tmpTex.nOffsets[0] = tmpTex.nOffsets[1] = tmpTex.nOffsets[2] = tmpTex.nOffsets[3] = 0;
+	//tmpTex.nHeight = 64;
+	//tmpTex.nWidth = 64;
+	//tmpTex.szName[0] = 'N';
+	//tmpTex.szName[1] = 'U';
+	//tmpTex.szName[2] = 'L';
+	//tmpTex.szName[3] = 'L';
+	//tmpTex.szName[4] = '\0';
+	//memcpy(texLump + 8, &tmpTex, sizeof(BSPMIPTEX));
+	//bspModel->replace_lump(LUMP_TEXTURES, texLump, sizeof(int) * 2 + sizeof(BSPMIPTEX));
+	bspModel->replace_lump(LUMP_TEXTURES,
+		new unsigned char[sizeof(int)] {0, 0, 0, 0}, sizeof(int));
+	bspModel->textureCount = 0;
 
 	bspModel->create_leaf(CONTENTS_SOLID);
 	bspModel->ents.clear();
@@ -368,7 +377,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	std::vector<int> newMarkSurfaces;
 
 	STRUCTREMAP remap = STRUCTREMAP(src_map);
-	src_map->copy_bsp_model(model_id, bspModel, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, 
+	src_map->copy_bsp_model(model_id, bspModel, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
 		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
 
 	if (newClipnodes.size())
@@ -409,10 +418,14 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		while (newTextures.size())
 		{
 			auto& tex = newTextures[newTextures.size() - 1];
-			if (tex->data)
+			if (tex->data && ExportType != 0)
 			{
 				auto data = ConvertWadTexToRGB(tex);
-				bspModel->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+				lodepng_encode24_file((std::string(tex->szName) + "_1.png").c_str(), (unsigned char*)data, tex->nWidth, tex->nHeight);
+				int mip = bspModel->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+				delete[]data;
+				data = ConvertMipTexToRGB(bspModel->find_embedded_texture(tex->szName, mip));
+				lodepng_encode24_file((std::string(tex->szName) + "_2.png").c_str(), (unsigned char*)data, tex->nWidth, tex->nHeight);
 				delete[]data;
 			}
 			else
@@ -465,12 +478,21 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 					if (s->hasTexture(tex.szName))
 					{
 						WADTEX* wadTex = s->readTexture(tex.szName);
-						COLOR3* imageData = ConvertWadTexToRGB(wadTex);
+						if (ExportType != 0)
+						{
+							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
-						newMiptex = src_map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+							lodepng_encode24_file(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
+							newMiptex = src_map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+
+							delete[] imageData;
+						}
+						else
+						{
+							newMiptex = src_map->add_texture(tex.szName, NULL, wadTex->nWidth, wadTex->nHeight);
+						}
 
 						delete wadTex;
-						delete[] imageData;
 						break;
 					}
 				}
@@ -1355,7 +1377,7 @@ void Gui::drawBspContexMenu()
 
 						if (merge_errors > 0)
 						{
-							print_log(PRINT_RED, "Found {} errors in models merging! Possible one model overlapped another!\n",merge_errors);
+							print_log(PRINT_RED, "Found {} errors in models merging! Possible one model overlapped another!\n", merge_errors);
 						}
 
 					}
@@ -4509,7 +4531,7 @@ void Gui::drawMenuBar()
 		{
 			if (ImGui::BeginMenu(get_localized_string(LANG_0605).c_str()))
 			{
-				if (ImGui::MenuItem("Print textures offsets"))
+				if (ImGui::MenuItem("Print textures"))
 				{
 					for (int i = 0; i < map->textureCount; i++)
 					{
@@ -4518,12 +4540,31 @@ void Gui::drawMenuBar()
 						int data_offset = 0;
 						if (mip_offset >= 0)
 						{
-							BSPMIPTEX* oldTex = (BSPMIPTEX*)(map->textures + mip_offset);
-							data_offset = oldTex->nOffsets[0];
-							name = oldTex->szName;
+							BSPMIPTEX* tex = (BSPMIPTEX*)(map->textures + mip_offset);
+							data_offset = tex->nOffsets[0];
+							name = tex->szName;
+							int colors = -1;
+							if (tex->nOffsets[0] > 0)
+							{
+								int w = tex->nWidth;
+								int h = tex->nHeight;
+								int sz = w * h;	   // miptex 0
+								int sz2 = sz / 4;  // miptex 1
+								int sz3 = sz2 / 4; // miptex 2
+								int sz4 = sz3 / 4; // miptex 3
+								int szAll = sz + sz2 + sz3 + sz4;
+								unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
+								colors = (int)*(unsigned short*)(texdata + szAll);
+							}
+							print_log("mip name \"{}\" offset {} data offset {}-{}-{}-{} size {}x{} colors {}\n", name, mip_offset, tex->nOffsets[0],
+								tex->nOffsets[1], tex->nOffsets[2], tex->nOffsets[3]
+								, tex->nWidth, tex->nHeight, colors);
+						}
+						else
+						{
+							print_log("mip name \"BAD NAME\" offset {} data offset NO DATA OFFSET\n", name, mip_offset, data_offset);
 						}
 
-						print_log("mip name \"{}\" offset {} data offset {}\n", name, mip_offset, data_offset);
 					}
 
 				}

@@ -4183,16 +4183,43 @@ bool Renderer::isEntTransparent(const char* classname)
 }
 
 // now it temporary used for something
-Texture* Renderer::giveMeTexture(const std::string& texname)
+Texture* Renderer::giveMeTexture(const std::string& texname, const std::string& wadpart)
 {
 	if (!texname.size())
 	{
 		return missingTex;
 	}
 
-	if (glExteralTextures.find(texname) != glExteralTextures.end())
+	auto it = std::find(glExteralTextures_names.begin(), glExteralTextures_names.end(), texname);
+	if (it != glExteralTextures_names.end())
 	{
-		return glExteralTextures[texname];
+		auto idx = std::distance(glExteralTextures_names.begin(), it);
+		if (wadpart.empty())
+		{
+			return glExteralTextures_textures[idx];
+		}
+		else
+		{
+			std::string lowerWadPart = toLowerCase(wadpart);
+
+			if (glExteralTextures_wads[idx].find(lowerWadPart) != std::string::npos)
+			{
+				return glExteralTextures_textures[idx];
+			}
+			else
+			{
+				++it;
+				while (it != glExteralTextures_names.end())
+				{
+					idx = std::distance(glExteralTextures_names.begin(), it);
+					if (wadpart.empty() || glExteralTextures_wads[idx].find(toLowerCase(wadpart)) != std::string::npos)
+					{
+						return glExteralTextures_textures[idx];
+					}
+					it = std::find(std::next(it), glExteralTextures_names.end(), texname);
+				}
+			}
+		}
 	}
 
 	for (auto& render : mapRenderers)
@@ -4208,7 +4235,9 @@ Texture* Renderer::giveMeTexture(const std::string& texname)
 					if (imageData)
 					{
 						Texture* tmpTex = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, texname);
-						glExteralTextures[texname] = tmpTex;
+						glExteralTextures_names.push_back(texname);
+						glExteralTextures_wads.push_back(toLowerCase(wad->wadname));
+						glExteralTextures_textures.push_back(tmpTex);
 						delete wadTex;
 						return tmpTex;
 					}
@@ -4219,4 +4248,3 @@ Texture* Renderer::giveMeTexture(const std::string& texname)
 	}
 	return missingTex;
 }
-

@@ -326,6 +326,8 @@ public:
 	void ungrabEnt();
 	void loadFgds();
 
-	std::map<std::string, Texture*> glExteralTextures;
-	Texture* giveMeTexture(const std::string& texname);
+	std::vector<std::string> glExteralTextures_names;
+	std::vector<Texture*> glExteralTextures_textures;
+	std::vector<std::string> glExteralTextures_wads;
+	Texture* giveMeTexture(const std::string& texname, const std::string & wadPart = std::string());
 };
