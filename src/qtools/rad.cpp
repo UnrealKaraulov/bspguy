@@ -278,7 +278,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 	for (int i = 0; i < 2; i++)
 	{
 		mins_out[i] = (int)floor(mins[i] / TEXTURE_STEP);
-		maxs_out[i] = (int)ceil(maxs[i] / TEXTURE_STEP);;
+		maxs_out[i] = (int)ceil(maxs[i] / TEXTURE_STEP);
 
 		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * TEXTURE_STEP > 4096)
 		{

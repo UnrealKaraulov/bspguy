@@ -97,7 +97,8 @@ public:
 	BSPMODEL* models;
 
 	bool is_colored_lightmap;
-	bool is_texture_pal;
+	bool is_texture_has_pal;
+	bool target_save_texture_has_pal;
 
 	std::string bsp_path;
 	std::string bsp_name;
@@ -224,7 +225,8 @@ public:
 	int create_solid(Solid& solid, int targetModelIdx = -1);
 
 	int create_leaf(int contents);
-	void create_primitive_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int textureIdx);
+	void create_inside_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx);
+	void create_primitive_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int textureIdx, bool inside = false);
 	void create_solid_nodes(Solid& solid, BSPMODEL* targetModel);
 	// returns index of the solid node
 

@@ -1564,7 +1564,7 @@ void Renderer::cameraObjectHovering()
 		vec3 pickStart, pickDir;
 		getPickRay(pickStart, pickDir);
 		PickInfo vertPick = PickInfo();
-		vertPick.bestDist = FLT_MAX_COORD;
+		vertPick.bestDist = FLT_MAX_COORD * 2.0f + 1.0f;
 
 		Entity* ent = map->ents[entIdx[0]];
 		vec3 entOrigin = ent->origin;
@@ -1606,7 +1606,7 @@ void Renderer::cameraObjectHovering()
 		return;
 
 	PickInfo vertPick = PickInfo();
-	vertPick.bestDist = FLT_MAX_COORD;
+	vertPick.bestDist = FLT_MAX_COORD * 2.0f + 1.0f;
 
 	originHovered = false;
 
@@ -1635,7 +1635,7 @@ void Renderer::cameraObjectHovering()
 			vec3 pickStart, pickDir;
 			getPickRay(pickStart, pickDir);
 			PickInfo axisPick = PickInfo();
-			axisPick.bestDist = FLT_MAX_COORD;
+			axisPick.bestDist = FLT_MAX_COORD * 2.0f + 1.0f;
 
 			if (map->getBspRender())
 			{
@@ -1816,7 +1816,7 @@ void Renderer::pickObject()
 	Bsp* oldmap = map;
 
 	PickInfo tmpPickInfo = PickInfo();
-	tmpPickInfo.bestDist = FLT_MAX_COORD;
+	tmpPickInfo.bestDist = FLT_MAX_COORD * 2.0f + 1.0f;
 
 	map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tmpPickInfo, &map);
 
@@ -2174,8 +2174,8 @@ bool Renderer::transformAxisControls()
 					}
 					else
 					{
-						map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
 						map->resize_all_lightmaps();
+						map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
 					}
 					map->getBspRender()->refreshModel(modelIdx);
 					map->getBspRender()->refreshModelClipnodes(modelIdx);
@@ -3490,7 +3490,6 @@ bool Renderer::splitModelFace()
 			selectedEdges.push_back(i);
 		}
 	}
-
 	if (selectedEdges.size() != 2)
 	{
 		print_log(get_localized_string(LANG_0917));
@@ -3689,8 +3688,8 @@ bool Renderer::splitModelFace()
 	gui->reloadLimits();
 
 
-	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
 	map->resize_all_lightmaps();
+	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
 
 	mapRenderer->loadLightmaps();
 	mapRenderer->calcFaceMaths();

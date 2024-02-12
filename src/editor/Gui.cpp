@@ -546,16 +546,19 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->update_lump_pointers();
 		update_unused_wad_files(src_map, bspModel, ExportType);
 	}
+
 	if (ExportType == 1)
 	{
 		bspModel->is_bsp29 = true;
-		bspModel->is_texture_pal = false;
+		bspModel->is_texture_has_pal = false;
+		bspModel->target_save_texture_has_pal = false;
 		bspModel->bsp_header.nVersion = 29;
 	}
 	else
 	{
 		bspModel->is_bsp29 = false;
-		bspModel->is_texture_pal = true;
+		bspModel->is_texture_has_pal = true;
+		bspModel->target_save_texture_has_pal = true;
 		bspModel->bsp_header.nVersion = 30;
 	}
 
@@ -583,13 +586,13 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	//if (ExportType == 1)
 	//{
 	//	tmpMap->is_bsp29 = true;
-	//	tmpMap->is_texture_pal = false;
+	//	tmpMap->is_texture_has_pal = false;
 	//	tmpMap->bsp_header.nVersion = 29;
 	//}
 	//else
 	//{
 	//	tmpMap->is_bsp29 = false;
-	//	tmpMap->is_texture_pal = true;
+	//	tmpMap->is_texture_has_pal = true;
 	//	tmpMap->bsp_header.nVersion = 30;
 	//}
 
@@ -1288,12 +1291,12 @@ void Gui::drawBspContexMenu()
 							if (map->ents[tmpentIdx]->isBspModel())
 							{
 								map->duplicate_model_structures(map->ents[tmpentIdx]->getBspModelIdx());
-								rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 							}
 						}
 						map->update_ent_lump();
 
 						map->resize_all_lightmaps();
+						rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 
 						rend->loadLightmaps();
 
@@ -1626,7 +1629,7 @@ void Gui::drawMenuBar()
 
 				bool is_need_reload = false;
 
-				if (ImGui::MenuItem(get_localized_string(LANG_0481).c_str(), NULL, is_default_format))
+				if (ImGui::MenuItem(get_localized_string(LANG_0481).c_str(), NULL, is_default_format && map->is_texture_has_pal))
 				{
 					if (map->isValid())
 					{
@@ -1641,6 +1644,42 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = true;
+						map->target_save_texture_has_pal = true;
+
+						map->bsp_header.nVersion = 30;
+
+						if (map->validate() && map->isValid())
+						{
+							is_need_reload = true;
+							map->write(map->bsp_path);
+						}
+						else
+						{
+							print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
+						}
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
+					}
+				}
+
+				if (ImGui::MenuItem((get_localized_string(LANG_0481) + "[NO PALETTE]").c_str(), NULL, is_default_format && !map->is_texture_has_pal))
+				{
+					if (map->isValid())
+					{
+						map->update_ent_lump();
+						map->update_lump_pointers();
+
+						map->is_bsp30ext = false;
+						map->is_bsp2 = false;
+						map->is_bsp2_old = false;
+						map->is_bsp29 = false;
+						map->is_32bit_clipnodes = false;
+						map->is_broken_clipnodes = false;
+						map->is_blue_shift = false;
+						map->is_colored_lightmap = true;
+						map->target_save_texture_has_pal = true;
 
 						map->bsp_header.nVersion = 30;
 
@@ -1693,6 +1732,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = true;
 						map->is_colored_lightmap = true;
+						map->target_save_texture_has_pal = true;
 
 						map->bsp_header.nVersion = 30;
 
@@ -1745,6 +1785,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = true;
+						map->target_save_texture_has_pal = false;
 
 						map->bsp_header.nVersion = 29;
 
@@ -1797,6 +1838,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = false;
+						map->target_save_texture_has_pal = false;
 
 						map->bsp_header.nVersion = 29;
 
@@ -1851,6 +1893,7 @@ void Gui::drawMenuBar()
 							map->is_broken_clipnodes = true;
 							map->is_blue_shift = false;
 							map->is_colored_lightmap = true;
+							map->target_save_texture_has_pal = false;
 
 							map->bsp_header.nVersion = 29;
 
@@ -1903,6 +1946,7 @@ void Gui::drawMenuBar()
 							map->is_broken_clipnodes = true;
 							map->is_blue_shift = false;
 							map->is_colored_lightmap = false;
+							map->target_save_texture_has_pal = false;
 
 							map->bsp_header.nVersion = 29;
 
@@ -1957,6 +2001,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = true;
+						map->target_save_texture_has_pal = false;
 
 						map->bsp_header.nVersion = 29;
 
@@ -2011,6 +2056,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = false;
+						map->target_save_texture_has_pal = false;
 
 						map->bsp_header.nVersion = 29;
 
@@ -2064,6 +2110,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = true;
+						map->target_save_texture_has_pal = false;
 
 						map->bsp_header.nVersion = 29;
 
@@ -2117,6 +2164,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = false;
+						map->target_save_texture_has_pal = false;
 
 						map->bsp_header.nVersion = 29;
 
@@ -2170,6 +2218,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = true;
+						map->target_save_texture_has_pal = true;
 
 						map->bsp_header.nVersion = 30;
 
@@ -2223,6 +2272,7 @@ void Gui::drawMenuBar()
 						map->is_broken_clipnodes = false;
 						map->is_blue_shift = false;
 						map->is_colored_lightmap = false;
+						map->target_save_texture_has_pal = true;
 
 						map->bsp_header.nVersion = 30;
 
@@ -3536,6 +3586,8 @@ void Gui::drawMenuBar()
 						rend->reuploadTextures();
 
 						map->regenerate_clipnodes(newModelIdx, -1);
+
+						map->getBspRender()->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 				}
 			}
@@ -4579,10 +4631,79 @@ void Gui::drawMenuBar()
 						{
 							print_log("mip name \"BAD NAME\" offset {} data offset NO DATA OFFSET\n", name, mip_offset, data_offset);
 						}
+					}
+				}
 
+				if (ImGui::MenuItem("CREATE SKYBOX"))
+				{
+					map->remove_faces_by_content(CONTENTS_SOLID);
+					map->remove_faces_by_content(CONTENTS_SKY);
+
+					for (int f = map->faceCount - 1; f >= 0; f--)
+					{
+						BSPFACE32 face = map->faces[f];
+
+						if (face.iTextureInfo >= 0)
+						{
+							BSPTEXTUREINFO texinfo = map->texinfos[face.iTextureInfo];
+							if (texinfo.iMiptex >= 0)
+							{
+								int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+								if (texOffset >= 0)
+								{
+									BSPMIPTEX tex = *((BSPMIPTEX*)(map->textures + texOffset));
+									std::string texname = toLowerCase(tex.szName);
+									if (texname == "sky" || texname == "skycull")
+									{
+										map->remove_face(f);
+									}
+								}
+							}
+						}
 					}
 
+
+					rend->loadLightmaps();
+					rend->calcFaceMaths();
+					rend->preRenderFaces();
+
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+
+
+					vec3 mins = { -FLT_MAX_COORD + 1.0f,-FLT_MAX_COORD + 1.0f,-FLT_MAX_COORD + 1.0f }, maxs = { FLT_MAX_COORD - 1.0f,FLT_MAX_COORD - 1.0f,FLT_MAX_COORD - 1.0f };
+					//map->get_bounding_box(mins, maxs);
+					int newModelIdx = map->create_model();
+
+					BSPMODEL& newModel = map->models[newModelIdx];
+
+					Entity* newEnt = new Entity("func_wall");
+
+					newEnt->addKeyvalue("model", "*" + std::to_string(newModelIdx));
+					map->ents.push_back(newEnt);
+
+					for (auto& ent : map->ents)
+					{
+						if (ent->isWorldSpawn())
+						{
+							ent->setOrAddKeyvalue("MaxRange", std::to_string((int)(FLT_MAX_COORD * 2.0f + 1.0f)));
+						}
+					}
+
+					map->update_ent_lump();
+
+					map->create_inside_box(mins, maxs, &newModel, 0);
+
+					rend->loadLightmaps();
+					rend->calcFaceMaths();
+					rend->preRenderFaces();
+					rend->preRenderEnts();
+					rend->addClipnodeModel(newModelIdx);
+
+					rend->pushModelUndoState("CREATE SKYBOX", EDIT_MODEL_LUMPS);
 				}
+
 
 				ImGui::EndMenu();
 			}
@@ -10573,8 +10694,8 @@ void Gui::drawFaceEditorWidget()
 				targetLumps = FL_PLANES | FL_TEXTURES | FL_VERTICES | FL_NODES | FL_TEXINFO | FL_FACES | FL_LIGHTING | FL_CLIPNODES | FL_LEAVES | FL_EDGES | FL_SURFEDGES | FL_MODELS;
 			}
 
-			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
 			map->resize_all_lightmaps(true);
+			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
 			mapRenderer->loadLightmaps();
 			mapRenderer->calcFaceMaths();
 

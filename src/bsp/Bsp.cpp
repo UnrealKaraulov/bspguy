@@ -122,7 +122,8 @@ Bsp::Bsp()
 	is_blue_shift = false;
 	is_colored_lightmap = true;
 
-	is_texture_pal = true;
+	is_texture_has_pal = true;
+	target_save_texture_has_pal = true;
 
 	extralumps = NULL;
 
@@ -155,7 +156,9 @@ Bsp::Bsp(std::string fpath)
 	is_broken_clipnodes = false;
 	is_blue_shift = false;
 	is_colored_lightmap = true;
-	is_texture_pal = true;
+
+	is_texture_has_pal = true;
+	target_save_texture_has_pal = true;
 
 	force_skip_crc = false;
 
@@ -1491,6 +1494,9 @@ int Bsp::delete_embedded_textures()
 
 	replace_lump(LUMP_TEXTURES, newTextureData, newTexDataSize);
 
+
+	remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
+
 	return numRemoved;
 }
 
@@ -1579,69 +1585,77 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 {
 	int oldTexCount = textureCount;
 
-	int removeCount = 0;
-	int removeSize = 0;
+	int usedCount = 0;
+	int usedSize = 4;
+
 	for (int i = 0; i < oldTexCount; i++)
 	{
-		if (!usedTextures[i])
+		int offset = ((int*)textures)[i + 1];
+		for (int t = 0; t < texinfoCount; t++)
 		{
-			for (int t = 0; t < texinfoCount; t++)
+			BSPTEXTUREINFO& texinfo = texinfos[t];
+			if (texinfo.iMiptex == i)
 			{
-				BSPTEXTUREINFO& texinfo = texinfos[t];
-				if (texinfo.iMiptex == i)
+				usedTextures[i] = true;
+				if (offset < 0)
 				{
-					usedTextures[i] = true;
+					remappedIndexes[i] = 0;
+					texinfo.iMiptex = 0;
 				}
 			}
-			if (usedTextures[i])
-				continue;
+		}
 
-			int offset = ((int*)textures)[i + 1];
-			if (offset < 0)
+		if (usedTextures[i])
+		{
+			if (offset >= 0)
 			{
-				removeCount++;
+				usedSize += getBspTextureSize(i) + sizeof(int);
+				usedCount++;
 			}
-			else
-			{
-				BSPMIPTEX* tex = (BSPMIPTEX*)(textures + offset);
-				// don't delete single frames from animated textures or else game crashes
-				if ((tex->szName[0] == '-' || tex->szName[0] == '+') && strlen(tex->szName) > 2)
-				{
-					// TODO: delete all frames if none are used. Success ?!
+			continue;
+		}
 
-					char* newname = &tex->szName[2]; // +0BTN1 +1BTN1 +ABTN1 +BBTN1
-					for (int n = 0; n < oldTexCount; n++)
+		if (offset >= 0)
+		{
+			BSPMIPTEX* tex = (BSPMIPTEX*)(textures + offset);
+			// don't delete single frames from animated textures or else game crashes
+			if ((tex->szName[0] == '-' || tex->szName[0] == '+') && strlen(tex->szName) > 2)
+			{
+				// TODO: delete all frames if none are used. Success ?!
+
+				char* newname = &tex->szName[2]; // +0BTN1 +1BTN1 +ABTN1 +BBTN1
+				for (int n = 0; n < oldTexCount; n++)
+				{
+					if (usedTextures[n] && n != i)
 					{
-						if (usedTextures[n] && n != i)
+						int offset2 = ((int*)textures)[n + 1];
+						if (offset2 >= 0)
 						{
-							int offset2 = ((int*)textures)[n + 1];
-							if (offset2 >= 0)
+							BSPMIPTEX* tex2 = (BSPMIPTEX*)(textures + offset2);
+							if (strlen(tex2->szName) > 2 && strcasecmp(newname, &tex2->szName[2]) == 0)
 							{
-								BSPMIPTEX* tex2 = (BSPMIPTEX*)(textures + offset2);
-								if (strlen(tex2->szName) > 2 && strcasecmp(newname, &tex2->szName[2]) == 0)
-								{
-									usedTextures[i] = true;
-									break;
-								}
+								usedTextures[i] = true;
+								break;
 							}
 						}
 					}
-
-					if (usedTextures[i])
-					{
-						continue;
-					}
 				}
-				removeSize += getBspTextureSize(i) + sizeof(int);
-				removeCount++;
-			}
 
+				if (usedTextures[i])
+				{
+					usedSize += getBspTextureSize(i) + sizeof(int);
+					usedCount++;
+					continue;
+				}
+			}
 		}
 	}
 
-	int newTexCount = oldTexCount - removeCount;
+	int removeCount = oldTexCount - usedCount;
+	int newTexCount = usedCount;
 
-	int totalSize = bsp_header.lump[LUMP_TEXTURES].nLength - removeSize;
+	int removeSize = bsp_header.lump[LUMP_TEXTURES].nLength - usedSize;
+	int totalSize = usedSize;
 
 	totalSize = (totalSize + 3) & ~3; // 4 bytes align lump
 
@@ -1649,7 +1663,6 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 	memset(newTexData, 0, totalSize);
 
 	int* texHeader = (int*)newTexData;
-
 
 	int newOffset = (newTexCount + 1) * sizeof(int);
 	int k = 0;
@@ -1660,24 +1673,16 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 			continue;
 		}
 		int oldOffset = ((int*)textures)[i + 1];
-		if (oldOffset < 0)
-		{
-			texHeader[k + 1] = oldOffset;
-			newOffset += sizeof(int);
-		}
-		else
+		if (oldOffset >= 0)
 		{
 			//BSPMIPTEX* tex = (BSPMIPTEX*)(textures + oldOffset);
 			int sz = getBspTextureSize(i);
-
 			memcpy(newTexData + newOffset, textures + oldOffset, sz);
-
 			texHeader[k + 1] = newOffset;
-
 			newOffset += sz;
+			remappedIndexes[i] = k;
+			k++;
 		}
-		remappedIndexes[i] = k;
-		k++;
 	}
 
 	texHeader[0] = k;
@@ -2709,6 +2714,19 @@ void Bsp::write(const std::string& path)
 
 	update_lump_pointers();
 
+	// convert textures
+
+	if (target_save_texture_has_pal != is_texture_has_pal)
+	{
+		createDir(g_working_dir);
+		if (ExportWad(g_working_dir + "temp.wad"))
+		{
+			is_texture_has_pal = target_save_texture_has_pal;
+			ImportWad(g_working_dir + "temp.wad");
+			removeFile(g_working_dir + "temp.wad");
+		}
+	}
+
 	unsigned char* nulls = new unsigned char[sizeof(BSPHEADER) + sizeof(BSPHEADER_EX)];
 
 	file.write((const char*)nulls, is_bsp30ext && extralumps ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
@@ -2742,6 +2760,8 @@ void Bsp::write(const std::string& path)
 			faces[n].nLightmapOffset /= sizeof(COLOR3);
 		}
 	}
+
+	
 
 	unsigned char* oldClipnodes = (unsigned char*)clipnodes;
 	BSPCLIPNODE16* freeClipnodes16 = NULL;
@@ -3658,8 +3678,8 @@ bool Bsp::load_lumps(std::string fpath)
 		print_log("Light: {} [mono {}, color {}, map has {}]\n", !is_colored_lightmap ? "monochrome" : "colored", lightmap1_bytes, lightmap3_bytes, lightDataLength);
 	}
 
-	int textures_bytes = 0;
-	int textures_no_pal_bytes = 0;
+	int textures_bytes = sizeof(int) + textureCount * sizeof(int);
+	int textures_no_pal_bytes = sizeof(int) + textureCount * sizeof(int);
 
 	for (int t = 0; t < textureCount; t++)
 	{
@@ -3705,12 +3725,13 @@ bool Bsp::load_lumps(std::string fpath)
 		}
 	}
 
-	is_texture_pal = textureCount == 0 || textures_no_pal_bytes == textures_bytes || abs(textures_no_pal_bytes - textureDataLength) > abs(textures_bytes - textureDataLength);
+	is_texture_has_pal = textureCount == 0 || textures_no_pal_bytes == textures_bytes || abs(textures_no_pal_bytes - textureDataLength) > abs(textures_bytes - textureDataLength);
+	target_save_texture_has_pal = is_texture_has_pal;
 
 	if (g_settings.verboseLogs)
 	{
-		//print_log("Embedded Textures: {}\n", !is_texture_pal ? "quake pal" : "has pal");
-		print_log("Embedded Textures: {} [pal:{}, nopal:{}, map has:{}]\n", !is_texture_pal ? "quake pal" : "has pal", textures_bytes, textures_no_pal_bytes, textureDataLength);
+		//print_log("Embedded Textures: {}\n", !is_texture_has_pal ? "quake pal" : "has pal");
+		print_log("Embedded Textures: {} [pal:{}, nopal:{}, map has:{}]\n", !is_texture_has_pal ? "quake pal" : "has pal", textures_bytes, textures_no_pal_bytes, textureDataLength);
 	}
 
 	if (!is_colored_lightmap)
@@ -4244,7 +4265,7 @@ bool Bsp::validate()
 			models[i].nMins.y > models[i].nMaxs.y ||
 			models[i].nMins.z > models[i].nMaxs.z)
 		{
-			print_log("Backwards mins/maxs in model {}. Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i,
+			print_log(PRINT_RED | PRINT_INTENSITY, "Backwards mins/maxs in model {}. Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i,
 				models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
 				models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
 			isValid = false;
@@ -5292,7 +5313,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				oldtex->nWidth = width;
 				oldtex->nHeight = height;
 
-				remove_unused_model_structures(CLEAN_TEXTURES);
+				remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 				return oldtexid;
 			}
 			else
@@ -5315,7 +5336,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
 
-			remove_unused_model_structures(CLEAN_TEXTURES);
+			remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 			return oldtexid;
 		}
 	}
@@ -5368,7 +5389,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	memset(&palette, 0, sizeof(COLOR3) * 256);
 	int colorCount = 0;
 
-	if (is_texture_pal && !force_custompal)
+	if (is_texture_has_pal && !force_custompal)
 	{
 		texDataSize += width * height + sizeof(short) /* palette count */ + sizeof(COLOR3) * 256;
 	}
@@ -5385,7 +5406,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		COLOR3* src = (COLOR3*)data;
 
 		// If custom pal || quake || force quake
-		if (!is_texture_pal || force_custompal)
+		if (!is_texture_has_pal || force_custompal)
 		{
 			int colors = 0;
 			if (g_settings.pal_id >= 0)
@@ -5489,7 +5510,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 
 		size_t palleteOffset = oldtex->nOffsets[3] + (width >> 3) * (height >> 3);
-		if (is_texture_pal && !force_custompal)
+		if (is_texture_has_pal && !force_custompal)
 		{
 			*(unsigned short*)(textures + newTexOffset + palleteOffset) = colorCount;
 			palleteOffset += sizeof(short) /* pal count */;
@@ -5557,14 +5578,14 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		newMipTex->nOffsets[1] = newMipTex->nOffsets[0] + width * height;
 		newMipTex->nOffsets[2] = newMipTex->nOffsets[1] + (width >> 1) * (height >> 1);
 		newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
-		unsigned char * palleteOffset = newTexData + (newTexOffset + newMipTex->nOffsets[3] + (width >> 3) * (height >> 3));
+		unsigned char* palleteOffset = newTexData + (newTexOffset + newMipTex->nOffsets[3] + (width >> 3) * (height >> 3));
 
-		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[0], mip[0], width* height);
-		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[1], mip[1], (width >> 1)* (height >> 1));
-		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[2], mip[2], (width >> 2)* (height >> 2));
-		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[3], mip[3], (width >> 3)* (height >> 3));
+		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[0], mip[0], width * height);
+		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
+		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
+		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 
-		if (is_texture_pal && !force_custompal)
+		if (is_texture_has_pal && !force_custompal)
 		{
 			*(unsigned short*)palleteOffset = 256;
 			memcpy(palleteOffset + 2, palette, sizeof(COLOR3) * 256);
@@ -5577,7 +5598,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	}
 
 	replace_lump(LUMP_TEXTURES, newTexData, newTexLumpSize);
-	remove_unused_model_structures(CLEAN_TEXTURES);
+	remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 	return textureCount - 1;
 }
 
@@ -5606,7 +5627,7 @@ int Bsp::add_texture(WADTEX* tex, bool embedded)
 	{
 		COLOR3* newTex = ConvertWadTexToRGB(tex);
 
-		if (!is_texture_pal)
+		if (!is_texture_has_pal)
 		{
 			COLOR3 palette[256];
 			unsigned int colorCount = 0;
@@ -5654,7 +5675,43 @@ int Bsp::create_leaf(int contents)
 	return newLeafIdx;
 }
 
-void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx)
+void Bsp::create_inside_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx)
+{
+	create_primitive_box(min, max, targetModel, textureIdx, true);
+	targetModel->iHeadnodes[1] = targetModel->iHeadnodes[2] = targetModel->iHeadnodes[3] = CONTENTS_EMPTY;
+	for (int f = targetModel->iFirstFace; f < targetModel->iFirstFace + targetModel->nFaces; f++)
+	{
+		BSPFACE32 face = faces[f];
+		int size[2];
+		GetFaceLightmapSize(this, f, size);
+		size[0] *= TEXTURE_STEP;
+		size[1] *= TEXTURE_STEP;
+		if (face.iTextureInfo >= 0)
+		{
+			BSPTEXTUREINFO * texinfo = get_unique_texinfo(f);
+			
+			if (texinfo->iMiptex >= 0)
+			{
+				int texOffset = ((int*)textures)[texinfo->iMiptex + 1];
+				if (texOffset >= 0)
+				{
+					BSPMIPTEX tex = *((BSPMIPTEX*)(textures + texOffset));
+					texinfo->vS /= size[0] / tex.nWidth;
+					texinfo->vT /= size[1] / tex.nHeight;
+				}
+			}
+		}
+	}
+	save_undo_lightmaps();
+	for (int f = targetModel->iFirstFace; f < targetModel->iFirstFace + targetModel->nFaces; f++)
+	{
+		BSPFACE32 & face = faces[f];
+		face.nStyles[0] = 0;
+	}
+	resize_all_lightmaps();
+}
+
+void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx, bool inside)
 {
 	// add new verts (1 for each corner)
 	// TODO: subdivide faces to prevent max surface extents error
@@ -5663,15 +5720,30 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		vec3* newVerts = new vec3[vertCount + 8];
 		memcpy(newVerts, verts, vertCount * sizeof(vec3));
 
-		newVerts[vertCount + 0] = vec3(min.x, min.y, min.z); // front-left-bottom
-		newVerts[vertCount + 1] = vec3(max.x, min.y, min.z); // front-right-bottom
-		newVerts[vertCount + 2] = vec3(max.x, max.y, min.z); // back-right-bottom
-		newVerts[vertCount + 3] = vec3(min.x, max.y, min.z); // back-left-bottom
+		if (inside)
+		{
+			newVerts[vertCount + 0] = vec3(min.x, min.y, min.z); // back-left-bottom
+			newVerts[vertCount + 1] = vec3(max.x, min.y, min.z); // back-right-bottom
+			newVerts[vertCount + 2] = vec3(max.x, max.y, min.z); // front-right-bottom
+			newVerts[vertCount + 3] = vec3(min.x, max.y, min.z); // front-left-bottom
 
-		newVerts[vertCount + 4] = vec3(min.x, min.y, max.z); // front-left-top
-		newVerts[vertCount + 5] = vec3(max.x, min.y, max.z); // front-right-top
-		newVerts[vertCount + 6] = vec3(max.x, max.y, max.z); // back-right-top
-		newVerts[vertCount + 7] = vec3(min.x, max.y, max.z); // back-left-top
+			newVerts[vertCount + 4] = vec3(min.x, min.y, max.z); // back-left-top
+			newVerts[vertCount + 5] = vec3(max.x, min.y, max.z); // back-right-top
+			newVerts[vertCount + 6] = vec3(max.x, max.y, max.z); // front-right-top
+			newVerts[vertCount + 7] = vec3(min.x, max.y, max.z); // front-left-top
+		}
+		else
+		{
+			newVerts[vertCount + 0] = vec3(min.x, min.y, min.z); // front-left-bottom
+			newVerts[vertCount + 1] = vec3(max.x, min.y, min.z); // front-right-bottom
+			newVerts[vertCount + 2] = vec3(max.x, max.y, min.z); // back-right-bottom
+			newVerts[vertCount + 3] = vec3(min.x, max.y, min.z); // back-left-bottom
+
+			newVerts[vertCount + 4] = vec3(min.x, min.y, max.z); // front-left-top
+			newVerts[vertCount + 5] = vec3(max.x, min.y, max.z); // front-right-top
+			newVerts[vertCount + 6] = vec3(max.x, max.y, max.z); // back-right-top
+			newVerts[vertCount + 7] = vec3(min.x, max.y, max.z); // back-left-top
+		}
 
 		replace_lump(LUMP_VERTICES, newVerts, (vertCount + 8) * sizeof(vec3));
 	}
@@ -5683,29 +5755,58 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		BSPEDGE32* newEdges = new BSPEDGE32[edgeCount + 12];
 		memcpy(newEdges, edges, edgeCount * sizeof(BSPEDGE32));
 
-		// left
-		newEdges[startEdge + 0] = BSPEDGE32(startVert + 3, startVert + 0);
-		newEdges[startEdge + 1] = BSPEDGE32(startVert + 4, startVert + 7);
+		if (inside)
+		{
+			// left
+			newEdges[startEdge + 0] = BSPEDGE32(startVert + 0, startVert + 3);
+			newEdges[startEdge + 1] = BSPEDGE32(startVert + 7, startVert + 4);
 
-		// right
-		newEdges[startEdge + 2] = BSPEDGE32(startVert + 1, startVert + 2); // bottom edge
-		newEdges[startEdge + 3] = BSPEDGE32(startVert + 6, startVert + 5); // right edge
+			// right
+			newEdges[startEdge + 2] = BSPEDGE32(startVert + 2, startVert + 1); // bottom edge
+			newEdges[startEdge + 3] = BSPEDGE32(startVert + 5, startVert + 6); // right edge
 
-		// front
-		newEdges[startEdge + 4] = BSPEDGE32(startVert + 0, startVert + 1); // bottom edge
-		newEdges[startEdge + 5] = BSPEDGE32(startVert + 5, startVert + 4); // top edge
+			// front
+			newEdges[startEdge + 4] = BSPEDGE32(startVert + 1, startVert + 0); // bottom edge
+			newEdges[startEdge + 5] = BSPEDGE32(startVert + 4, startVert + 5); // top edge
 
-		// back
-		newEdges[startEdge + 6] = BSPEDGE32(startVert + 3, startVert + 7); // left edge
-		newEdges[startEdge + 7] = BSPEDGE32(startVert + 6, startVert + 2); // right edge
+			// back
+			newEdges[startEdge + 6] = BSPEDGE32(startVert + 7, startVert + 3); // left edge
+			newEdges[startEdge + 7] = BSPEDGE32(startVert + 2, startVert + 6); // right edge
 
-		// bottom
-		newEdges[startEdge + 8] = BSPEDGE32(startVert + 3, startVert + 2);
-		newEdges[startEdge + 9] = BSPEDGE32(startVert + 1, startVert + 0);
+			// bottom
+			newEdges[startEdge + 8] = BSPEDGE32(startVert + 2, startVert + 3);
+			newEdges[startEdge + 9] = BSPEDGE32(startVert + 0, startVert + 1);
 
-		// top
-		newEdges[startEdge + 10] = BSPEDGE32(startVert + 7, startVert + 4);
-		newEdges[startEdge + 11] = BSPEDGE32(startVert + 5, startVert + 6);
+			// top
+			newEdges[startEdge + 10] = BSPEDGE32(startVert + 4, startVert + 7);
+			newEdges[startEdge + 11] = BSPEDGE32(startVert + 6, startVert + 5);
+		}
+		else
+		{
+			// left
+			newEdges[startEdge + 0] = BSPEDGE32(startVert + 3, startVert + 0);
+			newEdges[startEdge + 1] = BSPEDGE32(startVert + 4, startVert + 7);
+
+			// right
+			newEdges[startEdge + 2] = BSPEDGE32(startVert + 1, startVert + 2); // bottom edge
+			newEdges[startEdge + 3] = BSPEDGE32(startVert + 6, startVert + 5); // right edge
+
+			// front
+			newEdges[startEdge + 4] = BSPEDGE32(startVert + 0, startVert + 1); // bottom edge
+			newEdges[startEdge + 5] = BSPEDGE32(startVert + 5, startVert + 4); // top edge
+
+			// back
+			newEdges[startEdge + 6] = BSPEDGE32(startVert + 3, startVert + 7); // left edge
+			newEdges[startEdge + 7] = BSPEDGE32(startVert + 6, startVert + 2); // right edge
+
+			// bottom
+			newEdges[startEdge + 8] = BSPEDGE32(startVert + 3, startVert + 2);
+			newEdges[startEdge + 9] = BSPEDGE32(startVert + 1, startVert + 0);
+
+			// top
+			newEdges[startEdge + 10] = BSPEDGE32(startVert + 7, startVert + 4);
+			newEdges[startEdge + 11] = BSPEDGE32(startVert + 5, startVert + 6);
+		}
 
 		replace_lump(LUMP_EDGES, newEdges, (edgeCount + 12) * sizeof(BSPEDGE32));
 	}
@@ -5727,18 +5828,26 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		replace_lump(LUMP_SURFEDGES, newSurfedges, (surfedgeCount + 24) * sizeof(int));
 	}
 
+	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 6];
 	// add new planes (1 for each face/node)
 	unsigned int startPlane = planeCount;
 	{
-		BSPPLANE* newPlanes = new BSPPLANE[planeCount + 6];
 		memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
 
-		newPlanes[startPlane + 0] = { vec3(1.0f, 0.0f, 0.0f), min.x, PLANE_X }; // left
-		newPlanes[startPlane + 1] = { vec3(1.0f, 0.0f, 0.0f), max.x, PLANE_X }; // right
-		newPlanes[startPlane + 2] = { vec3(0.0f, 1.0f, 0.0f), min.y, PLANE_Y }; // front
-		newPlanes[startPlane + 3] = { vec3(0.0f, 1.0f, 0.0f), max.y, PLANE_Y }; // back
-		newPlanes[startPlane + 4] = { vec3(0.0f, 0.0f, 1.0f), min.z, PLANE_Z }; // bottom
-		newPlanes[startPlane + 5] = { vec3(0.0f, 0.0f, 1.0f), max.z, PLANE_Z }; // top
+		newPlanes[startPlane + 0] = { /*inside ? -vec3(1.0f, 0.0f, 0.0f) :*/ vec3(1.0f, 0.0f, 0.0f), /*inside ? -min.x : */min.x, PLANE_X }; // left
+		newPlanes[startPlane + 1] = { /*inside ? -vec3(1.0f, 0.0f, 0.0f) : */vec3(1.0f, 0.0f, 0.0f), /*inside ? -max.x : */max.x, PLANE_X }; // right
+		newPlanes[startPlane + 2] = { /*inside ? -vec3(0.0f, 1.0f, 0.0f) : */vec3(0.0f, 1.0f, 0.0f), /*inside ? -min.y : */min.y, PLANE_Y }; // front
+		newPlanes[startPlane + 3] = { /*inside ? -vec3(0.0f, 1.0f, 0.0f) : */vec3(0.0f, 1.0f, 0.0f), /*inside ? -max.y : */max.y, PLANE_Y }; // back
+		newPlanes[startPlane + 4] = { /*inside ? -vec3(0.0f, 0.0f, 1.0f) : */vec3(0.0f, 0.0f, 1.0f), /*inside ? -min.z : */min.z, PLANE_Z }; // bottom
+		newPlanes[startPlane + 5] = { /*inside ? -vec3(0.0f, 0.0f, 1.0f) : */vec3(0.0f, 0.0f, 1.0f), /*inside ? -max.z : */max.z, PLANE_Z }; // top
+
+	/*	if (inside)
+		{
+			for (int i = 0; i < 6; i++)
+			{
+				newPlanes[startPlane + i].update_plane(newPlanes[startPlane + i].vNormal, newPlanes[startPlane + i].fDist);
+			}
+		}*/
 
 		replace_lump(LUMP_PLANES, newPlanes, (planeCount + 6) * sizeof(BSPPLANE));
 	}
@@ -5772,8 +5881,16 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 			info.nFlags = TEX_SPECIAL;
 			info.shiftS = 0;
 			info.shiftT = 0;
-			info.vT = faceUp[i];
-			info.vS = crossProduct(faceUp[i], faceNormals[i]);
+			if (inside)
+			{
+				info.vT = -faceUp[i];
+				info.vS = crossProduct(-faceUp[i], faceNormals[i]);
+			}
+			else
+			{
+				info.vT = faceUp[i];
+				info.vS = crossProduct(faceUp[i], faceNormals[i]);
+			}
 			// TODO: fit texture to face
 		}
 
@@ -5792,9 +5909,9 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 			face.iFirstEdge = startSurfedge + i * 4;
 			face.iPlane = (startPlane + i);
 			face.nEdges = 4;
-			face.nPlaneSide = i % 2 == 0; // even-numbered planes are inverted
+			face.nPlaneSide = inside ? i % 2 != 0 : i % 2 == 0; // even-numbered planes are inverted
 			face.iTextureInfo = (startTexinfo + i);
-			face.nLightmapOffset = 0; // TODO: Lighting
+			face.nLightmapOffset = 0;
 			memset(face.nStyles, 255, MAX_LIGHTMAPS);
 		}
 
@@ -5807,26 +5924,14 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 	// So, just find an existing EMPTY leaf. Also, water brushes work just fine with SOLID nodes.
 	// The inner contents of a node is changed dynamically by entity properties.
 	int sharedSolidLeaf = 0;
-	int anyEmptyLeaf = 0;
-	for (int i = 0; i < leafCount; i++)
+	int anyEmptyLeaf = create_leaf(CONTENTS_EMPTY);
+	for (int f = faceCount - 7; f < faceCount; f++)
 	{
-		if (leaves[i].nContents == CONTENTS_EMPTY)
-		{
-			anyEmptyLeaf = i;
-			break;
-		}
+		leaf_add_face(f, anyEmptyLeaf);
 	}
-	// If emptyLeaf is still 0 (SOLID), it means the map is fully solid, so the contents wouldn't matter.
-	// Anyway, still setting this in case someone wants to copy the model to another map
-	if (anyEmptyLeaf == 0)
-	{
-		anyEmptyLeaf = create_leaf(CONTENTS_EMPTY);
-		targetModel->nVisLeafs = 1;
-	}
-	else
-	{
-		targetModel->nVisLeafs = 0;
-	}
+	
+
+	targetModel->nVisLeafs = 1; 
 
 	// add new nodes
 	unsigned int startNode = nodeCount;
@@ -5842,11 +5947,11 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 			node.iPlane = startPlane + k;
 			// node mins/maxs don't matter for submodels. Leave them at 0.
 
-			int insideContents = k == 5 ? ~sharedSolidLeaf : (nodeCount + k + 1);
+			int insideContents = k == 5 ? ( ~sharedSolidLeaf) : (nodeCount + k + 1);
 			int outsideContents = ~anyEmptyLeaf;
 
 			// can't have negative normals on planes so children are swapped instead
-			if (k % 2 == 0)
+			if (inside ? k % 2 != 0 : k % 2 == 0)
 			{
 				node.iChildren[0] = insideContents;
 				node.iChildren[1] = outsideContents;
@@ -5879,6 +5984,8 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		if (v.y < targetModel->nMins.y) targetModel->nMins.y = v.y;
 		if (v.z < targetModel->nMins.z) targetModel->nMins.z = v.z;
 	}
+	leaves[anyEmptyLeaf].nMins = targetModel->nMins;
+	leaves[anyEmptyLeaf].nMaxs = targetModel->nMaxs;
 }
 
 void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
@@ -6445,7 +6552,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 					usedmips.insert(texinfo.iMiptex);
 					BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + texOffset));
 
-					if (!is_texture_pal)
+					if (!is_texture_has_pal)
 					{
 						if (g_settings.pal_id >= 0)
 						{
@@ -6864,7 +6971,7 @@ bool Bsp::leaf_add_face(int faceIdx, int leafIdx)
 
 		leaves[i].iFirstMarkSurface = surface_idx;
 
-		if (!has_face && (leafIdx == -1 || leafIdx == i))
+		if (!has_face && (leafIdx <= -1 || leafIdx == i))
 		{
 			leaves[i].nMarkSurfaces += 1;
 			all_mark_surfaces.push_back(faceIdx);
@@ -6894,7 +7001,7 @@ bool Bsp::leaf_del_face(int faceIdx, int leafIdx)
 		int del_faces = 0;
 		for (int n = 0; n < leaves[i].nMarkSurfaces; n++)
 		{
-			if (marksurfs[leaves[i].iFirstMarkSurface + n] == faceIdx && (leafIdx == -1 || leafIdx == i))
+			if (marksurfs[leaves[i].iFirstMarkSurface + n] == faceIdx && (leafIdx <= -1 || leafIdx == i))
 			{
 				del_faces++;
 			}
@@ -8496,6 +8603,8 @@ bool Bsp::ExportWad(const std::string& path)
 	bool retval = true;
 	if (textureCount > 0)
 	{
+		if (fileExists(path))
+			removeFile(path);
 		Wad* tmpWad = new Wad(path);
 		std::vector<WADTEX*> tmpWadTex;
 		for (int i = 0; i < textureCount; i++)
@@ -8506,7 +8615,7 @@ bool Bsp::ExportWad(const std::string& path)
 				BSPMIPTEX* bspTex = (BSPMIPTEX*)(textures + oldOffset);
 				if (bspTex->nOffsets[0] <= 0)
 					continue;
-				if (!is_texture_pal)
+				if (!is_texture_has_pal)
 				{
 					if (g_settings.pal_id >= 0)
 					{
@@ -8804,7 +8913,7 @@ int Bsp::getBspTextureSize(int textureid)
 	int sz = sizeof(BSPMIPTEX);
 	if (tex->nOffsets[0] > 0)
 	{
-		if (is_texture_pal && is_texture_with_pal(textureid))
+		if (is_texture_has_pal && is_texture_with_pal(textureid))
 		{
 			sz += sizeof(short); /* pal size */
 			sz += sizeof(COLOR3) * 256; // pallette
@@ -8835,5 +8944,5 @@ bool Bsp::is_texture_with_pal(int textureid)
 			return true;
 	}
 
-	return is_texture_pal;
+	return is_texture_has_pal;
 }

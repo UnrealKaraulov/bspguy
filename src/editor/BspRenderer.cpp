@@ -1097,7 +1097,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		int groupIdx = -1;
 		for (size_t k = 0; k < renderGroups.size(); k++)
 		{
-			if (texinfo.iMiptex == -1 || texinfo.iMiptex >= map->textureCount)
+			if (texinfo.iMiptex <= -1 || texinfo.iMiptex >= map->textureCount)
 				continue;
 			bool textureMatch = !texturesLoaded || renderGroups[k].texture == glTextures[texinfo.iMiptex];
 			if (textureMatch && renderGroups[k].transparent == isTransparent)
@@ -2264,7 +2264,7 @@ bool BspRenderer::getRenderPointers(int faceIdx, RenderFace** renderFace, Render
 {
 	int modelIdx = map->get_model_from_face(faceIdx);
 
-	if (modelIdx == -1)
+	if (modelIdx <= -1)
 	{
 		return false;
 	}
@@ -2452,7 +2452,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 					continue;
 				if (renderEnts[i].modelIdx > 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
-					if (clipnodeHull == -1 && renderModels[renderEnts[i].modelIdx].groupCount > 0)
+					if (clipnodeHull <= -1 && renderModels[renderEnts[i].modelIdx].groupCount > 0)
 					{
 						continue; // skip rendering for models that have faces, if in auto mode
 					}
@@ -2551,12 +2551,12 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 {
-	if (hullIdx == -1)
+	if (hullIdx <= -1)
 	{
 		hullIdx = getBestClipnodeHull(modelIdx);
 	}
 
-	if (hullIdx == -1 || hullIdx > 3)
+	if (hullIdx <= -1 || hullIdx > 3)
 	{
 		return; // nothing can be drawn
 	}
@@ -3130,7 +3130,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 	bool selectWorldClips = modelIdx == 0 && (g_render_flags & RENDER_WORLD_CLIPNODES) && hullIdx != -1;
 	bool selectEntClips = modelIdx > 0 && (g_render_flags & RENDER_ENT_CLIPNODES);
 
-	if (hullIdx == -1 && renderModels[modelIdx].groupCount == 0)
+	if (hullIdx <= -1 && renderModels[modelIdx].groupCount == 0)
 	{
 		// clipnodes are visible for this model because it has no faces
 		hullIdx = getBestClipnodeHull(modelIdx);
