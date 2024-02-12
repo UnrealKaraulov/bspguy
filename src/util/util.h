@@ -63,73 +63,6 @@ std::vector<std::string> splitString(const std::string& s, const std::string& de
 
 void replaceAll(std::string& str, const std::string& from, const std::string& to);
 
-
-template<class ...Args>
-inline void print_log(const std::string& format, Args ...args) noexcept
-{
-	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
-
-	if (!line.size())
-		return;
-
-	g_mutex_list[0].lock();
-#ifndef NDEBUG
-	static std::ofstream outfile("log.txt", std::ios_base::app);
-	outfile << line;
-	outfile.flush();
-	std::cout << line;
-#endif
-	//replaceAll(line, " ", "+");
-	auto newline = line.ends_with('\n');
-	auto splitstr = splitString(line, "\n");
-
-	bool ret = line[0] == '\r';
-	if (ret)
-		line.erase(line.begin());
-
-	if (splitstr.size() == 1)
-	{
-		if (!newline && g_log_buffer.size())
-		{
-			if (ret)
-			{
-				g_log_buffer[g_log_buffer.size() - 1] = line;
-			}
-			else
-			{
-				g_log_buffer[g_log_buffer.size() - 1] += line;
-			}
-		}
-		else
-		{
-			if (newline)
-				line.pop_back();
-
-			g_log_buffer[g_log_buffer.size() - 1] += line;
-			g_color_buffer[g_log_buffer.size() - 1] = g_console_colors;
-
-			g_log_buffer.emplace_back("");
-			g_color_buffer.emplace_back(0);
-		}
-	}
-	else
-	{
-		for (auto& s : splitstr)
-		{
-			if (s.size())
-			{
-				g_log_buffer[g_log_buffer.size() - 1] += s;
-				g_color_buffer[g_log_buffer.size() - 1] = g_console_colors;
-
-				g_log_buffer.emplace_back("");
-				g_color_buffer.emplace_back(0);
-			}
-		}
-	}
-	g_mutex_list[0].unlock();
-}
-
-
 template<class ...Args>
 inline void print_log(unsigned short colors, const std::string& format, Args ...args) noexcept
 {
@@ -161,10 +94,12 @@ inline void print_log(unsigned short colors, const std::string& format, Args ...
 			if (ret)
 			{
 				g_log_buffer[g_log_buffer.size() - 1] = line;
+				g_color_buffer[g_log_buffer.size() - 1] = colors;
 			}
 			else
 			{
 				g_log_buffer[g_log_buffer.size() - 1] += line;
+				g_color_buffer[g_log_buffer.size() - 1] = colors;
 			}
 		}
 		else
@@ -193,7 +128,16 @@ inline void print_log(unsigned short colors, const std::string& format, Args ...
 		}
 	}
 	g_mutex_list[0].unlock();
+	set_console_colors(0);
 }
+
+template<class ...Args>
+inline void print_log(const std::string& format, Args ...args) noexcept
+{
+	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
+	print_log(g_console_colors, "{}", line);
+}
+
 
 bool fileExists(const std::string& fileName);
 

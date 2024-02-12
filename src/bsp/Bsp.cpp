@@ -7240,9 +7240,8 @@ int Bsp::merge_two_models(size_t src_ent, size_t dst_ent, int& tryanotherway)
 	else if (separate_plane.nType == -1 && tryanotherway == 1)
 	{
 		tryanotherway++;
-		separate_plane = getSeparatePlane(bmin, bmax, amin, amax, true);
+		return -1;
 	}
-
 
 	STRUCTUSAGE shouldBeMoved(this);
 	mark_model_structures(src_model, &shouldBeMoved, true);

@@ -611,6 +611,7 @@ void StudioModel::RefreshMeshList(int body)
 		mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 		maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	}
+
 	pvertbone = ((unsigned char*)m_pstudiohdr + m_pmodel->vertinfoindex);
 	pnormbone = ((unsigned char*)m_pstudiohdr + m_pmodel->norminfoindex);
 	ptexture = m_ptexturehdr ? (mstudiotexture_t*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->textureindex) : NULL;

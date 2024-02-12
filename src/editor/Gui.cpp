@@ -1318,7 +1318,7 @@ void Gui::drawBspContexMenu()
 						IsValidForMerge = true;
 						for (auto& tmpentIdx : app->pickInfo.selectedEnts)
 						{
-							if (!map->ents[tmpentIdx]->isBspModel())
+							if (!map->ents[tmpentIdx]->isBspModel() || map->ents[tmpentIdx]->isWorldSpawn())
 							{
 								IsValidForMerge = false;
 								break;
@@ -1348,9 +1348,14 @@ void Gui::drawBspContexMenu()
 							int newmodelid =
 								map->merge_two_models(ent1, ent2, try_again);
 
-							if (try_again > 1)
+							int mdl1 = map->ents[ent1]->getBspModelIdx();
+							int mdl2 = map->ents[ent2]->getBspModelIdx();
+
+							if (newmodelid < 0)
 							{
-								merge_errors++;
+								print_log(PRINT_RED, "Model {} and {} is overlapped\n", mdl1, mdl2);
+								print_log(PRINT_RED, "Impossible to merge it!\n");
+								break;
 							}
 
 							if (map->ents[ent1]->getBspModelIdx() != newmodelid)
@@ -7091,9 +7096,11 @@ void Gui::drawLog()
 		{
 			if (line_start + i < log_buffer_copy.size())
 			{
+				ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[line_start + i]));
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
 				ImGui::TextWrapped(log_buffer_copy[line_start + i].c_str());
 				ImGui::PopStyleVar();
+				ImGui::PopStyleColor();
 			}
 		}
 	}
