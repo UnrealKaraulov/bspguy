@@ -29,8 +29,8 @@
 bool DebugKeyPressed = false;
 ProgressMeter g_progress = {};
 int g_render_flags;
-std::vector<std::string> g_log_buffer;
-std::vector<unsigned short> g_color_buffer;
+std::vector<std::string> g_log_buffer = { "" };
+std::vector<unsigned short> g_color_buffer = { 0 };
 
 std::mutex g_mutex_list[10] = {};
 

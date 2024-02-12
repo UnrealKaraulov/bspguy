@@ -28,7 +28,7 @@ extern std::string g_version_string;
 #define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
 #endif
 
-enum PRINT_CONTS : unsigned short
+enum PRINT_CONST : unsigned short
 {
 	PRINT_BLUE = 1,
 	PRINT_GREEN = 2,
@@ -68,8 +68,9 @@ template<class ...Args>
 inline void print_log(const std::string& format, Args ...args) noexcept
 {
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
-	auto splitstr = splitString(line, "\n");
 
+	if (!line.size())
+		return;
 
 	g_mutex_list[0].lock();
 #ifndef NDEBUG
@@ -78,23 +79,50 @@ inline void print_log(const std::string& format, Args ...args) noexcept
 	outfile.flush();
 	std::cout << line;
 #endif
+	//replaceAll(line, " ", "+");
+	auto newline = line.ends_with('\n');
+	auto splitstr = splitString(line, "\n");
 
-	replaceAll(line, "\r", "");/*
-	replaceAll(line, "\n", "");*/
+	bool ret = line[0] == '\r';
+	if (ret)
+		line.erase(line.begin());
 
 	if (splitstr.size() == 1)
 	{
-		g_log_buffer.push_back(line);
-		g_color_buffer.push_back(g_console_colors);
+		if (!newline && g_log_buffer.size())
+		{
+			if (ret)
+			{
+				g_log_buffer[g_log_buffer.size() - 1] = line;
+			}
+			else
+			{
+				g_log_buffer[g_log_buffer.size() - 1] += line;
+			}
+		}
+		else
+		{
+			if (newline)
+				line.pop_back();
+
+			g_log_buffer[g_log_buffer.size() - 1] += line;
+			g_color_buffer[g_log_buffer.size() - 1] = g_console_colors;
+
+			g_log_buffer.emplace_back("");
+			g_color_buffer.emplace_back(0);
+		}
 	}
 	else
 	{
-		for (const auto& s : splitstr)
+		for (auto& s : splitstr)
 		{
 			if (s.size())
 			{
-				g_log_buffer.emplace_back(s + "\n");
-				g_color_buffer.emplace_back(g_console_colors);
+				g_log_buffer[g_log_buffer.size() - 1] += s;
+				g_color_buffer[g_log_buffer.size() - 1] = g_console_colors;
+
+				g_log_buffer.emplace_back("");
+				g_color_buffer.emplace_back(0);
 			}
 		}
 	}
@@ -108,7 +136,8 @@ inline void print_log(unsigned short colors, const std::string& format, Args ...
 	set_console_colors(colors);
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 
-	auto splitstr = splitString(line, "\n");
+	if (!line.size())
+		return;
 
 	g_mutex_list[0].lock();
 #ifndef NDEBUG
@@ -117,25 +146,52 @@ inline void print_log(unsigned short colors, const std::string& format, Args ...
 	outfile.flush();
 	std::cout << line;
 #endif
+	//replaceAll(line, " ", "+");
+	auto newline = line.ends_with('\n');
+	auto splitstr = splitString(line, "\n");
 
+	bool ret = line[0] == '\r';
+	if (ret)
+		line.erase(line.begin());
 
 	if (splitstr.size() == 1)
 	{
-		g_log_buffer.push_back(line);
-		g_color_buffer.push_back(g_console_colors);
+		if (!newline && g_log_buffer.size())
+		{
+			if (ret)
+			{
+				g_log_buffer[g_log_buffer.size() - 1] = line;
+			}
+			else
+			{
+				g_log_buffer[g_log_buffer.size() - 1] += line;
+			}
+		}
+		else
+		{
+			line.pop_back();
+
+			g_log_buffer[g_log_buffer.size() - 1] = line;
+			g_color_buffer[g_log_buffer.size() - 1] = colors;
+
+			g_log_buffer.emplace_back("");
+			g_color_buffer.emplace_back(0);
+		}
 	}
 	else
 	{
-		for (const auto& s : splitstr)
+		for (auto& s : splitstr)
 		{
 			if (s.size())
 			{
-				g_log_buffer.push_back(s + "\n");
-				g_color_buffer.push_back(g_console_colors);
+				g_log_buffer[g_log_buffer.size() - 1] = s;
+				g_color_buffer[g_log_buffer.size() - 1] = colors;
+
+				g_log_buffer.emplace_back("");
+				g_color_buffer.emplace_back(0);
 			}
 		}
 	}
-	set_console_colors();
 	g_mutex_list[0].unlock();
 }
 

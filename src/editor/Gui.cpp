@@ -3404,8 +3404,7 @@ void Gui::drawMenuBar()
 									if (!GetFaceExtents(map, (int)f, tmins, tmaxs))
 									{
 										BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[f].iTextureInfo];
-										texInfo.vS = vec3(1.0f, 0.0f, 0.0f);
-										texInfo.vT = vec3(1.0f, 0.0f, -1.0f);
+										texInfo.nFlags = TEX_SPECIAL;
 									}
 								}
 							}
@@ -7072,20 +7071,18 @@ void Gui::drawLog()
 	}
 
 	ImGuiListClipper clipper;
-	clipper.Begin((int)log_buffer_copy.size());
+	clipper.Begin((int)log_buffer_copy.size(), ImGui::GetTextLineHeightWithSpacing());
 	while (clipper.Step())
 	{
-		for (int line_no = clipper.DisplayStart; line_no < clipper.DisplayEnd; line_no++)
+		int line_start = clipper.DisplayStart;
+		int line_count = clipper.DisplayEnd - clipper.DisplayStart;
+		for (int i = 0; i < line_count; i++)
 		{
-			if (line_no < (int)log_buffer_copy.size())
+			if (line_start + i < log_buffer_copy.size())
 			{
-				if (line_no > 0 && !log_buffer_copy[line_no - 1].ends_with("\n"))
-				{
-					ImGui::SameLine();
-				}
-				ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[line_no]));
-				ImGui::Text(log_buffer_copy[line_no].c_str());
-				ImGui::PopStyleColor();
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+				ImGui::TextWrapped(log_buffer_copy[line_start + i].c_str());
+				ImGui::PopStyleVar();
 			}
 		}
 	}

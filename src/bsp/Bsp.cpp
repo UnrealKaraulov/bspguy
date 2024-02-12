@@ -5656,7 +5656,6 @@ int Bsp::create_leaf(int contents)
 
 void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx)
 {
-
 	// add new verts (1 for each corner)
 	// TODO: subdivide faces to prevent max surface extents error
 	unsigned int startVert = vertCount;

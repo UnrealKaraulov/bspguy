@@ -1164,6 +1164,7 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB)
 	size_t duplicates = (mapA.planeCount + mapB.planeCount) - mergedPlanes.size();
 
 	print_log(get_localized_string(LANG_0240), duplicates);
+	print_log("\n");
 
 	unsigned char* newPlanes = new unsigned char[newLen];
 	memcpy(newPlanes, &mergedPlanes[0], newLen);
@@ -1275,6 +1276,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 
 
 	print_log(get_localized_string(LANG_0241), duplicates);
+	print_log("\n");
 
 	mapA.replace_lump(LUMP_TEXTURES, newTextureData, newLen);
 }
@@ -1345,6 +1347,7 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB)
 	memcpy(newTexinfoData, &mergedInfo[0], newLen);
 
 	print_log(get_localized_string(LANG_0242), duplicates);
+	print_log("\n");
 
 	mapA.replace_lump(LUMP_TEXINFO, newTexinfoData, newLen);
 }
@@ -1789,6 +1792,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	mapA.replace_lump(LUMP_VISIBILITY, compressedVisResize, newVisLen);
 
 	print_log(get_localized_string(LANG_0244), oldLen, newVisLen);
+	print_log("\n");
 
 	delete[] decompressedVis;
 	delete[] compressedVis;
