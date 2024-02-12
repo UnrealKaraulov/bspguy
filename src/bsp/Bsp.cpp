@@ -342,7 +342,7 @@ Bsp::~Bsp()
 
 void Bsp::get_bounding_box(vec3& mins, vec3& maxs)
 {
-	if (modelCount)
+	if (modelCount > 0)
 	{
 		BSPMODEL& thisWorld = models[0];
 
@@ -364,6 +364,12 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 		return;
 	mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+
+	if (modelIdx == 0)
+	{
+		get_bounding_box(mins, maxs);
+		return;
+	}
 
 	//BSPMODEL& model = models[modelIdx];
 	auto rndverts = getModelTransformVerts(modelIdx);
@@ -3663,7 +3669,7 @@ bool Bsp::load_lumps(std::string fpath)
 		{
 			if (g_settings.verboseLogs)
 			{
-				print_log("Skip calculate bad texture offset...\n");
+				print_log("Skip calculate bad texture offset {}...\n", iStartOffset);
 			}
 			continue;
 		}
@@ -4317,7 +4323,7 @@ bool Bsp::validate()
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0135), i, /*dataOffset + */texOffset + texlen, bsp_header.lump[LUMP_TEXTURES].nLength);
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
 			}
-			if (texlen == 0)
+			else if (tex->nOffsets[0] > 0 && texlen == 0)
 			{
 				isValid = false;
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string("LANG_ERROR_TEXLEN"), i);
@@ -5624,6 +5630,7 @@ int Bsp::add_texture(WADTEX* tex, bool embedded)
 			delete[] newTex;
 			return rettex;
 		}
+
 		int rettex = add_texture(tex->szName, (unsigned char*)newTex, tex->nWidth, tex->nHeight);
 		delete[] newTex;
 		return rettex;
@@ -8076,7 +8083,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 								foundInWad = true;
 
 								WADTEX* wadTex = mapRenderers[r]->wads[k]->readTexture(tex.szName);
-								int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
+								int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
 								COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 								unsigned char* src = wadTex->data;
 								COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];

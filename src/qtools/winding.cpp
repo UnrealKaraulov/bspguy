@@ -233,7 +233,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 	// do this exactly, with no epsilon so tiny portals still work
 	for (i = 0; i < m_NumPoints; i++)
 	{
-		dot = DotProduct(m_Points[i], (float*)(&split.vNormal));
+		dot = DotProduct(m_Points[i], split.vNormal);
 		dot -= split.fDist;
 		dists[i] = dot;
 		if (dot > epsilon)
@@ -308,9 +308,9 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 		dot = dists[i] / (dists[i] - dists[i + 1]);
 		for (j = 0; j < 3; j++)
 		{                                                  // avoid round off error when possible
-			if (abs(((float*)&split.vNormal)[j] - 1.0) < EPSILON)
+			if (abs(split.vNormal[j] - 1.0f) < EPSILON)
 				mid[j] = split.fDist;
-			else if (abs(((float*)&split.vNormal)[j] - -1) < EPSILON)
+			else if (abs(split.vNormal[j] - -1.0f) < EPSILON)
 				mid[j] = -split.fDist;
 			else
 				mid[j] = p1[j] + dot * (p2[j] - p1[j]);

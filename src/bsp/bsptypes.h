@@ -98,13 +98,6 @@ enum clean_unused_lump
 #define CONTENTS_CURRENT_DOWN -14
 #define CONTENTS_TRANSLUCENT  -15
 
-#define PLANE_X 0     // Plane is perpendicular to given axis
-#define PLANE_Y 1
-#define PLANE_Z 2
-#define PLANE_ANYX 3  // Non-axial plane is snapped to the nearest
-#define PLANE_ANYY 4
-#define PLANE_ANYZ 5
-
 // maximum x/y hull extent a monster can have before it starts using hull 2
 #define MAX_HULL1_EXTENT_MONSTER 18
 
@@ -160,6 +153,13 @@ struct BSPHEADER
 	}
 };
 
+#define PLANE_X 0     // Plane is perpendicular to given axis
+#define PLANE_Y 1
+#define PLANE_Z 2
+#define PLANE_ANYX 3  // Non-axial plane is snapped to the nearest
+#define PLANE_ANYY 4
+#define PLANE_ANYZ 5
+
 struct BSPPLANE
 {
 	vec3 vNormal;
@@ -200,14 +200,12 @@ struct BSPTEXTUREINFO
 	}
 };
 
-
 struct BSPMIPTEX
 {
 	char szName[MAXTEXTURENAME];  // Name of texture
 	int nWidth, nHeight;		  // Extends of the texture
 	int nOffsets[MIPLEVELS];	  // Offsets to texture mipmaps, relative to the start of this structure
 };
-
 
 struct BSPFACE32
 {
@@ -226,7 +224,6 @@ struct BSPFACE32
 			nStyles[2] = nStyles[3] = 255;
 	}
 };
-
 
 struct BSPLEAF32
 {

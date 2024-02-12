@@ -141,5 +141,5 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX* wadTex, COLOR3* palette = NULL);
 COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette = NULL, int colors = 256);
 COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette = NULL, int colors = 256);
 
-COLOR3 GetMipTexAplhaColor(BSPMIPTEX* wadTex, COLOR3* palette = NULL);
-COLOR3 GetWadTexAplhaColor(WADTEX* wadTex, COLOR3* palette = NULL);
+COLOR3 GetMipTexAplhaColor(BSPMIPTEX* wadTex, COLOR3* palette = NULL, int colors = 256);
+COLOR3 GetWadTexAplhaColor(WADTEX* wadTex, COLOR3* palette = NULL, int colors = 256);

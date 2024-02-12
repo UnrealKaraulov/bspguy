@@ -2559,7 +2559,7 @@ void Gui::drawMenuBar()
 												, (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
 
 
-											/*	int lastMipSize = (texture->nWidth / 8) * (texture->nHeight / 8);
+											/*	int lastMipSize = (texture->nWidth>> 3) * (texture->nHeight>> 3);
 
 												COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + sizeof(short) - 40);
 

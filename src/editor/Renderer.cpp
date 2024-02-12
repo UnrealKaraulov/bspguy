@@ -721,10 +721,10 @@ void Renderer::renderLoop()
 					drawLine(p1, p2, { 128, 128, 255, 255 });
 					vec3 p3 = offset + vec3(0.0f, -10240.0f, 0.0f);
 					vec3 p4 = offset + vec3(0.0f, 10240.0f, 0.0f);
-					drawLine(p3, p4, { 0, 255, 0, 255 });
+					drawLine(p3, p4, { 0, 0, 255, 255 });
 					vec3 p5 = offset + vec3(0.0f, 0.0f, -10240.0f);
 					vec3 p6 = offset + vec3(0.0f, 0.0f, 10240.0f);
-					drawLine(p5, p6, { 0, 0, 255, 255 });
+					drawLine(p5, p6, { 0, 255, 0, 255 });
 					glEnable(GL_CULL_FACE);
 				}
 			}
@@ -1372,10 +1372,10 @@ void Renderer::cameraPickingControls()
 		if (!transforming && (oldLeftMouse == GLFW_RELEASE || (facePickTime > 0.0 && curTime - facePickTime > 0.05)))
 		{
 			facePickTime = -1.0;
-		/*	if (map && entIdx.size() && oldLeftMouse == GLFW_RELEASE)
-			{
-				applyTransform(map);
-			}*/
+			/*	if (map && entIdx.size() && oldLeftMouse == GLFW_RELEASE)
+				{
+					applyTransform(map);
+				}*/
 			if (hoverAxis == -1)
 				pickObject();
 		}

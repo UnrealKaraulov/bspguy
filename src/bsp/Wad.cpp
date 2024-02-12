@@ -513,7 +513,7 @@ COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0257),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
-	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
+	int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
 	if (palette == NULL)
 		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 	unsigned char* src = wadTex->data;
@@ -536,7 +536,7 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0259),tex->szName,tex->nWidth,tex->nHeight);
-	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
+	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
 
 	if (palette == NULL)
 		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
@@ -560,7 +560,7 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette, int colors)
 {
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0261),wadTex->szName,wadTex->nWidth,wadTex->nHeight);
-	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
+	int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
 
 	if (palette == NULL)
 		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
@@ -590,7 +590,7 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
 {
 	if (g_settings.verboseLogs)
 		print_log(get_localized_string(LANG_0263),tex->szName,tex->nWidth,tex->nHeight);
-	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
+	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
 
 	if (palette == NULL)
 		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
@@ -616,21 +616,32 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette, int colors)
 	return imageData;
 }
 
-COLOR3 GetMipTexAplhaColor(BSPMIPTEX* tex, COLOR3* palette)
+COLOR3 GetMipTexAplhaColor(BSPMIPTEX* tex, COLOR3* palette, int max_colors)
 {
-	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
+	int lastMipSize = (tex->nWidth >> 3) * (tex->nHeight >> 3);
 	if (palette == NULL)
+	{
+		max_colors = *(unsigned short*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize);
 		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
-
-	return palette[255];
+	}
+	if (max_colors > 256 || max_colors < 0)
+	{
+		max_colors = 256;
+	}
+	return palette[max_colors - 1];
 }
 
-COLOR3 GetWadTexAplhaColor(WADTEX* wadTex, COLOR3* palette)
+COLOR3 GetWadTexAplhaColor(WADTEX* wadTex, COLOR3* palette, int max_colors)
 {
-	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
-
+	int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
 	if (palette == NULL)
+	{
+		max_colors = *(unsigned short*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize - sizeof(BSPMIPTEX));
 		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-
-	return palette[255];
+	}
+	if (max_colors > 256 || max_colors < 0)
+	{
+		max_colors = 256;
+	}
+	return palette[max_colors - 1];
 }
