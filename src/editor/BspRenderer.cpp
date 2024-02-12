@@ -3031,7 +3031,6 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 						foundBetterPick = true;
 					}
 				}
-
 			}
 			if (g_render_flags & RENDER_MODELS && renderEnts[i].spr)
 			{

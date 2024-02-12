@@ -1224,6 +1224,17 @@ void Gui::drawBspContexMenu()
 						ImGui::EndMenu();
 					}
 
+					if (ImGui::MenuItem("Print HeadNodes"))
+					{
+						if (modelIdx >= 0)
+						{
+							for (int i = 0; i < MAX_MAP_HULLS; i++)
+							{
+								print_log("iHeadNode{} = {}\n", i, map->models[modelIdx].iHeadnodes[i]);
+							}
+						}
+					}
+
 					ImGui::EndMenu();
 				}
 

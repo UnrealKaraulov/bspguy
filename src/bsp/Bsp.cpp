@@ -5176,7 +5176,7 @@ int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool e
 	BSPMODEL& newModel = models[newModelIdx];
 
 
-	create_node_box(mins, maxs, &newModel, textureIdx);
+	create_primitive_box(mins, maxs, &newModel, textureIdx);
 	create_clipnode_box(mins, maxs, &newModel, 0, false, empty);
 
 	//remove_unused_model_structures(); // will also resize VIS data for new leaf count
@@ -5189,7 +5189,7 @@ int Bsp::create_solid(Solid& solid, int targetModelIdx)
 	int modelIdx = targetModelIdx >= 0 ? targetModelIdx : create_model();
 	BSPMODEL& newModel = models[modelIdx];
 
-	create_nodes(solid, &newModel);
+	create_solid_nodes(solid, &newModel);
 	regenerate_clipnodes(modelIdx, -1);
 
 	return modelIdx;
@@ -5654,7 +5654,7 @@ int Bsp::create_leaf(int contents)
 	return newLeafIdx;
 }
 
-void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx)
+void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx)
 {
 	// add new verts (1 for each corner)
 	// TODO: subdivide faces to prevent max surface extents error
@@ -5881,7 +5881,7 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 	}
 }
 
-void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
+void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 {
 	std::vector<int> newVertIndexes;
 	unsigned int startVert = vertCount;
@@ -6060,6 +6060,73 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 	}
 }
 
+int Bsp::create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel)
+{
+	std::vector<BSPPLANE> addPlanes;
+	std::vector<BSPNODE32> addNodes;
+
+	int sharedSolidLeaf = 0;
+	int anyEmptyLeaf = create_leaf(CONTENTS_EMPTY);
+
+	vec3 min = mins;
+	vec3 max = maxs;
+
+	int nodeIdx = nodeCount + (int)addNodes.size();
+	int planeIdx = planeCount + (int)addPlanes.size();
+
+	addPlanes.push_back({ vec3(1.0f, 0.0f, 0.0f), min.x, PLANE_X }); // left
+	addPlanes.push_back({ vec3(1.0f, 0.0f, 0.0f), max.x, PLANE_X }); // right
+	addPlanes.push_back({ vec3(0.0f, 1.0f, 0.0f), min.y, PLANE_Y }); // front
+	addPlanes.push_back({ vec3(0.0f, 1.0f, 0.0f), max.y, PLANE_Y }); // back
+	addPlanes.push_back({ vec3(0.0f, 0.0f, 1.0f), min.z, PLANE_Z }); // bottom
+	addPlanes.push_back({ vec3(0.0f, 0.0f, 1.0f), max.z, PLANE_Z }); // top
+
+	targetModel->iHeadnodes[0] = nodeCount + (int)addNodes.size();
+
+	int solidNodeIdx = 0;
+
+	for (int k = 0; k < 6; k++)
+	{
+		BSPNODE32 node = BSPNODE32();
+		node.iPlane = (int)planeIdx++;
+
+
+		int insideContents = k == 5 ? ~sharedSolidLeaf : nodeIdx + 1;
+		if (k == 5)
+			solidNodeIdx = nodeIdx;
+
+		nodeIdx++;
+
+		// can't have negative normals on planes so children are swapped instead
+		if (k % 2 == 0)
+		{
+			node.iChildren[0] = insideContents;
+			node.iChildren[1] = ~anyEmptyLeaf;
+		}
+		else
+		{
+			node.iChildren[0] = ~anyEmptyLeaf;
+			node.iChildren[1] = insideContents;
+		}
+
+		addNodes.push_back(node);
+	}
+
+	BSPPLANE* newPlanes = new BSPPLANE[planeCount + addPlanes.size()];
+	memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
+	if (addPlanes.size())
+		std::copy(addPlanes.begin(), addPlanes.end(), newPlanes + planeCount);
+	replace_lump(LUMP_PLANES, newPlanes, (planeCount + addPlanes.size()) * sizeof(BSPPLANE));
+
+	BSPNODE32* newNodes = new BSPNODE32[nodeCount + addNodes.size()];
+	memcpy(newNodes, clipnodes, nodeCount * sizeof(BSPCLIPNODE32));
+	if (addNodes.size())
+		std::copy(addNodes.begin(), addNodes.end(), newNodes + nodeCount);
+	replace_lump(LUMP_NODES, newNodes, (nodeCount + addNodes.size()) * sizeof(BSPCLIPNODE32));
+
+	return solidNodeIdx;
+}
+
 int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull, bool skipEmpty, bool empty)
 {
 	std::vector<BSPPLANE> addPlanes;
@@ -6100,7 +6167,7 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 
 			int insideContents = k == 5 ? CONTENTS_SOLID : clipnodeIdx + 1;
 
-			if (insideContents == CONTENTS_SOLID)
+			if (k == 5)
 				solidNodeIdx = clipnodeIdx;
 
 			clipnodeIdx++;

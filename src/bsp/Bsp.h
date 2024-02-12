@@ -224,9 +224,11 @@ public:
 	int create_solid(Solid& solid, int targetModelIdx = -1);
 
 	int create_leaf(int contents);
-	void create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int textureIdx);
-	void create_nodes(Solid& solid, BSPMODEL* targetModel);
+	void create_primitive_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int textureIdx);
+	void create_solid_nodes(Solid& solid, BSPMODEL* targetModel);
 	// returns index of the solid node
+
+	int create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel);
 	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false, bool empty = false);
 	// copies a model from the sourceMap into this one
 	void add_model(Bsp* sourceMap, int modelIdx);

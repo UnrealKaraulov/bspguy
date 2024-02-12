@@ -606,8 +606,11 @@ void StudioModel::RefreshMeshList(int body)
 	float				lv_tmp;
 	short* pskinref;
 
-	mins = maxs = vec3();
-
+	if (needForceUpdate)
+	{
+		mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+		maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+	}
 	pvertbone = ((unsigned char*)m_pstudiohdr + m_pmodel->vertinfoindex);
 	pnormbone = ((unsigned char*)m_pstudiohdr + m_pmodel->norminfoindex);
 	ptexture = m_ptexturehdr ? (mstudiotexture_t*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->textureindex) : NULL;
@@ -859,39 +862,28 @@ void StudioModel::RefreshMeshList(int body)
 
 			if (needForceUpdate)
 			{
-				if (mins.x > vertexData[z * 3 + 0])
-					mins.x = vertexData[z * 3 + 0];
-				if (mins.y > vertexData[z * 3 + 1])
-					mins.y = vertexData[z * 3 + 1];
-				if (mins.z > vertexData[z * 3 + 2])
-					mins.z = vertexData[z * 3 + 2];
-
-				if (maxs.x < vertexData[z * 3 + 0])
-					maxs.x = vertexData[z * 3 + 0];
-				if (maxs.y < vertexData[z * 3 + 1])
-					maxs.y = vertexData[z * 3 + 1];
-				if (maxs.z < vertexData[z * 3 + 2])
-					maxs.z = vertexData[z * 3 + 2];
+				expandBoundingBox(vec3(vertexData[z * 3 + 0], vertexData[z * 3 + 1], vertexData[z * 3 + 2]),
+					mins, maxs);
 			}
 		}
 	}
 
-	if (mdl_cube != NULL)
+	if (needForceUpdate)
 	{
-		mdl_cube->mins = mins;
-		mdl_cube->maxs = maxs;
-		if (needForceUpdate)
+		if (mdl_cube != NULL)
 		{
+			mdl_cube->mins = mins;
+			mdl_cube->maxs = maxs;
 			g_app->pointEntRenderer->genCubeBuffers(mdl_cube);
 		}
-	}
-	else
-	{
-		mdl_cube = new EntCube();
-		mdl_cube->color = { 255, 255, 0, 255 };
-		mdl_cube->mins = mins;
-		mdl_cube->maxs = maxs;
-		g_app->pointEntRenderer->genCubeBuffers(mdl_cube);
+		else
+		{
+			mdl_cube = new EntCube();
+			mdl_cube->color = { 255, 255, 0, 255 };
+			mdl_cube->mins = mins;
+			mdl_cube->maxs = maxs;
+			g_app->pointEntRenderer->genCubeBuffers(mdl_cube);
+		}
 	}
 }
 
