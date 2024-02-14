@@ -1497,11 +1497,11 @@ void Gui::drawBspContexMenu()
 	}
 }
 
-
-
 void Gui::drawMenuBar()
 {
 	ImGuiContext& g = *GImGui;
+	static bool ditheringEnabled = false;
+
 	if (ImGui::BeginMainMenuBar())
 	{
 		Bsp* map = app->getSelectedMap();
@@ -1514,9 +1514,16 @@ void Gui::drawMenuBar()
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				std::string png_import_dir = stripFileName(res.string());
 				g_settings.lastdir = stripFileName(res.string());
-
-
-
+				if (dirExists(png_import_dir))
+				{
+					createDir(g_working_dir);
+					removeFile(g_working_dir + "temp2.wad");
+					if (map->import_textures_to_wad(g_working_dir + "temp2.wad", png_import_dir, ditheringEnabled))
+					{
+						map->ImportWad(g_working_dir + "temp2.wad");
+					}
+					removeFile(g_working_dir + "temp2.wad");
+				}
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -2735,23 +2742,28 @@ void Gui::drawMenuBar()
 					}
 				}
 
-				if (ImGui::MenuItem("All .png textures from dir", NULL))
+				if (ImGui::BeginMenu("Embedded##import"))
 				{
-					if (map)
-					{
-						ifd::FileDialog::Instance().Open("PngDirOpenDialog", "Open .png dir", "Directory with .png files (*.png){.png},.*", false, g_settings.lastdir);
-					}
+					if (ImGui::MenuItem(get_localized_string(LANG_0549).c_str(), 0, ditheringEnabled))
+						ditheringEnabled = !ditheringEnabled;
 
-					if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+					if (ImGui::MenuItem("From .png files"))
 					{
-						ImGui::BeginTooltip();
-						std::string embtextooltip;
-						ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_working_dir, map->bsp_name + ".wad").c_str());
-						ImGui::EndTooltip();
+						if (map)
+						{
+							ifd::FileDialog::Instance().Open("PngDirOpenDialog", "Open .png dir", std::string(), false, g_settings.lastdir);
+						}
+
+						if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+						{
+							ImGui::BeginTooltip();
+							std::string embtextooltip;
+							ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_working_dir, map->bsp_name + ".wad").c_str());
+							ImGui::EndTooltip();
+						}
 					}
+					ImGui::EndMenu();
 				}
-
-				static bool ditheringEnabled = false;
 
 				if (ImGui::BeginMenu(get_localized_string(LANG_0548).c_str()))
 				{

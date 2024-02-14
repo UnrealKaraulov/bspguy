@@ -55,7 +55,7 @@ struct WADTEX
 		nWidth = tex->nWidth;
 		nHeight = tex->nHeight;
 		for (int i = 0; i < MIPLEVELS; i++)
-			nOffsets[i] = tex->nOffsets[i];
+			nOffsets[i] = tex->nOffsets[i]/* - sizeof(BSPMIPTEX)*/;
 
 		if (nOffsets[0] <= 0)
 		{

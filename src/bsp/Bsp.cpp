@@ -2726,6 +2726,7 @@ void Bsp::write(const std::string& path)
 	if (target_save_texture_has_pal != is_texture_has_pal)
 	{
 		createDir(g_working_dir);
+		removeFile(g_working_dir + "temp.wad");
 		if (ExportEmbeddedWad(g_working_dir + "temp.wad"))
 		{
 			is_texture_has_pal = target_save_texture_has_pal;
@@ -5808,7 +5809,10 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 		if (renderer && textureList.size())
 			renderer->reloadTextures();
 		else
+		{
+			print_log(PRINT_RED, get_localized_string(LANG_0252), wadpath);
 			return false;
+		}
 	}
 	return true;
 }
