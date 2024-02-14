@@ -5288,7 +5288,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	memset(name, 0, MAXTEXTURENAME);
 	memcpy(name, oldname, std::min(MAXTEXTURENAME, (int)strlen(oldname)));
 
-	print_log(get_localized_string(LANG_0157), !data ? "embedded" : "wad", name, width, height);
+	print_log(get_localized_string(LANG_0157), data == NULL ? "wad" : "embedded", name, width, height);
 
 	if (width % 16 != 0 || height % 16 != 0)
 	{
@@ -5313,7 +5313,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		print_log(get_localized_string(LANG_0160), name);
 		if (oldtex->nWidth != width || oldtex->nHeight != height)
 		{
-			if (!data)
+			if (data == NULL)
 			{
 				print_log(get_localized_string(LANG_0161));
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
@@ -5321,7 +5321,6 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				oldtex->nWidth = width;
 				oldtex->nHeight = height;
 
-				remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 				return oldtexid;
 			}
 			else
@@ -5333,7 +5332,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 					oldtex->nOffsets[3] = 0;
 			}
 		}
-		else if (data)
+		else if (data != NULL)
 		{
 			only_copy_data = true;
 			print_log(get_localized_string(LANG_0162));
@@ -5344,7 +5343,6 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
 
-			remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 			return oldtexid;
 		}
 	}
@@ -5359,7 +5357,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			print_log(get_localized_string(LANG_0164), name);
 			if (oldtex->nWidth != width || oldtex->nHeight != height)
 			{
-				if (!data)
+				if (data == NULL)
 				{
 					print_log("Same wad texture with size different {}x{} > {}x{} found in map.\nJust update size and return index.\n",
 						oldtex->nWidth, oldtex->nHeight, width, height);
@@ -5377,7 +5375,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 						oldtex->nOffsets[3] = 0;
 				}
 			}
-			else if (!data)
+			else if (data == NULL)
 			{
 				print_log(get_localized_string(LANG_0165));
 				return oldtexid;
@@ -5409,7 +5407,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 	unsigned char* mip[MIPLEVELS] = { NULL };
 
-	if (data)
+	if (data != NULL)
 	{
 		COLOR3* src = (COLOR3*)data;
 
@@ -5580,7 +5578,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	newMipTex->nHeight = height;
 	memcpy(newMipTex->szName, name, MAXTEXTURENAME);
 
-	if (data)
+	if (data != NULL)
 	{
 		newMipTex->nOffsets[0] = sizeof(BSPMIPTEX);
 		newMipTex->nOffsets[1] = newMipTex->nOffsets[0] + width * height;
@@ -5606,7 +5604,6 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	}
 
 	replace_lump(LUMP_TEXTURES, newTexData, newTexLumpSize);
-	remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 	return textureCount - 1;
 }
 
