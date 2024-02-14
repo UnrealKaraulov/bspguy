@@ -343,6 +343,7 @@ Renderer::Renderer()
 
 	hoverAxis = -1;
 	saveTranformResult = false;
+	deltaMoveOffset = vec3();
 }
 
 Renderer::~Renderer()
@@ -1959,9 +1960,11 @@ bool Renderer::transformAxisControls()
 	Entity* ent = map->ents[entIdx[0]];
 	int modelIdx = ent->getBspModelIdx();
 	// axis handle dragging
+
 	if (showDragAxes && !movingEnt && hoverAxis != -1 &&
 		curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE)
 	{
+		deltaMoveOffset = vec3();
 		axisDragEntOriginStart = getEntOrigin(map, ent);
 		axisDragStart = getAxisDragPoint(axisDragEntOriginStart);
 	}
@@ -2038,11 +2041,10 @@ bool Renderer::transformAxisControls()
 						}
 						else
 						{
-							vertPickCount++;
+							deltaMoveOffset += delta;
+							/*vertPickCount++;
 							map->move(delta, modelIdx, true, false, false);
-							map->getBspRender()->refreshEnt((int)entIdx[0]);
-							//map->getBspRender()->refreshModel(modelIdx);
-							updateEntConnectionPositions();
+							updateEntConnectionPositions();*/
 						}
 					}
 					else if (transformTarget == TRANSFORM_ORIGIN)
@@ -2122,11 +2124,20 @@ bool Renderer::transformAxisControls()
 					else
 					{
 						saveTranformResult = false;
+						vec3 neworigin = gridSnappingEnabled ? snapToGrid(deltaMoveOffset) : deltaMoveOffset;
+						if (!neworigin.IsZero())
+						{
+							map->move(neworigin, modelIdx, true, false, false);
+						}
+						deltaMoveOffset = vec3();
 						map->resize_all_lightmaps();
+
+						applyTransform(map, true);
+						map->regenerate_clipnodes(modelIdx, -1);
+
 						map->getBspRender()->refreshEnt((int)entIdx[0]);
 						map->getBspRender()->refreshModel(modelIdx);
 						map->getBspRender()->refreshModelClipnodes(modelIdx);
-						applyTransform(map, true); 
 						updateEntConnectionPositions();
 						map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
@@ -2574,7 +2585,7 @@ vec3 Renderer::getEntOffset(Bsp* map, Entity* ent)
 	return vec3();
 }
 
-void Renderer::updateDragAxes(vec3 delta)
+void Renderer::updateDragAxes()
 {
 	Bsp* map = SelectedMap;
 	Entity* ent = NULL;
@@ -2635,7 +2646,6 @@ void Renderer::updateDragAxes(vec3 delta)
 
 			scaleAxes.origin = modelOrigin;
 			scaleAxes.origin += ent->origin;
-			scaleAxes.origin += delta;
 		}
 	}
 	else
@@ -2668,12 +2678,12 @@ void Renderer::updateDragAxes(vec3 delta)
 				else
 					moveAxes.origin = ent->origin;
 
-				moveAxes.origin += delta;
+				moveAxes.origin += deltaMoveOffset;
 			}
 			else
 			{
 				moveAxes.origin = getEntOrigin(map, ent);
-				moveAxes.origin += delta;
+				moveAxes.origin += deltaMoveOffset;
 			}
 		}
 
@@ -2705,7 +2715,7 @@ void Renderer::updateDragAxes(vec3 delta)
 			if (selectTotal != 0)
 			{
 				moveAxes.origin = min + (max - min) * 0.5f;
-				moveAxes.origin += delta;
+				moveAxes.origin += deltaMoveOffset;
 			}
 		}
 	}

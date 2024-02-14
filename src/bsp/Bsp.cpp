@@ -948,7 +948,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	// for submodels. All other data is ignored. bspguy will reuse world leaves in submodels to 
 	// save space, which means moving leaves for those models would likely break something else.
 	// So, don't move leaves for submodels.
-	bool dontMoveLeaves = !movingWorld;
+	// bool dontMoveLeaves = !movingWorld;
 
 	if (!forceMove && does_model_use_shared_structures(modelIdx))
 		split_shared_model_structures(modelIdx);
@@ -996,7 +996,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	}
 
 	STRUCTUSAGE shouldBeMoved(this);
-	mark_model_structures(modelIdx, &shouldBeMoved, dontMoveLeaves);
+	mark_model_structures(modelIdx, &shouldBeMoved, false /*dontMoveLeaves*/);
 
 	for (int i = 0; i < nodeCount; i++)
 	{
