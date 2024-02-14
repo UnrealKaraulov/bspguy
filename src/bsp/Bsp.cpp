@@ -5851,8 +5851,8 @@ void Bsp::create_inside_box(const vec3& min, const vec3& max, BSPMODEL* targetMo
 				if (texOffset >= 0)
 				{
 					BSPMIPTEX tex = *((BSPMIPTEX*)(textures + texOffset));
-					texinfo->vS /= size[0] / tex.nWidth;
-					texinfo->vT /= size[1] / tex.nHeight;
+					texinfo->vS /= 1.0f * size[0] / tex.nWidth;
+					texinfo->vT /= 1.0f * size[1] / tex.nHeight;
 				}
 			}
 		}

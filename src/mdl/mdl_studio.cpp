@@ -871,6 +871,11 @@ void StudioModel::RefreshMeshList(int body)
 
 	if (needForceUpdate)
 	{
+		if (abs(mins.x - maxs.x) > 512.f &&
+			abs(mins.y - maxs.y) > 512.f &&
+			abs(mins.z - maxs.z) > 512.f)
+			ExtractBBox(mins, maxs);
+
 		if (mdl_cube != NULL)
 		{
 			mdl_cube->mins = mins;
@@ -1143,8 +1148,13 @@ void StudioModel::ExtractBBox(vec3& _mins, vec3& _maxs)
 {
 	mstudioseqdesc_t* pseqdesc;
 
-	pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex);
+	if (!m_pstudiohdr || m_sequence > m_pstudiohdr->numseq)
+		return;
+	if (m_sequence < 0)
+		return;
 
+	pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex);
+	
 	_mins[0] = pseqdesc[m_sequence].bbmin[0];
 	_mins[1] = pseqdesc[m_sequence].bbmin[1];
 	_mins[2] = pseqdesc[m_sequence].bbmin[2];

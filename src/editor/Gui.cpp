@@ -88,7 +88,7 @@ void Gui::init()
 	leafIconTexture->upload();
 }
 
-ImVec4 imguiColorFromConsole(unsigned short colors)
+ImVec4 imguiColorFromConsole(unsigned int colors)
 {
 	bool intensity = (colors & PRINT_INTENSITY) != 0;
 	float red = (colors & PRINT_RED) ? (intensity ? 1.0f : 0.5f) : 0.0f;
@@ -3552,6 +3552,8 @@ void Gui::drawMenuBar()
 						else
 							replaceAll(args, "{map_path}", "\"" + bsp_path + "\"");
 
+						showConsoleWindow(true);
+
 						tmpProc->arg(args);
 						tmpProc->executeAndWait(0, 0, 0);
 
@@ -4480,6 +4482,12 @@ void Gui::drawMenuBar()
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0601).c_str()))
 		{
+#ifdef WIN32
+			if (ImGui::MenuItem("Console", NULL, &g_console_visibled))
+			{
+				showConsoleWindow(g_console_visibled);
+			}
+#endif
 			Bsp* selectedMap = app->getSelectedMap();
 			for (BspRenderer* bspRend : mapRenderers)
 			{
@@ -7079,7 +7087,7 @@ void Gui::drawLog()
 	}
 
 	static std::vector<std::string> log_buffer_copy;
-	static std::vector<unsigned short> color_buffer_copy;
+	static std::vector<unsigned int> color_buffer_copy;
 
 	g_mutex_list[0].lock();
 	if (log_buffer_copy.size() != g_log_buffer.size())

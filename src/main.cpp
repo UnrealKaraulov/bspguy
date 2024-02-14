@@ -111,15 +111,6 @@ bool g_verbose = false;
 #include <csignal>
 #endif
 
-void hideConsoleWindow()
-{
-#ifdef WIN32
-#ifdef NDEBUG
-	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
-#endif
-#endif
-}
-
 bool start_viewer(const char* map)
 {
 	if (map && map[0] != '\0' && !fileExists(map))
@@ -132,9 +123,11 @@ bool start_viewer(const char* map)
 		renderer.addMap(new Bsp(map));
 	}
 	renderer.reloadBspModels();
-	hideConsoleWindow();
 
 #ifdef WIN32
+#ifdef NDEBUG
+	showConsoleWindow(false);
+#endif
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 #endif
 
@@ -1086,7 +1079,7 @@ int main(int argc, char* argv[])
 		{
 			std::string newpath;
 			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ExportExtFile(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile,newpath);
+			tmpBsp->ExportExtFile(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile, newpath);
 			delete tmpBsp;
 			return 0;
 		}

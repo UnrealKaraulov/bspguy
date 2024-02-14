@@ -30,7 +30,7 @@ bool DebugKeyPressed = false;
 ProgressMeter g_progress = {};
 int g_render_flags;
 std::vector<std::string> g_log_buffer = { "" };
-std::vector<unsigned short> g_color_buffer = { 0 };
+std::vector<unsigned int> g_color_buffer = { 0 };
 
 std::mutex g_mutex_list[10] = {};
 
@@ -1196,10 +1196,18 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 	replaceAll(path, "//", "/");
 }
 
-unsigned short g_console_colors = 0;
+unsigned int g_console_colors = 0;
+bool g_console_visibled = true;
+void showConsoleWindow(bool show)
+{
+	g_console_visibled = show;
+#ifdef WIN32
+	::ShowWindow(::GetConsoleWindow(), show ? SW_SHOW :SW_HIDE);
+#endif
+}
 
 #ifdef WIN32
-void set_console_colors(unsigned short colors)
+void set_console_colors(unsigned int colors)
 {
 	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (!console)
@@ -1212,7 +1220,7 @@ void set_console_colors(unsigned short colors)
 	}
 }
 #else 
-void set_console_colors(unsigned short colors)
+void set_console_colors(unsigned int colors)
 {
 	colors = colors ? colors : (PRINT_GREEN | PRINT_BLUE | PRINT_RED | PRINT_INTENSITY);
 	g_console_colors = colors;
@@ -1947,7 +1955,7 @@ BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force
 		{
 			separationPlane.nType = -1; // no simple separating axis
 
-			print_log(PRINT_RED,get_localized_string(LANG_0239));
+			print_log(PRINT_RED, get_localized_string(LANG_0239));
 			print_log(PRINT_RED, "({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
 			print_log(PRINT_RED, " - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
 

@@ -2,9 +2,6 @@
 
 #include <filesystem>
 namespace fs = std::filesystem;
-// not working on fucking linux (<format> file not found, or std::format not found, etc)
-//#include <format>
-// replaced to fmt
 #include <fmt/format.h>
 #include <iostream>
 #include <string>
@@ -28,7 +25,7 @@ extern std::string g_version_string;
 #define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
 #endif
 
-enum PRINT_CONST : unsigned short
+enum PRINT_CONST : unsigned int
 {
 	PRINT_BLUE = 1,
 	PRINT_GREEN = 2,
@@ -49,14 +46,18 @@ extern bool DebugKeyPressed;
 extern bool g_verbose;
 extern ProgressMeter g_progress;
 extern std::vector<std::string> g_log_buffer;
-extern std::vector<unsigned short> g_color_buffer;
+extern std::vector<unsigned int> g_color_buffer;
 
 extern std::mutex g_mutex_list[10];
 
 
-extern unsigned short g_console_colors;
-//ImVec4 imguiColorFromConsole(unsigned short colors);
-void set_console_colors(unsigned short colors = 0);
+extern unsigned int g_console_colors;
+
+extern bool g_console_visibled;
+void showConsoleWindow(bool show);
+
+//ImVec4 imguiColorFromConsole(unsigned int colors);
+void set_console_colors(unsigned int colors = 0);
 
 std::vector<std::string> splitStringIgnoringQuotes(const std::string& s, const std::string& delimitter);
 std::vector<std::string> splitString(const std::string& s, const std::string& delimiter, int maxParts = 0);
@@ -64,7 +65,7 @@ std::vector<std::string> splitString(const std::string& s, const std::string& de
 void replaceAll(std::string& str, const std::string& from, const std::string& to);
 
 template<class ...Args>
-inline void print_log(unsigned short colors, const std::string& format, Args ...args) noexcept
+inline void print_log(unsigned int colors, const std::string& format, Args ...args) noexcept
 {
 	set_console_colors(colors);
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
@@ -77,8 +78,8 @@ inline void print_log(unsigned short colors, const std::string& format, Args ...
 	static std::ofstream outfile("log.txt", std::ios_base::app);
 	outfile << line;
 	outfile.flush();
-	std::cout << line;
 #endif
+	std::cout << line;
 	//replaceAll(line, " ", "+");
 	auto newline = line.ends_with('\n');
 	auto splitstr = splitString(line, "\n");
@@ -137,7 +138,6 @@ inline void print_log(const std::string& format, Args ...args) noexcept
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 	print_log(g_console_colors, "{}", line);
 }
-
 
 bool fileExists(const std::string& fileName);
 
