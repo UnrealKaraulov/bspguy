@@ -1201,8 +1201,11 @@ bool g_console_visibled = true;
 void showConsoleWindow(bool show)
 {
 	g_console_visibled = show;
-#ifdef WIN32
-	::ShowWindow(::GetConsoleWindow(), show ? SW_SHOW :SW_HIDE);
+#ifdef WIN32		
+	if (::GetConsoleWindow())
+	{
+		::ShowWindow(::GetConsoleWindow(), show ? SW_SHOW : SW_HIDE);
+	}
 #endif
 }
 

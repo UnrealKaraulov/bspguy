@@ -6947,10 +6947,10 @@ void Gui::drawTransformWidget()
 			}
 
 			ImGui::SameLine();
-			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT)
+			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT || app->modelUsesSharedStructures)
 				ImGui::BeginDisabled();
 			ImGui::Checkbox(get_localized_string(LANG_0703).c_str(), &app->moveOrigin);
-			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT)
+			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT || app->modelUsesSharedStructures)
 				ImGui::EndDisabled();
 
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenDisabled))

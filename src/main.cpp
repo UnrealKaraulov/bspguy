@@ -977,10 +977,7 @@ int main(int argc, char* argv[])
 	try
 	{
 #ifdef WIN32
-		if (::GetConsoleWindow())
-		{
-			::ShowWindow(::GetConsoleWindow(), SW_SHOW);
-		}
+		showConsoleWindow(true);
 #ifndef NDEBUG
 		SetUnhandledExceptionFilter(unhandled_handler);
 		AddVectoredExceptionHandler(1, unhandled_handler);

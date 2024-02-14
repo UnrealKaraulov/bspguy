@@ -589,6 +589,11 @@ void Renderer::renderLoop()
 					invalidSolid = false;
 				else
 					invalidSolid = !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
+
+				if (modelUsesSharedStructures)
+				{
+					moveOrigin = true;
+				}
 			}
 
 			setupView();
@@ -2036,7 +2041,7 @@ bool Renderer::transformAxisControls()
 							vertPickCount++;
 							map->move(delta, modelIdx, true, false, false);
 							map->getBspRender()->refreshEnt((int)entIdx[0]);
-							map->getBspRender()->refreshModel(modelIdx);
+							//map->getBspRender()->refreshModel(modelIdx);
 							updateEntConnectionPositions();
 						}
 					}
@@ -2117,17 +2122,13 @@ bool Renderer::transformAxisControls()
 					else
 					{
 						saveTranformResult = false;
-						if (invalidSolid)
-							revertInvalidSolid(map, modelIdx);
-						else
-						{
-							map->resize_all_lightmaps();
-							map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
-						}
+						map->resize_all_lightmaps();
 						map->getBspRender()->refreshEnt((int)entIdx[0]);
 						map->getBspRender()->refreshModel(modelIdx);
 						map->getBspRender()->refreshModelClipnodes(modelIdx);
-						applyTransform(map, true);
+						applyTransform(map, true); 
+						updateEntConnectionPositions();
+						map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 				}
 				else if (transformTarget == TRANSFORM_ORIGIN)
