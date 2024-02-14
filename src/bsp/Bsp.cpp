@@ -826,7 +826,7 @@ std::vector<ScalableTexinfo> Bsp::getScalableTexinfos(int modelIdx)
 
 bool Bsp::vertex_manipulation_sync(int modelIdx, const std::vector<TransformVert>& hullVerts, bool convexCheckOnly)
 {
-	if (modelIdx < 0)
+	if (modelIdx < 0 || hullVerts.size() < 4)
 		return false;
 
 	std::set<int> affectedPlanes;

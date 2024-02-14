@@ -575,31 +575,20 @@ void Renderer::renderLoop()
 					}
 				}
 
-				modelUsesSharedStructures = modelIdx == 0 || modelIdx > 0 && SelectedMap->does_model_use_shared_structures(modelIdx);
+				modelUsesSharedStructures = modelIdx > 0 && SelectedMap->does_model_use_shared_structures(modelIdx);
 
 				isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
 				isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN && modelIdx >= 0;
 				isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
 					|| (isTransformableSolid && isScalingObject);
-				isTransformingWorld = ent && ent->isWorldSpawn() && transformTarget != TRANSFORM_OBJECT;
+				isTransformingWorld = modelIdx == 0 || ent && ent->isWorldSpawn();
 
 				if (ent && modelIdx < 0)
 					invalidSolid = false;
+				else if (modelIdx == 0)
+					invalidSolid = false;
 				else
-				{
-					invalidSolid = !modelVerts.size() || !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
-					if (!invalidSolid)
-					{
-						std::vector<TransformVert> tmpVerts;
-						SelectedMap->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
-
-						Solid modelSolid;
-						if (!getModelSolid(tmpVerts, SelectedMap, modelSolid))
-						{
-							invalidSolid = true;
-						}
-					}
-				}
+					invalidSolid = !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
 			}
 
 			setupView();
