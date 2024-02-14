@@ -1409,7 +1409,12 @@ void Renderer::revertInvalidSolid(Bsp* map, int modelIdx)
 	{
 		map->vertex_manipulation_sync(modelIdx, modelVerts, false);
 		BSPMODEL& model = map->models[modelIdx];
-		map->get_model_vertex_bounds(modelIdx, model.nMins, model.nMaxs);
+		vec3 mins, maxs;
+		if (map->get_model_vertex_bounds(modelIdx, mins, maxs))
+		{
+			model.nMins = mins;
+			model.nMaxs = maxs;
+		}
 		map->getBspRender()->refreshModel(modelIdx);
 	}
 	gui->reloadLimits();
@@ -1476,7 +1481,12 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 		if (modelTransform >= 0)
 		{
 			BSPMODEL& model = map->models[modelTransform];
-			map->get_model_vertex_bounds(modelTransform, model.nMins, model.nMaxs);
+			vec3 mins, maxs;
+			if (map->get_model_vertex_bounds(modelTransform, mins, maxs))
+			{
+				model.nMins = mins;
+				model.nMaxs = maxs;
+			}
 		}
 
 		gui->reloadLimits();
@@ -2621,7 +2631,12 @@ void Renderer::updateDragAxes(vec3 delta)
 			}
 			else
 			{
-				map->get_model_vertex_bounds(modelIdx, entMin, entMax);
+				vec3 mins, maxs;
+				if (map->get_model_vertex_bounds(modelIdx, mins, maxs))
+				{
+					entMin = mins;
+					entMax = maxs;
+				}
 			}
 			vec3 modelOrigin = entMin + (entMax - entMin) * 0.5f;
 
@@ -2995,14 +3010,10 @@ void Renderer::updateSelectionSize()
 	else if (modelIdx > 0)
 	{
 		vec3 mins, maxs;
-		if (map->models[modelIdx].nFaces == 0)
+		if (!map->get_model_vertex_bounds(modelIdx, mins, maxs))
 		{
 			mins = map->models[modelIdx].nMins;
 			maxs = map->models[modelIdx].nMaxs;
-		}
-		else
-		{
-			map->get_model_vertex_bounds(modelIdx, mins, maxs);
 		}
 		selectionSize = maxs - mins;
 	}

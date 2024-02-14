@@ -156,7 +156,7 @@ public:
 	void get_bounding_box(vec3& mins, vec3& maxs);
 
 	// get the bounding box for all vertexes in a BSP tree
-	void get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs);
+	bool get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs);
 
 	// get all verts used by this model
 	// TODO: split any verts shared with other models!

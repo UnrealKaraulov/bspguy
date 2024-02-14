@@ -361,32 +361,38 @@ void Bsp::get_bounding_box(vec3& mins, vec3& maxs)
 	}
 }
 
-void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
+bool Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 {
 	if (modelIdx < 0)
-		return;
+		return false;
 	mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
 	if (modelIdx == 0)
 	{
 		get_bounding_box(mins, maxs);
-		return;
+		return false;
 	}
 
 	//BSPMODEL& model = models[modelIdx];
-	auto rndverts = getModelTransformVerts(modelIdx);
-	for (auto const& s : rndverts)
-	{
-		expandBoundingBox(s.pos, mins, maxs);
-	}
-	rndverts.clear();
+	std::vector<TransformVert> rnd_verts = getModelTransformVerts(modelIdx);
+	std::vector<TransformVert> rnd_plane_verts;
+	getModelPlaneIntersectVerts(modelIdx, rnd_plane_verts);
 
-	getModelPlaneIntersectVerts(modelIdx, rndverts);
-	for (auto const& s : rndverts)
+	if (rnd_verts.size() == 0 && rnd_plane_verts.size() == 0)
+	{
+		return false;
+	}
+
+	for (auto const& s : rnd_verts)
 	{
 		expandBoundingBox(s.pos, mins, maxs);
 	}
+	for (auto const& s : rnd_plane_verts)
+	{
+		expandBoundingBox(s.pos, mins, maxs);
+	}
+
 	/*for (int i = 0; i < model.nFaces; i++)
 	{
 		BSPFACE32& face = faces[model.iFirstFace + i];
@@ -400,6 +406,7 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 			expandBoundingBox(verts[vertIdx], mins, maxs);
 		}
 	}*/
+	return true;
 }
 
 std::vector<int> Bsp::getModelVertsIds(int modelIdx)
@@ -6346,9 +6353,14 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 
 	vec3 vertMin(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	vec3 vertMax(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-	get_model_vertex_bounds(modelIdx, vertMin, vertMax);
-
-	create_clipnode_box(vertMin, vertMax, &model, hullIdx, true);
+	if (get_model_vertex_bounds(modelIdx, vertMin, vertMax))
+	{
+		create_clipnode_box(vertMin, vertMax, &model, hullIdx, true);
+	}
+	else
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1036), modelIdx);
+	}
 }
 
 int Bsp::create_clipnode(bool force_reversed, int reversed_id)
@@ -7324,8 +7336,26 @@ int Bsp::merge_two_models(size_t src_ent, size_t dst_ent, int& tryanotherway)
 
 	vec3 amin, amax, bmin, bmax;
 
-	get_model_vertex_bounds(src_model, amin, amax);
-	get_model_vertex_bounds(dst_model, bmin, bmax);
+	bool valid1 = get_model_vertex_bounds(src_model, amin, amax);
+	bool valid2 = get_model_vertex_bounds(dst_model, bmin, bmax);
+
+	if (!valid1 && !valid2)
+	{
+		amin = models[src_model].nMins;
+		amax = models[src_model].nMaxs;
+		bmin = models[dst_model].nMins;
+		bmax = models[dst_model].nMaxs;
+	}
+	else if (!valid1)
+	{
+		amin = models[src_model].nMins;
+		amax = models[src_model].nMaxs;
+	}
+	else if (!valid2)
+	{
+		bmin = models[dst_model].nMins;
+		bmax = models[dst_model].nMaxs;
+	}
 
 	vec3 ent_offset = ents[src_ent]->origin - ents[dst_ent]->origin;
 
@@ -7489,7 +7519,7 @@ int Bsp::merge_two_models(size_t src_ent, size_t dst_ent, int& tryanotherway)
 
 			headNode = {
 				separationPlaneIdx,			// plane idx
-				{models[src_model].iHeadnodes[0],
+				{ models[src_model].iHeadnodes[0],
 				 models[dst_model].iHeadnodes[0] },		// child nodes
 				{ new_min.x, new_min.y, new_min.z },	// mins
 				{ new_max.x, new_max.y, new_max.z },	// maxs

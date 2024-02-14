@@ -1507,6 +1507,18 @@ void Gui::drawMenuBar()
 		Bsp* map = app->getSelectedMap();
 		BspRenderer* rend = NULL;
 
+		static std::string png_import_dir;
+
+		if (ifd::FileDialog::Instance().IsDone("PngDirOpenDialog"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+			{
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				png_import_dir = stripFileName(res.string());
+				g_settings.lastdir = stripFileName(res.string());
+			}
+			ifd::FileDialog::Instance().Close();
+		}
 
 		if (map)
 		{
@@ -2741,6 +2753,22 @@ void Gui::drawMenuBar()
 					if (map)
 					{
 						ifd::FileDialog::Instance().Open("WadOpenDialog", "Open .wad", "Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
+					}
+
+					if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+					{
+						ImGui::BeginTooltip();
+						std::string embtextooltip;
+						ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0349)), g_working_dir, map->bsp_name + ".wad").c_str());
+						ImGui::EndTooltip();
+					}
+				}
+
+				if (ImGui::MenuItem("All .png textures from dir", NULL))
+				{
+					if (map)
+					{
+						ifd::FileDialog::Instance().Open("PngDirOpenDialog", "Open .png dir", "Directory with .png files (*.png){.png},.*", false, g_settings.lastdir);
 					}
 
 					if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
