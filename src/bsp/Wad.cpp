@@ -22,7 +22,12 @@ Wad::Wad(const std::string& file)
 	dirEntries.clear();
 	if (filedata)
 		delete[] filedata;
-	filedata = NULL;
+	filedata = NULL;/*
+
+	if (fileExists(file))
+	{
+		readInfo();
+	}*/
 }
 
 Wad::~Wad(void)
@@ -68,6 +73,7 @@ bool Wad::readInfo()
 	if (!filedata)
 	{
 		print_log(get_localized_string(LANG_1043),filename);
+		filedata = NULL;
 		return false;
 	}
 
@@ -117,7 +123,7 @@ bool Wad::readInfo()
 		if (offset + (int)sizeof(WADDIRENTRY) > fileLen)
 		{
 			print_log(get_localized_string(LANG_0251));
-			return false;
+			break;
 		}
 
 		memcpy((char*)&tmpWadEntry, &filedata[offset], sizeof(WADDIRENTRY));
@@ -133,9 +139,13 @@ bool Wad::readInfo()
 
 	if (!usableTextures)
 	{
-		print_log(get_localized_string(LANG_0252),basename(filename));
+		print_log(get_localized_string(LANG_0252), basename(filename));
 		if (!dirEntries.size())
+		{
+			delete[] filedata;
+			filedata = NULL;
 			return false;
+		}
 	}
 
 	return true;
@@ -371,7 +381,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 	mip[0] = new unsigned char[width * height];
 
 	bool do_magic = false;
-	if ( name[0] == '{')
+	if ( name[0] == '{' )
 	{
 		int sz = width * height;
 		for (int i = 0; i < sz; i++)
@@ -493,17 +503,17 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 	newMipTex->nOffsets[2] = newMipTex->nOffsets[1] + (width >> 1) * (height >> 1);
 	newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
 
-	unsigned char* palleteOffset = newTexData + newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + sizeof(short);
+	unsigned char* palleteOffset = newTexData + newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) - sizeof(BSPMIPTEX);
 	memcpy(newTexData + newMipTex->nOffsets[0], mip[0], width * height);
 	memcpy(newTexData + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
 	memcpy(newTexData + newMipTex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 	memcpy(newTexData + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 	memcpy(palleteOffset, palette, sizeof(COLOR3) * 256);
 
-	palleteOffset[-1] = 0x01;
-	palleteOffset[-2] = 0x00;
+	*(unsigned short*)palleteOffset = 256;
+	memcpy(palleteOffset + 2, palette, sizeof(COLOR3) * 256);
 
-	newMipTex->data = newTexData + sizeof(BSPMIPTEX);
+	newMipTex->data = newTexData;
 	newMipTex->needclean = true;
 
 	return newMipTex;

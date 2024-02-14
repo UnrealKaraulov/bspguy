@@ -1507,15 +1507,16 @@ void Gui::drawMenuBar()
 		Bsp* map = app->getSelectedMap();
 		BspRenderer* rend = NULL;
 
-		static std::string png_import_dir;
-
 		if (ifd::FileDialog::Instance().IsDone("PngDirOpenDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				png_import_dir = stripFileName(res.string());
+				std::string png_import_dir = stripFileName(res.string());
 				g_settings.lastdir = stripFileName(res.string());
+
+
+
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -2453,7 +2454,7 @@ void Gui::drawMenuBar()
 				{
 					print_log(get_localized_string(LANG_0343), g_working_dir, map->bsp_name + ".wad");
 					createDir(g_working_dir);
-					if (map->ExportWad(g_working_dir + map->bsp_name + ".wad"))
+					if (map->ExportEmbeddedWad(g_working_dir + map->bsp_name + ".wad"))
 					{
 						print_log(get_localized_string(LANG_0344));
 						map->delete_embedded_textures();
@@ -2617,37 +2618,7 @@ void Gui::drawMenuBar()
 						if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 						{
 							print_log(get_localized_string(LANG_0345), basename(wad->filename));
-
-							createDir(g_working_dir + "wads/" + basename(wad->filename));
-
-							std::vector<size_t> texturesIds(wad->dirEntries.size());
-							std::iota(texturesIds.begin(), texturesIds.end(), 0);
-
-							std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](size_t file)
-								{
-									{
-										WADTEX* texture = wad->readTexture(file);
-
-										if (texture->szName[0] != '\0')
-										{
-											print_log(get_localized_string(LANG_0346), texture->szName, basename(wad->filename));
-											COLOR4* texturedata = ConvertWadTexToRGBA(texture);
-
-											lodepng_encode32_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
-												, (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
-
-
-											/*	int lastMipSize = (texture->nWidth>> 3) * (texture->nHeight>> 3);
-
-												COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + sizeof(short) - 40);
-
-												lodepng_encode24_file((g_working_dir + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".pal.png").c_str()
-																	  , (unsigned char*)palette, 8, 32);*/
-											delete texturedata;
-										}
-										delete texture;
-									}
-								});
+							map->export_wad_to_pngs(wad->filename, g_working_dir + "wads/" + basename(wad->filename));
 						}
 					}
 
@@ -2796,88 +2767,9 @@ void Gui::drawMenuBar()
 						if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 						{
 							print_log(get_localized_string(LANG_0350), basename(wad->filename));
-							if (!dirExists(g_working_dir + "wads/" + basename(wad->filename)))
+							if (!map->import_textures_to_wad(wad->filename, g_working_dir + "wads/" + basename(wad->filename), ditheringEnabled))
 							{
-								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0351), g_working_dir + "wads/" + basename(wad->filename));
-							}
-							else
-							{
-								copyFile(wad->filename, wad->filename + ".bak");
-
-								Wad* resetWad = new Wad(wad->filename);
-								resetWad->write(NULL, 0);
-								delete resetWad;
-
-								Wad* tmpWad = new Wad(wad->filename);
-
-								std::vector<WADTEX*> textureList{};
-
-								createDir(g_working_dir);
-								fs::path tmpPath = g_working_dir + "wads/" + basename(wad->filename);
-
-								std::vector<std::string> files{};
-
-								for (auto& dir_entry : std::filesystem::directory_iterator(tmpPath))
-								{
-									if (!dir_entry.is_directory() && toLowerCase(dir_entry.path().string()).ends_with(".png"))
-									{
-										files.emplace_back(dir_entry.path().string());
-									}
-								}
-
-								std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto file)
-									{
-										print_log(get_localized_string(LANG_0352), basename(file), basename(wad->filename));
-										COLOR4* image_bytes = NULL;
-										unsigned int w2, h2;
-										auto error = lodepng_decode_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str(),
-											LodePNGColorType::LCT_RGBA, 8);
-										COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
-										if (error == 0 && image_bytes)
-										{
-											for (unsigned int i = 0; i < w2 * h2; i++)
-											{
-												COLOR4& curPixel = image_bytes[i];
-
-												if (curPixel.a == 0)
-												{
-													image_bytes_rgb[i] = COLOR3(0, 0, 255);
-												}
-												else
-												{
-													image_bytes_rgb[i] = COLOR3(curPixel.r, curPixel.g, curPixel.b);
-												}
-											}
-
-											int oldcolors = 0;
-											if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
-											{
-												print_log(get_localized_string(LANG_0353), basename(file));
-												Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-
-												if (ditheringEnabled)
-													tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
-												else
-													tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
-
-												print_log(get_localized_string(LANG_0354), oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
-
-												delete tmpCQuantizer;
-											}
-											std::string tmpTexName = stripExt(basename(file));
-
-											WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
-											g_mutex_list[1].lock();
-											textureList.push_back(tmpWadTex);
-											g_mutex_list[1].unlock();
-											free(image_bytes);
-										}
-									});
-								print_log(get_localized_string(LANG_0355));
-
-								tmpWad->write(textureList);
-								delete tmpWad;
-								map->getBspRender()->reloadTextures();
+								//
 							}
 						}
 					}

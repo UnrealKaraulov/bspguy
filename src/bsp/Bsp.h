@@ -240,6 +240,9 @@ public:
 	int add_texture(const char* name, unsigned char* data, int width, int height, bool force_custompal = false);
 	int add_texture(WADTEX* tex, bool embedded = false);
 
+	bool export_wad_to_pngs(const std::string& wadpath, const std::string& targetdir);
+	bool import_textures_to_wad(const std::string& wadpath, const std::string& texpath, bool dithering);
+
 	void replace_lump(int lumpIdx, void* newData, size_t newLength);
 	void append_lump(int lumpIdx, void* newData, size_t appendLength);
 
@@ -326,7 +329,7 @@ public:
 	void ImportLightFile(const std::string& path);
 
 	bool ImportWad(const std::string& path);
-	bool ExportWad(const std::string& path);
+	bool ExportEmbeddedWad(const std::string& path);
 
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
 	bool isModelHasLeafIdx(const BSPMODEL& bspmdl, int leafidx);

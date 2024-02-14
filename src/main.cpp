@@ -1093,7 +1093,7 @@ int main(int argc, char* argv[])
 		else if (cli.command == "exportwad")
 		{
 			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ExportWad(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile + ".wad");
+			tmpBsp->ExportEmbeddedWad(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile + ".wad");
 			delete tmpBsp;
 			return 0;
 		}
