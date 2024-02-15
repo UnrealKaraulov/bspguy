@@ -2105,13 +2105,18 @@ BspRenderer::~BspRenderer()
 void BspRenderer::reuploadTextures()
 {
 	if (!glTexturesSwap)
-		return;
+	{
+		loadTextures();
+	}
 
+	if (!glTexturesSwap)
+		return;
 	deleteTextures();
 
 	//loadTextures();
 
 	glTextures = glTexturesSwap;
+	glTexturesSwap = NULL;
 
 	for (int i = 0; i < map->textureCount; i++)
 	{

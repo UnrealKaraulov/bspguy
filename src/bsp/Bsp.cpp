@@ -2178,9 +2178,7 @@ void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 							}
 							else
 							{
-								colorCount = 256;
-								memcpy(palette, g_settings.palette_default,
-									256 * sizeof(COLOR3));
+								colorCount = 0;
 							}
 
 							WADTEX* wadTex = wad->readTexture(tex->szName);
@@ -2190,7 +2188,8 @@ void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 							{
 								COLOR3* newTex = ConvertWadTexToRGB(wadTex);
 								Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-								tmpCQuantizer->SetColorTable(palette, 256);
+								if (colorCount != 0)
+									tmpCQuantizer->SetColorTable(palette, 256);
 								tmpCQuantizer->ApplyColorTable((COLOR3*)newTex, wadTex->nWidth * wadTex->nHeight);
 								delete tmpCQuantizer;
 								targetMap->add_texture(tex->szName, (unsigned char*)newTex, wadTex->nWidth, wadTex->nHeight, true);
@@ -5427,12 +5426,11 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			}
 			else
 			{
-				colors = 256;
-				memcpy(palette, g_settings.palette_default,
-					256 * sizeof(COLOR3));
+				colors = 0;
 			}
 			Quantizer* tmpCQuantizer = new Quantizer(colors, 8);
-			tmpCQuantizer->SetColorTable(palette, colors);
+			if (colors != 0)
+				tmpCQuantizer->SetColorTable(palette, colors);
 			tmpCQuantizer->ApplyColorTable((COLOR3*)data, width * height);
 			delete tmpCQuantizer;
 		}
@@ -5519,14 +5517,14 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		memcpy(textures + newTexOffset + oldtex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 		memcpy(textures + newTexOffset + oldtex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 
+		unsigned char* palleteOffset = textures + (newTexOffset + oldtex->nOffsets[3] + (width >> 3) * (height >> 3));
 
-		size_t palleteOffset = oldtex->nOffsets[3] + (width >> 3) * (height >> 3);
 		if (is_texture_has_pal && !force_custompal)
 		{
-			*(unsigned short*)(textures + newTexOffset + palleteOffset) = colorCount;
-			palleteOffset += sizeof(short) /* pal count */;
-			memcpy(textures + newTexOffset + palleteOffset, palette, colorCount);
+			*(unsigned short*)palleteOffset = 256;
+			memcpy(palleteOffset + 2, palette, sizeof(COLOR3) * 256);
 		}
+
 		for (int i = 0; i < MIPLEVELS; i++)
 		{
 			delete[] mip[i];
@@ -5648,13 +5646,12 @@ int Bsp::add_texture(WADTEX* tex, bool embedded)
 			}
 			else
 			{
-				colorCount = 256;
-				memcpy(palette, g_settings.palette_default,
-					256 * sizeof(COLOR3));
+				colorCount = 0;
 			}
 
 			Quantizer* tmpCQuantizer = new Quantizer(colorCount, 8);
-			tmpCQuantizer->SetColorTable(palette, colorCount);
+			if (colorCount != 0)
+				tmpCQuantizer->SetColorTable(palette, colorCount);
 			tmpCQuantizer->ApplyColorTable((COLOR3*)newTex, tex->nWidth * tex->nHeight);
 			delete tmpCQuantizer;
 			int rettex = add_texture(tex->szName, (unsigned char*)newTex, tex->nWidth, tex->nHeight);

@@ -3489,10 +3489,10 @@ void Gui::drawMenuBar()
 											{
 												Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 
-												/*if (ditheringEnabled)
-													tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
-												else*/
-												tmpCQuantizer->ApplyColorTable((COLOR3*)tmpData, newWidth * newHeight);
+												if (ditheringEnabled)
+													tmpCQuantizer->ApplyColorTableDither((COLOR3*)tmpData, newWidth, newHeight);
+												else
+													tmpCQuantizer->ApplyColorTable((COLOR3*)tmpData, newWidth * newHeight);
 
 												delete tmpCQuantizer;
 											}
@@ -4836,7 +4836,7 @@ void Gui::drawMenuBar()
 					float scale_val = (FLT_MAX_COORD - 2.0f) / 256.0f;
 
 					//map->get_bounding_box(mins, maxs);
-					int newModelIdx = ImportModel(map, "./primitives/skybox.bsp",true);
+					int newModelIdx = ImportModel(map, "./primitives/skybox.bsp", true);
 
 					Entity* newEnt = new Entity("func_wall");
 
@@ -4866,8 +4866,69 @@ void Gui::drawMenuBar()
 					{
 						unsigned char* sky_data = NULL;
 						unsigned int w, h;
-						lodepng_decode32_file(&sky_data, &w, &h, "./primitives/skytest/sky_up.png");
+						lodepng_decode24_file(&sky_data, &w, &h, "./primitives/skytest/sky_up.png");
+						int out_w, out_h;
+						auto images = splitImage((COLOR3*)sky_data, w, h, 4, 4, out_w, out_h);
+						const int new_w = 128, new_h = 128;
+						for (auto& img : images)
+						{
+							std::vector<COLOR3> new_img;
+							scaleImage(img.data(), new_img, out_w, out_h, new_w, new_h);
+							img = new_img;
+						}
+						out_w = new_w;
+						out_h = new_h;
 
+						print_log("Split {}x{} to {} images with size {}x{}\n", w, h, images.size(), out_w, out_h);
+						for (int x = 0; x < 4; x++)
+						{
+							for (int y = 0; y < 4; y++)
+							{
+								auto img = getSubImage(images, x, y, 4);
+								lodepng_encode24_file(("test-" + std::to_string(x) + "-" + std::to_string(y) + ".png").c_str(), (unsigned char*)img.data(), out_w, out_h);
+							}
+						}
+
+						for (int x = 0; x < 4; x++)
+						{
+							for (int y = 0; y < 4; y++)
+							{
+								std::string sky_side = "box_up_" + std::to_string(x) + "x" + std::to_string(y);
+
+								auto target_img = getSubImage(images, x, y, 4);
+								if (GetImageColors(target_img.data(), new_w * new_h) > 256)
+								{
+									COLOR3 palette[256];
+									unsigned int colorCount = 0;
+									if (g_settings.pal_id >= 0)
+									{
+										colorCount = g_settings.palettes[g_settings.pal_id].colors;
+										memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+									}
+									else
+									{
+										colorCount = 0;
+									}
+
+									COLOR3* newTex = new COLOR3[new_w * new_h];
+									memcpy(newTex, target_img.data(), (new_w * new_h) * sizeof(COLOR3));
+
+									Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+									if (colorCount != 0)
+										tmpCQuantizer->SetColorTable(palette, 256);
+									tmpCQuantizer->ApplyColorTable((COLOR3*)newTex, new_w * new_h);
+									delete tmpCQuantizer;
+
+
+									lodepng_encode24_file(("testQuantizer-" + std::to_string(x) + "-" + std::to_string(y) + ".png").c_str(), (unsigned char*)newTex, out_w, out_h);
+
+									map->add_texture(sky_side.c_str(), (unsigned char*)newTex, new_w, new_h);
+									delete[] newTex;
+								}
+								else
+									map->add_texture(sky_side.c_str(), (unsigned char*)target_img.data(), new_w, new_h);
+							}
+						}
 					}
 
 					STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
@@ -4883,12 +4944,76 @@ void Gui::drawMenuBar()
 							map->verts[i] *= scale_val;
 						}
 					}
+
 					for (int i = 0; i < map->texinfoCount; i++)
 					{
 						if (modelUsage.texInfo[i])
 						{
-							map->texinfos[i].vS /= scale_val;
-							map->texinfos[i].vT /= scale_val;
+							mat4x4 scaleMat;
+							scaleMat.loadIdentity();
+							scaleMat.scale(0.5f / scale_val, 0.5f / scale_val, 0.5f / scale_val);
+							BSPTEXTUREINFO& info = map->texinfos[i];
+
+							info.vS = (scaleMat * vec4(info.vS, 1)).xyz();
+							info.vT = (scaleMat * vec4(info.vT, 1)).xyz();
+
+							//float shiftS = info.shiftS;
+							//float shiftT = info.shiftT;
+
+							//// magic guess-and-check code that somehow works some of the time
+							//// also its shit
+							//for (int k = 0; k < 3; k++)
+							//{
+							//	vec3 stretchDir;
+							//	if (k == 0) stretchDir = vec3(1.0f, 0, 0).normalize();
+							//	if (k == 1) stretchDir = vec3(0, 1.0f, 0).normalize();
+							//	if (k == 2) stretchDir = vec3(0, 0, 1.0f).normalize();
+
+							//	float refDist = 0;
+							//	if (k == 0) refDist = scaleFromDist.x;
+							//	if (k == 1) refDist = scaleFromDist.y;
+							//	if (k == 2) refDist = scaleFromDist.z;
+
+							//	vec3 texFromDir;
+							//	if (k == 0) texFromDir = dir * vec3(1, 0, 0);
+							//	if (k == 1) texFromDir = dir * vec3(0, 1, 0);
+							//	if (k == 2) texFromDir = dir * vec3(0, 0, 1);
+
+							//	float dotS = dotProduct(oldinfo.oldS.normalize(), stretchDir);
+							//	float dotT = dotProduct(oldinfo.oldT.normalize(), stretchDir);
+
+							//	float dotSm = dotProduct(texFromDir, info.vS) < 0 ? 1.0f : -1.0f;
+							//	float dotTm = dotProduct(texFromDir, info.vT) < 0 ? 1.0f : -1.0f;
+
+							//	// hurr dur oh god im fucking retarded huurr
+							//	if (k == 0 && dotProduct(texFromDir, fromDir) < 0 != fromDir.x < 0)
+							//	{
+							//		dotSm *= -1.0f;
+							//		dotTm *= -1.0f;
+							//	}
+							//	if (k == 1 && dotProduct(texFromDir, fromDir) < 0 != fromDir.y < 0)
+							//	{
+							//		dotSm *= -1.0f;
+							//		dotTm *= -1.0f;
+							//	}
+							//	if (k == 2 && dotProduct(texFromDir, fromDir) < 0 != fromDir.z < 0)
+							//	{
+							//		dotSm *= -1.0f;
+							//		dotTm *= -1.0f;
+							//	}
+
+							//	float vsdiff = info.vS.length() - oldinfo.oldS.length();
+							//	float vtdiff = info.vT.length() - oldinfo.oldT.length();
+
+							//	shiftS += (refDist * vsdiff * abs(dotS)) * dotSm;
+							//	shiftT += (refDist * vtdiff * abs(dotT)) * dotTm;
+							//}
+
+							//info.shiftS = shiftS;
+							//info.shiftT = shiftT;
+
+							//map->texinfos[i].vS /= scale_val;
+							//map->texinfos[i].vT /= scale_val;
 						}
 					}
 					for (int i = 0; i < map->nodeCount; i++)
@@ -4915,6 +5040,8 @@ void Gui::drawMenuBar()
 						}
 					}
 
+					rend->reuploadTextures();
+					rend->preRenderFaces();
 					rend->pushModelUndoState("CREATE SKYBOX", EDIT_MODEL_LUMPS | FL_ENTITIES);
 				}
 
