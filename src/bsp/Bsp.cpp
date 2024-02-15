@@ -312,6 +312,11 @@ Bsp::Bsp(std::string fpath)
 		}
 	}
 
+	if (ents.size())
+	{
+		ents[0]->setOrAddKeyvalue("_editor", g_version_string);
+	}
+
 	save_undo_lightmaps();
 }
 
@@ -6653,6 +6658,9 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 	STRUCTUSAGE usage(this);
 	mark_model_structures(modelIdx, &usage, skipLeafs);
 
+	if (leafCount > 0)
+		usage.leaves[0] = false;
+
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{
 		if (usage.planes[i])
@@ -8724,7 +8732,7 @@ void Bsp::ExportExtFile(const std::string& path, std::string& out_map_path)
 
 	Wad* tmpWad = new Wad(targetMapFileName + "_nolight.wa_");
 
-	
+
 
 	std::vector<std::string> addedTextures;
 	std::vector<WADTEX*> outTextures;

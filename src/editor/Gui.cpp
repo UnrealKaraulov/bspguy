@@ -317,6 +317,214 @@ void Gui::pasteLightmap()
 	dst.nLightmapOffset = src.nLightmapOffset;
 }
 
+int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
+{
+	if (!map || !map->getBspRender())
+		return -1;
+	if (!fileExists(mdl_path))
+		return -1;
+	Bsp* bspModel = new Bsp(mdl_path);
+	bspModel->setBspRender(map->getBspRender());
+
+	std::vector<BSPPLANE> newPlanes;
+	std::vector<vec3> newVerts;
+	std::vector<BSPEDGE32> newEdges;
+	std::vector<int> newSurfedges;
+	std::vector<BSPTEXTUREINFO> newTexinfo;
+	std::vector<BSPFACE32> newFaces;
+	std::vector<COLOR3> newLightmaps;
+	std::vector<BSPNODE32> newNodes;
+	std::vector<BSPCLIPNODE32> newClipnodes;
+	std::vector<WADTEX*> newTextures;
+	std::vector<BSPLEAF32> newLeaves;
+	std::vector<int> newMarkSurfaces;
+
+	STRUCTREMAP remap = STRUCTREMAP(map);
+	bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
+		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
+
+	if (!noclip && newClipnodes.size())
+	{
+		map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE32) * newClipnodes.size());
+	}
+	if (newEdges.size())
+	{
+		map->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
+	}
+	if (newFaces.size())
+	{
+		map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
+	}
+	if (newLeaves.size())
+	{
+		map->append_lump(LUMP_LEAVES, &newLeaves[0], sizeof(BSPLEAF32) * newLeaves.size());
+	}
+
+	if (newMarkSurfaces.size())
+	{
+		map->append_lump(LUMP_MARKSURFACES, &newMarkSurfaces[0], sizeof(int) * newMarkSurfaces.size());
+	}
+	if (newNodes.size())
+	{
+		map->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
+	}
+	if (newPlanes.size())
+	{
+		map->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
+	}
+	if (newSurfedges.size())
+	{
+		map->append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
+	}
+
+	if (newTextures.size())
+	{
+		while (newTextures.size())
+		{
+			auto& tex = newTextures[newTextures.size() - 1];
+			if (tex->data)
+			{
+				auto data = ConvertWadTexToRGB(tex);
+				map->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
+				delete[]data;
+			}
+			else
+			{
+				map->add_texture(tex->szName, NULL, tex->nWidth, tex->nHeight);
+			}
+			delete tex;
+			newTextures.pop_back();
+		}
+	}
+
+	map->update_lump_pointers();
+
+	if (newTexinfo.size())
+	{
+		for (auto& texinfo : newTexinfo)
+		{
+			if (texinfo.iMiptex < 0 || texinfo.iMiptex >= bspModel->textureCount)
+			{
+				texinfo.iMiptex = 0;
+				texinfo.nFlags = TEX_SPECIAL;
+				continue;
+			}
+			int newMiptex = -1;
+			int texOffset = ((int*)bspModel->textures)[texinfo.iMiptex + 1];
+			if (texOffset < 0)
+			{
+				texinfo.iMiptex = 0;
+				texinfo.nFlags = TEX_SPECIAL;
+				continue;
+			}
+			BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
+			for (int i = map->textureCount - 1; i >= 0; i--)
+			{
+				int tex2Offset = ((int*)map->textures)[i + 1];
+				if (tex2Offset >= 0)
+				{
+					BSPMIPTEX* tex2 = ((BSPMIPTEX*)(map->textures + tex2Offset));
+					if (strcasecmp(tex.szName, tex2->szName) == 0)
+					{
+						newMiptex = i;
+						break;
+					}
+				}
+			}
+			if (newMiptex < 0 && bspModel->getBspRender() && bspModel->getBspRender()->wads.size())
+			{
+				for (auto& s : bspModel->getBspRender()->wads)
+				{
+					if (s->hasTexture(tex.szName))
+					{
+						WADTEX* wadTex = s->readTexture(tex.szName);
+						COLOR3* imageData = ConvertWadTexToRGB(wadTex);
+
+						newMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+
+						delete wadTex;
+						delete[] imageData;
+						break;
+					}
+				}
+			}
+			texinfo.iMiptex = newMiptex;
+			if (newMiptex < 0)
+			{
+				texinfo.iMiptex = 0;
+				texinfo.nFlags = TEX_SPECIAL;
+			}
+		}
+		map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
+	}
+
+	if (newVerts.size())
+	{
+		map->append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
+	}
+	if (newLightmaps.size())
+	{
+		map->append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
+	}
+
+	int newModelIdx = map->create_model();
+	map->models[newModelIdx] = bspModel->models[0];
+
+	map->models[newModelIdx].iFirstFace = remap.faces[map->models[newModelIdx].iFirstFace];
+	map->models[newModelIdx].iHeadnodes[0] = map->models[newModelIdx].iHeadnodes[0] < 0 ? -1 : remap.nodes[map->models[newModelIdx].iHeadnodes[0]];
+
+	if (!noclip)
+	{
+		for (int i = 1; i < MAX_MAP_HULLS; i++)
+		{
+			map->models[newModelIdx].iHeadnodes[i] = map->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[map->models[newModelIdx].iHeadnodes[i]];
+		}
+	}
+	else
+	{
+		for (int i = 1; i < MAX_MAP_HULLS; i++)
+		{
+			map->models[newModelIdx].iHeadnodes[i] = CONTENTS_EMPTY;
+		}
+	}
+
+	if (map->models[newModelIdx].nVisLeafs > 0 && map->models[newModelIdx].nVisLeafs > newLeaves.size())
+	{
+		map->models[newModelIdx].nVisLeafs--;
+	}
+	else if (map->models[newModelIdx].nVisLeafs > newLeaves.size())
+	{
+		map->leafCount--;
+		map->bsp_header.lump[LUMP_LEAVES].nLength -= sizeof(BSPLEAF32);
+	}
+	else if (newLeaves.size() > map->models[newModelIdx].nVisLeafs)
+	{
+		map->models[newModelIdx].nVisLeafs++;
+	}
+
+	bspModel->setBspRender(NULL);
+	delete bspModel;
+
+	g_app->deselectObject();
+
+	map->save_undo_lightmaps();
+	map->resize_all_lightmaps();
+
+	BspRenderer* rend = map->getBspRender();
+
+	rend->loadTextures();
+	rend->reuploadTextures();
+
+	rend->loadLightmaps();
+	rend->calcFaceMaths();
+	rend->preRenderFaces();
+	rend->preRenderEnts();
+
+	map->getBspRender()->pushModelUndoState("IMPORT MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+
+	return newModelIdx;
+}
+
 void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 {
 	Bsp* bspModel = new Bsp();
@@ -402,6 +610,18 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	}
 	if (newNodes.size())
 	{
+		//FIXME: DO OFFSET BECAUSE CREATE ZERO IS SOLID ?? IS NEED?
+		for (auto& n : newNodes)
+		{
+			if (n.iChildren[0] < 0)
+			{
+				n.iChildren[0]--;
+			}
+			if (n.iChildren[1] < 0)
+			{
+				n.iChildren[1]--;
+			}
+		}
 		bspModel->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
 	}
 	if (newPlanes.size())
@@ -421,11 +641,11 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 			if (tex->data && ExportType != 0)
 			{
 				auto data = ConvertWadTexToRGB(tex);
-				lodepng_encode24_file((std::string(tex->szName) + "_1.png").c_str(), (unsigned char*)data, tex->nWidth, tex->nHeight);
+				/*	lodepng_encode24_file((std::string(tex->szName) + "_1.png").c_str(), (unsigned char*)data, tex->nWidth, tex->nHeight);*/
 				int mip = bspModel->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
 				delete[]data;
 				data = ConvertMipTexToRGB(bspModel->find_embedded_texture(tex->szName, mip));
-				lodepng_encode24_file((std::string(tex->szName) + "_2.png").c_str(), (unsigned char*)data, tex->nWidth, tex->nHeight);
+				/*	lodepng_encode24_file((std::string(tex->szName) + "_2.png").c_str(), (unsigned char*)data, tex->nWidth, tex->nHeight);*/
 				delete[]data;
 			}
 			else
@@ -482,7 +702,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 						{
 							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
-							lodepng_encode24_file(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
+							//lodepng_encode24_file(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
 							newMiptex = src_map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
 							delete[] imageData;
@@ -527,6 +747,8 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->models[newModelIdx].iHeadnodes[i] = bspModel->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
 	}
 
+	bspModel->create_leaf(CONTENTS_EMPTY);
+
 	//app->deselectObject();
 
 	STRUCTCOUNT removed = bspModel->remove_unused_model_structures();
@@ -561,6 +783,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->target_save_texture_has_pal = true;
 		bspModel->bsp_header.nVersion = 30;
 	}
+
 
 	bspModel->bsp_path = g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp";
 	bspModel->write(bspModel->bsp_path);
@@ -3510,12 +3733,13 @@ void Gui::drawMenuBar()
 						map->save_undo_lightmaps();
 						map->resize_all_lightmaps();
 
+						rend->loadTextures();
+						rend->reuploadTextures();
+
 						rend->loadLightmaps();
 						rend->calcFaceMaths();
 						rend->preRenderFaces();
 						rend->preRenderEnts();
-						rend->loadTextures();
-						rend->reuploadTextures();
 
 						map->regenerate_clipnodes(newModelIdx, -1);
 
@@ -3756,7 +3980,6 @@ void Gui::drawMenuBar()
 							}
 							for (int i = 0; i < map->planeCount; i++)
 							{
-								//map->planes[i].update_plane(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
 								if (modelUsage.planes[i])
 								{
 									map->planes[i].fDist *= scale_val;
@@ -4178,6 +4401,7 @@ void Gui::drawMenuBar()
 						}
 					}
 					map->getBspRender()->reuploadTextures();
+					map->getBspRender()->preRenderFaces();
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -4592,7 +4816,7 @@ void Gui::drawMenuBar()
 								{
 									BSPMIPTEX tex = *((BSPMIPTEX*)(map->textures + texOffset));
 									std::string texname = toLowerCase(tex.szName);
-									if (texname == "sky" || texname == "skycull")
+									if (texname.starts_with("sky"))
 									{
 										map->remove_face(f);
 									}
@@ -4601,7 +4825,6 @@ void Gui::drawMenuBar()
 						}
 					}
 
-
 					rend->loadLightmaps();
 					rend->calcFaceMaths();
 					rend->preRenderFaces();
@@ -4609,13 +4832,11 @@ void Gui::drawMenuBar()
 					map->update_ent_lump();
 					map->update_lump_pointers();
 
+					vec3 org_mins = vec3(-256.0f, -256.0f, -256.0f), org_maxs = vec3(256.0f, 256.0f, 256.0f);
+					float scale_val = (FLT_MAX_COORD - 2.0f) / 256.0f;
 
-
-					vec3 mins = { -FLT_MAX_COORD + 1.0f,-FLT_MAX_COORD + 1.0f,-FLT_MAX_COORD + 1.0f }, maxs = { FLT_MAX_COORD - 1.0f,FLT_MAX_COORD - 1.0f,FLT_MAX_COORD - 1.0f };
 					//map->get_bounding_box(mins, maxs);
-					int newModelIdx = map->create_model();
-
-					BSPMODEL& newModel = map->models[newModelIdx];
+					int newModelIdx = ImportModel(map, "./primitives/skybox.bsp",true);
 
 					Entity* newEnt = new Entity("func_wall");
 
@@ -4632,15 +4853,69 @@ void Gui::drawMenuBar()
 
 					map->update_ent_lump();
 
-					map->create_inside_box(mins, maxs, &newModel, 0);
+					map->getBspRender()->preRenderEnts();
 
-					rend->loadLightmaps();
-					rend->calcFaceMaths();
-					rend->preRenderFaces();
-					rend->preRenderEnts();
-					rend->addClipnodeModel(newModelIdx);
+					//./primitives/skytest/sky_up.png
+					//./primitives/skytest/sky_dn.png
+					//./primitives/skytest/sky_ft.png
+					//./primitives/skytest/sky_bk.png
+					//./primitives/skytest/sky_fl.png
+					//./primitives/skytest/sky_rt.png
 
-					rend->pushModelUndoState("CREATE SKYBOX", EDIT_MODEL_LUMPS);
+					// up 
+					{
+						unsigned char* sky_data = NULL;
+						unsigned int w, h;
+						lodepng_decode32_file(&sky_data, &w, &h, "./primitives/skytest/sky_up.png");
+
+					}
+
+					STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
+					map->mark_model_structures(newModelIdx, &modelUsage, true);
+
+					map->models[newModelIdx].nMaxs *= scale_val;
+					map->models[newModelIdx].nMins *= scale_val;
+
+					for (int i = 0; i < map->vertCount; i++)
+					{
+						if (modelUsage.verts[i])
+						{
+							map->verts[i] *= scale_val;
+						}
+					}
+					for (int i = 0; i < map->texinfoCount; i++)
+					{
+						if (modelUsage.texInfo[i])
+						{
+							map->texinfos[i].vS /= scale_val;
+							map->texinfos[i].vT /= scale_val;
+						}
+					}
+					for (int i = 0; i < map->nodeCount; i++)
+					{
+						if (modelUsage.nodes[i])
+						{
+							map->nodes[i].nMaxs *= scale_val;
+							map->nodes[i].nMins *= scale_val;
+						}
+					}
+					for (int i = 0; i < map->leafCount; i++)
+					{
+						if (modelUsage.leaves[i])
+						{
+							map->leaves[i].nMaxs *= scale_val;
+							map->leaves[i].nMins *= scale_val;
+						}
+					}
+					for (int i = 0; i < map->planeCount; i++)
+					{
+						if (modelUsage.planes[i])
+						{
+							map->planes[i].fDist *= scale_val;
+						}
+					}
+
+					rend->pushModelUndoState("CREATE SKYBOX", EDIT_MODEL_LUMPS | FL_ENTITIES);
 				}
 
 
@@ -8338,173 +8613,20 @@ void Gui::drawImportMapWidget()
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
 				{
 					Bsp* map = app->getSelectedMap();
+					Entity* newEnt = new Entity("func_wall");
 
-					Bsp* bspModel = new Bsp(mapPath);
-					bspModel->setBspRender(map->getBspRender());
+					newEnt->addKeyvalue("model", "*" + std::to_string(ImportModel(map, mapPath)));
+					map->ents.push_back(newEnt);
 
-					std::vector<BSPPLANE> newPlanes;
-					std::vector<vec3> newVerts;
-					std::vector<BSPEDGE32> newEdges;
-					std::vector<int> newSurfedges;
-					std::vector<BSPTEXTUREINFO> newTexinfo;
-					std::vector<BSPFACE32> newFaces;
-					std::vector<COLOR3> newLightmaps;
-					std::vector<BSPNODE32> newNodes;
-					std::vector<BSPCLIPNODE32> newClipnodes;
-					std::vector<WADTEX*> newTextures;
-					std::vector<BSPLEAF32> newLeaves;
-					std::vector<int> newMarkSurfaces;
-
-					STRUCTREMAP remap = STRUCTREMAP(map);
-					bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
-						newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
-
-					if (newClipnodes.size())
+					for (auto& ent : map->ents)
 					{
-						map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE32) * newClipnodes.size());
-					}
-					if (newEdges.size())
-					{
-						map->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
-					}
-					if (newFaces.size())
-					{
-						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
-					}
-					if (newLeaves.size())
-					{
-						map->append_lump(LUMP_LEAVES, &newLeaves[0], sizeof(BSPLEAF32) * newLeaves.size());
-					}
-					if (newMarkSurfaces.size())
-					{
-						map->append_lump(LUMP_MARKSURFACES, &newMarkSurfaces[0], sizeof(int) * newMarkSurfaces.size());
-					}
-					if (newNodes.size())
-					{
-						map->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
-					}
-					if (newPlanes.size())
-					{
-						map->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
-					}
-					if (newSurfedges.size())
-					{
-						map->append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
-					}
-
-					if (newTextures.size())
-					{
-						while (newTextures.size())
+						if (ent->isWorldSpawn())
 						{
-							auto& tex = newTextures[newTextures.size() - 1];
-							if (tex->data)
-							{
-								auto data = ConvertWadTexToRGB(tex);
-								map->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
-								delete[]data;
-							}
-							else
-							{
-								map->add_texture(tex->szName, NULL, tex->nWidth, tex->nHeight);
-							}
-							delete tex;
-							newTextures.pop_back();
+							ent->setOrAddKeyvalue("MaxRange", std::to_string((int)(FLT_MAX_COORD * 2.0f + 1.0f)));
 						}
 					}
-
-					map->update_lump_pointers();
-
-					if (newTexinfo.size())
-					{
-						for (auto& texinfo : newTexinfo)
-						{
-							if (texinfo.iMiptex < 0 || texinfo.iMiptex >= bspModel->textureCount)
-							{
-								texinfo.iMiptex = 0;
-								texinfo.nFlags = TEX_SPECIAL;
-								continue;
-							}
-							int newMiptex = -1;
-							int texOffset = ((int*)bspModel->textures)[texinfo.iMiptex + 1];
-							if (texOffset < 0)
-							{
-								texinfo.iMiptex = 0;
-								texinfo.nFlags = TEX_SPECIAL;
-								continue;
-							}
-							BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
-							for (int i = map->textureCount - 1; i >= 0; i--)
-							{
-								int tex2Offset = ((int*)map->textures)[i + 1];
-								if (tex2Offset >= 0)
-								{
-									BSPMIPTEX* tex2 = ((BSPMIPTEX*)(map->textures + tex2Offset));
-									if (strcasecmp(tex.szName, tex2->szName) == 0)
-									{
-										newMiptex = i;
-										break;
-									}
-								}
-							}
-							if (newMiptex < 0 && bspModel->getBspRender() && bspModel->getBspRender()->wads.size())
-							{
-								for (auto& s : bspModel->getBspRender()->wads)
-								{
-									if (s->hasTexture(tex.szName))
-									{
-										WADTEX* wadTex = s->readTexture(tex.szName);
-										COLOR3* imageData = ConvertWadTexToRGB(wadTex);
-
-										newMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
-
-										delete wadTex;
-										delete[] imageData;
-										break;
-									}
-								}
-							}
-							texinfo.iMiptex = newMiptex;
-							if (newMiptex < 0)
-							{
-								texinfo.iMiptex = 0;
-								texinfo.nFlags = TEX_SPECIAL;
-							}
-						}
-						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
-					}
-
-					if (newVerts.size())
-					{
-						map->append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
-					}
-					if (newLightmaps.size())
-					{
-						map->append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
-					}
-
-					int newModelIdx = map->create_model();
-					map->models[newModelIdx] = bspModel->models[0];
-
-					map->models[newModelIdx].iFirstFace = remap.faces[map->models[newModelIdx].iFirstFace];
-					map->models[newModelIdx].iHeadnodes[0] = map->models[newModelIdx].iHeadnodes[0] < 0 ? -1 : remap.nodes[map->models[newModelIdx].iHeadnodes[0]];
-
-					for (int i = 1; i < MAX_MAP_HULLS; i++)
-					{
-						map->models[newModelIdx].iHeadnodes[i] = map->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[map->models[newModelIdx].iHeadnodes[i]];
-					}
-
-					bspModel->setBspRender(NULL);
-					delete bspModel;
-
-					app->deselectObject();
-
-					map->ents.push_back(new Entity("func_wall"));
-					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
-					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", "0 0 0");
 					map->update_ent_lump();
-					app->updateEnts();
-					map->update_lump_pointers();
-					map->getBspRender()->reload();
+					map->getBspRender()->preRenderEnts();
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_ENTITY)
 				{
@@ -10464,6 +10586,13 @@ void Gui::drawFaceEditorWidget()
 			}
 		}
 
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted("Apply texture or create one new.");
+			ImGui::EndTooltip();
+		}
+
 		if (!validTexture)
 		{
 			ImGui::PopStyleColor();
@@ -10529,6 +10658,19 @@ void Gui::drawFaceEditorWidget()
 							delete wadTex;
 						}
 					}
+				}
+				if (!validTexture)
+				{
+					validTexture = true;
+					COLOR3 rndColor;
+					rndColor.r = 50 + rand() % 206;
+					rndColor.g = 50 + rand() % 206;
+					rndColor.b = 50 + rand() % 206;
+					std::vector<COLOR3> img(width * height, rndColor);
+					validTexture = true;
+					newMiptex = map->add_texture(textureName, (unsigned char*)img.data(), width, height);
+					mapRenderer->loadTextures();
+					mapRenderer->reuploadTextures();
 				}
 			}
 

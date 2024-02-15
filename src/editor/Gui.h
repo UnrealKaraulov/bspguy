@@ -151,3 +151,5 @@ private:
 	void loadFonts();
 	void checkFaceErrors();
 };
+
+int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip = false);

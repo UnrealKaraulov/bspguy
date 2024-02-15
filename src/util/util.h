@@ -332,3 +332,7 @@ void getTrueTexSize(int& width, int& height, int maxsize = 512);
 
 vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge);
 vec3 getCentroid(std::vector<TransformVert>& hullVerts);
+
+std::vector<std::vector<COLOR3>> splitImage(const COLOR3* input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height);
+std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3>& input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height);
+std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, int x, int y, int x_parts);

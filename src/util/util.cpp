@@ -1739,7 +1739,7 @@ void scaleImage(const COLOR4* inputImage, std::vector<COLOR4>& outputImage,
 void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 	int inputWidth, int inputHeight, int outputWidth, int outputHeight) {
 	if (inputWidth <= 0 || inputHeight <= 0 || outputWidth <= 0 || outputHeight <= 0) {
-		// Invalid input dimensions
+		print_log(PRINT_RED, "scaleImage: INVALID INPUT DIMENSIONS!\n");
 		return;
 	}
 
@@ -2466,4 +2466,48 @@ vec3 getCentroid(std::vector<TransformVert>& hullVerts)
 		centroid += hullVerts[i].pos;
 	}
 	return centroid / (float)hullVerts.size();
+}
+
+std::vector<std::vector<COLOR3>> splitImage(const COLOR3* input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height)
+{
+	out_part_width = input_width / x_parts;
+	out_part_height = input_height / y_parts;
+
+	std::vector<std::vector<COLOR3>> parts(x_parts * y_parts);
+
+	if (input_width % x_parts || input_height % y_parts)
+	{
+		print_log(PRINT_RED, "splitImage: INVALID INPUT DIMENSIONS {}%{}={} and {}%{}={}!\n",input_width,x_parts,input_width % x_parts, input_height, y_parts, input_height % y_parts);
+		parts.clear();
+		return parts;
+	}
+
+	for (int y = 0; y < y_parts; ++y) {
+		for (int x = 0; x < x_parts; ++x) {
+			int startIdx = (y * out_part_height * input_width) + (x * out_part_width);
+			for (int row = 0; row < out_part_height; ++row) {
+				for (int col = 0; col < out_part_width; ++col) {
+					int idx = startIdx + (row * input_width) + col;
+					parts[y * x_parts + x].push_back(input[idx]);
+				}
+			}
+		}
+	}
+
+	return parts;
+}
+
+std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3>& input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height)
+{
+	return splitImage(input.data(), input_width, input_height, x_parts, y_parts, out_part_width, out_part_height);
+}
+std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, int x, int y, int x_parts)
+{
+	if (x < 0 || x >= images.size() || y < 0 || y >= images[0].size()) {
+		print_log(PRINT_RED, "getSubImage: INVALID INPUT COORDS!\n");
+		return std::vector<COLOR3>();
+	}
+
+	int index = y * x_parts + x; 
+	return images[index];
 }

@@ -2122,8 +2122,6 @@ void BspRenderer::reuploadTextures()
 
 	texturesLoaded = true;
 
-	preRenderFaces();
-
 	needReloadDebugTextures = true;
 }
 
@@ -2138,13 +2136,13 @@ void BspRenderer::delayLoadData()
 		}
 
 		preRenderFaces();
-
 		lightmapsUploaded = true;
 	}
 
 	if (!texturesLoaded && texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		reuploadTextures();
+		preRenderFaces();
 	}
 
 	if (!clipnodesLoaded && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
