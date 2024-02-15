@@ -2171,10 +2171,18 @@ void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 						{
 							unsigned int colorCount = 256;
 							COLOR3 palette[256];
-							if (g_settings.pal_id >= 0)
+							if (!targetMap->is_texture_has_pal)
 							{
-								colorCount = g_settings.palettes[g_settings.pal_id].colors;
-								memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+								if (g_settings.pal_id >= 0)
+								{
+									colorCount = g_settings.palettes[g_settings.pal_id].colors;
+									memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+								}
+								else
+								{
+									colorCount = 256;
+									memcpy(palette, g_settings.palette_default, 256 * sizeof(COLOR3));
+								}
 							}
 							else
 							{
@@ -5426,7 +5434,8 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			}
 			else
 			{
-				colors = 0;
+				colorCount = 256;
+				memcpy(palette, g_settings.palette_default, 256 * sizeof(COLOR3));
 			}
 			Quantizer* tmpCQuantizer = new Quantizer(colors, 8);
 			if (colors != 0)
@@ -5646,7 +5655,8 @@ int Bsp::add_texture(WADTEX* tex, bool embedded)
 			}
 			else
 			{
-				colorCount = 0;
+				colorCount = 256;
+				memcpy(palette, g_settings.palette_default, 256 * sizeof(COLOR3));
 			}
 
 			Quantizer* tmpCQuantizer = new Quantizer(colorCount, 8);

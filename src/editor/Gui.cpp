@@ -4833,7 +4833,7 @@ void Gui::drawMenuBar()
 					map->update_lump_pointers();
 
 					vec3 org_mins = vec3(-256.0f, -256.0f, -256.0f), org_maxs = vec3(256.0f, 256.0f, 256.0f);
-					float scale_val = (FLT_MAX_COORD - 2.0f) / 256.0f;
+					int scale_val = (int)((FLT_MAX_COORD - 2.0f) / 256.0f);
 
 					//map->get_bounding_box(mins, maxs);
 					int newModelIdx = ImportModel(map, "./primitives/skybox.bsp", true);
@@ -4869,7 +4869,7 @@ void Gui::drawMenuBar()
 						lodepng_decode24_file(&sky_data, &w, &h, "./primitives/skytest/sky_up.png");
 						int out_w, out_h;
 						auto images = splitImage((COLOR3*)sky_data, w, h, 4, 4, out_w, out_h);
-						const int new_w = 128, new_h = 128;
+						const int new_w = 256, new_h = 256;
 						for (auto& img : images)
 						{
 							std::vector<COLOR3> new_img;
@@ -4900,10 +4900,18 @@ void Gui::drawMenuBar()
 								{
 									COLOR3 palette[256];
 									unsigned int colorCount = 0;
-									if (g_settings.pal_id >= 0)
+									if (!map->is_texture_has_pal)
 									{
-										colorCount = g_settings.palettes[g_settings.pal_id].colors;
-										memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+										if (g_settings.pal_id >= 0)
+										{
+											colorCount = g_settings.palettes[g_settings.pal_id].colors;
+											memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+										}
+										else
+										{
+											colorCount = 256;
+											memcpy(palette, g_settings.palette_default, 256 * sizeof(COLOR3));
+										}
 									}
 									else
 									{
@@ -4951,7 +4959,24 @@ void Gui::drawMenuBar()
 						{
 							mat4x4 scaleMat;
 							scaleMat.loadIdentity();
-							scaleMat.scale(0.5f / scale_val, 0.5f / scale_val, 0.5f / scale_val);
+							scaleMat.scale(1.0f/2.0f, 1.0f / 2.0f, 1.0f / 2.0f);
+							BSPTEXTUREINFO& info = map->texinfos[i];
+
+							info.vS = (scaleMat * vec4(info.vS, 1)).xyz();
+							info.vT = (scaleMat * vec4(info.vT, 1)).xyz();
+
+							info.shiftS *= 2.0f;
+							info.shiftT *= 2.0f;
+						}
+					}
+
+					for (int i = 0; i < map->texinfoCount; i++)
+					{
+						if (modelUsage.texInfo[i])
+						{
+							mat4x4 scaleMat;
+							scaleMat.loadIdentity();
+							scaleMat.scale(1.0f / scale_val, 1.0f / scale_val, 1.0f / scale_val);
 							BSPTEXTUREINFO& info = map->texinfos[i];
 
 							info.vS = (scaleMat * vec4(info.vS, 1)).xyz();
