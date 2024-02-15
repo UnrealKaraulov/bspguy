@@ -199,6 +199,8 @@ bool vec3::equal(vec3 to, float epsilon)
 
 vec3 vec3::snap(float snapSize)
 {
+	if (snapSize < 0.00001f)
+		return vec3(x, y, z);
 	float _x = std::round(x / snapSize) * snapSize;
 	float _y = std::round(y / snapSize) * snapSize;
 	float _z = std::round(z / snapSize) * snapSize;

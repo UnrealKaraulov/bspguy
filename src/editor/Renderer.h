@@ -188,6 +188,7 @@ public:
 	//int draggingAxis = -1; // axis currently being dragged by the mouse
 	bool gridSnappingEnabled = false;
 	int gridSnapLevel = 0;
+	float snapSize = 0.01f;
 	int transformMode = TRANSFORM_MODE_MOVE;
 	int transformTarget = TRANSFORM_OBJECT;
 	int pickMode = PICK_OBJECT;
@@ -207,6 +208,9 @@ public:
 	bool isTransformableSolid = false;
 	bool anyEdgeSelected = false;
 	bool anyVertSelected = false;
+
+	bool drawingScaleAxes = false;
+	bool drawingMoveAxes = false;
 
 	int modelTransform = -1;
 	std::vector<TransformVert> modelVerts; // control points for invisible plane intersection verts in HULL 0
@@ -311,11 +315,9 @@ public:
 	void pasteEnt(bool noModifyOrigin);
 	void deleteEnt(size_t entIdx = 0);
 	void deleteEnts();
-	void scaleSelectedObject(float x, float y, float z);
-	void scaleSelectedObject(vec3 dir, const vec3& fromDir, bool logging = false);
-	void scaleSelectedVerts(float x, float y, float z);
-	vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge);
-	vec3 getCentroid(std::vector<TransformVert>& hullVerts);
+	void scaleSelectedObject(Bsp* map, float x, float y, float z);
+	void scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool logging = false);
+	void scaleSelectedVerts(Bsp* map, float x, float y, float z);
 	void deselectObject(bool onlyobject = false); // keep map selected but unselect all objects
 	void selectFace(Bsp* map, int face, bool add = false);
 	void deselectFaces();

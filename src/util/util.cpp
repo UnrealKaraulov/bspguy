@@ -2450,3 +2450,20 @@ void getTrueTexSize(int& width, int& height, int maxsize)
 	width = newWidth;
 	height = newHeight;
 }
+
+vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge)
+{
+	vec3 v0 = hullVerts[edge.verts[0]].pos;
+	vec3 v1 = hullVerts[edge.verts[1]].pos;
+	return v0 + (v1 - v0) * 0.5f;
+}
+
+vec3 getCentroid(std::vector<TransformVert>& hullVerts)
+{
+	vec3 centroid;
+	for (size_t i = 0; i < hullVerts.size(); i++)
+	{
+		centroid += hullVerts[i].pos;
+	}
+	return centroid / (float)hullVerts.size();
+}

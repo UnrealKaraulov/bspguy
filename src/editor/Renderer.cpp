@@ -595,6 +595,8 @@ void Renderer::renderLoop()
 				{
 					moveOrigin = true;
 				}
+
+				gui->shouldUpdateUi = true;
 			}
 
 			setupView();
@@ -742,6 +744,9 @@ void Renderer::renderLoop()
 					SelectedMap->selectModelEnt();
 				}
 			}
+
+			drawingMoveAxes = false;
+			drawingScaleAxes = false;
 
 			if (showDragAxes && pickMode == pick_modes::PICK_OBJECT)
 			{
@@ -1145,6 +1150,7 @@ void Renderer::drawTransformAxes()
 			glEnable(GL_CULL_FACE);
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
+			drawingScaleAxes = true;
 		}
 	}
 	if (SelectedMap && pickInfo.selectedEnts.size() > 0 && transformMode == TRANSFORM_MODE_MOVE)
@@ -1163,6 +1169,7 @@ void Renderer::drawTransformAxes()
 			glEnable(GL_CULL_FACE);
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
+			drawingMoveAxes = true;
 		}
 	}
 }
@@ -1371,7 +1378,7 @@ void Renderer::cameraPickingControls()
 				{
 					applyTransform(map);
 				}*/
-			if (hoverAxis == -1)
+			if (hoverAxis == -1 || (!drawingScaleAxes && !drawingMoveAxes))
 				pickObject();
 		}
 		oldTransforming = transforming;
@@ -2079,7 +2086,7 @@ bool Renderer::transformAxisControls()
 							vec3(0.0f, -1.0f, 0.0f),
 							vec3(0.0f, 0.0f, -1.0f),
 						};
-						scaleSelectedObject(delta, scaleDirs[hoverAxis]);
+						scaleSelectedObject(map, delta, scaleDirs[hoverAxis]);
 						map->getBspRender()->refreshModel(modelIdx);
 						vertPickCount++;
 					}
@@ -3270,40 +3277,39 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 	return true;
 }
 
-void Renderer::scaleSelectedObject(float x, float y, float z)
+void Renderer::scaleSelectedObject(Bsp* map, float x, float y, float z)
 {
-	vec3 minDist;
+	/*vec3 minDist;
 	vec3 maxDist;
 
-	for (size_t i = 0; i < modelVerts.size(); i++)
+	if (map)
 	{
-		vec3 v = modelVerts[i].startPos;
-		if (v.x > maxDist.x) maxDist.x = v.x;
-		if (v.x < minDist.x) minDist.x = v.x;
-
-		if (v.y > maxDist.y) maxDist.y = v.y;
-		if (v.y < minDist.y) minDist.y = v.y;
-
-		if (v.z > maxDist.z) maxDist.z = v.z;
-		if (v.z < minDist.z) minDist.z = v.z;
+		map->get_model_vertex_bounds(modelTransform, minDist, maxDist);
 	}
-	vec3 distRange = maxDist - minDist;
+	else
+	{
+		for (size_t i = 0; i < modelVerts.size(); i++)
+		{
+			vec3 v = modelVerts[i].startPos;
+			expandBoundingBox(v, minDist, maxDist);
+		}
+	}
+
+	vec3 distRange = maxDist - minDist;*/
 
 	vec3 dir;
-	dir.x = (distRange.x * x) - distRange.x;
-	dir.y = (distRange.y * y) - distRange.y;
-	dir.z = (distRange.z * z) - distRange.z;
+	dir.x = x;
+	dir.y = y;
+	dir.z = z;
 
-	scaleSelectedObject(dir, vec3());
+	scaleSelectedObject(map, dir, vec3());
 }
 
-void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir, bool logging)
+void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool logging)
 {
 	auto entIdx = pickInfo.selectedEnts;
 	if (entIdx.empty() || !SelectedMap)
 		return;
-
-	Bsp* map = SelectedMap;
 
 	bool scaleFromOrigin = abs(fromDir.x) < EPSILON && abs(fromDir.y) < EPSILON && abs(fromDir.z) < EPSILON;
 
@@ -3710,7 +3716,7 @@ bool Renderer::splitModelFace()
 	return true;
 }
 
-void Renderer::scaleSelectedVerts(float x, float y, float z)
+void Renderer::scaleSelectedVerts(Bsp* map, float x, float y, float z)
 {
 	auto entIdx = pickInfo.selectedEnts;
 	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
@@ -3751,7 +3757,6 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 				*modelVerts[i].ptr = modelVerts[i].pos;
 		}
 	}
-	Bsp* map = SelectedMap;
 	if (map)
 	{
 		if (entIdx.size())
@@ -3768,26 +3773,8 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 	}
 }
 
-vec3 Renderer::getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge)
-{
-	vec3 v0 = hullVerts[edge.verts[0]].pos;
-	vec3 v1 = hullVerts[edge.verts[1]].pos;
-	return v0 + (v1 - v0) * 0.5f;
-}
-
-vec3 Renderer::getCentroid(std::vector<TransformVert>& hullVerts)
-{
-	vec3 centroid;
-	for (size_t i = 0; i < hullVerts.size(); i++)
-	{
-		centroid += hullVerts[i].pos;
-	}
-	return centroid / (float)hullVerts.size();
-}
-
 vec3 Renderer::snapToGrid(vec3 pos)
 {
-	float snapSize = (float)pow(2.0f, gridSnapLevel);
 	return pos.snap(snapSize);
 }
 

@@ -4346,7 +4346,7 @@ void Gui::drawMenuBar()
 				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 				newEnt->addKeyvalue("classname", "func_illusionary");
 
-				float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
+				float snapSize = app->snapSize;
 				if (snapSize < 16)
 				{
 					snapSize = 16;
@@ -4379,7 +4379,7 @@ void Gui::drawMenuBar()
 				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 				newEnt->addKeyvalue("classname", "func_wall");
 
-				float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
+				float snapSize = app->snapSize;
 				if (snapSize < 16)
 				{
 					snapSize = 16;
@@ -4413,8 +4413,7 @@ void Gui::drawMenuBar()
 				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 				newEnt->addKeyvalue("classname", "trigger_once");
 
-				float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
-
+				float snapSize = app->snapSize;
 				if (snapSize < 16)
 				{
 					snapSize = 16;
@@ -6653,7 +6652,6 @@ void Gui::drawGOTOWidget()
 }
 void Gui::drawTransformWidget()
 {
-	bool transformingEnt = false;
 	Entity* ent = NULL;
 	int modelIdx = -1;
 	auto entIdx = app->pickInfo.selectedEnts;
@@ -6663,7 +6661,6 @@ void Gui::drawTransformWidget()
 	{
 		ent = map->ents[entIdx[0]];
 		modelIdx = ent->getBspModelIdx();
-		transformingEnt = true;
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(440.f, 450.f), ImGuiCond_FirstUseEver);
@@ -6671,11 +6668,7 @@ void Gui::drawTransformWidget()
 
 
 	static float x, y, z;
-	static float fx, fy, fz;
-	static float last_fx, last_fy, last_fz;
 	static float sx, sy, sz;
-
-	static bool shouldUpdateUi = true;
 
 	static int lastPickCount = -1;
 	static int lastVertPickCount = -1;
@@ -6683,7 +6676,7 @@ void Gui::drawTransformWidget()
 
 	if (ImGui::Begin(fmt::format("{}###TRANSFORM_WIDGET", get_localized_string(LANG_0688)).c_str(), &showTransformWidget, 0))
 	{
-		if (!ent)
+		if (!ent || modelIdx == 0)
 		{
 			ImGui::Text(get_localized_string(LANG_1180).c_str());
 		}
@@ -6691,43 +6684,54 @@ void Gui::drawTransformWidget()
 		{
 			ImGuiStyle& style = ImGui::GetStyle();
 
-			if (!shouldUpdateUi)
-			{
-				shouldUpdateUi = lastPickCount != pickCount ||
-					app->hoverAxis != -1 ||
-					app->movingEnt ||
-					oldSnappingEnabled != app->gridSnappingEnabled ||
-					lastVertPickCount != vertPickCount;
-			}
-
 			TransformAxes& activeAxes = *(app->transformMode == TRANSFORM_MODE_SCALE ? &app->scaleAxes : &app->moveAxes);
+
+			static float org_x = 0.0f, org_y = 0.0f, org_z = 0.0f;
 
 			if (shouldUpdateUi)
 			{
-				if (transformingEnt)
+				if (app->transformTarget == TRANSFORM_VERTEX)
 				{
-					if (app->transformTarget == TRANSFORM_VERTEX)
+					org_x = activeAxes.origin.x;
+					org_y = activeAxes.origin.y;
+					org_z = activeAxes.origin.z;
+				}
+				else if (app->transformTarget == TRANSFORM_ORIGIN)
+				{
+					if (modelIdx > 0 && modelIdx < map->modelCount)
 					{
-						x = fx = last_fx = activeAxes.origin.x;
-						y = fy = last_fy = activeAxes.origin.y;
-						z = fz = last_fz = activeAxes.origin.z;
+						org_x = map->models[modelIdx].vOrigin.x;
+						org_y = map->models[modelIdx].vOrigin.y;
+						org_z = map->models[modelIdx].vOrigin.z;
 					}
-					else
-					{
-						vec3 ori = ent->origin;
-						x = fx = ori.x;
-						y = fy = ori.y;
-						z = fz = ori.z;
-					}
-
 				}
 				else
 				{
-					x = fx = 0.f;
-					y = fy = 0.f;
-					z = fz = 0.f;
+					org_x = ent->origin.x;
+					org_y = ent->origin.y;
+					org_z = ent->origin.z;
 				}
-				sx = sy = sz = 1;
+
+				x = org_x;
+				y = org_y;
+				z = org_z;
+				if (app->transformTarget == TRANSFORM_VERTEX)
+				{
+					sx = sy = sz = 1.0f;
+				}
+				else
+				{
+					if (modelIdx <= 0)
+					{
+						sx = sy = sz = 0.0f;
+					}
+					else
+					{
+						sx = app->selectionSize.x;
+						sy = app->selectionSize.y;
+						sz = app->selectionSize.z;
+					}
+				}
 				shouldUpdateUi = false;
 			}
 
@@ -6735,48 +6739,47 @@ void Gui::drawTransformWidget()
 			lastVertPickCount = vertPickCount;
 			lastPickCount = pickCount;
 
-			bool scaled = false;
-			bool originChanged = false;
 			guiHoverAxis = -1;
 
 			float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
 			float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.33f;
 			float inputWidth4 = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.25f;
 
-			static bool inputsWereDragged = false;
-			bool inputsAreDragging = false;
+			float dragPow = app->gridSnappingEnabled ? app->snapSize : 0.02f;
+
+			bool forceUpdate = false;
 
 			ImGui::Text(get_localized_string(LANG_0689).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			if (ImGui::DragFloat(get_localized_string(LANG_1107).c_str(), &x, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "Y: %.2f" : "Y: %.0f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_1107).c_str(), &x, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "Y: %.2f"))
 			{
-				originChanged = true;
+				if (app->curLeftMouse == GLFW_RELEASE)
+					forceUpdate = true;
 			}
+
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 0;
-			if (ImGui::IsItemActive())
-				inputsAreDragging = true;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_1108).c_str(), &y, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "X: %.2f" : "X: %.0f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_1108).c_str(), &y, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "X: %.2f"))
 			{
-				originChanged = true;
+				if (app->curLeftMouse == GLFW_RELEASE)
+					forceUpdate = true;
 			}
+
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 1;
-			if (ImGui::IsItemActive())
-				inputsAreDragging = true;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_1109).c_str(), &z, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "Z: %.2f" : "Z: %.0f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_1109).c_str(), &z, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "Z: %.2f"))
 			{
-				originChanged = true;
+				if (app->curLeftMouse == GLFW_RELEASE)
+					forceUpdate = true;
 			}
+
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 2;
-			if (ImGui::IsItemActive())
-				inputsAreDragging = true;
 
 
 			ImGui::PopItemWidth();
@@ -6786,59 +6789,43 @@ void Gui::drawTransformWidget()
 			ImGui::Text(get_localized_string(LANG_0690).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			if (ImGui::DragFloat(get_localized_string(LANG_0691).c_str(), &sx, 0.002f, 0, 0, "Y: %.3f"))
+			if (!app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
-				scaled = true;
+				ImGui::BeginDisabled();
+			}
+
+			if (ImGui::DragFloat(get_localized_string(LANG_0691).c_str(), &sx, dragPow, 0, 0, "Y: %.2f"))
+			{
+				if (app->curLeftMouse == GLFW_RELEASE)
+					forceUpdate = true;
 			}
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 0;
-			if (ImGui::IsItemActive())
-				inputsAreDragging = true;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_0692).c_str(), &sy, 0.002f, 0, 0, "X: %.3f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_0692).c_str(), &sy, dragPow, 0, 0, "X: %.2f"))
 			{
-				scaled = true;
+				if (app->curLeftMouse == GLFW_RELEASE)
+					forceUpdate = true;
 			}
+
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 1;
-			if (ImGui::IsItemActive())
-				inputsAreDragging = true;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_0693).c_str(), &sz, 0.002f, 0, 0, "Z: %.3f"))
+			if (ImGui::DragFloat(get_localized_string(LANG_0693).c_str(), &sz, dragPow, 0, 0, "Z: %.2f"))
 			{
-				scaled = true;
+				if (app->curLeftMouse == GLFW_RELEASE)
+					forceUpdate = true;
 			}
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 2;
-			if (ImGui::IsItemActive())
-				inputsAreDragging = true;
 
-			if (inputsWereDragged && !inputsAreDragging)
+			if (!app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
-				if (transformingEnt)
-				{
-					if (app->gridSnappingEnabled)
-					{
-						fx = last_fx = x;
-						fy = last_fy = y;
-						fz = last_fz = z;
-					}
-					else
-					{
-						x = last_fx = fx;
-						y = last_fy = fy;
-						z = last_fz = fz;
-					}
-					app->applyTransform(map, true);
-
-				}
-				if (map->getBspRender()->undoEntityStateMap[entIdx[0]].origin != ent->origin)
-				{
-					map->getBspRender()->pushEntityUndoStateDelay("Move Entity", (int)entIdx[0], ent);
-				}
+				ImGui::EndDisabled();
 			}
+
 
 			ImGui::Dummy(ImVec2(0, style.FramePadding.y * 3));
 			ImGui::PopItemWidth();
@@ -6886,12 +6873,23 @@ void Gui::drawTransformWidget()
 					app->transformTarget = TRANSFORM_OBJECT;
 				}
 			}
+			if (!app->isTransformableSolid || app->modelUsesSharedStructures)
+			{
+				if (app->transformTarget == TRANSFORM_VERTEX)
+				{
+					app->transformTarget = TRANSFORM_OBJECT;
+				}
+				ImGui::BeginDisabled();
+			}
 			if (ImGui::RadioButton(get_localized_string(LANG_0696).c_str(), &app->transformTarget, TRANSFORM_VERTEX))
 			{
 				pickCount++;
 				vertPickCount++;
 			}
-
+			if (!app->isTransformableSolid || app->modelUsesSharedStructures)
+			{
+				ImGui::EndDisabled();
+			}
 			ImGui::NextColumn();
 
 			if (ImGui::RadioButton(get_localized_string(LANG_0697).c_str(), &app->transformTarget, TRANSFORM_ORIGIN))
@@ -6915,21 +6913,23 @@ void Gui::drawTransformWidget()
 			ImGui::Text(get_localized_string(LANG_0698).c_str()); ImGui::NextColumn();
 			ImGui::RadioButton(get_localized_string(LANG_1110).c_str(), &app->transformMode, TRANSFORM_MODE_NONE); ImGui::NextColumn();
 			ImGui::RadioButton(get_localized_string(LANG_1111).c_str(), &app->transformMode, TRANSFORM_MODE_MOVE); ImGui::NextColumn();
-			if (modelIdx < 0)
+			if (modelIdx < 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
 				if (app->transformMode == TRANSFORM_MODE_SCALE)
 					app->transformMode = TRANSFORM_MODE_MOVE;
 				ImGui::BeginDisabled();
 			}
 			ImGui::RadioButton(get_localized_string(LANG_1112).c_str(), &app->transformMode, TRANSFORM_MODE_SCALE); ImGui::NextColumn();
-			if (modelIdx < 0)
+			if (modelIdx < 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
 				ImGui::EndDisabled();
 			}
 			ImGui::Columns(1);
 
-			const int grid_snap_modes = 11;
-			const char* element_names[grid_snap_modes] = { "0", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512" };
+			const char* element_names[] = { "0", "0.01", "0.1", "0.5", "1", "2", "4", "8", "16", "32", "64" };
+			const int grid_snap_modes = sizeof(element_names) / sizeof(element_names[0]);
+			const float element_values[grid_snap_modes] = { 0.00001f, 0.01f, 0.1f,0.5f,1.f,2.f,4.f,8.f,16.f,32.f,64.f };
+
 			static int current_element = app->gridSnapLevel;
 
 			ImGui::Columns(2, 0, false);
@@ -6937,12 +6937,14 @@ void Gui::drawTransformWidget()
 			ImGui::SetColumnWidth(1, inputWidth4 * 3);
 			ImGui::Text(get_localized_string(LANG_0699).c_str()); ImGui::NextColumn();
 			ImGui::SetNextItemWidth(inputWidth4 * 3);
+
 			if (ImGui::SliderInt(get_localized_string(LANG_0700).c_str(), &current_element, 0, grid_snap_modes - 1, element_names[current_element]))
 			{
 				app->gridSnapLevel = current_element - 1;
 				app->gridSnappingEnabled = current_element != 0;
-				originChanged = true;
+				app->snapSize = element_values[current_element];
 			}
+
 			ImGui::Columns(1);
 
 			ImGui::PushItemWidth(inputWidth);
@@ -6977,10 +6979,10 @@ void Gui::drawTransformWidget()
 			ImGui::PopItemWidth();
 
 			ImGui::Dummy(ImVec2(0, style.FramePadding.y * 2));
-			ImGui::Separator();
+			ImGui::Separator();/*
 			ImGui::Dummy(ImVec2(0, style.FramePadding.y * 2));
 			ImGui::Text(("Size: " + app->selectionSize.toKeyvalueString(false, "w ", "l ", "h")).c_str());
-			ImGui::Separator();
+			ImGui::Separator();*/
 
 			ImGui::Text(fmt::format("Entity origin: {:.2f} {:.2f} {:.2f}", ent->origin.x, ent->origin.y, ent->origin.z).c_str());
 
@@ -6992,71 +6994,85 @@ void Gui::drawTransformWidget()
 				ImGui::Text(fmt::format("Model bounds: \n{:.2f} {:.2f} {:.2f} / {:.2f} {:.2f} {:.2f}", map->models[modelIdx].nMins.x, map->models[modelIdx].nMins.y, map->models[modelIdx].nMins.z, map->models[modelIdx].nMaxs.x, map->models[modelIdx].nMaxs.y, map->models[modelIdx].nMaxs.z).c_str());
 			}
 
-			if (transformingEnt)
+
+			if (forceUpdate || (!app->canControl && app->oldLeftMouse == GLFW_PRESS && app->curLeftMouse != GLFW_PRESS))
 			{
-				if (originChanged)
+				if (app->transformTarget == TRANSFORM_VERTEX)
 				{
-					if (app->transformTarget == TRANSFORM_VERTEX)
+					vec3 org1 = vec3(org_x, org_y, org_z);
+					vec3 org2 = vec3(x, y, z);
+					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
+					if (!delta.IsZero())
 					{
-						vec3 delta;
-						if (app->gridSnappingEnabled)
-						{
-							delta = vec3(x - last_fx, y - last_fy, z - last_fz);
-						}
-						else
-						{
-							delta = vec3(fx - last_fx, fy - last_fy, fz - last_fz);
-						}
-
 						app->moveSelectedVerts(delta);
-					}
-					else if (app->transformTarget == TRANSFORM_OBJECT)
-					{
-						vec3 newOrigin = app->gridSnappingEnabled ? vec3(x, y, z) : vec3(fx, fy, fz);
-						newOrigin = app->gridSnappingEnabled ? app->snapToGrid(newOrigin) : newOrigin;
 
-						if (app->gridSnappingEnabled)
-						{
-							fx = x;
-							fy = y;
-							fz = z;
-						}
-						else
-						{
-							x = fx;
-							y = fy;
-							z = fz;
-						}
-
-						ent->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
-						map->getBspRender()->refreshEnt((int)entIdx[0]);
-						app->updateEntConnectionPositions();
-					}
-					else if (app->transformTarget == TRANSFORM_ORIGIN)
-					{
-						vec3 newOrigin = app->gridSnappingEnabled ? vec3(x, y, z) : vec3(fx, fy, fz);
-						newOrigin = app->gridSnappingEnabled ? app->snapToGrid(newOrigin) : newOrigin;
+						shouldUpdateUi = true;
+						vertPickCount++;
 					}
 				}
-				if (scaled && ent->isBspModel() && app->isTransformableSolid && !app->modelUsesSharedStructures)
+				else if (app->transformTarget == TRANSFORM_OBJECT)
+				{
+					vec3 org1 = vec3(org_x, org_y, org_z);
+					vec3 org2 = vec3(x, y, z);
+					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
+					if (!delta.IsZero())
+					{
+						ent->setOrAddKeyvalue("origin", org2.toKeyvalueString());
+						map->getBspRender()->refreshEnt((int)entIdx[0]);
+						app->updateEntConnectionPositions();
+
+						shouldUpdateUi = true;
+						pickCount++;
+					}
+				}
+				else if (app->transformTarget == TRANSFORM_ORIGIN)
+				{
+					vec3 org1 = vec3(org_x, org_y, org_z);
+					vec3 org2 = vec3(x, y, z);
+					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
+					if (!delta.IsZero())
+					{
+						if (modelIdx > 0 && modelIdx < map->modelCount)
+						{
+							map->models[modelIdx].vOrigin = org2;
+						}
+
+						shouldUpdateUi = true;
+						pickCount++;
+					}
+				}
+				if (app->isTransformableSolid && !app->modelUsesSharedStructures)
 				{
 					if (app->transformTarget == TRANSFORM_VERTEX)
 					{
-						app->scaleSelectedVerts(sx, sy, sz);
+						vec3 org1 = vec3(1.0f, 1.0f, 1.0f);
+						vec3 org2 = vec3(sx, sy, sz);
+						vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
+						if (!delta.IsZero())
+						{
+							app->scaleSelectedVerts(map, sx, sy, sz);
+
+							shouldUpdateUi = true;
+							vertPickCount++;
+						}
 					}
 					else if (app->transformTarget == TRANSFORM_OBJECT)
 					{
-						app->scaleSelectedObject(sx, sy, sz);
-						map->getBspRender()->refreshModel(modelIdx);
-					}
-					else if (app->transformTarget == TRANSFORM_ORIGIN)
-					{
-						print_log(get_localized_string(LANG_0397));
+						vec3 org1 = vec3(app->selectionSize.x, app->selectionSize.y, app->selectionSize.z);
+						vec3 org2 = vec3(sx, sy, sz);
+						vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
+						if (!delta.IsZero())
+						{
+							app->scaleSelectedObject(map, delta.x, delta.y, delta.z);
+							map->getBspRender()->refreshModel(modelIdx);
+
+							shouldUpdateUi = true;
+							vertPickCount++;
+							pickCount++;
+						}
 					}
 				}
 			}
-
-			inputsWereDragged = inputsAreDragging;
 		}
 	}
 	ImGui::End();

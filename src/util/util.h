@@ -328,3 +328,7 @@ public:
 
 void calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vertices, const std::vector<vec2>& uvs);
 void getTrueTexSize(int& width, int& height, int maxsize = 512);
+
+
+vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge);
+vec3 getCentroid(std::vector<TransformVert>& hullVerts);
