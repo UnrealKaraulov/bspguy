@@ -43,14 +43,6 @@ public:
 		targetsCached = false;
 		setOrAddKeyvalue("classname", classname);
 	}
-
-	~Entity(void)
-	{
-		cachedTargets.clear();
-		keyOrder.clear();
-		keyvalues.clear();
-	}
-
 	void addKeyvalue(const std::string key, const std::string value, bool multisupport = false);
 	void removeKeyvalue(const std::string key);
 	bool renameKey(int idx, const std::string& newName);

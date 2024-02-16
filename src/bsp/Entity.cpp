@@ -228,6 +228,9 @@ void Entity::clearEmptyKeyvalues()
 
 bool Entity::hasKey(const std::string key)
 {
+	if (keyvalues.empty() || keyOrder.empty()) {
+		return false; 
+	}
 	return keyvalues.find(key) != keyvalues.end() && std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end();
 }
 

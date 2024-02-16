@@ -1991,6 +1991,17 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 		}
 	}
 
+	if (ents.size())
+	{
+		if (ents[0]->hasKey("message") && ents[0]->keyvalues["message"] == "bsp model")
+		{
+			if (nodeCount)
+				usedStructures.nodes[0] = true;
+			if (clipnodeCount)
+				usedStructures.clipnodes[0] = true;
+		}
+	}
+
 	STRUCTREMAP remap(this);
 	STRUCTCOUNT removeCount = STRUCTCOUNT();
 
@@ -6665,8 +6676,8 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 	STRUCTUSAGE usage(this);
 	mark_model_structures(modelIdx, &usage, skipLeafs);
 
-	if (leafCount > 0)
-		usage.leaves[0] = false;
+	if (!skipLeafs && leafCount > 0)
+		usage.leaves[0] = true;
 
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{
@@ -6829,6 +6840,8 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 		}
 	}
 
+	bool found_zero_leaf = false;
+
 	for (size_t i = 0; i < newNodes.size(); i++)
 	{
 		BSPNODE32& node = newNodes[i];
@@ -6844,7 +6857,31 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 			else if (!skipLeafs)
 			{
 				int leafIdx = ~node.iChildren[k];
-				node.iChildren[k] = ~(remap.leaves[leafIdx]);
+				if (leafIdx == 0)
+				{
+					node.iChildren[k] = -1;
+					if (~(remap.leaves[leafIdx]) != -1)
+						found_zero_leaf = true;
+				}
+				else
+					node.iChildren[k] = ~(remap.leaves[leafIdx]);
+			}
+		}
+	}
+
+	if (!skipLeafs && found_zero_leaf)
+	{
+		newLeafs.erase(newLeafs.begin());
+		for (size_t i = 0; i < newNodes.size(); i++)
+		{
+			BSPNODE32& node = newNodes[i];
+			if (node.iChildren[0] < -1)
+			{
+				node.iChildren[0]++;
+			}
+			if (node.iChildren[1] < -1)
+			{
+				node.iChildren[1]++;
 			}
 		}
 	}

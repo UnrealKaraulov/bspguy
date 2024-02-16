@@ -30,8 +30,19 @@ std::string get_localized_string(int id)
 
 		if (itr == lang_db.end())
 		{
-			std::string value = lang_ini->Get<std::string>(g_settings.selected_lang, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
-			replaceAll(value, "\\n", "\n");
+			std::string value = fmt::format("NO LANG_{:04}", id);
+			try
+			{
+				std::string tmp_value = lang_ini->Get<std::string>(g_settings.selected_lang, fmt::format("LANG_{:04}", id), fmt::format("NO LANG_{:04}", id));
+				replaceAll(tmp_value, "\\n", "\n");
+				replaceAll(tmp_value, "\\r", "\r");
+
+				value = tmp_value;
+			}
+			catch(...)
+			{
+
+			}
 			lang_db[id] = value;
 			return value;
 		}
@@ -54,8 +65,18 @@ std::string get_localized_string(const std::string& str_id)
 
 		if (itr == lang_db_str.end())
 		{
-			std::string value = lang_ini->Get<std::string>(g_settings.selected_lang, str_id, fmt::format("NO {}", str_id));
-			replaceAll(value, "\\n", "\n");
+			std::string value = fmt::format("NO {}", str_id);
+			try
+			{
+				std::string tmp_value = lang_ini->Get<std::string>(g_settings.selected_lang, str_id, fmt::format("NO {}", str_id));
+				replaceAll(tmp_value, "\\n", "\n");
+				replaceAll(tmp_value, "\\r", "\r");
+				value = tmp_value;
+			}
+			catch (...)
+			{
+
+			}
 			lang_db_str[str_id] = value;
 			return value;
 		}

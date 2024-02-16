@@ -564,12 +564,15 @@ void Quantizer::ApplyColorTableDither(COLOR3* image, int width, int height)
 {
 	if (!m_pPalette)
 		ProcessImage(image, width * height);
-
-	unsigned int* tmpcolorarray = new unsigned int[width * height];
+	for (unsigned int i = 0; i < width * height; i++)
+	{
+		image[i] = m_pPalette[GetNearestIndexDither(image[i], m_pPalette)];
+	}
+	/*unsigned int* tmpcolorarray = new unsigned int[width * height];
 	FloydSteinbergDither((COLOR3*)image, width, height, tmpcolorarray);
 	for (int i = 0; i < width * height; i++)
 	{
 		image[i] = m_pPalette[tmpcolorarray[i]];
 	}
-	delete[] tmpcolorarray;
+	delete[] tmpcolorarray;*/
 }

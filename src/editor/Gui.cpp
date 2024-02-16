@@ -359,7 +359,6 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	{
 		map->append_lump(LUMP_LEAVES, &newLeaves[0], sizeof(BSPLEAF32) * newLeaves.size());
 	}
-
 	if (newMarkSurfaces.size())
 	{
 		map->append_lump(LUMP_MARKSURFACES, &newMarkSurfaces[0], sizeof(int) * newMarkSurfaces.size());
@@ -488,19 +487,19 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 		}
 	}
 
-	if (map->models[newModelIdx].nVisLeafs > 0 && map->models[newModelIdx].nVisLeafs > newLeaves.size())
-	{
-		map->models[newModelIdx].nVisLeafs--;
-	}
-	else if (map->models[newModelIdx].nVisLeafs > newLeaves.size())
-	{
-		map->leafCount--;
-		map->bsp_header.lump[LUMP_LEAVES].nLength -= sizeof(BSPLEAF32);
-	}
-	else if (newLeaves.size() > map->models[newModelIdx].nVisLeafs)
-	{
-		map->models[newModelIdx].nVisLeafs++;
-	}
+	//if (map->models[newModelIdx].nVisLeafs > 0 && map->models[newModelIdx].nVisLeafs > newLeaves.size())
+	//{
+	//	map->models[newModelIdx].nVisLeafs--;
+	//}
+	//else if (map->models[newModelIdx].nVisLeafs > newLeaves.size())
+	//{
+	//	map->leafCount--;
+	//	map->bsp_header.lump[LUMP_LEAVES].nLength -= sizeof(BSPLEAF32);
+	//}
+	//else if (newLeaves.size() > map->models[newModelIdx].nVisLeafs)
+	//{
+	//	map->models[newModelIdx].nVisLeafs++;
+	//}
 
 	bspModel->setBspRender(NULL);
 	delete bspModel;
@@ -556,7 +555,6 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		new unsigned char[sizeof(int)] {0, 0, 0, 0}, sizeof(int));
 	bspModel->textureCount = 0;
 
-	bspModel->create_leaf(CONTENTS_SOLID);
 	bspModel->ents.clear();
 	bspModel->ents.push_back(new Entity("worldspawn"));
 
@@ -567,6 +565,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		if (src_map->ents[src_entId]->hasKey("wad"))
 		{
 			bspModel->ents[bspModel->ents.size() - 1]->setOrAddKeyvalue("wad", src_map->ents[src_entId]->keyvalues["wad"]);
+			bspModel->ents[bspModel->ents.size() - 1]->setOrAddKeyvalue("message", "bsp model");
 		}
 	}
 	bspModel->update_ent_lump();
@@ -588,10 +587,6 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	src_map->copy_bsp_model(model_id, bspModel, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
 		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
 
-	if (newClipnodes.size())
-	{
-		bspModel->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE32) * newClipnodes.size());
-	}
 	if (newEdges.size())
 	{
 		bspModel->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
@@ -608,22 +603,17 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	{
 		bspModel->append_lump(LUMP_MARKSURFACES, &newMarkSurfaces[0], sizeof(int) * newMarkSurfaces.size());
 	}
+
 	if (newNodes.size())
 	{
-		//FIXME: DO OFFSET BECAUSE CREATE ZERO IS SOLID ?? IS NEED?
-		for (auto& n : newNodes)
-		{
-			if (n.iChildren[0] < 0)
-			{
-				n.iChildren[0]--;
-			}
-			if (n.iChildren[1] < 0)
-			{
-				n.iChildren[1]--;
-			}
-		}
 		bspModel->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
 	}
+
+	if (newClipnodes.size())
+	{
+		bspModel->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE32) * newClipnodes.size());
+	}
+
 	if (newPlanes.size())
 	{
 		bspModel->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
@@ -747,8 +737,6 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->models[newModelIdx].iHeadnodes[i] = bspModel->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
 	}
 
-	bspModel->create_leaf(CONTENTS_EMPTY);
-
 	//app->deselectObject();
 
 	STRUCTCOUNT removed = bspModel->remove_unused_model_structures();
@@ -769,6 +757,9 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		update_unused_wad_files(src_map, bspModel, ExportType);
 	}
 
+	bspModel->create_node(true);
+	bspModel->create_clipnode(true);
+
 	if (ExportType == 1)
 	{
 		bspModel->is_bsp29 = true;
@@ -784,8 +775,28 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->bsp_header.nVersion = 30;
 	}
 
-
 	bspModel->bsp_path = g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp";
+	bspModel->write(bspModel->bsp_path);
+	removeFile(bspModel->bsp_path);
+
+	unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
+	memset(tmpCompressed, 0xFF, MAX_MAP_LEAVES / 8);
+
+	// ADD LEAFS TO ALL VISIBILITY BYTES
+	for (int i = 0; i < bspModel->leafCount; i++)
+	{
+		if (bspModel->leaves[i].nVisOffset < 0)
+		{
+			bspModel->leaves[i].nVisOffset = bspModel->visDataLength;
+			unsigned char* newVisLump = new unsigned char[bspModel->visDataLength + MAX_MAP_LEAVES / 8];
+			memcpy(newVisLump, bspModel->visdata, bspModel->visDataLength);
+			memcpy(newVisLump + bspModel->visDataLength, tmpCompressed, MAX_MAP_LEAVES / 8);
+			bspModel->replace_lump(LUMP_VISIBILITY, newVisLump, bspModel->visDataLength + MAX_MAP_LEAVES / 8);
+		}
+	}
+	// recompile vis lump, remove unused textures
+	bspModel->remove_unused_model_structures();
+	bspModel->validate();
 	bspModel->write(bspModel->bsp_path);
 
 	bspModel->setBspRender(NULL);
@@ -2647,6 +2658,9 @@ void Gui::drawMenuBar()
 						app->clearMaps();
 						app->selectMapId(0);
 
+						rend = NULL;
+						map = NULL;
+						app->selectMapId(0);
 						print_log(get_localized_string(LANG_0907));
 					}
 				}
@@ -8765,20 +8779,15 @@ void Gui::drawImportMapWidget()
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
 				{
 					Bsp* map = app->getSelectedMap();
-					Entity* newEnt = new Entity("func_wall");
-
-					newEnt->addKeyvalue("model", "*" + std::to_string(ImportModel(map, mapPath)));
-					map->ents.push_back(newEnt);
-
-					for (auto& ent : map->ents)
+					if (map)
 					{
-						if (ent->isWorldSpawn())
-						{
-							ent->setOrAddKeyvalue("MaxRange", std::to_string((int)(FLT_MAX_COORD * 2.0f + 1.0f)));
-						}
+						int import_model = ImportModel(map, mapPath);
+						Entity* newEnt = new Entity("func_wall");
+						newEnt->addKeyvalue("model", "*" + std::to_string(import_model));
+						map->ents.push_back(newEnt);
+						map->update_ent_lump();
+						map->getBspRender()->preRenderEnts();
 					}
-					map->update_ent_lump();
-					map->getBspRender()->preRenderEnts();
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_ENTITY)
 				{
