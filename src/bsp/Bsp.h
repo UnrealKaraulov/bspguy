@@ -158,6 +158,9 @@ public:
 	// get the bounding box for all vertexes in a BSP tree
 	bool get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs);
 
+	// face has duplicate verts, this is bad?
+	bool is_face_duplicate_edges(int faceIdx);
+
 	// get all verts used by this model
 	// TODO: split any verts shared with other models!
 	std::vector<TransformVert> getModelTransformVerts(int modelIdx);
@@ -321,7 +324,7 @@ public:
 
 	void ExportToMapWIP(const std::string& path);
 
-	int merge_all_faces();
+	int merge_all_planes();
 
 	void ExportPortalFile(const std::string& path);
 	void ExportExtFile(const std::string& path, std::string& out_map_path);

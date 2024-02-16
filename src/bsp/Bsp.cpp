@@ -1914,19 +1914,19 @@ int Bsp::merge_all_verts(float epsilon)
 {
 	int merged_verts = 0;
 
-	for (int v = vertCount - 1; v >= vertCount; v--)
+	for (int v = 0; v < vertCount; v++)
 	{
 		bool found1 = false;
 		bool found2 = false;
 		for (int i = 0; i < edgeCount; i++)
 		{
-			if (!found1 && VectorCompare(verts[edges[i].iVertex[0]], verts[v], epsilon))
+			if (!found1 && edges[i].iVertex[0] != v && verts[edges[i].iVertex[0]].equal(verts[v], epsilon))
 			{
 				edges[i].iVertex[0] = v;
 				merged_verts++;
 				found1 = true;
 			}
-			if (!found2 && VectorCompare(verts[edges[i].iVertex[1]], verts[v], epsilon))
+			if (!found2 && edges[i].iVertex[1] != v && verts[edges[i].iVertex[1]].equal(verts[v], epsilon))
 			{
 				edges[i].iVertex[1] = v;
 				merged_verts++;
@@ -1940,7 +1940,32 @@ int Bsp::merge_all_verts(float epsilon)
 		}
 	}
 
-	return abs(merged_verts - vertCount);
+	for (int n = 0; n < surfedgeCount; n++)
+	{
+		int surfedge = surfedges[n];
+
+		int vert1 = edges[abs(surfedge)].iVertex[0];
+		int vert2 = edges[abs(surfedge)].iVertex[1];
+
+		for (int e = 0; e < edgeCount; e++)
+		{
+			BSPEDGE32 edge = edges[e];
+			if (edge.iVertex[0] == vert1 && edge.iVertex[1] == vert2)
+			{
+				surfedges[n] = surfedge < 0 ? -e : e;
+				break;
+			}
+			else if (edge.iVertex[1] == vert2 && edge.iVertex[0] == vert1)
+			{
+				surfedges[n] = surfedge < 0 ? e : -e;
+				break;
+			}
+		}
+	}
+
+
+
+	return merged_verts;
 }
 
 STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
@@ -1957,7 +1982,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	if (g_settings.merge_verts && target & CLEAN_VERTICES)
 	{
 		print_log(get_localized_string(LANG_0066));
-		merged_verts = merge_all_verts() + merge_all_verts();
+		merged_verts = merge_all_verts();
 	}
 
 	// marks which structures should not be moved
@@ -4180,6 +4205,16 @@ bool Bsp::validate()
 		int bmaxs[2];
 		if (isValid)
 			isValid = GetFaceExtents(this, i, bmins, bmaxs);
+
+		if (isValid)
+		{
+			isValid = !is_face_duplicate_edges(i);
+			if (!isValid)
+			{
+				print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "Warning! Face {} has duplicate verts!\n", i);
+			}
+			isValid = true;
+		}
 	}
 	for (int i = 0; i < leafCount; i++)
 	{
@@ -8325,7 +8360,7 @@ bool Bsp::isModelHasLeafIdx(const BSPMODEL& bspmdl, int leafidx)
 	return std::find(visLeafs.begin(), visLeafs.end(), leafidx) != visLeafs.end();
 }
 
-int Bsp::merge_all_faces()
+int Bsp::merge_all_planes()
 {
 	int merged = 0;
 
@@ -9210,4 +9245,29 @@ bool Bsp::is_texture_with_pal(int textureid)
 	}
 
 	return is_texture_has_pal;
+}
+
+bool Bsp::is_face_duplicate_edges(int faceIdx)
+{
+	if (faceIdx < 0 || faceIdx >= faceCount)
+	{
+		return true;
+	}
+
+	std::set<int> verts_usage;
+	BSPFACE32 face = faces[faceIdx];
+
+	for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
+	{
+		int edgeIdx = surfedges[e];
+		BSPEDGE32 edge = edges[abs(edgeIdx)];
+		int vert = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+		if (verts_usage.count(vert))
+		{
+			return true;
+		}
+		verts_usage.insert(vert);
+	}
+
+	return false;
 }
