@@ -8654,7 +8654,9 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 
 		BspRenderer* bsprend = renderer;
 
-		bsprend->reload();
+		//g_app->reloading = true;
+		//bsprend->reload();
+		//g_app->reloading = false;
 
 		createDir(path + "textures");
 		std::vector<std::string> materials;
@@ -9637,7 +9639,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 		BspRenderer* bsprend = renderer;
 
-		bsprend->reload();
+		//bsprend->reload();
 
 		for (size_t entIdx = 0; entIdx < ents.size(); entIdx++)
 		{

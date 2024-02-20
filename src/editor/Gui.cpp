@@ -1529,9 +1529,9 @@ void Gui::drawBspContexMenu()
 						map->update_ent_lump();
 
 						map->resize_all_lightmaps();
-						rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
-
 						rend->loadLightmaps();
+
+						rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 
 						pickCount++;
 					}
@@ -1687,22 +1687,18 @@ void Gui::drawBspContexMenu()
 				}
 
 			}
-			if (modelIdx > 0)
+			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", get_localized_string(LANG_0473).c_str()))
 			{
-				if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", get_localized_string(LANG_0473).c_str()))
+				if (!app->movingEnt)
+					app->grabEnt();
+				else
 				{
-					if (!app->movingEnt)
-						app->grabEnt();
-					else
-					{
-						app->ungrabEnt();
-					}
+					app->ungrabEnt();
 				}
-
-				if (ImGui::MenuItem(get_localized_string(LANG_0474).c_str(), get_localized_string(LANG_0475).c_str()))
-				{
-					showTransformWidget = true;
-				}
+			}
+			if (ImGui::MenuItem(get_localized_string(LANG_0474).c_str(), get_localized_string(LANG_0475).c_str()))
+			{
+				showTransformWidget = true;
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem(get_localized_string(LANG_0476).c_str(), get_localized_string(LANG_0477).c_str()))
@@ -1801,16 +1797,17 @@ void Gui::drawMenuBar()
 				std::string pathlowercase = toLowerCase(res.string());
 				if (pathlowercase.ends_with(".wad"))
 				{
-					if (!app->SelectedMap)
+					if (!map)
 					{
 						app->addMap(new Bsp(""));
 						app->selectMapId(0);
+						map = app->getSelectedMap();
 					}
 
-					if (app->SelectedMap)
+					if (map)
 					{
 						bool foundInMap = false;
-						for (auto& wad : app->SelectedMap->getBspRender()->wads)
+						for (auto& wad : rend->wads)
 						{
 							std::string tmppath = toLowerCase(wad->filename);
 							if (tmppath.find(basename(pathlowercase)) != std::string::npos)
@@ -1826,13 +1823,16 @@ void Gui::drawMenuBar()
 							Wad* wad = new Wad(res.string());
 							if (wad->readInfo())
 							{
-								app->SelectedMap->getBspRender()->wads.push_back(wad);
-								if (!app->SelectedMap->ents[0]->keyvalues["wad"].ends_with(";"))
-									app->SelectedMap->ents[0]->keyvalues["wad"] += ";";
-								app->SelectedMap->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
-								app->SelectedMap->update_ent_lump();
+								rend->wads.push_back(wad);
+								if (!map->ents[0]->keyvalues["wad"].ends_with(";"))
+									map->ents[0]->keyvalues["wad"] += ";";
+								map->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
+								map->update_ent_lump();
 								app->updateEnts();
-								app->SelectedMap->getBspRender()->reload();
+
+								app->reloading = true;
+								rend->reload();
+								app->reloading = false;
 							}
 							else
 								delete wad;
@@ -1854,7 +1854,7 @@ void Gui::drawMenuBar()
 			ifd::FileDialog::Instance().Close();
 		}
 
-		if (ImGui::BeginMenu(get_localized_string(LANG_0478).c_str()))
+		if (ImGui::BeginMenu(get_localized_string(LANG_0478).c_str(), map))
 		{
 			if (ImGui::MenuItem(get_localized_string(LANG_0479).c_str(), NULL, false, map && !map->is_mdl_model && !app->isLoading))
 			{
@@ -2853,7 +2853,7 @@ void Gui::drawMenuBar()
 				if (ImGui::BeginMenu(get_localized_string(LANG_0542).c_str(), map && !map->is_mdl_model))
 				{
 					std::string hash = "##1";
-					for (auto& wad : map->getBspRender()->wads)
+					for (auto& wad : rend->wads)
 					{
 						if (wad->dirEntries.size() == 0)
 							continue;
@@ -2949,11 +2949,13 @@ void Gui::drawMenuBar()
 							char* newlump = loadFile(entFilePath, len);
 							map->replace_lump(LUMP_ENTITIES, newlump, len);
 							map->load_ents();
+							app->reloading = true;
 							for (size_t i = 0; i < mapRenderers.size(); i++)
 							{
 								BspRenderer* mapRender = mapRenderers[i];
 								mapRender->reload();
 							}
+							app->reloading = false;
 						}
 						else
 						{
@@ -3007,7 +3009,7 @@ void Gui::drawMenuBar()
 						ditheringEnabled = !ditheringEnabled;
 
 					std::string hash = "##1";
-					for (auto& wad : map->getBspRender()->wads)
+					for (auto& wad : rend->wads)
 					{
 						if (wad->dirEntries.size() == 0)
 							continue;
@@ -3178,7 +3180,7 @@ void Gui::drawMenuBar()
 			if (ImGui::MenuItem(get_localized_string(LANG_0559).c_str(), get_localized_string(LANG_0560).c_str()))
 			{
 				map->hideEnts(false);
-				map->getBspRender()->preRenderEnts();
+				rend->preRenderEnts();
 				app->updateEntConnections();
 				pickCount++;
 			}
@@ -3196,7 +3198,7 @@ void Gui::drawMenuBar()
 					if (map->ents[tmpentIdx]->isBspModel())
 					{
 						DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), (int)tmpentIdx);
-						map->getBspRender()->pushUndoCommand(command);
+						rend->pushUndoCommand(command);
 					}
 				}
 			}
@@ -3221,7 +3223,7 @@ void Gui::drawMenuBar()
 					{
 						pickCount++;
 						map->duplicate_model_structures(map->ents[tmpentIdx]->getBspModelIdx());
-						map->getBspRender()->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
+						rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 					}
 				}
 			}
@@ -3586,10 +3588,10 @@ void Gui::drawMenuBar()
 							}
 
 
-							map->getBspRender()->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+							rend->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 
 							app->reloading = true;
-							map->getBspRender()->reload();
+							rend->reload();
 							app->reloading = false;
 						}
 					}
@@ -3730,17 +3732,17 @@ void Gui::drawMenuBar()
 
 				map->resize_all_lightmaps();
 
-				map->getBspRender()->loadLightmaps();
-				map->getBspRender()->calcFaceMaths();
-				map->getBspRender()->preRenderFaces();
-				map->getBspRender()->preRenderEnts();
+				rend->loadLightmaps();
+				rend->calcFaceMaths();
+				rend->preRenderFaces();
+				rend->preRenderEnts();
 
 				map->update_ent_lump();
 				map->update_lump_pointers();
 
 				map->is_protected = true;
 
-				map->getBspRender()->pushModelUndoState("PROTECT MAP FROM DECOMPILER", EDIT_MODEL_LUMPS);
+				rend->pushModelUndoState("PROTECT MAP FROM DECOMPILER", EDIT_MODEL_LUMPS);
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
@@ -3877,18 +3879,18 @@ void Gui::drawMenuBar()
 								map->planes[i].fDist *= scale_val;
 							}
 						}
+						map->resize_all_lightmaps();
+
+						rend->loadLightmaps();
+						rend->calcFaceMaths();
+						rend->preRenderFaces();
+						rend->preRenderEnts();
+						rend->reloadClipnodes();
+
 						map->update_ent_lump();
 						map->update_lump_pointers();
 
-						map->resize_all_lightmaps();
-
-						map->getBspRender()->loadLightmaps();
-						map->getBspRender()->calcFaceMaths();
-						map->getBspRender()->preRenderFaces();
-						map->getBspRender()->preRenderEnts();
-						map->getBspRender()->reloadClipnodes();
-
-						map->getBspRender()->pushModelUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
+						rend->pushModelUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 				}
 				ImGui::EndMenu();
@@ -3900,6 +3902,8 @@ void Gui::drawMenuBar()
 				{
 					map->remove_faces_by_content(CONTENTS_SKY);
 
+					map->save_undo_lightmaps();
+					map->resize_all_lightmaps();
 					rend->loadLightmaps();
 					rend->calcFaceMaths();
 					rend->preRenderFaces();
@@ -3922,6 +3926,8 @@ void Gui::drawMenuBar()
 					map->remove_faces_by_content(CONTENTS_SOLID);
 
 
+					map->save_undo_lightmaps();
+					map->resize_all_lightmaps();
 					rend->loadLightmaps();
 					rend->calcFaceMaths();
 					rend->preRenderFaces();
@@ -3943,7 +3949,8 @@ void Gui::drawMenuBar()
 					{
 						map->cull_leaf_faces(rend->curLeafIdx);
 
-
+						map->save_undo_lightmaps();
+						map->resize_all_lightmaps();
 
 						rend->loadLightmaps();
 						rend->calcFaceMaths();
@@ -3978,7 +3985,7 @@ void Gui::drawMenuBar()
 						//for (int k = 0; k < mapRenderers.size(); k++) {
 						//	Bsp* map = mapRenderers[k]->map;
 						map->delete_hull(i, -1);
-						map->getBspRender()->reloadClipnodes();
+						rend->reloadClipnodes();
 						//	mapRenderers[k]->reloadClipnodes();
 						print_log(get_localized_string(LANG_0360), i, map->bsp_name);
 						//}
@@ -4003,7 +4010,7 @@ void Gui::drawMenuBar()
 								//for (int j = 0; j < mapRenderers.size(); j++) {
 								//	Bsp* map = mapRenderers[j]->map;
 								map->delete_hull(i, k);
-								map->getBspRender()->reloadClipnodes();
+								rend->reloadClipnodes();
 								//	mapRenderers[j]->reloadClipnodes();
 								print_log(get_localized_string(LANG_0361), i, k, map->bsp_name);
 								//}
@@ -4129,10 +4136,10 @@ void Gui::drawMenuBar()
 					}
 
 					map->update_ent_lump();
-					if (map->getBspRender())
+					if (rend)
 					{
 						app->reloading = true;
-						map->getBspRender()->reload();
+						rend->reload();
 						app->reloading = false;
 					}
 				}
@@ -4225,7 +4232,7 @@ void Gui::drawMenuBar()
 										continue;
 									textureset.insert(tex.szName);
 									bool textureFoundInWad = false;
-									for (auto& s : map->getBspRender()->wads)
+									for (auto& s : rend->wads)
 									{
 										if (s->hasTexture(tex.szName))
 										{
@@ -4250,8 +4257,8 @@ void Gui::drawMenuBar()
 							}
 						}
 					}
-					map->getBspRender()->reuploadTextures();
-					map->getBspRender()->preRenderFaces();
+					rend->reuploadTextures();
+					rend->preRenderFaces();
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -4703,7 +4710,7 @@ void Gui::drawMenuBar()
 
 					map->update_ent_lump();
 
-					map->getBspRender()->preRenderEnts();
+					rend->preRenderEnts();
 
 					//./primitives/skytest/sky_up.png
 					//./primitives/skytest/sky_dn.png
@@ -7132,15 +7139,6 @@ void Gui::drawTransformWidget()
 			}
 
 			ImGui::NextColumn();
-			if (app->transformMode == TRANSFORM_MODE_SCALE)
-			{
-				ImGui::BeginDisabled();
-				if (app->transformTarget == TRANSFORM_ORIGIN)
-				{
-					app->transformTarget = TRANSFORM_OBJECT;
-				}
-			}
-
 			if (modelIdx < 0)
 			{
 				ImGui::BeginDisabled();
@@ -7167,6 +7165,16 @@ void Gui::drawTransformWidget()
 			{
 				ImGui::EndDisabled();
 			}
+
+			if (app->transformMode == TRANSFORM_MODE_SCALE)
+			{
+				ImGui::BeginDisabled();
+				if (app->transformTarget == TRANSFORM_ORIGIN)
+				{
+					app->transformTarget = TRANSFORM_OBJECT;
+				}
+			}
+
 			ImGui::NextColumn();
 
 			if (ImGui::RadioButton(get_localized_string(LANG_0697).c_str(), &app->transformTarget, TRANSFORM_ORIGIN))
@@ -8376,6 +8384,7 @@ void Gui::drawHelp()
 				ImGui::BulletText(get_localized_string(LANG_0812).c_str());
 				ImGui::BulletText(get_localized_string(LANG_0813).c_str());
 				ImGui::BulletText(get_localized_string(LANG_0814).c_str());
+				ImGui::BulletText("Press CTRL+ALT+A to select all faces same texture.");
 				ImGui::BulletText(get_localized_string(LANG_0815).c_str());
 				ImGui::Indent();
 				ImGui::BulletText(get_localized_string(LANG_0816).c_str());
@@ -8405,19 +8414,43 @@ void Gui::drawHelp()
 
 void Gui::drawAbout()
 {
-	ImGui::SetNextWindowSize(ImVec2(550.f, 140.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(650.f, 160.f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin(fmt::format("{}###ABOUT_WIDGET", get_localized_string(LANG_1119)).c_str(), &showAboutWidget))
 	{
 		ImGui::InputText(get_localized_string(LANG_0822).c_str(), &g_version_string, ImGuiInputTextFlags_ReadOnly);
 
 		static char author[] = "w00tguy(bspguy), karaulov(newbspguy)";
 		ImGui::InputText(get_localized_string(LANG_0823).c_str(), author, strlen(author), ImGuiInputTextFlags_ReadOnly);
-
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted(author);
+			ImGui::EndTooltip();
+		}
 		static char url[] = "https://github.com/wootguy/bspguy";
 		ImGui::InputText(get_localized_string(LANG_0824).c_str(), url, strlen(url), ImGuiInputTextFlags_ReadOnly);
-
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted(url);
+			ImGui::EndTooltip();
+		}
 		static char url2[] = "https://github.com/UnrealKaraulov/newbspguy";
-		ImGui::InputText(get_localized_string(LANG_0824).c_str(), url, strlen(url), ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText((get_localized_string(LANG_0824) + "##2").c_str(), url2, strlen(url2), ImGuiInputTextFlags_ReadOnly);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted(url2);
+			ImGui::EndTooltip();
+		}
+		static char help1[] = "https://t.me/ninjac0w, https://github.com/Qwertyus3D, etc";
+		ImGui::InputText("Thanks list:", help1, strlen(help1), ImGuiInputTextFlags_ReadOnly);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted(help1);
+			ImGui::EndTooltip();
+		}
 	}
 
 	ImGui::End();
@@ -10097,8 +10130,8 @@ void Gui::drawLightMapTool()
 						int offset = face->nLightmapOffset + i * lightmapSz;
 						memcpy(map->lightdata + offset, currentlightMap[i]->get_data(), lightmapSz);
 					}
-					renderer->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
 					map->resize_all_lightmaps(true);
+					renderer->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
 				}
 				ImGui::SameLine();
 
@@ -10349,9 +10382,6 @@ void Gui::drawFaceEditorWidget()
 
 
 		ImGui::Text(get_localized_string(LANG_1169).c_str());
-
-		ImGui::SameLine();
-		ImGui::Text(get_localized_string(LANG_1170).c_str());
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
@@ -10374,9 +10404,6 @@ void Gui::drawFaceEditorWidget()
 		ImGui::Dummy(ImVec2(0, 8));
 
 		ImGui::Text(get_localized_string(LANG_0875).c_str());
-
-		ImGui::SameLine();
-		ImGui::Text(get_localized_string(LANG_1179).c_str());
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
@@ -10433,88 +10460,6 @@ void Gui::drawFaceEditorWidget()
 
 		ImGui::Checkbox(get_localized_string(LANG_0883).c_str(), &lockRotate);
 
-		if (app->pickInfo.selectedFaces.size() == 1)
-		{
-			ImGui::Separator();
-			ImGui::Text(get_localized_string(LANG_0884).c_str());
-			if (ImGui::DragInt("# 1:", &tmpStyles[0], 1, 0, 255)) stylesChanged = true;
-			ImGui::SameLine();
-			if (ImGui::DragInt("# 2:", &tmpStyles[1], 1, 0, 255)) stylesChanged = true;
-			if (ImGui::DragInt("# 3:", &tmpStyles[2], 1, 0, 255)) stylesChanged = true;
-			ImGui::SameLine();
-			if (ImGui::DragInt("# 4:", &tmpStyles[3], 1, 0, 255)) stylesChanged = true;
-			ImGui::Separator();
-			ImGui::Text(get_localized_string(LANG_0885).c_str());
-			ImGui::SameLine();
-			ImGui::TextDisabled(get_localized_string(LANG_0886).c_str());
-
-			std::string tmplabel = "##unklabel";
-
-			int edgeIdx = 0;
-			for (auto& v : edgeVerts)
-			{
-				edgeIdx++;
-				tmplabel = fmt::format(fmt::runtime(get_localized_string(LANG_0423)), edgeIdx);
-				if (ImGui::DragFloat(tmplabel.c_str(), &v.x, 0.1f, 0, 0, "T1: %.3f"))
-				{
-					updatedFaceVec = true;
-				}
-
-				tmplabel = fmt::format(fmt::runtime(get_localized_string(LANG_0424)), edgeIdx);
-				ImGui::SameLine();
-				if (ImGui::DragFloat(tmplabel.c_str(), &v.y, 0.1f, 0, 0, "T2: %.3f"))
-				{
-					updatedFaceVec = true;
-				}
-
-				tmplabel = fmt::format(fmt::runtime(get_localized_string(LANG_0425)), edgeIdx);
-				ImGui::SameLine();
-				if (ImGui::DragFloat(tmplabel.c_str(), &v.z, 0.1f, 0, 0, "T3: %.3f"))
-				{
-					updatedFaceVec = true;
-				}
-			}
-
-			if (ImGui::Button("COPY"))
-			{
-				std::string outstr = "";
-				for (auto& s : edgeVerts)
-				{
-					outstr += s.toKeyvalueString() + "\n";
-				}
-				ImGui::SetClipboardText(outstr.c_str());
-			}
-
-			//if (ImGui::Button("Optimize"))
-			//{
-			//	auto edge_copy_verts = edgeVerts;
-			//	removeColinearPoints(edge_copy_verts, EPSILON);
-
-			//	bool swap_need = false;
-			//	for (int e = face.iFirstEdge, v = 0; e < face.iFirstEdge + face.nEdges && v < (int)edge_copy_verts.size(); e++, v++)
-			//	{
-			//		int edge_id = map->surfedges[e];
-			//		BSPEDGE32 edge = map->edges[abs(edge_id)];
-			//		vec3 vert = edge_id >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
-			//		if (vert == edge_copy_verts[v]) continue; // already in 
-			//	
-			//		for (int z = e; z < face.iFirstEdge + face.nEdges - 1; z++)
-			//		{
-			//			map->surfedges[z] = map->surfedges[z + 1];
-			//		}
-
-			//		e--;
-			//		v--;
-			//		face.nEdges--;
-			//	}
-
-			//	face.nEdges = (int)edge_copy_verts.size();
-
-			//	edgeVerts = edge_copy_verts;
-
-			//	updatedFaceVec = true;
-			//}
-		}
 
 		if (app->pickInfo.selectedFaces.size() > 1)
 		{
@@ -10606,6 +10551,103 @@ void Gui::drawFaceEditorWidget()
 
 		ImGui::SameLine();
 		ImGui::Text(get_localized_string(LANG_0893).c_str(), width, height);
+
+
+		ImVec2 imgSize = ImVec2(inputWidth * 2 - 2, inputWidth * 2 - 2);
+		if (ImGui::ImageButton("##show_texbrowser", textureId, imgSize, ImVec2(0, 0), ImVec2(1, 1)))
+		{
+			showTextureBrowser = true;
+		}
+
+		ImGui::PushItemWidth(inputWidth);
+
+
+		if (app->pickInfo.selectedFaces.size() == 1)
+		{
+			ImGui::Separator();
+			ImGui::Text(get_localized_string(LANG_0884).c_str());
+			if (ImGui::DragInt("# 1:", &tmpStyles[0], 1, 0, 255)) stylesChanged = true;
+			ImGui::SameLine();
+			if (ImGui::DragInt("# 2:", &tmpStyles[1], 1, 0, 255)) stylesChanged = true;
+			if (ImGui::DragInt("# 3:", &tmpStyles[2], 1, 0, 255)) stylesChanged = true;
+			ImGui::SameLine();
+			if (ImGui::DragInt("# 4:", &tmpStyles[3], 1, 0, 255)) stylesChanged = true;
+			ImGui::Separator();
+			ImGui::Text(get_localized_string(LANG_0885).c_str());
+			ImGui::SameLine();
+			ImGui::TextDisabled(get_localized_string(LANG_0886).c_str());
+
+			std::string tmplabel = "##unklabel";
+
+			int edgeIdx = 0;
+			for (auto& v : edgeVerts)
+			{
+				edgeIdx++;
+				tmplabel = fmt::format(fmt::runtime(get_localized_string(LANG_0423)), edgeIdx);
+				if (ImGui::DragFloat(tmplabel.c_str(), &v.x, 0.1f, 0, 0, "T1: %.3f"))
+				{
+					updatedFaceVec = true;
+				}
+
+				tmplabel = fmt::format(fmt::runtime(get_localized_string(LANG_0424)), edgeIdx);
+				ImGui::SameLine();
+				if (ImGui::DragFloat(tmplabel.c_str(), &v.y, 0.1f, 0, 0, "T2: %.3f"))
+				{
+					updatedFaceVec = true;
+				}
+
+				tmplabel = fmt::format(fmt::runtime(get_localized_string(LANG_0425)), edgeIdx);
+				ImGui::SameLine();
+				if (ImGui::DragFloat(tmplabel.c_str(), &v.z, 0.1f, 0, 0, "T3: %.3f"))
+				{
+					updatedFaceVec = true;
+				}
+			}
+
+
+			if (ImGui::Button("COPY VERTS"))
+			{
+				std::string outstr = "";
+				for (auto& s : edgeVerts)
+				{
+					outstr += s.toKeyvalueString() + "\n";
+				}
+				ImGui::SetClipboardText(outstr.c_str());
+			}
+
+			//if (ImGui::Button("Optimize"))
+			//{
+			//	auto edge_copy_verts = edgeVerts;
+			//	removeColinearPoints(edge_copy_verts, EPSILON);
+
+			//	bool swap_need = false;
+			//	for (int e = face.iFirstEdge, v = 0; e < face.iFirstEdge + face.nEdges && v < (int)edge_copy_verts.size(); e++, v++)
+			//	{
+			//		int edge_id = map->surfedges[e];
+			//		BSPEDGE32 edge = map->edges[abs(edge_id)];
+			//		vec3 vert = edge_id >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+			//		if (vert == edge_copy_verts[v]) continue; // already in 
+			//	
+			//		for (int z = e; z < face.iFirstEdge + face.nEdges - 1; z++)
+			//		{
+			//			map->surfedges[z] = map->surfedges[z + 1];
+			//		}
+
+			//		e--;
+			//		v--;
+			//		face.nEdges--;
+			//	}
+
+			//	face.nEdges = (int)edge_copy_verts.size();
+
+			//	edgeVerts = edge_copy_verts;
+
+			//	updatedFaceVec = true;
+			//}
+		}
+
+		ImGui::PopItemWidth();
+
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) &&
 			(pasteTextureNow || updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || textureChanged || stylesChanged || toggledFlags || updatedTexVec || mergeFaceVec))
 		{
@@ -10787,7 +10829,10 @@ void Gui::drawFaceEditorWidget()
 			if (mergeFaceVec)
 			{
 				map->remove_unused_model_structures(CLEAN_VERTICES);
+
+				app->reloading = true;
 				map->getBspRender()->reload();
+				app->reloading = false;
 			}
 
 			checkFaceErrors();
@@ -10798,7 +10843,6 @@ void Gui::drawFaceEditorWidget()
 			}
 
 			map->resize_all_lightmaps(true);
-			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
 			mapRenderer->loadLightmaps();
 			mapRenderer->calcFaceMaths();
 
@@ -10812,15 +10856,10 @@ void Gui::drawFaceEditorWidget()
 			mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
 				textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
 
+			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
 		}
 
 		pasteTextureNow = false;
-
-		ImVec2 imgSize = ImVec2(inputWidth * 2 - 2, inputWidth * 2 - 2);
-		if (ImGui::ImageButton("##show_texbrowser", textureId, imgSize, ImVec2(0, 0), ImVec2(1, 1)))
-		{
-			showTextureBrowser = true;
-		}
 	}
 	else
 	{
@@ -11591,14 +11630,14 @@ void Gui::drawFaceEditorWidget()
 				tmpLeaf.nMins = mins;
 				tmpLeaf.nMaxs = maxs;
 
-				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES);
-
 
 				mapRenderer->leafCube->mins = tmpLeaf.nMins;
 				mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
 
 				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
 				updatedLeafVec = false;
+
+				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES);
 			}
 
 			std::vector<int> leafNodes{};
@@ -11740,9 +11779,9 @@ void Gui::drawFaceEditorWidget()
 			if (ImGui::Button("Create duplicate"))
 			{
 				last_leaf = map->clone_world_leaf(last_leaf);
-				mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_NODES | FL_PLANES | FL_MARKSURFACES | FL_VISIBILITY);
 				BSPLEAF32& leaf = map->leaves[last_leaf];
 				app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
+				mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_NODES | FL_PLANES | FL_MARKSURFACES | FL_VISIBILITY);
 			}
 
 			if (ImGui::IsItemHovered())

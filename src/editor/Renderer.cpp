@@ -1194,7 +1194,7 @@ void Renderer::controls()
 
 	if (canControl && !blockMoving)
 	{
-		if (anyCtrlPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
+		if (anyCtrlPressed && anyAltPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
 			&& pickMode != PICK_OBJECT && pickInfo.selectedFaces.size() == 1)
 		{
 			Bsp* map = SelectedMap;
@@ -2101,15 +2101,17 @@ bool Renderer::transformAxisControls()
 					saveTranformResult = false;
 					map->regenerate_clipnodes(modelIdx, -1);
 					if (invalidSolid)
+					{
 						revertInvalidSolid(map, modelIdx);
+					}
 					else
 					{
 						map->resize_all_lightmaps();
+						map->getBspRender()->refreshModel(modelIdx);
+						map->getBspRender()->refreshModelClipnodes(modelIdx);
+						applyTransform(map, true);
 						map->getBspRender()->pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
 					}
-					map->getBspRender()->refreshModel(modelIdx);
-					map->getBspRender()->refreshModelClipnodes(modelIdx);
-					applyTransform(map, true);
 				}
 				else if (transformTarget == TRANSFORM_OBJECT)
 				{
@@ -2186,10 +2188,10 @@ bool Renderer::transformAxisControls()
 					else
 					{
 						map->resize_all_lightmaps();
+						map->getBspRender()->refreshModel(modelIdx);
+						map->getBspRender()->refreshModelClipnodes(modelIdx);
 						map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
 					}
-					map->getBspRender()->refreshModel(modelIdx);
-					map->getBspRender()->refreshModelClipnodes(modelIdx);
 				}
 			}
 		}
@@ -3701,13 +3703,11 @@ bool Renderer::splitModelFace()
 
 
 	map->resize_all_lightmaps();
-	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
-
 	mapRenderer->loadLightmaps();
 	mapRenderer->calcFaceMaths();
 	mapRenderer->refreshModel(modelIdx);
 	updateModelVerts();
-
+	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
 	return true;
 }
 

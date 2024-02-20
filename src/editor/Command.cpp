@@ -398,6 +398,9 @@ void CreateBspModelCommand::execute()
 	//renderer->refreshModel(modelIdx);
 	//
 
+	map->save_undo_lightmaps();
+	map->resize_all_lightmaps();
+
 	renderer->loadLightmaps();
 	if (NeedreloadTextures)
 		renderer->reuploadTextures();
@@ -405,7 +408,10 @@ void CreateBspModelCommand::execute()
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
 	renderer->addClipnodeModel(modelIdx);
+	renderer->refreshModel(modelIdx);
+	//g_app->reloading = true;
 	//renderer->reload();
+	//g_app->reloading = false;
 
 	g_app->gui->refresh();
 }

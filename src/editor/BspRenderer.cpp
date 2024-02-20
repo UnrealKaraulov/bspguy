@@ -444,10 +444,10 @@ void BspRenderer::reload()
 {
 	map->update_lump_pointers();
 	loadLightmaps();
+	reloadTextures();
 	calcFaceMaths();
 	preRenderFaces();
 	preRenderEnts();
-	reloadTextures();
 	reloadClipnodes();
 }
 
@@ -2164,7 +2164,7 @@ void BspRenderer::highlightFace(size_t faceIdx, int highlight, bool reupload)
 
 	if (highlight == 1)
 	{
-		r = rgroup->special ? 2.0f : 0.86f;
+		r = rgroup->special ? 2.0f : 0.15f;
 		g = 0.0f;
 		b = 0.0f;
 	}
@@ -2173,14 +2173,14 @@ void BspRenderer::highlightFace(size_t faceIdx, int highlight, bool reupload)
 	{
 		r = rgroup->special ? 3.0f : 0.0f;
 		g = 0.0f;
-		b = 0.86f;
+		b = 0.15f;
 	}
 
 	if (highlight == 3)
 	{
 		r = rgroup->special ? 4.0f : 0.0f;
-		g = 0.2f;
-		b = 0.2f;
+		g = 0.15f;
+		b = 0.15f;
 	}
 
 	auto verts = ((lightmapVert*)rgroup->buffer->get_data());
@@ -3358,7 +3358,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 	pushUndoCommand(editCommand);
 
 	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
-	saveEntityState((int)entIdx[0]);
+	// saveEntityState((int)entIdx[0]);
 }
 
 void BspRenderer::pushUndoCommand(Command* cmd)
