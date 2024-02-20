@@ -27,7 +27,7 @@ CMesh Clipper::clip(std::vector<BSPPLANE>& clips)
 			continue;
 		}
 
-		clipEdges(mesh, clip);
+		clipEdges(mesh/*, clip*/);
 		clipFaces(mesh, clip);
 	}
 
@@ -76,7 +76,7 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip)
 	return 0;
 }
 
-void Clipper::clipEdges(CMesh& mesh, BSPPLANE& clip)
+void Clipper::clipEdges(CMesh& mesh/*, BSPPLANE& clip*/)
 {
 	for (size_t i = 0; i < mesh.edges.size(); i++)
 	{

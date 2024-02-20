@@ -59,6 +59,7 @@ void AppSettings::loadDefault()
 
 	vsync = true;
 	merge_verts = false;
+	merge_edges = false;
 	mark_unused_texinfos = false;
 	start_at_entity = false;
 	backUpMap = true;
@@ -262,7 +263,7 @@ void AppSettings::fillPalettes(const std::string& folderPath)
 					else
 					{
 						filename.pop_back(); filename.pop_back(); filename.pop_back(); filename.pop_back();
-						palettes.push_back({ toUpperCase(filename), (unsigned int)(len / sizeof(COLOR3)), NULL});
+						palettes.push_back({ toUpperCase(filename), (unsigned int)(len / sizeof(COLOR3)), NULL });
 						memcpy(palettes[palettes.size() - 1].data, data, len);
 						delete[] data;
 					}
@@ -277,12 +278,53 @@ void AppSettings::load()
 	set_localize_lang("EN");
 
 	std::ifstream file(g_settings_path);
-	if (!file.is_open())
+	if (!file.is_open() || fileSize(g_settings_path) == 0)
 	{
-		print_log(get_localized_string(LANG_0926), g_settings_path);
-		reset();
-		return;
+		file.close();
+
+		bool settings_deleted = true;
+
+		if (fileExists(g_settings_path))
+		{
+			settings_deleted = removeFile(g_settings_path);
+		}
+
+		if (settings_deleted)
+		{
+			if (fileExists(g_settings_path + ".bak"))
+			{
+				copyFile(g_settings_path + ".bak", g_settings_path);
+				file = std::ifstream(g_settings_path);
+			}
+
+			if (!file.is_open() || fileSize(g_settings_path) == 0)
+			{
+				print_log(PRINT_RED, get_localized_string(LANG_0926), g_settings_path);
+				reset();
+				return;
+			}
+		}
+		else
+		{
+			if (fileExists(g_settings_path + ".bak"))
+			{
+				file = std::ifstream(g_settings_path + ".bak");
+			}
+
+
+			if (!file.is_open() || fileSize(g_settings_path + ".bak") == 0)
+			{
+				print_log(PRINT_RED, get_localized_string(LANG_0926), g_settings_path);
+				reset();
+				return;
+			}
+
+
+			print_log(PRINT_GREEN | PRINT_RED, "Warning! Settings restored from {} file!\n", g_settings_path + ".bak");
+		}
 	}
+
+
 
 	fillLanguages("./languages/");
 
@@ -380,6 +422,10 @@ void AppSettings::load()
 		{
 			g_settings.merge_verts = atoi(val.c_str()) != 0;
 		}
+		else if (key == "merge_edges")
+		{
+			g_settings.merge_edges = atoi(val.c_str()) != 0;
+		}
 		else if (key == "start_at_entity")
 		{
 			g_settings.start_at_entity = atoi(val.c_str()) != 0;
@@ -461,7 +507,7 @@ void AppSettings::load()
 		{
 			g_settings.palette_name = val;
 			pal_id = -1;
-			for(size_t i = 0; i < palettes.size();i++)
+			for (size_t i = 0; i < palettes.size(); i++)
 			{
 				if (toLowerCase(palettes[i].name) == toLowerCase(g_settings.palette_name))
 				{
@@ -641,12 +687,15 @@ void AppSettings::load()
 	}
 
 	if (lines_readed > 0)
+	{
 		g_settings.settingLoaded = true;
+
+		removeFile(g_settings_path + ".bak");
+		copyFile(g_settings_path, g_settings_path + ".bak");
+	}
 	else
 	{
 		print_log(get_localized_string(LANG_0928), g_settings_path);
-		removeFile(g_settings_path + ".bak");
-		copyFile(g_settings_path, g_settings_path + ".bak");
 	}
 
 	if (defaultIsEmpty && fgdPaths.empty())
@@ -745,7 +794,7 @@ void AppSettings::load()
 
 void AppSettings::save(std::string path)
 {
-	std::ostringstream file;
+	std::ostringstream file = {};
 
 	file << "window_width=" << g_settings.windowWidth << std::endl;
 	file << "window_height=" << g_settings.windowHeight << std::endl;
@@ -832,6 +881,7 @@ void AppSettings::save(std::string path)
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << std::endl;
 	file << "merge_verts=" << g_settings.merge_verts << std::endl;
+	file << "merge_edges=" << g_settings.merge_edges << std::endl;
 	file << "start_at_entity=" << g_settings.start_at_entity << std::endl;
 #ifdef NDEBUG
 	file << "verbose_logs=" << g_settings.verboseLogs << std::endl;

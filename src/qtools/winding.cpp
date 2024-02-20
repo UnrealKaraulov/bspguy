@@ -308,9 +308,9 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 		dot = dists[i] / (dists[i] - dists[i + 1]);
 		for (j = 0; j < 3; j++)
 		{                                                  // avoid round off error when possible
-			if (abs(split.vNormal[j] - 1.0f) < EPSILON)
+			if (std::abs(split.vNormal[j] - 1.0f) < EPSILON)
 				mid[j] = split.fDist;
-			else if (abs(split.vNormal[j] - -1.0f) < EPSILON)
+			else if (std::abs(split.vNormal[j] - -1.0f) < EPSILON)
 				mid[j] = -split.fDist;
 			else
 				mid[j] = p1[j] + dot * (p2[j] - p1[j]);

@@ -318,8 +318,6 @@ struct BSPCLIPNODE32
 
 /* other */
 
-bool operator < (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
-bool operator > (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
 bool operator ==(const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
 
 
@@ -509,5 +507,12 @@ struct Solid
 struct NodeVolumeCuts
 {
 	int nodeIdx;
+	//int nContents;
 	std::vector<BSPPLANE> cuts; // cuts which define the leaf boundaries when applied to a bounding box, in order.
+};
+
+struct BBOX
+{
+	vec3 mins, maxs;
+	int row;
 };

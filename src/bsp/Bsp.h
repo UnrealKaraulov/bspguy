@@ -21,13 +21,6 @@ struct membuf : std::streambuf
 	}
 };
 
-enum ExportObjOrder
-{
-	EXPORT_XYZ,
-	EXPORT_XZY
-};
-
-
 struct LeafDebug
 {
 	int leafIdx;
@@ -233,7 +226,7 @@ public:
 	void create_solid_nodes(Solid& solid, BSPMODEL* targetModel);
 	// returns index of the solid node
 
-	int create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel);
+	int create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, bool empty = false);
 	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false, bool empty = false);
 	// copies a model from the sourceMap into this one
 	void add_model(Bsp* sourceMap, int modelIdx);
@@ -263,12 +256,13 @@ public:
 	int create_clipnode(bool force_reversed = false, int reversed_id = 0);
 	int create_plane();
 	int create_model();
+	int create_vert();
 	int create_texinfo();
 
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 		std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 		std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
-		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32> & newLeafs, std::vector<int>& newMarkSurfs, bool skipLeafs = false);
+		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32> & newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
 
 	int duplicate_model(int modelIdx);
 	void duplicate_model_structures(int modelIdx);
@@ -278,7 +272,8 @@ public:
 	bool remove_face(int faceid);
 	void remove_faces_by_content(int content);
 	int clone_world_leaf(int oldleafIdx);
-	int merge_two_models(size_t src_ent, size_t dst_ent, int &try_again);
+	int merge_two_models_ents(size_t src_ent, size_t dst_ent, int &try_again);
+	int merge_two_models_idx(int src_model, int dst_model, int &try_again);
 
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
 	BSPTEXTUREINFO* get_unique_texinfo(int faceIdx);
@@ -320,9 +315,11 @@ public:
 	void setBspRender(BspRenderer* rnd);
 
 
-	void ExportToObjWIP(const std::string& path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1, bool lightmap_mode = false);
+	void ExportToObjWIP(const std::string& path, int iscale = 1, bool lightmap_mode = false);
 
 	void ExportToMapWIP(const std::string& path);
+
+	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool & valid_nodes);
 
 	int merge_all_planes();
 
@@ -359,7 +356,7 @@ public:
 	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
-	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
+	unsigned int remove_unused_visdata(BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
 	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes, int* removeddata = NULL);
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 

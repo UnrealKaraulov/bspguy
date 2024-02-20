@@ -73,7 +73,7 @@ public:
 
 private:
 	int clipVertices(CMesh& mesh, BSPPLANE& clip);
-	void clipEdges(CMesh& mesh, BSPPLANE& clip);
+	void clipEdges(CMesh& mesh/*, BSPPLANE& clip*/);
 	void clipFaces(CMesh& mesh, BSPPLANE& clip);
 	bool getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final);
 

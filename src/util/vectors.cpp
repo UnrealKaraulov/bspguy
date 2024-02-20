@@ -6,11 +6,11 @@
 bool operator==(const vec3& v1, const vec3& v2)
 {
 	vec3 v = v1 - v2;
-	if (abs(v.x) >= EPSILON)
+	if (std::abs(v.x) >= EPSILON)
 		return false;
-	if (abs(v.y) >= EPSILON)
+	if (std::abs(v.y) >= EPSILON)
 		return false;
-	if (abs(v.z) >= EPSILON)
+	if (std::abs(v.z) >= EPSILON)
 		return false;
 	return true;
 }
@@ -18,11 +18,11 @@ bool operator==(const vec3& v1, const vec3& v2)
 bool operator!=(const vec3& v1, const vec3& v2)
 {
 	vec3 v = v1 - v2;
-	if (abs(v.x) >= EPSILON)
+	if (std::abs(v.x) >= EPSILON)
 		return true;
-	if (abs(v.y) >= EPSILON)
+	if (std::abs(v.y) >= EPSILON)
 		return true;
-	if (abs(v.z) >= EPSILON)
+	if (std::abs(v.z) >= EPSILON)
 		return true;
 	return false;
 }
@@ -179,7 +179,7 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 
 vec3 vec3::normalize(float length)
 {
-	if (::abs(x) < EPSILON2 && ::abs(y) < EPSILON2 && ::abs(z) < EPSILON2)
+	if (std::abs(x) < EPSILON2 && std::abs(y) < EPSILON2 && std::abs(z) < EPSILON2)
 		return vec3();
 	float d = length / sqrt((x * x) + (y * y) + (z * z));
 
@@ -188,11 +188,11 @@ vec3 vec3::normalize(float length)
 
 bool vec3::equal(vec3 to, float epsilon)
 {
-	if (::abs(x - to.x) >= epsilon)
+	if (std::abs(x - to.x) >= epsilon)
 		return false;
-	if (::abs(y - to.y) >= epsilon)
+	if (std::abs(y - to.y) >= epsilon)
 		return false;
-	if (::abs(z - to.z) >= epsilon)
+	if (std::abs(z - to.z) >= epsilon)
 		return false;
 	return true;
 }
@@ -234,7 +234,7 @@ vec3 vec3::swap_xz()
 
 vec3 vec3::abs()
 {
-	return vec3(::abs(x), ::abs(y), ::abs(z));
+	return vec3(std::abs(x), std::abs(y), std::abs(z));
 }
 
 vec3 vec3::invert()
@@ -249,7 +249,7 @@ float vec3::length()
 
 bool vec3::IsZero()
 {
-	return (::abs(x) + ::abs(y) + ::abs(z)) < EPSILON;
+	return (std::abs(x) + std::abs(y) + std::abs(z)) < EPSILON;
 }
 
 std::string vec3::toString()
@@ -324,16 +324,16 @@ float vec3::dist(vec3 to)
 bool operator==(const vec2& v1, const vec2& v2)
 {
 	vec2 v = v1 - v2;
-	if (abs(v.x) >= EPSILON)
+	if (std::abs(v.x) >= EPSILON)
 		return false;
-	if (abs(v.y) >= EPSILON)
+	if (std::abs(v.y) >= EPSILON)
 		return false;
 	return true;
 }
 
 bool operator!=(const vec2& v1, const vec2& v2)
 {
-	return abs(v1.x - v2.x) >= EPSILON || abs(v1.y - v2.y) >= EPSILON;
+	return std::abs(v1.x - v2.x) >= EPSILON || std::abs(v1.y - v2.y) >= EPSILON;
 }
 
 vec2 operator-(vec2 v1, const vec2& v2)
@@ -447,7 +447,7 @@ float vec2::length()
 
 vec2 vec2::normalize(float length)
 {
-	if (abs(x) < EPSILON2 && abs(y) < EPSILON2)
+	if (std::abs(x) < EPSILON2 && std::abs(y) < EPSILON2)
 		return vec2();
 	float d = length / sqrt((x * x) + (y * y));
 	return vec2(x * d, y * d);
@@ -461,7 +461,7 @@ vec2 vec2::swap()
 bool operator==(const vec4& v1, const vec4& v2)
 {
 	vec4 v = v1 - v2;
-	return abs(v.x) < EPSILON && abs(v.y) < EPSILON && abs(v.z) < EPSILON && abs(v.w) < EPSILON;
+	return std::abs(v.x) < EPSILON && std::abs(v.y) < EPSILON && std::abs(v.z) < EPSILON && std::abs(v.w) < EPSILON;
 }
 
 
@@ -593,7 +593,7 @@ bool VectorCompare(const vec3& v1, const vec3& v2, float epsilon)
 	int		i;
 
 	for (i = 0; i < 3; i++)
-		if (abs(v1[i] - v2[i]) > epsilon)
+		if (std::abs(v1[i] - v2[i]) > epsilon)
 			return false;
 
 	return true;
@@ -740,14 +740,14 @@ float VectorNormalize(vec3& v)
 	int		i;
 	float	length;
 
-	if (abs(v[1] - 0.000215956f) < 0.0001f)
+	if (std::abs(v[1] - 0.000215956f) < 0.0001f)
 		i = 1;
 
 	length = 0.0f;
 	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
 	length = sqrt(length);
-	if (abs(length) < EPSILON)
+	if (std::abs(length) < EPSILON)
 		return 0.0f;
 
 	for (i = 0; i < 3; i++)

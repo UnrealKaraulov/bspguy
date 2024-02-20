@@ -987,7 +987,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			verts[e].r = 0.0f;
 			if (ent && ent->rendermode > 0)
 			{
-				verts[e].g = 1.001f + abs((float)ent->rendermode);
+				verts[e].g = 1.001f + std::abs((float)ent->rendermode);
 			}
 			else
 			{
@@ -1469,11 +1469,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 		return;
 	}
 
-	if (modelIdx > 0 && hullIdx == 0)
+	/*if (modelIdx > 0 && hullIdx == 0)
 	{
 		allVerts = stretch_model(allVerts, 0.1f);
 		wireframeVerts = stretch_model(wireframeVerts, 0.1f);
-	}
+	}*/
 
 	cVert* output = new cVert[allVerts.size()];
 	if (allVerts.size())
@@ -1568,34 +1568,6 @@ void BspRenderer::preRenderEnts()
 	}
 }
 
-void BspRenderer::refreshPointEnt(size_t entIdx)
-{
-	//int skipIdx = 0;
-
-	//if (entIdx == 0)
-	//	return;
-
-	//// skip worldspawn
-	//for (size_t i = 1, sz = map->ents.size(); i < sz; i++)
-	//{
-	//	if (renderEnts[i].modelIdx >= 0)
-	//		continue;
-
-	//	if ((int)i == entIdx)
-	//	{
-	//		break;
-	//	}
-
-	//	skipIdx++;
-	//}
-
-	//if (skipIdx >= numPointEnts)
-	//{
-	//	print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0284));
-	//	return;
-	//}
-}
-
 void BspRenderer::setRenderAngles(size_t entIdx, vec3 angles)
 {
 	if (!map->ents[entIdx]->hasKey("classname"))
@@ -1622,7 +1594,7 @@ void BspRenderer::setRenderAngles(size_t entIdx, vec3 angles)
 		}
 		else if (entClassName == "env_sprite")
 		{
-			if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
+			if (std::abs(angles.y) >= EPSILON && std::abs(angles.z) < EPSILON)
 			{
 				renderEnts[entIdx].angles.z = 0.0f;
 				renderEnts[entIdx].modelMat4x4_angles.rotateY(0.0);
@@ -1667,7 +1639,7 @@ void BspRenderer::setRenderAngles(size_t entIdx, vec3 angles)
 
 void BspRenderer::refreshEnt(size_t entIdx)
 {
-	if (entIdx < 0 || !g_app->pointEntRenderer)
+	if (entIdx >= map->ents.size() || !g_app->pointEntRenderer)
 		return;
 	int skin = -1;
 	int sequence = -1;
@@ -2298,7 +2270,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 	{
 		for (const auto& undoEnt : delayEntUndoList)
 		{
-			if (undoEnt.entIdx >= 0 && undoEnt.entIdx < (int)map->ents.size() && undoEnt.ent == map->ents[undoEnt.entIdx])
+			if (undoEnt.entIdx < map->ents.size() && undoEnt.ent == map->ents[undoEnt.entIdx])
 			{
 				pushEntityUndoState(undoEnt.description, undoEnt.entIdx);
 			}

@@ -53,7 +53,7 @@ extern std::mutex g_mutex_list[10];
 
 extern unsigned int g_console_colors;
 
-extern bool g_console_visibled;
+extern bool g_console_visible;
 void showConsoleWindow(bool show);
 
 //ImVec4 imguiColorFromConsole(unsigned int colors);
@@ -205,7 +205,7 @@ void expandBoundingBox(const cVert& v, vec3& mins, vec3& maxs);
 
 void expandBoundingBox(const vec2& v, vec2& mins, vec2& maxs);
 
-std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes);
+std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE>& planes);
 
 bool vertsAllOnOneSide(std::vector<vec3>& verts, BSPPLANE& plane);
 
@@ -215,7 +215,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts);
 vec3 getNormalFromVerts(std::vector<vec3>& verts);
 
 // transforms verts onto a plane (which is defined by the verts themselves)
-std::vector<vec2> localizeVerts(std::vector<vec3>& verts);
+std::vector<vec2> localizeVerts( std::vector<vec3>& verts);
 
 // Returns CCW sorted indexes into the verts, as viewed on the plane the verts define
 std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts);
@@ -336,3 +336,7 @@ vec3 getCentroid(std::vector<TransformVert>& hullVerts);
 std::vector<std::vector<COLOR3>> splitImage(const COLOR3* input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height);
 std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3>& input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height);
 std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, int x, int y, int x_parts);
+
+bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles);
+
+std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<vec3>& gl_triangles, int& max_row);

@@ -415,7 +415,7 @@ bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist)
 	/* Calculate T distances to candidate planes */
 	for (i = 0; i < 3; i++)
 	{
-		if (quadrant[i] != MIDDLE && abs(dir[i]) >= EPSILON)
+		if (quadrant[i] != MIDDLE && std::abs(dir[i]) >= EPSILON)
 			maxT[i] = (candidatePlane[i] - origin[i]) / dir[i];
 		else
 			maxT[i] = -1.0f;
@@ -465,7 +465,7 @@ bool rayPlaneIntersect(const vec3& start, const vec3& dir, const vec3& normal, f
 	float dot = dotProduct(dir, normal);
 
 	// don't select backfaces or parallel faces
-	if (abs(dot) < EPSILON)
+	if (std::abs(dot) < EPSILON)
 	{
 		return false;
 	}
@@ -507,7 +507,7 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 		else
 		{
 			float dot = dotProduct(outNormal, normal);
-			if (abs(dot) < 1.0f - tolerance)
+			if (std::abs(dot) < 1.0f - tolerance)
 			{
 				return false; // non-planar face
 			}
@@ -681,60 +681,52 @@ int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p)
 	return sides;
 }
 
-std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes)
-{
+std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE>& planes) {
 	std::vector<vec3> intersectVerts;
 
-	// https://math.stackexchange.com/questions/1883835/get-list-of-vertices-from-list-of-planes
 	size_t numPlanes = planes.size();
 
-	if (numPlanes < 2)
+	if (numPlanes < 3) { 
 		return intersectVerts;
+	}
 
-	for (size_t i = 0; i < numPlanes - 2; i++)
-	{
-		for (size_t j = i + 1; j < numPlanes - 1; j++)
-		{
-			for (size_t k = j + 1; k < numPlanes; k++)
-			{
-				vec3& n0 = planes[i].vNormal;
-				vec3& n1 = planes[j].vNormal;
-				vec3& n2 = planes[k].vNormal;
-				float& d0 = planes[i].fDist;
-				float& d1 = planes[j].fDist;
-				float& d2 = planes[k].fDist;
+	for (size_t i = 0; i < numPlanes - 2; i++) {
+		for (size_t j = i + 1; j < numPlanes - 1; j++) {
+			for (size_t k = j + 1; k < numPlanes; k++) {
+				const vec3& n0 = planes[i].vNormal;
+				const vec3& n1 = planes[j].vNormal;
+				const vec3& n2 = planes[k].vNormal;
+				const float& d0 = planes[i].fDist;
+				const float& d1 = planes[j].fDist;
+				const float& d2 = planes[k].fDist;
 
 				float t = n0.x * (n1.y * n2.z - n1.z * n2.y) +
 					n0.y * (n1.z * n2.x - n1.x * n2.z) +
 					n0.z * (n1.x * n2.y - n1.y * n2.x);
 
-				if (abs(t) < ON_EPSILON)
-				{
+				if (std::abs(t) < EPSILON) {
 					continue;
 				}
 
-				// don't use crossProduct because it's less accurate
-				//vec3 v = crossProduct(n1, n2)*d0 + crossProduct(n0, n2)*d1 + crossProduct(n0, n1)*d2;
-				vec3 v(
+				vec3 v{
 					(d0 * (n1.z * n2.y - n1.y * n2.z) + d1 * (n0.y * n2.z - n0.z * n2.y) + d2 * (n0.z * n1.y - n0.y * n1.z)) / -t,
 					(d0 * (n1.x * n2.z - n1.z * n2.x) + d1 * (n0.z * n2.x - n0.x * n2.z) + d2 * (n0.x * n1.z - n0.z * n1.x)) / -t,
 					(d0 * (n1.y * n2.x - n1.x * n2.y) + d1 * (n0.x * n2.y - n0.y * n2.x) + d2 * (n0.y * n1.x - n0.x * n1.y)) / -t
-				);
+				};
 
 				bool validVertex = true;
 
-				for (size_t m = 0; m < numPlanes; m++)
-				{
-					BSPPLANE& pm = planes[m];
-					if (m != i && m != j && m != k && dotProduct(v, pm.vNormal) < pm.fDist + EPSILON)
-					{
-						validVertex = false;
-						break;
+				for (size_t m = 0; m < numPlanes; m++) {
+					if (m != i && m != j && m != k) {
+						const BSPPLANE& pm = planes[m];
+						if (dotProduct(v, pm.vNormal) < pm.fDist + EPSILON) {
+							validVertex = false;
+							break;
+						}
 					}
 				}
 
-				if (validVertex)
-				{
+				if (validVertex) {
 					intersectVerts.push_back(v);
 				}
 			}
@@ -804,7 +796,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 		{
 			vec3 ab = (verts[i1] - verts[i0]).normalize();
 			vec3 ac = (verts[i] - verts[i0]).normalize();
-			if (abs(dotProduct(ab, ac) - 1.0) < EPSILON)
+			if (std::abs(dotProduct(ab, ac) - 1.0) < EPSILON)
 			{
 				continue;
 			}
@@ -943,7 +935,7 @@ bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 		vec2& v1 = poly[i];
 		vec2& v2 = poly[(i + 1) % poly.size()];
 
-		if (abs(v1.x - p.x) < EPSILON && abs(v1.y - p.y) < EPSILON)
+		if (std::abs(v1.x - p.x) < EPSILON && std::abs(v1.y - p.y) < EPSILON)
 		{
 			break; // on edge = inside
 		}
@@ -1197,10 +1189,10 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 }
 
 unsigned int g_console_colors = 0;
-bool g_console_visibled = true;
+bool g_console_visible = true;
 void showConsoleWindow(bool show)
 {
-	g_console_visibled = show;
+	g_console_visible = show;
 #ifdef WIN32		
 	if (::GetConsoleWindow())
 	{
@@ -1959,11 +1951,11 @@ BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force
 			separationPlane.nType = -1; // no simple separating axis
 
 			print_log(PRINT_RED, get_localized_string(LANG_0239));
-			print_log(PRINT_RED, "({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
-			print_log(PRINT_RED, " - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
+			print_log(PRINT_RED, "({:6.2f}, {:6.2f}, {:6.2f})", amin.x, amin.y, amin.z);
+			print_log(PRINT_RED, " - ({:6.2f}, {:6.2f}, {:6.2f}) {}\n", amax.x, amax.y, amax.z, "MODEL1");
 
-			print_log(PRINT_RED, "({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
-			print_log(PRINT_RED, " - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, "MODEL2");
+			print_log(PRINT_RED, "({:6.2f}, {:6.2f}, {:6.2f})", bmin.x, bmin.y, bmin.z);
+			print_log(PRINT_RED, " - ({:6.2f}, {:6.2f}, {:6.2f}) {}\n", bmax.x, bmax.y, bmax.z, "MODEL2");
 		}
 	}
 
@@ -2477,7 +2469,7 @@ std::vector<std::vector<COLOR3>> splitImage(const COLOR3* input, int input_width
 
 	if (input_width % x_parts || input_height % y_parts)
 	{
-		print_log(PRINT_RED, "splitImage: INVALID INPUT DIMENSIONS {}%{}={} and {}%{}={}!\n",input_width,x_parts,input_width % x_parts, input_height, y_parts, input_height % y_parts);
+		print_log(PRINT_RED, "splitImage: INVALID INPUT DIMENSIONS {}%{}={} and {}%{}={}!\n", input_width, x_parts, input_width % x_parts, input_height, y_parts, input_height % y_parts);
 		parts.clear();
 		return parts;
 	}
@@ -2501,6 +2493,7 @@ std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3>& input, in
 {
 	return splitImage(input.data(), input_width, input_height, x_parts, y_parts, out_part_width, out_part_height);
 }
+
 std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, int x, int y, int x_parts)
 {
 	if (x < 0 || x >= images.size() || y < 0 || y >= images[0].size()) {
@@ -2508,6 +2501,158 @@ std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, 
 		return std::vector<COLOR3>();
 	}
 
-	int index = y * x_parts + x; 
+	int index = y * x_parts + x;
 	return images[index];
+}
+
+
+bool rayIntersectsTriangle(const vec3& origin, const vec3& direction, const vec3& v0, const vec3& v1, const vec3& v2)
+{
+	vec3 edge1 = v1 - v0;
+	vec3 edge2 = v2 - v0;
+
+	vec3 h = crossProduct(direction, edge2);
+	float a = dotProduct(edge1, h);
+
+	if (std::abs(a) < EPSILON) {
+		return false; // Ray is parallel to the triangle
+	}
+
+	float f = 1.0f / a;
+	vec3 s = origin - v0;
+	float u = f * dotProduct(s, h);
+
+	if (u < 0.0f || u > 1.0f) {
+		return false;
+	}
+
+	vec3 q = crossProduct(s, edge1);
+	float v = f * dotProduct(direction, q);
+
+	if (v < 0.0f || u + v > 1.0f) {
+		return false;
+	}
+
+	float t = f * dotProduct(edge2, q);
+
+	if (t > EPSILON) {
+		return true;
+	}
+
+	return false;
+}
+
+bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles)
+{
+	if (glTriangles.size() % 3 != 0) {
+		return false;
+	}
+
+	int intersectCount = 0;
+	vec3 rayDirection = { 0, 0, 1 }; // ray direction UPWARDS
+
+	for (size_t i = 0; i < glTriangles.size(); i += 3) {
+		const vec3& v0 = glTriangles[i];
+		const vec3& v1 = glTriangles[i + 1];
+		const vec3& v2 = glTriangles[i + 2];
+
+		if (rayIntersectsTriangle(point, rayDirection, v0, v1, v2))
+		{
+			intersectCount++;
+		}
+	}
+
+	// If the number of intersections is odd, the point is inside the mesh
+	return intersectCount % 2 == 1;
+}
+
+
+std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<vec3>& gl_triangles, int& max_row) {
+	vec3 mins, maxs;
+	getBoundingBox(gl_triangles, mins, maxs);
+
+	std::vector<std::vector<BBOX>> all_boxes;
+	std::vector<BBOX> current_boxes;
+
+	float y_offset = 3.00f;
+	float z_offset = 3.00f;
+	float x_offset = 3.00f;
+
+	float p_offset = 0.1f;
+
+	max_row = 0;
+
+	for (float y = mins.y; y <= maxs.y; y += y_offset) {
+		for (float z = mins.z; z <= maxs.z; z += z_offset) {
+			current_boxes.clear();
+			for (float x = mins.x; x <= maxs.x; x += x_offset) {
+				vec3 point = vec3(x, y, z);
+				if (isPointInsideMesh(point, gl_triangles)) {
+					vec3 cmins = point;
+					vec3 cmaxs = { x + (x_offset - p_offset), y + (y_offset - p_offset), z + (z_offset - p_offset) };
+
+					x += 1.0f;
+					point = vec3(x, y, z);
+
+					while (isPointInsideMesh(point, gl_triangles) && x <= maxs.x) {
+						cmaxs.x += 1.0f;
+						x += 1.0f;
+						point = vec3(x, y, z);
+					}
+
+					BBOX tmpBox = { cmins, cmaxs, max_row };
+					print_log("TRACE: Add cube {:.2f} {:.2f} {:.2f} with row {}\n", x, y, z, tmpBox.row);
+					current_boxes.push_back(tmpBox);
+				}
+			}
+			if (!current_boxes.empty())
+			{
+				//if (all_boxes.size())
+				//{
+				//	if (all_boxes[all_boxes.size() - 1].size() == current_boxes.size())
+				//	{
+				//		bool same = true;
+				//		for (size_t c1 = 0; c1 < all_boxes[all_boxes.size() - 1].size(); c1++)
+				//		{
+				//			if (all_boxes[all_boxes.size() - 1][c1].row != current_boxes[c1].row) same = false; 
+				//			if (abs(all_boxes[all_boxes.size() - 1][c1].mins.z - current_boxes[c1].mins.z) > 0.001f) same = false;
+				//			if (abs(all_boxes[all_boxes.size() - 1][c1].mins.x - current_boxes[c1].mins.x) > 0.001f) same = false;
+				//			if (abs(all_boxes[all_boxes.size() - 1][c1].mins.y - current_boxes[c1].mins.y) > 0.001f) same = false;
+				//			if (abs(all_boxes[all_boxes.size() - 1][c1].maxs.z - current_boxes[c1].maxs.z) > 0.001f) same = false;
+				//			if (abs(all_boxes[all_boxes.size() - 1][c1].maxs.x - current_boxes[c1].maxs.x) > 0.001f) same = false;
+				//			if (abs(all_boxes[all_boxes.size() - 1][c1].maxs.y - current_boxes[c1].maxs.y) > 0.001f) same = false;
+
+				//			if (same == false)
+				//				break;
+				//		}
+
+				//		if (same)
+				//		{
+				//			for (auto& cur_box : all_boxes[all_boxes.size() - 1])
+				//			{
+				//				cur_box.maxs.z += z_offset;
+				//			}
+				//			current_boxes.clear();
+				//			continue;
+				//		}
+				//	}
+				//}
+
+				all_boxes.push_back(current_boxes);
+			}
+		}
+
+		max_row++;
+	}
+
+	vec3 offset = vec3(x_offset / 2.0f, y_offset / 2.0f, z_offset / 2.0f);
+
+	for (auto& row : all_boxes) {
+		for (auto& c : row) {
+			c.mins -= offset;
+			c.maxs -= offset;
+		}
+	}
+
+	return all_boxes;
 }

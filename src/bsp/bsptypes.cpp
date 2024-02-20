@@ -32,9 +32,9 @@ BSPEDGE32::BSPEDGE32(unsigned int v1, unsigned int v2)
 
 bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 {
-	double fx = abs(newNormal.x);
-	double fy = abs(newNormal.y);
-	double fz = abs(newNormal.z);
+	float fx = std::abs(newNormal.x);
+	float fy = std::abs(newNormal.y);
+	float fz = std::abs(newNormal.z);
 	int planeType = PLANE_ANYZ;
 	bool shouldFlip = false;
 	if (fx > 0.9999f)

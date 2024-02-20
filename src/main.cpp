@@ -963,6 +963,87 @@ void signalHandler(int signal) {
 	exit(signal);
 }
 #endif
+
+
+struct UVVERT {
+	vec3 vert;
+	float u, v;
+	char texname[16];
+};
+
+vec3 vec3mix(const vec3& a, const vec3& b, float t) {
+	return a * (1.0f - t) + b * t;
+}
+//void WriteObjFile(const std::vector<UVVERT>& vertices, const std::string& filename) {
+//	std::ofstream objFile(filename);
+//	if (!objFile.is_open()) return;
+//
+//	for (const auto& vert : vertices) {
+//		objFile << "v " << vert.vert.x << " " << vert.vert.y << " " << vert.vert.z << "\n";
+//	}
+//
+//	// Writing texture names for each vertex
+//	for (const auto& vert : vertices) {
+//		objFile << "vt " << vert.texname << "\n";
+//	}
+//
+//	// Assuming all vertices are part of a single object
+//	// Writing faces (triangles) assuming vertices are in order
+//	for (size_t i = 0; i < vertices.size(); i += 3) {
+//		objFile << "f " << (i + 1) << "/" << (i + 1) << " " << (i + 2) << "/" << (i + 2) << " " << (i + 3) << "/" << (i + 3) << "\n";
+//	}
+//
+//	objFile.close();
+//}
+
+void CreateSkybox(std::vector<UVVERT>& vertices, vec3 mins, vec3 maxs) {
+	std::string sides[6] = { "right", "left", "up", "down", "front", "back" };
+    vec3 directions[6][4] = {
+        {maxs, {maxs.x, mins.y, maxs.z}, {maxs.x, mins.y, mins.z}, {maxs.x, maxs.y, mins.z}}, // Right
+        {mins, {mins.x, mins.y, maxs.z}, {mins.x, maxs.y, maxs.z}, {mins.x, maxs.y, mins.z}}, // Left
+        {maxs, {maxs.x, maxs.y, mins.z}, {mins.x, maxs.y, mins.z}, {mins.x, maxs.y, maxs.z}}, // Up
+		{mins, {maxs.x, mins.y, mins.z}, {maxs.x, mins.y, maxs.z}, {mins.x, mins.y, maxs.z}}, // Down
+		{{mins.x, mins.y, maxs.z}, {maxs.x, mins.y, maxs.z}, {maxs.x, maxs.y, maxs.z}, {mins.x, maxs.y, maxs.z}}, // Front
+        {mins, {mins.x, maxs.y, mins.z}, {maxs.x, maxs.y, mins.z}, {maxs.x, mins.y, mins.z}}, // Back
+    };
+
+	int divisions = 8;
+	for (int side = 0; side < 6; ++side) {
+		for (int y = 0; y < divisions; ++y) {
+			for (int x = 0; x < divisions; ++x) {
+				float xFraction = static_cast<float>(x) / divisions;
+				float yFraction = static_cast<float>(y) / divisions;
+				float nextXFrac = static_cast<float>(x + 1) / divisions;
+				float nextYFrac = static_cast<float>(y + 1) / divisions;
+
+				vec3 topLeft = vec3mix(vec3mix(directions[side][0], directions[side][1], yFraction),
+					vec3mix(directions[side][3], directions[side][2], yFraction), xFraction);
+
+				vec3 bottomRight = vec3mix(vec3mix(directions[side][0], directions[side][1], nextYFrac),
+					vec3mix(directions[side][3], directions[side][2], nextYFrac), nextXFrac);
+
+				vec3 topRight = vec3mix(vec3mix(directions[side][0], directions[side][1], yFraction),
+					vec3mix(directions[side][3], directions[side][2], yFraction), nextXFrac);
+
+				vec3 bottomLeft = vec3mix(vec3mix(directions[side][0], directions[side][1], nextYFrac),
+					vec3mix(directions[side][3], directions[side][2], nextYFrac), xFraction);
+
+				UVVERT quad[6] = {
+					{topLeft, xFraction, 1.0f - yFraction}, {topRight, nextXFrac, 1.0f - yFraction}, {bottomLeft, xFraction, 1.0f - nextYFrac},
+					{bottomLeft, xFraction, 1.0f - nextYFrac}, {topRight, nextXFrac, 1.0f - yFraction}, {bottomRight, xFraction, 1.0f - yFraction}
+				};
+
+				for (int i = 0; i < 6; ++i) {
+					vertices.push_back(quad[i]);
+					std::string texname = sides[side] + "_" + std::to_string(x) + "_" + std::to_string(y);
+					strcpy(vertices.back().texname, texname.c_str());
+				}
+			}
+		}
+	}
+}
+
+
 int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, ".utf8");
@@ -1007,6 +1088,13 @@ int main(int argc, char* argv[])
 #endif
 
 		fs::current_path(bspguy_dir);
+
+
+		std::vector<UVVERT> vertices;
+		vec3 mins(-64.0f, -64.0f, -64.0f);
+		vec3 maxs(64.0f, 64.0f, 64.0f);
+
+		CreateSkybox(vertices, mins, maxs);
 
 		if (fileExists("./log.txt"))
 		{
@@ -1201,7 +1289,7 @@ int main(int argc, char* argv[])
 			print_help(cli.command);
 			return 1;
 		}
-	}
+		}
 	catch (fs::filesystem_error& ex)
 	{
 		std::cout << "std::filesystem fatal error." << std::endl << "what():  " << ex.what() << '\n'
@@ -1223,5 +1311,5 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	return 0;
-}
+	}
 

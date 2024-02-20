@@ -200,7 +200,6 @@ public:
 	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool noTriangulate = false);
 	bool refreshModelClipnodes(int modelIdx);
 	void refreshFace(int faceIdx);
-	void refreshPointEnt(size_t entIdx);
 	void updateClipnodeOpacity(unsigned char newValue);
 
 	void reload(); // reloads all geometry, textures, and lightmaps

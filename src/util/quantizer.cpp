@@ -314,24 +314,18 @@ void Quantizer::FloydSteinbergDither256(COLOR3* image, int width, int height, un
 					image[j + width].r = FixBounds(image[j + width].r + (diff[0] * 5) / 16);
 					image[j + width].g = FixBounds(image[j + width].g + (diff[1] * 5) / 16);
 					image[j + width].b = FixBounds(image[j + width].b + (diff[2] * 5) / 16);
-					if (x > 0)
-					{
-						image[j + (width - 1)].r = FixBounds(image[j + (width - 1)].r + (diff[0] * 3) / 16);
-						image[j + (width - 1)].g = FixBounds(image[j + (width - 1)].g + (diff[1] * 3) / 16);
-						image[j + (width - 1)].b = FixBounds(image[j + (width - 1)].b + (diff[2] * 3) / 16);
-					}
 					if (x < width - 1)
 					{
 						image[j + width + 1].r = FixBounds(image[j + width + 1].r + (diff[0] * 1) / 16);
 						image[j + width + 1].g = FixBounds(image[j + width + 1].g + (diff[1] * 1) / 16);
-						image[j + width + 1].b = FixBounds(image[j + width + 1].b + (diff[1] * 1) / 16);
+						image[j + width + 1].b = FixBounds(image[j + width + 1].b + (diff[2] * 1) / 16);
 					}
 				}
-				if (x > 0)
+				if (x < width - 1)
 				{
-					image[j - 1].r = FixBounds(image[j - 1].r + (diff[0] * 7) / 16);
-					image[j - 1].g = FixBounds(image[j - 1].g + (diff[1] * 7) / 16);
-					image[j - 1].b = FixBounds(image[j - 1].b + (diff[2] * 7) / 16);
+					image[j + 1].r = FixBounds(image[j + 1].r + (diff[0] * 7) / 16);
+					image[j + 1].g = FixBounds(image[j + 1].g + (diff[1] * 7) / 16);
+					image[j + 1].b = FixBounds(image[j + 1].b + (diff[2] * 7) / 16);
 				}
 			}
 		}

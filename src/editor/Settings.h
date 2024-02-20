@@ -99,6 +99,7 @@ struct AppSettings
 	bool vsync;
 	bool mark_unused_texinfos;
 	bool merge_verts;
+	bool merge_edges;
 	bool start_at_entity;
 	bool backUpMap;
 	bool preserveCrc32;

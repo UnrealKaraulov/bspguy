@@ -489,10 +489,10 @@ void Renderer::renderLoop()
 	while (!glfwWindowShouldClose(window))
 	{
 		curTime = glfwGetTime();
-		if (vsync != 0 || abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
+		if (vsync != 0 || std::abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
 		{
 
-			if (abs(curTime - fpsTime) >= 0.50)
+			if (std::abs(curTime - fpsTime) >= 0.50)
 			{
 				fpsTime = curTime;
 				current_fps = frame_fps * 2;
@@ -816,7 +816,7 @@ void Renderer::renderLoop()
 			glfwSwapBuffers(window);
 			glfwPollEvents();
 
-			if (abs(curTime - mouseTime) >= 0.016)
+			if (std::abs(curTime - mouseTime) >= 0.016)
 			{
 				if (vsync != (g_settings.vsync ? 1 : 0))
 				{
@@ -1134,7 +1134,7 @@ void Renderer::drawModelOrigin(int modelIdx)
 
 void Renderer::drawTransformAxes()
 {
-	if (SelectedMap && pickInfo.selectedEnts.size() == 1 && pickInfo.selectedEnts[0] >= 0 && transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT && !modelUsesSharedStructures && !invalidSolid)
+	if (SelectedMap && pickInfo.selectedEnts.size() == 1 && transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT && !modelUsesSharedStructures && !invalidSolid)
 	{
 		if (SelectedMap->ents[pickInfo.selectedEnts[0]]->getBspModelIdx() > 0)
 		{
@@ -1478,16 +1478,16 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 				scaleTexinfos[i].oldS = info.vS;
 				scaleTexinfos[i].oldT = info.vT;
 			}
-		}
 
-		if (modelTransform >= 0)
-		{
-			BSPMODEL& model = map->models[modelTransform];
-			vec3 mins, maxs;
-			if (map->get_model_vertex_bounds(modelTransform, mins, maxs))
+			if (modelTransform >= 0)
 			{
-				model.nMins = mins;
-				model.nMaxs = maxs;
+				BSPMODEL& model = map->models[modelTransform];
+				vec3 mins, maxs;
+				if (map->get_model_vertex_bounds(modelTransform, mins, maxs))
+				{
+					model.nMins = mins;
+					model.nMaxs = maxs;
+				}
 			}
 		}
 
@@ -1512,7 +1512,7 @@ void Renderer::cameraRotationControls()
 			cameraAngles.z += drag.x * rotationSpeed * 0.1f;
 			cameraAngles.x += drag.y * rotationSpeed * 0.1f;
 
-			totalMouseDrag += vec2(abs(drag.x), abs(drag.y));
+			totalMouseDrag += vec2(std::abs(drag.x), std::abs(drag.y));
 
 			cameraAngles.x = clamp(cameraAngles.x, -90.0f, 90.0f);
 
@@ -1887,7 +1887,8 @@ void Renderer::pickObject()
 			if ((int)tmpPickInfo.selectedFaces[0] != last_face_idx)
 			{
 				last_face_idx = -1;
-				if (std::find(pickInfo.selectedFaces.begin(), pickInfo.selectedFaces.end(), tmpPickInfo.selectedFaces[0]) == pickInfo.selectedFaces.end())
+				auto it = std::find(pickInfo.selectedFaces.begin(), pickInfo.selectedFaces.end(), tmpPickInfo.selectedFaces[0]);
+				if (it == pickInfo.selectedFaces.end())
 				{
 					map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], 1);
 					pickInfo.selectedFaces.push_back(tmpPickInfo.selectedFaces[0]);
@@ -1896,7 +1897,7 @@ void Renderer::pickObject()
 				{
 					last_face_idx = (int)tmpPickInfo.selectedFaces[0];
 					map->getBspRender()->highlightFace(last_face_idx, 0);
-					pickInfo.selectedFaces.erase(std::find(pickInfo.selectedFaces.begin(), pickInfo.selectedFaces.end(), tmpPickInfo.selectedFaces[0]));
+					pickInfo.selectedFaces.erase(it);
 				}
 				pickCount++;
 			}
@@ -1918,14 +1919,6 @@ void Renderer::pickObject()
 		tmpPickInfo.selectedFaces.clear();
 
 		updateModelVerts();
-
-		if (pointEntWasSelected)
-		{
-			for (size_t i = 0; i < mapRenderers.size(); i++)
-			{
-				mapRenderers[i]->refreshPointEnt((int)entIdx[0]);
-			}
-		}
 
 		pickClickHeld = true;
 
@@ -2513,7 +2506,7 @@ void Renderer::drawLine(vec3& start, vec3& end, COLOR4 color)
 void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 {
 	vec3 ori = plane.vNormal * plane.fDist;
-	vec3 crossDir = abs(plane.vNormal.z) > 0.9f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
+	vec3 crossDir = std::abs(plane.vNormal.z) > 0.9f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
 	vec3 right = crossProduct(plane.vNormal, crossDir);
 	vec3 up = crossProduct(right, plane.vNormal);
 
@@ -2867,7 +2860,7 @@ vec3 Renderer::getAxisDragPoint(vec3 origin)
 	float dots[3]{};
 	for (int i = 0; i < 3; i++)
 	{
-		dots[i] = abs(dotProduct(cameraForward, axisNormals[i]));
+		dots[i] = std::abs(dotProduct(cameraForward, axisNormals[i]));
 	}
 
 	// best movement planee is most perpindicular to the camera direction
@@ -3014,7 +3007,14 @@ void Renderer::updateSelectionSize()
 		map->get_bounding_box(mins, maxs);
 		selectionSize = maxs - mins;
 	}
-	else if (modelIdx > 0)
+	else if (entIdx.size())
+	{
+		Entity* ent = map->ents[entIdx[0]];
+		EntCube* cube = pointEntRenderer->getEntCube(ent);
+		if (cube)
+			selectionSize = cube->maxs - cube->mins;
+	}
+	else 
 	{
 		vec3 mins, maxs;
 		if (!map->get_model_vertex_bounds(modelIdx, mins, maxs))
@@ -3024,13 +3024,7 @@ void Renderer::updateSelectionSize()
 		}
 		selectionSize = maxs - mins;
 	}
-	else if (entIdx.size())
-	{
-		Entity* ent = map->ents[entIdx[0]];
-		EntCube* cube = pointEntRenderer->getEntCube(ent);
-		if (cube)
-			selectionSize = cube->maxs - cube->mins;
-	}
+	
 }
 
 void Renderer::updateEntConnections()
@@ -3108,6 +3102,7 @@ void Renderer::updateEntConnections()
 
 	size_t numVerts = targets.size() * 2 + callers.size() * 2 + callerAndTarget.size() * 2;
 	size_t numPoints = callers.size() + targets.size() + callerAndTarget.size();
+
 	cVert* lines = new cVert[numVerts + 9];
 	cCube* points = new cCube[numPoints + 3];
 
@@ -3257,7 +3252,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 				int iPlane2 = it2->first;
 				BSPPLANE& p = map->planes[iPlane2];
 				float dist = dotProduct(midPoint, p.vNormal) - p.fDist;
-				if (abs(dist) < ON_EPSILON)
+				if (std::abs(dist) < ON_EPSILON)
 				{
 					edge.planes[planeCount % 2] = iPlane2;
 					planeCount++;
@@ -3311,7 +3306,7 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 	if (entIdx.empty() || !SelectedMap)
 		return;
 
-	bool scaleFromOrigin = abs(fromDir.x) < EPSILON && abs(fromDir.y) < EPSILON && abs(fromDir.z) < EPSILON;
+	bool scaleFromOrigin = std::abs(fromDir.x) < EPSILON && std::abs(fromDir.y) < EPSILON && std::abs(fromDir.z) < EPSILON;
 
 	vec3 minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	vec3 maxDist = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
@@ -3455,8 +3450,8 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 				float vsdiff = info.vS.length() - oldinfo.oldS.length();
 				float vtdiff = info.vT.length() - oldinfo.oldT.length();
 
-				shiftS += (refDist * vsdiff * abs(dotS)) * dotSm;
-				shiftT += (refDist * vtdiff * abs(dotT)) * dotTm;
+				shiftS += (refDist * vsdiff * std::abs(dotS)) * dotSm;
+				shiftT += (refDist * vtdiff * std::abs(dotT)) * dotTm;
 			}
 
 			info.shiftS = shiftS;
@@ -4209,7 +4204,7 @@ Texture* Renderer::giveMeTexture(const std::string& texname, const std::string& 
 				while (it != glExteralTextures_names.end())
 				{
 					idx = std::distance(glExteralTextures_names.begin(), it);
-					if (wadpart.empty() || glExteralTextures_wads[idx].find(toLowerCase(wadpart)) != std::string::npos)
+					if (glExteralTextures_wads[idx].find(toLowerCase(wadpart)) != std::string::npos)
 					{
 						return glExteralTextures_textures[idx];
 					}

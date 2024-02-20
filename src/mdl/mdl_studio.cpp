@@ -871,9 +871,9 @@ void StudioModel::RefreshMeshList(int body)
 
 	if (needForceUpdate)
 	{
-		if (abs(mins.x - maxs.x) > 512.f &&
-			abs(mins.y - maxs.y) > 512.f &&
-			abs(mins.z - maxs.z) > 512.f)
+		if (std::abs(mins.x - maxs.x) > 512.f &&
+			std::abs(mins.y - maxs.y) > 512.f &&
+			std::abs(mins.z - maxs.z) > 512.f)
 			ExtractBBox(mins, maxs);
 
 		if (mdl_cube != NULL)

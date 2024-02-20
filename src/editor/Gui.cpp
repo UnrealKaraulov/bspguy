@@ -341,7 +341,7 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 
 	STRUCTREMAP remap = STRUCTREMAP(map);
 	bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
-		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
+		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces, true);
 
 	if (!noclip && newClipnodes.size())
 	{
@@ -511,7 +511,6 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 
 	BspRenderer* rend = map->getBspRender();
 
-	rend->loadTextures();
 	rend->reuploadTextures();
 
 	rend->loadLightmaps();
@@ -585,7 +584,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 
 	STRUCTREMAP remap = STRUCTREMAP(src_map);
 	src_map->copy_bsp_model(model_id, bspModel, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
-		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
+		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces, true);
 
 	if (newEdges.size())
 	{
@@ -1583,7 +1582,7 @@ void Gui::drawBspContexMenu()
 
 							int try_again = false;
 							int newmodelid =
-								map->merge_two_models(ent1, ent2, try_again);
+								map->merge_two_models_ents(ent1, ent2, try_again);
 
 							int mdl1 = map->ents[ent1]->getBspModelIdx();
 							int mdl2 = map->ents[ent2]->getBspModelIdx();
@@ -2716,7 +2715,7 @@ void Gui::drawMenuBar()
 				{
 					if (ImGui::MenuItem(get_localized_string(LANG_0535).c_str(), NULL))
 					{
-						map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, 1);
+						map->ExportToObjWIP(g_working_dir, 1);
 					}
 
 					for (int scale = 2; scale < 10; scale++, scale++)
@@ -2724,7 +2723,7 @@ void Gui::drawMenuBar()
 						std::string scaleitem = "UpScale x" + std::to_string(scale);
 						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
 						{
-							map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, scale);
+							map->ExportToObjWIP(g_working_dir, scale);
 						}
 					}
 
@@ -2733,7 +2732,7 @@ void Gui::drawMenuBar()
 						std::string scaleitem = "DownScale x" + std::to_string(scale);
 						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
 						{
-							map->ExportToObjWIP(g_working_dir, EXPORT_XYZ, -scale);
+							map->ExportToObjWIP(g_working_dir, -scale);
 						}
 					}
 					ImGui::EndMenu();
@@ -3086,6 +3085,7 @@ void Gui::drawMenuBar()
 			ImGui::Separator();
 			if (ImGui::MenuItem(get_localized_string(LANG_0555).c_str(), NULL))
 			{
+				g_settings.save();
 				if (fileSize(g_settings_path) == 0)
 				{
 					g_settings.save();
@@ -3330,437 +3330,273 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::MenuItem("MDL to BSP (WIP)", NULL, false, app->pickInfo.selectedEnts.size() == 1 &&
+			static bool generateClipnodes = false;
+
+			if (ImGui::BeginMenu("MDL to BSP (WIP)", app->pickInfo.selectedEnts.size() == 1 &&
 				rend->renderEnts[app->pickInfo.selectedEnts[0]].mdl))
 			{
-				size_t ent = app->pickInfo.selectedEnts[0];
-				std::set<Texture*> added_textures;
-
-				if (rend->renderEnts[ent].mdl)
+				if (ImGui::MenuItem("Try to regenerate clipnodes", NULL, &generateClipnodes))
 				{
-					auto mdl = rend->renderEnts[ent].mdl;
-					if (mdl->mdl_mesh_groups.size())
+					//generateClipnodes = !generateClipnodes;
+				}
+
+				if (ImGui::MenuItem("Convert selected to BSP"))
+				{
+					size_t ent = app->pickInfo.selectedEnts[0];
+					std::set<Texture*> added_textures;
+
+					if (rend->renderEnts[ent].mdl)
 					{
-						int modelFirstFace = map->faceCount;
-						int modelFirstPlane = map->planeCount;
-						int modelFaces = 0;
-						int lightOffset = map->lightDataLength;
-
-						unsigned char* testlightdata = new unsigned char[map->lightDataLength + (512 * 512 * 3)];
-						memcpy(testlightdata, map->lightdata, map->lightDataLength);
-						memset(testlightdata + map->lightDataLength, 125, (512 * 512 * 3));
-						map->replace_lump(LUMP_LIGHTING, testlightdata, map->lightDataLength + (512 * 512 * 3));
-
-						vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-						vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-
-						for (size_t group = 0; group < mdl->mdl_mesh_groups.size(); group++)
+						auto mdl = rend->renderEnts[ent].mdl;
+						if (mdl->mdl_mesh_groups.size())
 						{
-							for (size_t meshid = 0; meshid < mdl->mdl_mesh_groups[group].size(); meshid++)
+							std::vector<vec3> all_verts;
+							std::vector<StudioMesh> merged_meshes;
+							for (size_t group = 0; group < mdl->mdl_mesh_groups.size(); group++)
 							{
-								auto mesh = mdl->mdl_mesh_groups[group][meshid];
-								modelVert* mdlVerts = (modelVert*)mesh.buffer->get_data();
-
-								std::vector<int> newVertIndexes;
-
-								size_t startVertCount = map->vertCount;
-								size_t newVertCount = startVertCount + mesh.buffer->numVerts;
-
-								vec3* newverts = new vec3[newVertCount];
-								memcpy(newverts, map->verts, startVertCount * sizeof(vec3));
-								map->replace_lump(LUMP_VERTICES, newverts, newVertCount * sizeof(vec3));
-								newverts = map->verts;
-
-								std::vector<vec2> newuv;
-								newuv.resize(newVertCount);
-
-								int v = 0;
-
-								for (v = (int)startVertCount; v < newVertCount; v++)
+								for (size_t meshid = 0; meshid < mdl->mdl_mesh_groups[group].size(); meshid++)
 								{
-									newverts[v] = mdlVerts[v - startVertCount].pos.flipUV();
-									newuv[v] = { mdlVerts[v - startVertCount].u, mdlVerts[v - startVertCount].v };
-									newVertIndexes.push_back(v);
-									expandBoundingBox(newverts[v], mins, maxs);
+									merged_meshes.push_back(mdl->mdl_mesh_groups[group][meshid]);
+
+									for (auto v : mdl->mdl_mesh_groups[group][meshid].verts)
+										all_verts.push_back(v.pos.flipUV());
 								}
+							}
+							bool is_valid_nodes = false;
+							int newModelIdx = map->import_mdl_to_bspmodel(merged_meshes, is_valid_nodes);
+
+							map->ents[ent]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
+							map->ents[ent]->setOrAddKeyvalue("classname", "func_wall");
+							rend->renderEnts[ent].mdl = NULL;
+
+							map->update_ent_lump();
+							map->save_undo_lightmaps();
+							map->resize_all_lightmaps();
+
+							rend->reuploadTextures();
+
+							rend->loadLightmaps();
+							rend->calcFaceMaths();
+							rend->preRenderFaces();
+							rend->preRenderEnts();
 
 
-								std::map<int, int> vertToSurfedge;
-								bool inverse = false;
-								unsigned int startEdge = map->edgeCount;
-								size_t newdedgescount = startEdge + (mesh.buffer->numVerts + 1) / 2;
-								BSPEDGE32* newedges = new BSPEDGE32[newdedgescount];
-								memcpy(newedges, map->edges, startEdge * sizeof(BSPEDGE32));
-								map->replace_lump(LUMP_EDGES, newedges, newdedgescount * sizeof(BSPEDGE32));
-								newedges = map->edges;
+							map->remove_unused_model_structures();
 
+							if (!is_valid_nodes && generateClipnodes)
+							{
+								int max_rows;
+								auto collision_list = make_collision_from_triangles(all_verts, max_rows);
+								std::reverse(collision_list.begin(), collision_list.end());
 
-								v = 0;
-								for (unsigned int i = 0; i < mesh.buffer->numVerts; i += 2)
+								std::vector<int> merged_models;
+								std::vector<BBOX> merged_cubes;
+								int errors = 0;
+
+								// PASS #1 [MERGE X]
+								for (auto& cube_list : collision_list)
 								{
-									unsigned int v0 = i;
-									unsigned int v1 = (i + 1) % mesh.buffer->numVerts;
-									newedges[startEdge + v] = BSPEDGE32((unsigned int)newVertIndexes[v0], (unsigned int)newVertIndexes[v1]);
-
-									vertToSurfedge[v0] = startEdge + v;
-									if (v1 > 0)
+									for (int z = max_rows; z >= 0; z--)
 									{
-										vertToSurfedge[v1] = -((int)(startEdge + v)); // negative = use second vert
-									}
-
-									v++;
-								}
-
-
-								inverse = false;
-
-								size_t startSurfedgeCount = map->surfedgeCount;
-								size_t newsurfedges_count = startSurfedgeCount + mesh.buffer->numVerts;
-								int* newsurfedges = new int[newsurfedges_count];
-								memcpy(newsurfedges, map->surfedges, startSurfedgeCount * sizeof(int));
-								map->replace_lump(LUMP_SURFEDGES, newsurfedges, newsurfedges_count * sizeof(int));
-								newsurfedges = map->surfedges;
-
-								for (v = (int)startSurfedgeCount; v < newsurfedges_count; v++)
-								{
-									newsurfedges[v] = vertToSurfedge[v - (int)startSurfedgeCount];
-								}
-
-								size_t numTriangles = mesh.buffer->numVerts / 3;
-								modelFaces += (int)numTriangles;
-
-								size_t startFaceCount = map->faceCount;
-								size_t newFaceCount = startFaceCount + numTriangles;
-								BSPFACE32* newfaces = new BSPFACE32[newFaceCount];
-								memcpy(newfaces, map->faces, startFaceCount * sizeof(BSPFACE32));
-								map->replace_lump(LUMP_FACES, newfaces, newFaceCount * sizeof(BSPFACE32));
-								newfaces = map->faces;
-
-								size_t startPlaneCount = map->planeCount;
-								size_t newPlaneCount = startPlaneCount + numTriangles;
-								BSPPLANE* newplanes = new BSPPLANE[newPlaneCount];
-								memcpy(newplanes, map->planes, startPlaneCount * sizeof(BSPPLANE));
-								map->replace_lump(LUMP_PLANES, newplanes, newPlaneCount * sizeof(BSPPLANE));
-								newplanes = map->planes;
-
-								size_t startTexinfoCount = map->texinfoCount;
-								size_t newTexinfosCount = startTexinfoCount + numTriangles;
-								BSPTEXTUREINFO* newtexinfos = new BSPTEXTUREINFO[newTexinfosCount];
-								memcpy(newtexinfos, map->texinfos, startTexinfoCount * sizeof(BSPTEXTUREINFO));
-								map->replace_lump(LUMP_TEXINFO, newtexinfos, newTexinfosCount * sizeof(BSPTEXTUREINFO));
-								newtexinfos = map->texinfos;
-
-								for (v = (int)startFaceCount; v < newFaceCount; v++)
-								{
-									int edgeIdx = (int)(startSurfedgeCount + (v - startFaceCount) * 3);
-
-									newfaces[v].iFirstEdge = edgeIdx;
-									newfaces[v].nEdges = 3;
-									newfaces[v].iPlane = (int)((v - startFaceCount) + startPlaneCount);
-									newfaces[v].iTextureInfo = (int)((v - startFaceCount) + startTexinfoCount);
-									newfaces[v].nLightmapOffset = lightOffset;
-									memset(newfaces[v].nStyles, 255, MAX_LIGHTMAPS);
-									newfaces[v].nStyles[0] = 0;
-
-
-									BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[v].iTextureInfo];
-									texInfo = BSPTEXTUREINFO();
-									int miptex = 0;
-
-									if (!added_textures.count(mesh.texture))
-									{
-										COLOR4* tmpDataTex = (COLOR4*)mesh.texture->get_data();
-
-										int newWidth = mesh.texture->width;
-										int newHeight = mesh.texture->height;
-										getTrueTexSize(newWidth, newHeight, MAX_TEXTURE_DIMENSION);
-
-										COLOR3* tmpData = new COLOR3[mesh.texture->width * mesh.texture->height];
-										if (mesh.texture->format == GL_RGBA)
+										std::vector<int> models_to_merge;
+										std::vector<BBOX> cubes_to_merge;
+										for (auto& cube : cube_list)
 										{
-											for (int i = 0; i < mesh.texture->width * mesh.texture->height; i++)
+											if (cube.row == z)
 											{
-												tmpData[i] = tmpDataTex[i].rgb();
+												int tmpModelIdx = map->create_solid(cube.mins, cube.maxs, 0, false);
+												BSPMODEL& model = map->models[tmpModelIdx];
+												model.iFirstFace = 0;
+												model.nFaces = 0;
+												models_to_merge.push_back(tmpModelIdx);
+												cubes_to_merge.push_back(cube);
 											}
 										}
-										else
+										if (models_to_merge.size() == 1)
 										{
-											memcpy(tmpData, tmpDataTex, mesh.texture->width * mesh.texture->height * sizeof(COLOR3));
+											merged_models.push_back(models_to_merge[0]);
+											merged_cubes.push_back(cubes_to_merge[0]);
 										}
-										added_textures.insert(mesh.texture);
-
-										if (newWidth != mesh.texture->width
-											|| newHeight != mesh.texture->height)
+										else if (models_to_merge.size() > 1)
 										{
-											std::vector<COLOR3> newData;
-											scaleImage(tmpData, newData, mesh.texture->width, mesh.texture->height,
-												newWidth, newHeight);
-											delete[] tmpData;
-											tmpData = new COLOR3[newWidth * newHeight];
-											std::copy(newData.begin(), newData.end(), tmpData);
-
-											if (GetImageColors(tmpData, newWidth * newHeight) > 256)
+											while (models_to_merge.size() > 1)
 											{
-												Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+												int tries = 0;
 
-												if (ditheringEnabled)
-													tmpCQuantizer->ApplyColorTableDither((COLOR3*)tmpData, newWidth, newHeight);
+												int idx1 = models_to_merge[0];
+												int idx2 = models_to_merge[1];
+
+												int merged_index = map->merge_two_models_idx(idx1, idx2, tries);
+												models_to_merge.erase(models_to_merge.begin());
+
+												if (merged_index >= 0)
+												{
+													models_to_merge[0] = merged_index;
+													if (idx2 == merged_index)
+													{
+														cubes_to_merge.erase(cubes_to_merge.begin());
+													}
+													else
+													{
+														std::swap(cubes_to_merge[1], cubes_to_merge[0]);
+														cubes_to_merge.erase(cubes_to_merge.begin());
+													}
+												}
 												else
-													tmpCQuantizer->ApplyColorTable((COLOR3*)tmpData, newWidth * newHeight);
-
-												delete tmpCQuantizer;
+												{
+													cubes_to_merge.erase(cubes_to_merge.begin());
+													errors++;
+												}
 											}
 
-											//memcpy(tmpData, newData.data(), newData.size() * sizeof(COLOR3));
+											merged_models.push_back(models_to_merge[0]);
+											merged_cubes.push_back(cubes_to_merge[0]);
 										}
+									}
+								}
 
-										std::string trueTexName = mesh.texture->texName;
-										while (trueTexName.size() > 15)
+								print_log(PRINT_BLUE, "Merged_cubes after first PASS {} !\n", merged_cubes.size() + errors);
+
+								// PASS #2 [MERGE Y]
+								std::vector<int> merged_models_pass2;
+								std::vector<BBOX> merged_cubes_pass2;
+
+								for (int z = max_rows; z >= 0; z--)
+								{
+									std::vector<int> models_to_merge;
+									std::vector<BBOX> cubes_to_merge;
+
+									for (int cube = 0; cube < merged_cubes.size(); cube++)
+									{
+										if (merged_cubes[cube].row == z)
 										{
-											trueTexName.erase(trueTexName.begin());
+											int tmpModelIdx = merged_models[cube];
+											models_to_merge.push_back(tmpModelIdx);
+											cubes_to_merge.push_back(merged_cubes[cube]);
+										}
+									}
+									if (models_to_merge.size() == 1)
+									{
+										merged_models_pass2.push_back(models_to_merge[0]);
+										merged_cubes_pass2.push_back(cubes_to_merge[0]);
+									}
+									else if (models_to_merge.size() > 1)
+									{
+										while (models_to_merge.size() > 1)
+										{
+											int tries = 0;
+
+											int idx1 = models_to_merge[0];
+											int idx2 = models_to_merge[1];
+
+											int merged_index = map->merge_two_models_idx(idx1, idx2, tries);
+											models_to_merge.erase(models_to_merge.begin());
+
+											if (merged_index >= 0)
+											{
+												models_to_merge[0] = merged_index;
+												if (idx2 == merged_index)
+												{
+													cubes_to_merge.erase(cubes_to_merge.begin());
+												}
+												else
+												{
+													std::swap(cubes_to_merge[1], cubes_to_merge[0]);
+													cubes_to_merge.erase(cubes_to_merge.begin());
+												}
+											}
+											else
+											{
+												cubes_to_merge.erase(cubes_to_merge.begin());
+												errors++;
+											}
 										}
 
-										miptex = map->add_texture(trueTexName.c_str(), (unsigned char*)tmpData, newWidth,
-											newHeight);
+										merged_models_pass2.push_back(models_to_merge[0]);
+										merged_cubes_pass2.push_back(cubes_to_merge[0]);
+									}
+								}
 
-										delete[] tmpData;
+								// PASS #3 [MERGE Z]
+								std::vector<int> models_to_merge_pass3;
+
+								for (int z = max_rows; z >= 0; z--)
+								{
+									for (int cube = 0; cube < merged_cubes_pass2.size(); cube++)
+									{
+										if (merged_cubes_pass2[cube].row == z)
+										{
+											models_to_merge_pass3.push_back(merged_models_pass2[cube]);
+										}
+									}
+								}
+
+								print_log(PRINT_BLUE, "Merged_cubes after second PASS {} !\n", merged_cubes_pass2.size() + errors);
+								while (models_to_merge_pass3.size() > 1)
+								{
+									int tries = 0;
+
+									int idx1 = models_to_merge_pass3[0];
+									int idx2 = models_to_merge_pass3[1];
+
+									int merged_index = map->merge_two_models_idx(idx1, idx2, tries);
+									models_to_merge_pass3.erase(models_to_merge_pass3.begin());
+
+									if (merged_index >= 0)
+									{
+										models_to_merge_pass3[0] = merged_index;
 									}
 									else
 									{
-										std::string trueTexName = mesh.texture->texName;
-										while (trueTexName.size() > 15)
-										{
-											trueTexName.erase(trueTexName.begin());
-										}
-										map->find_embedded_texture(trueTexName.c_str(), miptex);
+										errors++;
 									}
-
-									BSPPLANE& plane = newplanes[newfaces[v].iPlane];
-
-									// Compute tangent and bitangent
-									int vert_id1 = newsurfedges[edgeIdx + 0] < 0 ? newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[1]
-										: newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[0];
-									vec3 vertex1 = newverts[vert_id1];
-
-									int vert_id2 = newsurfedges[edgeIdx + 1] < 0 ? newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[1]
-										: newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[0];
-									vec3 vertex2 = newverts[vert_id2];
-
-									int vert_id3 = newsurfedges[edgeIdx + 2] < 0 ? newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[1]
-										: newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[0];
-									vec3 vertex3 = newverts[vert_id3];
-
-
-
-									//if ((abs(vertex1.x - vertex3.x) < 0.2 &&
-									//	abs(vertex1.y - vertex3.y) < 0.2 &&
-									//	abs(vertex1.z - vertex3.z) < 0.2) || vert_id1 == vert_id3)
-									//{
-									//	print_log(PRINT_RED, "vert1 {} {} {} vert3 {} {} {} vert1_id {} vert2_id {}\n",
-									//		vertex1.x, vertex1.y, vertex1.z, vertex3.x, vertex3.y, vertex3.z, vert_id1,
-									//		vert_id3);
-									//	vertex3.z += 0.2;
-									//}
-									//if ((abs(vertex2.x - vertex3.x) < 0.2 &&
-									//	abs(vertex2.y - vertex3.y) < 0.2 &&
-									//	abs(vertex2.z - vertex3.z) < 0.2) || vert_id2 == vert_id3)
-									//{
-									//	print_log(PRINT_RED, "vert2 {} {} {} vert3 {} {} {} vert1_id {} vert2_id {}\n",
-									//		vertex2.x, vertex2.y, vertex2.z, vertex3.x, vertex3.y, vertex3.z, vert_id2,
-									//		vert_id3);
-									//	vertex3.z += 0.2;
-									//}
-									//if ((abs(vertex2.x - vertex1.x) < 0.2 &&
-									//	abs(vertex2.y - vertex1.y) < 0.2 &&
-									//	abs(vertex2.z - vertex1.z) < 0.2) || vert_id2 == vert_id1)
-									//{
-									//	print_log(PRINT_RED, "vert2 {} {} {} vert1 {} {} {} vert1_id {} vert2_id {}\n",
-									//		vertex2.x, vertex2.y, vertex2.z, vertex1.x, vertex1.y, vertex1.z, vert_id2,
-									//		vert_id1);
-									//	vertex2.z += 0.2;
-									//}
-
-									std::vector<vec3> vertexes{};
-									vertexes.push_back(vertex1);
-									vertexes.push_back(vertex2);
-									vertexes.push_back(vertex3);
-									// Texture coordinates
-									std::vector<vec2> uvs{};
-									uvs.push_back(newsurfedges[edgeIdx + 0] < 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[1]]
-										: newuv[newedges[abs(newsurfedges[edgeIdx])].iVertex[0]]);
-									uvs.push_back(newsurfedges[edgeIdx + 1] < 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[1]]
-										: newuv[newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[0]]);
-									uvs.push_back(newsurfedges[edgeIdx + 2] < 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[1]]
-										: newuv[newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[0]]);
-									/**/
-									for (auto& uv : uvs)
-									{
-										int newWidth = mesh.texture->width;
-										int newHeight = mesh.texture->height;
-
-										getTrueTexSize(newWidth, newHeight);
-										uv.x *= newWidth;
-										uv.y *= newHeight;
-									}
-
-									//// Compute edges and delta UVs
-									//vec3 edge1 = vertexes[1] - vertexes[0];
-									//vec3 edge2 = vertexes[2] - vertexes[0];
-
-									//vec3 normal = crossProduct(edge1, edge2).normalize();
-
-									//// Calculate the distance from the origin
-									//float dist = getDistAlongAxis(normal, vertex1);
-									//plane.vNormal = normal;
-									//plane.fDist = dist;
-
-
-										// Compute edges and delta UVs
-									vec3 edge1 = vertexes[1] - vertexes[0];
-									vec3 edge2 = vertexes[2] - vertexes[0];
-
-									vec3 normal = crossProduct(edge1, edge2).normalize().invert();
-
-									// Calculate the distance from the origin
-									float dist = getDistAlongAxis(normal, vertex1);
-									plane.vNormal = normal;
-									plane.fDist = dist;
-
-									newfaces[v].nPlaneSide = plane.update_plane(plane.vNormal, plane.fDist);
-
-									calculateTextureInfo(texInfo, vertexes, uvs);
-									texInfo.iMiptex = miptex;
 								}
 
-								for (size_t f = startFaceCount; f < newFaceCount; f++)
+								print_log(PRINT_BLUE, "Merged_cubes after finall PASS {} !\n", models_to_merge_pass3.size() + errors);
+
+								/*STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
+								map->mark_model_structures(models_to_merge_pass3[0], &modelUsage, true);
+
+								for (int i = 0; i < map->planeCount; i++)
 								{
-									int tmins[2];
-									int tmaxs[2];
-									if (!GetFaceExtents(map, (int)f, tmins, tmaxs))
+									if (modelUsage.planes[i])
 									{
-										BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[f].iTextureInfo];
-										texInfo.nFlags = TEX_SPECIAL;
+										map->planes[i].fDist = std::signbit(map->planes[i].fDist) ? map->planes[i].fDist - 1.f : map->planes[i].fDist + 1.f;
 									}
-								}
-							}
-						}
+								}*/
 
-						vec3 origin = getCenter(maxs, mins);
 
-						int newModelIdx = map->modelCount;
+								map->models[newModelIdx].iHeadnodes[0] = map->models[models_to_merge_pass3[0]].iHeadnodes[0];
+								map->models[newModelIdx].iHeadnodes[1] = map->models[models_to_merge_pass3[0]].iHeadnodes[1];
+								map->models[newModelIdx].iHeadnodes[2] = map->models[models_to_merge_pass3[0]].iHeadnodes[2];
+								map->models[newModelIdx].iHeadnodes[3] = map->models[models_to_merge_pass3[0]].iHeadnodes[3];
+								map->models[newModelIdx].nVisLeafs = map->models[models_to_merge_pass3[0]].nVisLeafs;
 
-						BSPMODEL* newmodels = new BSPMODEL[newModelIdx + 1];
-						memcpy(newmodels, map->models, newModelIdx * sizeof(BSPMODEL));
 
-						newmodels[newModelIdx].nMins = mins;
-						newmodels[newModelIdx].nMaxs = maxs;
-						newmodels[newModelIdx].vOrigin = vec3();
-						newmodels[newModelIdx].iFirstFace = modelFirstFace;
-						newmodels[newModelIdx].nFaces = modelFaces;
-						newmodels[newModelIdx].nVisLeafs = 1;
+								map->models[models_to_merge_pass3[0]].iHeadnodes[0] =
+									map->models[models_to_merge_pass3[0]].iHeadnodes[1] =
+									map->models[models_to_merge_pass3[0]].iHeadnodes[2] =
+									map->models[models_to_merge_pass3[0]].iHeadnodes[3] = 0;
+								map->models[models_to_merge_pass3[0]].iFirstFace = 0;
+								map->models[models_to_merge_pass3[0]].nFaces = 0;
+								map->models[models_to_merge_pass3[0]].nVisLeafs = 0;
 
-						map->create_leaf(CONTENTS_EMPTY);
-						map->leaves[map->leafCount - 1].nMins = mins + 1.0f;
-						map->leaves[map->leafCount - 1].nMaxs = maxs - 1.0f;
-						map->leaves[map->leafCount - 1].nVisOffset = -1;
-
-						for (int i = modelFirstFace; i < modelFirstFace + modelFaces; i++)
-						{
-							map->leaf_add_face(i, map->leafCount - 1);
-						}
-
-						unsigned int startNode = map->nodeCount;
-						{
-							int newnodecount = map->nodeCount + modelFaces + 2;
-							BSPNODE32* newNodes = new BSPNODE32[newnodecount];
-							memcpy(newNodes, map->nodes, map->nodeCount * sizeof(BSPNODE32));
-
-							int sharedSolidLeaf = 0;
-							int anyEmptyLeaf = map->leafCount - 1;
-
-							for (size_t k = 0; k < modelFaces; k++)
-							{
-								BSPNODE32& node = newNodes[map->nodeCount + k];
-
-								node.iFirstFace = (int)(modelFirstFace + k); // face required for decals
-								node.nFaces = 1;
-								node.iPlane = (int)(modelFirstPlane + k);
-								node.nMins = node.nMaxs = vec3();
-								// node mins/maxs don't matter for submodels. Leave them at 0.
-
-								int insideContents = modelFaces > 0 && k + 1 == modelFaces ? ~sharedSolidLeaf : (int)(map->nodeCount + k + 1);
-								int outsideContents = ~anyEmptyLeaf;
-
-								// can't have negative normals on planes so children are swapped instead
-								if (map->faces[node.iFirstFace].nPlaneSide == 1)
-								{
-									node.iChildren[0] = insideContents;
-									node.iChildren[1] = outsideContents;
-								}
-								else
-								{
-									node.iChildren[0] = outsideContents;
-									node.iChildren[1] = insideContents;
-								}
-
-								if (k + 1 == modelFaces)
-								{
-									if (!map->faces[node.iFirstFace].nPlaneSide)
-									{
-										node.iChildren[0] = (int)(map->nodeCount + k + 1);
-										node.iChildren[1] = (int)(map->nodeCount + k + 2);
-									}
-									else
-									{
-										node.iChildren[0] = (int)(map->nodeCount + k + 2);
-										node.iChildren[1] = (int)(map->nodeCount + k + 1);
-									}
-
-									BSPNODE32& lastnode1 = newNodes[map->nodeCount + k + 1];
-									lastnode1 = node;
-									lastnode1.iChildren[0] = ~sharedSolidLeaf;
-									lastnode1.iChildren[1] = outsideContents;
-
-									BSPNODE32& lastnode2 = newNodes[map->nodeCount + k + 2];
-									lastnode2 = node;
-									lastnode2.iChildren[0] = outsideContents;
-									lastnode2.iChildren[1] = ~sharedSolidLeaf;
-								}
+								print_log(PRINT_BLUE, "Very bad clipnodes regenerated with {} errors!\n", errors);
+								map->remove_unused_model_structures();
 							}
 
-							map->replace_lump(LUMP_NODES, newNodes, newnodecount * sizeof(BSPNODE32));
+
+							map->getBspRender()->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+
+							app->reloading = true;
+							map->getBspRender()->reload();
+							app->reloading = false;
 						}
-
-						newmodels[newModelIdx].iHeadnodes[0] = startNode;
-
-						newmodels[newModelIdx].iHeadnodes[1] = CONTENTS_EMPTY;
-						newmodels[newModelIdx].iHeadnodes[2] = CONTENTS_EMPTY;
-						newmodels[newModelIdx].iHeadnodes[3] = CONTENTS_EMPTY;
-
-						map->replace_lump(LUMP_MODELS, newmodels, (newModelIdx + 1) * sizeof(BSPMODEL));
-
-						map->ents[ent]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
-						map->ents[ent]->setOrAddKeyvalue("classname", "cycler_sprite");
-						rend->renderEnts[ent].mdl = NULL;
-
-						map->update_ent_lump();
-						map->save_undo_lightmaps();
-						map->resize_all_lightmaps();
-
-						rend->loadTextures();
-						rend->reuploadTextures();
-
-						rend->loadLightmaps();
-						rend->calcFaceMaths();
-						rend->preRenderFaces();
-						rend->preRenderEnts();
-
-						map->regenerate_clipnodes(newModelIdx, -1);
-
-						map->getBspRender()->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 				}
+				ImGui::EndMenu();
 			}
+
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
@@ -3924,7 +3760,7 @@ void Gui::drawMenuBar()
 
 				for (float scale_val = 0.25f; scale_val <= 2.0f; scale_val += 0.25f)
 				{
-					if (abs(scale_val - 1.0f) > EPSILON && ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
+					if (std::abs(scale_val - 1.0f) > EPSILON && ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
 					{
 						if (ScaleOnlySelected)
 						{
@@ -3972,7 +3808,7 @@ void Gui::drawMenuBar()
 								if (app->pickInfo.IsSelectedEnt(i))
 								{
 									vec3 neworigin = map->ents[i]->origin * scale_val;
-									neworigin.z += abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
+									neworigin.z += std::abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
 									map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
 								}
 							}
@@ -4022,7 +3858,7 @@ void Gui::drawMenuBar()
 							for (size_t i = 0; i < map->ents.size(); i++)
 							{
 								vec3 neworigin = map->ents[i]->origin * scale_val;
-								neworigin.z += abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
+								neworigin.z += std::abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
 								map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
 							}
 							for (int i = 0; i < map->nodeCount; i++)
@@ -4732,9 +4568,9 @@ void Gui::drawMenuBar()
 		if (ImGui::BeginMenu(get_localized_string(LANG_0601).c_str()))
 		{
 #ifdef WIN32
-			if (ImGui::MenuItem("Console", NULL, &g_console_visibled))
+			if (ImGui::MenuItem("Console", NULL, &g_console_visible))
 			{
-				showConsoleWindow(g_console_visibled);
+				showConsoleWindow(g_console_visible);
 			}
 #endif
 			Bsp* selectedMap = app->getSelectedMap();
@@ -4973,7 +4809,7 @@ void Gui::drawMenuBar()
 						{
 							mat4x4 scaleMat;
 							scaleMat.loadIdentity();
-							scaleMat.scale(1.0f/2.0f, 1.0f / 2.0f, 1.0f / 2.0f);
+							scaleMat.scale(1.0f / 2.0f, 1.0f / 2.0f, 1.0f / 2.0f);
 							BSPTEXTUREINFO& info = map->texinfos[i];
 
 							info.vS = (scaleMat * vec4(info.vS, 1)).xyz();
@@ -6619,11 +6455,11 @@ void Gui::drawKeyvalueEditor_RawEditTab(size_t entIdx)
 										vec3 newOrigin = parseVector(data->Buf);
 										vec3 oldOrigin = parseVector(selent->keyvalues[key]);
 										vec3 testOrigin = newOrigin - oldOrigin;
-										if (abs(testOrigin.x) > EPSILON2)
+										if (std::abs(testOrigin.x) > EPSILON2)
 										{
 											part_vec = 0;
 										}
-										else if (abs(testOrigin.y) > EPSILON2)
+										else if (std::abs(testOrigin.y) > EPSILON2)
 										{
 											part_vec = 1;
 										}
@@ -8074,6 +7910,15 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted(get_localized_string(LANG_0748).c_str());
 				ImGui::EndTooltip();
 			}
+
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::Checkbox("Merge edges [WIP]", &g_settings.merge_verts);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Warning! This option can add visual glitches to map.");
+				ImGui::EndTooltip();
+			}
+
 			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::Text(get_localized_string(LANG_0749).c_str());
 
@@ -10811,9 +10656,8 @@ void Gui::drawFaceEditorWidget()
 
 							validTexture = true;
 							newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
-
-							mapRenderer->loadTextures();
 							mapRenderer->reuploadTextures();
+							mapRenderer->preRenderFaces();
 
 							delete[] imageData;
 							delete wadTex;
@@ -10830,8 +10674,8 @@ void Gui::drawFaceEditorWidget()
 					std::vector<COLOR3> img(width * height, rndColor);
 					validTexture = true;
 					newMiptex = map->add_texture(textureName, (unsigned char*)img.data(), width, height);
-					mapRenderer->loadTextures();
 					mapRenderer->reuploadTextures();
+					mapRenderer->preRenderFaces();
 				}
 			}
 
@@ -11904,7 +11748,8 @@ void Gui::drawFaceEditorWidget()
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Create new laef with same settings.");
+				ImGui::TextUnformatted("Create new leaf with same settings.");
+				ImGui::TextUnformatted("(BUT NOT WORKING!)");
 				ImGui::EndTooltip();
 			}
 

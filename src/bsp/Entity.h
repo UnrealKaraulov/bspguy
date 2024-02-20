@@ -31,7 +31,7 @@ public:
 		hide = false;
 	}
 
-	Entity(const std::string& classname)
+	Entity(const std::string& _classname)
 	{
 		hide = false;
 		cachedModelIdx = -2;
@@ -41,7 +41,7 @@ public:
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
 		targetsCached = false;
-		setOrAddKeyvalue("classname", classname);
+		setOrAddKeyvalue("classname", _classname);
 	}
 	void addKeyvalue(const std::string key, const std::string value, bool multisupport = false);
 	void removeKeyvalue(const std::string key);

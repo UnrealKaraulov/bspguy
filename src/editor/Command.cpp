@@ -88,10 +88,6 @@ void EditEntityCommand::refresh()
 	if (!ent)
 		return;
 	renderer->refreshEnt(entIdx);
-	if (!ent->isBspModel())
-	{
-		renderer->refreshPointEnt(entIdx);
-	}
 	pickCount++; // force GUI update
 	g_app->updateModelVerts();
 }
@@ -309,10 +305,10 @@ void DuplicateBspModelCommand::undo()
 
 	map->update_ent_lump();
 	renderer->loadLightmaps();
+	renderer->reuploadTextures();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
-	renderer->reloadTextures();
 	g_app->gui->refresh();
 }
 
@@ -403,14 +399,13 @@ void CreateBspModelCommand::execute()
 	//
 
 	renderer->loadLightmaps();
+	if (NeedreloadTextures)
+		renderer->reuploadTextures();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
-	if (NeedreloadTextures)
-		renderer->reloadTextures();
 	renderer->addClipnodeModel(modelIdx);
 	//renderer->reload();
-
 
 	g_app->gui->refresh();
 }
@@ -559,7 +554,8 @@ void EditBspModelCommand::undo()
 	{
 		if (renderer)
 		{
-			renderer->reloadTextures();
+			renderer->reuploadTextures();
+			renderer->preRenderFaces();
 		}
 	}
 	if (targetLumps & FL_LIGHTING)

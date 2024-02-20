@@ -76,15 +76,15 @@ struct vec3
 
 	vec3(float x, float y, float z) : x(x), y(y), z(z)
 	{
-		if (::abs(x) < EPSILON2)
+		if (std::abs(x) < EPSILON2)
 		{
 			x = +0.00f;
 		}
-		if (::abs(y) < EPSILON2)
+		if (std::abs(y) < EPSILON2)
 		{
 			y = +0.00f;
 		}
-		if (::abs(z) < EPSILON2)
+		if (std::abs(z) < EPSILON2)
 		{
 			z = +0.00f;
 		}
@@ -200,16 +200,16 @@ struct vec2
 	float x, y;
 	vec2() : x(0), y(0)
 	{
-		if (abs(x) < EPSILON)
+		if (std::abs(x) < EPSILON)
 			x = +0.0f;
-		if (abs(y) < EPSILON)
+		if (std::abs(y) < EPSILON)
 			y = +0.0f;
 	}
 	vec2(float x, float y) : x(x), y(y)
 	{
-		if (abs(x) < EPSILON)
+		if (std::abs(x) < EPSILON)
 			x = +0.0f;
-		if (abs(y) < EPSILON)
+		if (std::abs(y) < EPSILON)
 			y = +0.0f;
 	}
 	vec2 swap();
@@ -249,44 +249,44 @@ struct vec4
 	}
 	vec4(float x, float y, float z) : x(x), y(y), z(z), w(1)
 	{
-		if (abs(x) < EPSILON)
+		if (std::abs(x) < EPSILON)
 			x = +0.0f;
-		if (abs(y) < EPSILON)
+		if (std::abs(y) < EPSILON)
 			y = +0.0f;
-		if (abs(z) < EPSILON)
+		if (std::abs(z) < EPSILON)
 			z = +0.0f;
 	}
 	vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w)
 	{
-		if (abs(x) < EPSILON)
+		if (std::abs(x) < EPSILON)
 			x = +0.0f;
-		if (abs(y) < EPSILON)
+		if (std::abs(y) < EPSILON)
 			y = +0.0f;
-		if (abs(z) < EPSILON)
+		if (std::abs(z) < EPSILON)
 			z = +0.0f;
-		if (abs(w) < EPSILON)
+		if (std::abs(w) < EPSILON)
 			w = +0.0f;
 	}
 	vec4(const vec3& v, float a) : x(v.x), y(v.y), z(v.z), w(a)
 	{
-		if (abs(x) < EPSILON)
+		if (std::abs(x) < EPSILON)
 			x = +0.0f;
-		if (abs(y) < EPSILON)
+		if (std::abs(y) < EPSILON)
 			y = +0.0f;
-		if (abs(z) < EPSILON)
+		if (std::abs(z) < EPSILON)
 			z = +0.0f;
-		if (abs(w) < EPSILON)
+		if (std::abs(w) < EPSILON)
 			w = +0.0f;
 	}
 	vec4(const COLOR4& c) : x(c.r / 255.0f), y(c.g / 255.0f), z(c.b / 255.0f), w(c.a / 255.0f)
 	{
-		if (abs(x) < EPSILON)
+		if (std::abs(x) < EPSILON)
 			x = +0.0f;
-		if (abs(y) < EPSILON)
+		if (std::abs(y) < EPSILON)
 			y = +0.0f;
-		if (abs(z) < EPSILON)
+		if (std::abs(z) < EPSILON)
 			z = +0.0f;
-		if (abs(w) < EPSILON)
+		if (std::abs(w) < EPSILON)
 			w = +0.0f;
 	}
 	vec3 xyz();

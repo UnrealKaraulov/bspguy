@@ -26,7 +26,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 			{
 				MAPBLOCK& block = blocks[z][y][x];
 
-				if (abs(block.offset.x) >= EPSILON || abs(block.offset.y) >= EPSILON || abs(block.offset.z) >= EPSILON)
+				if (std::abs(block.offset.x) >= EPSILON || std::abs(block.offset.y) >= EPSILON || std::abs(block.offset.z) >= EPSILON)
 				{
 					print_log("    Apply offset ({:6.0f}, {:6.0f}, {:6.0f}) to {}\n",
 						block.offset.x, block.offset.y, block.offset.z, block.map->bsp_name.c_str());
@@ -1142,7 +1142,7 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB)
 		bool isUnique = true;
 		for (int k = 0; k < mapA.planeCount; k++)
 		{
-			if (abs(mapB.planes[i].fDist - mapA.planes[k].fDist) < EPSILON
+			if (std::abs(mapB.planes[i].fDist - mapA.planes[k].fDist) < EPSILON
 				&& mapB.planes[i].nType == mapA.planes[k].nType
 				&& mapB.planes[i].vNormal == mapA.planes[k].vNormal)
 			{
@@ -1321,8 +1321,8 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB)
 		{
 			if (info.iMiptex == mapA.texinfos[k].iMiptex
 				&& info.nFlags == mapA.texinfos[k].nFlags
-				&& abs(info.shiftS - mapA.texinfos[k].shiftS) < EPSILON
-				&& abs(info.shiftT - mapA.texinfos[k].shiftT) < EPSILON
+				&& std::abs(info.shiftS - mapA.texinfos[k].shiftS) < EPSILON
+				&& std::abs(info.shiftT - mapA.texinfos[k].shiftT) < EPSILON
 				&& info.vS == mapA.texinfos[k].vS
 				&& info.vT == mapA.texinfos[k].vT)
 			{

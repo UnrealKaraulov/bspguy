@@ -4,7 +4,7 @@
 #include <string.h>
 #include "Renderer.h"
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, size_t numVerts, int primitive)
+VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, size_t _numVerts, int primitive)
 {
 	frameId = (size_t)-1;
 	uploaded = false;
@@ -13,7 +13,7 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, size_t numVe
 	ownData = false;
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
-	setData(dat, numVerts);
+	setData(dat, _numVerts);
 }
 
 VertexBuffer::~VertexBuffer() {
