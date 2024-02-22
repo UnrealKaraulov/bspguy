@@ -647,7 +647,7 @@ void BspRenderer::loadLightmaps()
 	lightmapsGenerated = true;
 
 
-	//preRenderFaces();
+	preRenderFaces();
 }
 
 void BspRenderer::updateLightmapInfos()
