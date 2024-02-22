@@ -515,7 +515,6 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 
 	rend->loadLightmaps();
 	rend->calcFaceMaths();
-	rend->preRenderFaces();
 	rend->preRenderEnts();
 
 	map->getBspRender()->pushModelUndoState("IMPORT MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
@@ -1300,7 +1299,7 @@ void Gui::drawBspContexMenu()
 				if (ImGui::MenuItem(get_localized_string(LANG_0453).c_str(), get_localized_string(LANG_0454).c_str()))
 				{
 					map->ents[entIdxs[0]]->hide = false;
-					rend->preRenderEnts();
+					rend->refreshEnt(entIdxs[0]);
 					app->updateEntConnections();
 				}
 			}
@@ -1527,10 +1526,6 @@ void Gui::drawBspContexMenu()
 							}
 						}
 						map->update_ent_lump();
-
-						map->resize_all_lightmaps();
-						rend->loadLightmaps();
-
 						rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 
 						pickCount++;
@@ -1622,7 +1617,6 @@ void Gui::drawBspContexMenu()
 
 						map->getBspRender()->loadLightmaps();
 						map->getBspRender()->calcFaceMaths();
-						map->getBspRender()->preRenderFaces();
 						map->getBspRender()->preRenderEnts();
 
 						map->getBspRender()->pushModelUndoState("MERGE {} and {} SELECTED BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
@@ -3252,7 +3246,6 @@ void Gui::drawMenuBar()
 				}
 				rend->loadLightmaps();
 				rend->calcFaceMaths();
-				rend->preRenderFaces();
 				rend->preRenderEnts();
 			}*/
 
@@ -3379,8 +3372,7 @@ void Gui::drawMenuBar()
 
 							rend->loadLightmaps();
 							rend->calcFaceMaths();
-							rend->preRenderFaces();
-							rend->preRenderEnts();
+							rend->refreshEnt(ent);
 
 
 							map->remove_unused_model_structures();
@@ -3734,8 +3726,6 @@ void Gui::drawMenuBar()
 
 				rend->loadLightmaps();
 				rend->calcFaceMaths();
-				rend->preRenderFaces();
-				rend->preRenderEnts();
 
 				map->update_ent_lump();
 				map->update_lump_pointers();
@@ -3883,7 +3873,6 @@ void Gui::drawMenuBar()
 
 						rend->loadLightmaps();
 						rend->calcFaceMaths();
-						rend->preRenderFaces();
 						rend->preRenderEnts();
 						rend->reloadClipnodes();
 
@@ -3906,8 +3895,6 @@ void Gui::drawMenuBar()
 					map->resize_all_lightmaps();
 					rend->loadLightmaps();
 					rend->calcFaceMaths();
-					rend->preRenderFaces();
-					rend->preRenderEnts();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -3930,8 +3917,6 @@ void Gui::drawMenuBar()
 					map->resize_all_lightmaps();
 					rend->loadLightmaps();
 					rend->calcFaceMaths();
-					rend->preRenderFaces();
-					rend->preRenderEnts();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -3954,8 +3939,6 @@ void Gui::drawMenuBar()
 
 						rend->loadLightmaps();
 						rend->calcFaceMaths();
-						rend->preRenderFaces();
-						rend->preRenderEnts();
 
 						map->update_ent_lump();
 						map->update_lump_pointers();
@@ -4683,7 +4666,6 @@ void Gui::drawMenuBar()
 
 					rend->loadLightmaps();
 					rend->calcFaceMaths();
-					rend->preRenderFaces();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -4709,7 +4691,7 @@ void Gui::drawMenuBar()
 
 					map->update_ent_lump();
 
-					rend->preRenderEnts();
+					rend->refreshEnt(map->ents.size() - 1);
 
 					//./primitives/skytest/sky_up.png
 					//./primitives/skytest/sky_dn.png
@@ -5282,6 +5264,9 @@ void Gui::drawDebugWidget()
 						}
 					}
 				}
+
+				ImGui::Text("Pick count: %d. \nVert pick count: %d", pickCount, vertPickCount);
+				ImGui::Text("Model verts: %d. \nModel faces: %d", app->modelVerts.size(), app->modelFaceVerts.size());
 				ImGui::Text("KEYS: %s", keysStr.c_str());
 				ImGui::Text(fmt::format("Time: {}", (float)app->curTime).c_str());
 				ImGui::Text(fmt::format("canControl:{}\noldControl:{}\nNo WantTextInput:{}", app->canControl, app->oldControl, !imgui_io->WantTextInput).c_str());
@@ -5542,6 +5527,12 @@ void Gui::drawDebugWidget()
 				app->showDragAxes, app->movingEnt, app->anyAltPressed).c_str());
 
 			ImGui::Text(fmt::format("hoverAxis:{}", app->hoverAxis).c_str());
+
+			ImGui::Text(fmt::format("anyVertSelected:{}", app->anyVertSelected).c_str());
+			ImGui::Text(fmt::format("anyEdgeSelected:{}", app->anyEdgeSelected).c_str());
+			ImGui::Text(fmt::format("hoverEdge:{}", app->hoverEdge).c_str());
+			ImGui::Text(fmt::format("hoverVert:{}", app->hoverVert).c_str());
+			ImGui::Text(fmt::format("pickClickHeld:{}", app->pickClickHeld).c_str());
 
 			ImGui::Checkbox(get_localized_string(LANG_0640).c_str(), &app->showDragAxes);
 		}
@@ -6078,7 +6069,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(size_t entIdx)
 											if (selected_ent->getBspModelIdx() > 0)
 											{
 												map->getBspRender()->refreshModel(selected_ent->getBspModelIdx());
-												map->getBspRender()->preRenderEnts();
+												map->getBspRender()->refreshEnt(selected_entId);
 											}
 										}
 
@@ -6141,7 +6132,6 @@ void Gui::drawKeyvalueEditor_SmartEditTab(size_t entIdx)
 
 
 						bool needReloadModel = false;
-						bool needRefreshModel2 = false;
 						Bsp* map2 = g_app->getSelectedMap();
 						if (map2)
 						{
@@ -6210,7 +6200,6 @@ void Gui::drawKeyvalueEditor_SmartEditTab(size_t entIdx)
 
 										if (needRefreshModel)
 										{
-											needRefreshModel2 = true;
 											if (ent->getBspModelIdx() > 0)
 											{
 												map2->getBspRender()->refreshModel(ent->getBspModelIdx());
@@ -6225,14 +6214,6 @@ void Gui::drawKeyvalueEditor_SmartEditTab(size_t entIdx)
 						vertPickCount++;
 						if (needReloadModel)
 							g_app->reloadBspModels();
-
-						if (needRefreshModel2)
-						{
-							if (map2)
-							{
-								map2->getBspRender()->preRenderEnts();
-							}
-						}
 
 						g_app->updateEntConnections();
 						return 1;
@@ -6419,7 +6400,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(size_t entIdx)
 									if (key == "model" || std::string(data->Buf) == "model")
 									{
 										g_app->reloadBspModels();
-										render->preRenderEnts();
 									}
 
 									g_app->updateEntConnections();
@@ -6534,7 +6514,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(size_t entIdx)
 									if (map2 && selent->getBspModelIdx() > 0)
 									{
 										map2->getBspRender()->refreshModel(selent->getBspModelIdx());
-										map2->getBspRender()->preRenderEnts();
 										g_app->updateEntConnections();
 									}
 								}
@@ -6548,7 +6527,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(size_t entIdx)
 							vertPickCount++;
 							g_app->updateEntConnections();
 							g_app->reloadBspModels();
-							render->preRenderEnts();
 						}
 					}
 				}
@@ -6720,8 +6698,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(size_t entIdx)
 			{
 				ent->removeKeyvalue(keyOrdname);
 				map->getBspRender()->refreshEnt(entIdx);
-				if (keyOrdname == "model")
-					map->getBspRender()->preRenderEnts();
 				app->updateEntConnections();
 				map->getBspRender()->pushEntityUndoStateDelay("Delete Keyvalue RAW", entIdx, ent);
 			}
@@ -6877,8 +6853,8 @@ void Gui::drawGOTOWidget()
 					{
 						if (map->ents[i]->getBspModelIdx() == modelid)
 						{
-							app->selectEnt(map, entid);
-							app->goToEnt(map, entid);
+							app->selectEnt(map, i);
+							app->goToEnt(map, i);
 							break;
 						}
 					}
@@ -6968,6 +6944,9 @@ void Gui::drawTransformWidget()
 			ImGuiStyle& style = ImGui::GetStyle();
 
 			TransformAxes& activeAxes = *(app->transformMode == TRANSFORM_MODE_SCALE ? &app->scaleAxes : &app->moveAxes);
+
+			int currentTransformMode = app->transformMode;
+			int currentTransformTarget = app->transformTarget;
 
 			static float org_x = 0.0f, org_y = 0.0f, org_z = 0.0f;
 
@@ -7195,15 +7174,18 @@ void Gui::drawTransformWidget()
 				ImGui::EndDisabled();
 			}
 			ImGui::Text(get_localized_string(LANG_0698).c_str()); ImGui::NextColumn();
-			ImGui::RadioButton(get_localized_string(LANG_1110).c_str(), &app->transformMode, TRANSFORM_MODE_NONE); ImGui::NextColumn();
-			ImGui::RadioButton(get_localized_string(LANG_1111).c_str(), &app->transformMode, TRANSFORM_MODE_MOVE); ImGui::NextColumn();
+			ImGui::RadioButton(get_localized_string(LANG_1110).c_str(), &app->transformMode, TRANSFORM_MODE_NONE); 
+			ImGui::NextColumn();
+			ImGui::RadioButton(get_localized_string(LANG_1111).c_str(), &app->transformMode, TRANSFORM_MODE_MOVE); 
+			ImGui::NextColumn();
 			if (modelIdx < 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
 				if (app->transformMode == TRANSFORM_MODE_SCALE)
 					app->transformMode = TRANSFORM_MODE_MOVE;
 				ImGui::BeginDisabled();
 			}
-			ImGui::RadioButton(get_localized_string(LANG_1112).c_str(), &app->transformMode, TRANSFORM_MODE_SCALE); ImGui::NextColumn();
+			ImGui::RadioButton(get_localized_string(LANG_1112).c_str(), &app->transformMode, TRANSFORM_MODE_SCALE); 
+			ImGui::NextColumn();
 			if (modelIdx < 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
 				ImGui::EndDisabled();
@@ -7278,15 +7260,21 @@ void Gui::drawTransformWidget()
 				ImGui::Text(fmt::format("Model bounds: \n{:.2f} {:.2f} {:.2f} / {:.2f} {:.2f} {:.2f}", map->models[modelIdx].nMins.x, map->models[modelIdx].nMins.y, map->models[modelIdx].nMins.z, map->models[modelIdx].nMaxs.x, map->models[modelIdx].nMaxs.y, map->models[modelIdx].nMaxs.z).c_str());
 			}
 
+			if (currentTransformMode != app->transformMode || currentTransformTarget != app->transformTarget)
+			{
+				pickCount++;
+				vertPickCount++;
+			}
 
-			if (forceUpdate || (!app->canControl && app->oldLeftMouse == GLFW_PRESS && app->curLeftMouse != GLFW_PRESS))
+			if (forceUpdate || (!app->canControl && app->oldLeftMouse == GLFW_PRESS && app->curLeftMouse != GLFW_PRESS && currentTransformMode == app->transformMode && currentTransformTarget == app->transformTarget))
 			{
 				if (app->transformTarget == TRANSFORM_VERTEX)
 				{
 					vec3 org1 = vec3(org_x, org_y, org_z);
 					vec3 org2 = vec3(x, y, z);
 					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
-					if (!delta.IsZero())
+					vec3 delta2 = org2 - org1;
+					if (!delta.IsZero() && !delta2.IsZero())
 					{
 						app->moveSelectedVerts(delta);
 
@@ -7299,7 +7287,8 @@ void Gui::drawTransformWidget()
 					vec3 org1 = vec3(org_x, org_y, org_z);
 					vec3 org2 = vec3(x, y, z);
 					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
-					if (!delta.IsZero())
+					vec3 delta2 = org2 - org1;
+					if (!delta.IsZero() && !delta2.IsZero())
 					{
 						ent->setOrAddKeyvalue("origin", org2.toKeyvalueString());
 						map->getBspRender()->refreshEnt((int)entIdx[0]);
@@ -7314,7 +7303,8 @@ void Gui::drawTransformWidget()
 					vec3 org1 = vec3(org_x, org_y, org_z);
 					vec3 org2 = vec3(x, y, z);
 					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
-					if (!delta.IsZero())
+					vec3 delta2 = org2 - org1;
+					if (!delta.IsZero() && !delta2.IsZero())
 					{
 						if (modelIdx > 0 && modelIdx < map->modelCount)
 						{
@@ -7332,7 +7322,8 @@ void Gui::drawTransformWidget()
 						vec3 org1 = vec3(1.0f, 1.0f, 1.0f);
 						vec3 org2 = vec3(sx, sy, sz);
 						vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
-						if (!delta.IsZero())
+						vec3 delta2 = org2 - org1;
+						if (!delta.IsZero() && !delta2.IsZero())
 						{
 							app->scaleSelectedVerts(map, sx, sy, sz);
 
@@ -7345,7 +7336,8 @@ void Gui::drawTransformWidget()
 						vec3 org1 = vec3(app->selectionSize.x, app->selectionSize.y, app->selectionSize.z);
 						vec3 org2 = vec3(sx, sy, sz);
 						vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
-						if (!delta.IsZero())
+						vec3 delta2 = org2 - org1;
+						if (!delta.IsZero() && !delta2.IsZero())
 						{
 							app->scaleSelectedObject(map, delta.x, delta.y, delta.z);
 							map->getBspRender()->refreshModel(modelIdx);
@@ -8664,7 +8656,7 @@ void Gui::drawImportMapWidget()
 						newEnt->addKeyvalue("model", "*" + std::to_string(import_model));
 						map->ents.push_back(newEnt);
 						map->update_ent_lump();
-						map->getBspRender()->preRenderEnts();
+						map->getBspRender()->refreshEnt(map->ents.size() - 1);
 					}
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_ENTITY)
@@ -10850,7 +10842,8 @@ void Gui::drawFaceEditorWidget()
 
 			if (updatedTexVec)
 			{
-				app->updateModelVerts();
+				pickCount++;
+				vertPickCount++;
 			}
 
 			mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
@@ -11020,7 +11013,6 @@ void Gui::drawFaceEditorWidget()
 
 					mapRenderer->loadLightmaps();
 					mapRenderer->calcFaceMaths();
-					mapRenderer->preRenderFaces();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -11046,8 +11038,8 @@ void Gui::drawFaceEditorWidget()
 						selected_faces.pop_back();
 					}
 
-					mapRenderer->calcFaceMaths();
 					mapRenderer->preRenderFaces();
+					mapRenderer->calcFaceMaths();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -11071,8 +11063,8 @@ void Gui::drawFaceEditorWidget()
 						map->leaf_add_face((int)selected_faces[selected_faces.size() - 1], -1);
 						selected_faces.pop_back();
 					}
-					mapRenderer->calcFaceMaths();
 					mapRenderer->preRenderFaces();
+					mapRenderer->calcFaceMaths();
 
 					map->update_lump_pointers();
 
@@ -11095,8 +11087,8 @@ void Gui::drawFaceEditorWidget()
 						selected_faces.pop_back();
 					}
 
-					mapRenderer->calcFaceMaths();
 					mapRenderer->preRenderFaces();
+					mapRenderer->calcFaceMaths();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -11120,8 +11112,8 @@ void Gui::drawFaceEditorWidget()
 						selected_faces.pop_back();
 					}
 
-					mapRenderer->calcFaceMaths();
 					mapRenderer->preRenderFaces();
+					mapRenderer->calcFaceMaths();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();

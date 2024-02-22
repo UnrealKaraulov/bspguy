@@ -7058,6 +7058,7 @@ void Bsp::duplicate_model_structures(int modelIdx)
 	{
 		append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
 		save_undo_lightmaps();
+		resize_all_lightmaps();
 		renderer->loadLightmaps();
 	}
 
@@ -7068,6 +7069,9 @@ void Bsp::duplicate_model_structures(int modelIdx)
 	{
 		oldModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
 	}
+
+	pickCount++;
+	vertPickCount++;
 }
 
 int Bsp::duplicate_model(int modelIdx)
@@ -7155,13 +7159,9 @@ int Bsp::duplicate_model(int modelIdx)
 
 	if (newLightmaps.size())
 	{
-		/*if (g_verbose)
-		{
-			print_log("Added lightmap, size {}\n", newLightmaps.size());
-			print_log("Data {}x{}x{}\n", newLightmaps[0].r, newLightmaps[0].g, newLightmaps[0].b);
-		}*/
 		append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
 		save_undo_lightmaps();
+		resize_all_lightmaps();
 		renderer->loadLightmaps();
 	}
 
@@ -7177,6 +7177,10 @@ int Bsp::duplicate_model(int modelIdx)
 	}
 	newModel.nVisLeafs = oldModel.nVisLeafs; // techinically should match the old model, but leaves aren't duplicated yetx
 	oldModel.nVisLeafs = 0;
+
+
+	pickCount++;
+	vertPickCount++;
 	// recalculate leafs 
 	return newModelIdx;
 }
@@ -9553,11 +9557,11 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 			node.nMins = node.nMaxs = vec3();
 			// node mins/maxs don't matter for submodels. Leave them at 0.
 
-			int insideContents = modelFaces > 0 && k + 1 == modelFaces ? ~sharedSolidLeaf : (int)(nodeCount + k + 1);
+			int insideContents = k + 1 == modelFaces ? ~sharedSolidLeaf : (int)(nodeCount + k + 1);
 			int outsideContents = ~anyEmptyLeaf;
 
 			// can't have negative normals on planes so children are swapped instead
-			if (faces[node.iFirstFace].nPlaneSide == 1)
+			if (faces[k].nPlaneSide)
 			{
 				node.iChildren[0] = insideContents;
 				node.iChildren[1] = outsideContents;
@@ -9588,6 +9592,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 
 				BSPNODE32& lastnode2 = newNodes[nodeCount + k + 2];
 				lastnode2 = node;
+				lastnode2.nFaces = 0;
 				lastnode2.iChildren[0] = outsideContents;
 				lastnode2.iChildren[1] = ~sharedSolidLeaf;
 			}
@@ -9605,11 +9610,13 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 	std::vector<TransformVert> hullVerts;
 	if (getModelPlaneIntersectVerts(newModelIdx, hullVerts))
 	{
+		print_log(PRINT_GREEN, "Found valid intersect verts for model %d\n", newModelIdx);
 		regenerate_clipnodes(newModelIdx, -1);
 		validNodes = true;
 	}
 	else
 	{
+		print_log(PRINT_RED, "No intersect verts for model %d\n", newModelIdx);
 		create_node_box(models[newModelIdx].nMins, models[newModelIdx].nMaxs, &models[newModelIdx], true);
 		validNodes = false;
 	}

@@ -68,7 +68,6 @@ public:
 
 	void execute() override;
 	void undo() override;
-	void refresh();
 	size_t memoryUsage() override;
 };
 

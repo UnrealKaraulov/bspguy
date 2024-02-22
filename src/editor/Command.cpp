@@ -89,7 +89,6 @@ void EditEntityCommand::refresh()
 		return;
 	renderer->refreshEnt(entIdx);
 	pickCount++; // force GUI update
-	g_app->updateModelVerts();
 }
 
 size_t EditEntityCommand::memoryUsage()
@@ -199,7 +198,11 @@ void CreateEntityCommand::execute()
 	map->ents.push_back(newEnt);
 	map->update_ent_lump();
 	g_app->updateEnts();
-	refresh();
+	BspRenderer* renderer = getBspRenderer();
+	if (!renderer)
+		return;
+	renderer->refreshEnt(map->ents.size() - 1);
+	g_app->gui->refresh();
 }
 
 void CreateEntityCommand::undo()
@@ -212,15 +215,9 @@ void CreateEntityCommand::undo()
 
 	delete map->ents[map->ents.size() - 1];
 	map->ents.pop_back();
-	refresh();
-}
-
-void CreateEntityCommand::refresh()
-{
 	BspRenderer* renderer = getBspRenderer();
 	if (!renderer)
 		return;
-
 	renderer->preRenderEnts();
 	g_app->gui->refresh();
 }
@@ -276,9 +273,10 @@ void DuplicateBspModelCommand::execute()
 
 	renderer->loadLightmaps();
 	renderer->calcFaceMaths();
-	renderer->preRenderFaces();
-	renderer->preRenderEnts();
+	renderer->refreshEnt(entIdx);
+
 	renderer->addClipnodeModel(newModelIdx);
+	renderer->refreshModel(newModelIdx);
 
 	g_app->pickInfo.selectedFaces.clear();
 
@@ -304,10 +302,9 @@ void DuplicateBspModelCommand::undo()
 
 
 	map->update_ent_lump();
-	renderer->loadLightmaps();
 	renderer->reuploadTextures();
+	renderer->loadLightmaps();
 	renderer->calcFaceMaths();
-	renderer->preRenderFaces();
 	renderer->preRenderEnts();
 	g_app->gui->refresh();
 }
@@ -398,17 +395,18 @@ void CreateBspModelCommand::execute()
 	//renderer->refreshModel(modelIdx);
 	//
 
+	map->update_ent_lump();
+
 	map->save_undo_lightmaps();
 	map->resize_all_lightmaps();
 
-	renderer->loadLightmaps();
 	if (NeedreloadTextures)
 		renderer->reuploadTextures();
+	renderer->loadLightmaps();
 	renderer->calcFaceMaths();
-	renderer->preRenderFaces();
-	renderer->preRenderEnts();
 	renderer->addClipnodeModel(modelIdx);
 	renderer->refreshModel(modelIdx);
+	renderer->refreshEnt(map->ents.size() - 1);
 	//g_app->reloading = true;
 	//renderer->reload();
 	//g_app->reloading = false;
@@ -585,9 +583,12 @@ void EditBspModelCommand::refresh()
 	BspRenderer* renderer = getBspRenderer();
 
 
+	bool updateVerts = false;
+
 	if (newLumps.lumps[LUMP_LIGHTING].size())
 	{
 		map->getBspRender()->loadLightmaps();
+		updateVerts = true;
 	}
 
 	if (newLumps.lumps[LUMP_ENTITIES].size())
@@ -599,8 +600,17 @@ void EditBspModelCommand::refresh()
 	renderer->refreshModel(modelIdx);
 
 	g_app->gui->refresh();
-	pickCount++;
-	vertPickCount++;
+
+	if (updateVerts)
+	{
+		g_app->updateModelVerts();
+		g_app->applyTransform(map, true);
+	}
+	else
+	{
+		pickCount++;
+		vertPickCount++;
+	}
 }
 
 size_t EditBspModelCommand::memoryUsage()

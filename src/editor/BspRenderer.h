@@ -243,7 +243,6 @@ public:
 	int numRenderClipnodes;
 	int numRenderLightmapInfos;
 	int numFaceMaths;
-	int numPointEnts;
 	int numLoadedTextures;
 
 

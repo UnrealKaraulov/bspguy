@@ -37,17 +37,17 @@ bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 	float fz = std::abs(newNormal.z);
 	int planeType = PLANE_ANYZ;
 	bool shouldFlip = false;
-	if (fx > 0.9999f)
+	if (fx > 1.0f - EPSILON && fy < EPSILON && fz < EPSILON)
 	{
 		planeType = PLANE_X;
 		if (newNormal.x < 0.0f) shouldFlip = true;
 	}
-	else if (fy > 0.9999f)
+	else if (fy > 1.0f - EPSILON && fz < EPSILON && fx < EPSILON)
 	{
 		planeType = PLANE_Y;
 		if (newNormal.y < 0.0f) shouldFlip = true;
 	}
-	else if (fz > 0.9999f)
+	else if (fz > 1.0f - EPSILON && fx < EPSILON && fy < EPSILON)
 	{
 		planeType = PLANE_Z;
 		if (newNormal.z < 0.0f) shouldFlip = true;
@@ -57,17 +57,14 @@ bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 		if (fx > fy && fx > fz)
 		{
 			planeType = PLANE_ANYX;
-			//if (newNormal.x < 0) shouldFlip = true;
 		}
 		else if (fy > fx && fy > fz)
 		{
 			planeType = PLANE_ANYY;
-			//if (newNormal.y < 0) shouldFlip = true;
 		}
 		else
 		{
 			planeType = PLANE_ANYZ;
-			//if (newNormal.z < 0) shouldFlip = true;
 		}
 	}
 

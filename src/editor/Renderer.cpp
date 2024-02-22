@@ -25,7 +25,8 @@ vec3 cameraOrigin;
 vec3 cameraAngles;
 
 int pickCount = 0; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
-int vertPickCount = 0;
+// also used to refresh pick models
+int vertPickCount = 0; // used to refresh solid state
 
 
 size_t g_drawFrameId = 0;
@@ -330,7 +331,6 @@ Renderer::Renderer()
 	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;
 
 	blockMoving = false;
-	showDragAxes = true;
 
 	gui->init();
 
@@ -538,11 +538,7 @@ void Renderer::renderLoop()
 
 			if (SelectedMap && (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount || transformTarget != tmpTransformTarget || tmpModelIdx != modelIdx))
 			{
-				if (transformTarget != tmpTransformTarget && transformTarget == TRANSFORM_VERTEX)
-				{
-					updateModelVerts();
-				}
-				else if (!modelVerts.size() || tmpModelIdx != modelIdx)
+				if ((!modelVerts.size() && !modelFaceVerts.size()) || tmpModelIdx != modelIdx || tmpPickIdx != pickCount)
 				{
 					updateModelVerts();
 				}
@@ -584,12 +580,16 @@ void Renderer::renderLoop()
 					|| (isTransformableSolid && isScalingObject);
 				isTransformingWorld = modelIdx == 0 || ent && ent->isWorldSpawn();
 
-				if (ent && modelIdx < 0)
-					invalidSolid = false;
-				else if (modelIdx == 0)
-					invalidSolid = false;
-				else
+				invalidSolid = false;
+				if (ent && modelIdx > 0)
+				{
 					invalidSolid = !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
+					showDragAxes = transformMode != TRANSFORM_MODE_NONE;
+				}
+				else
+				{
+					showDragAxes = false;
+				}
 
 				if (modelUsesSharedStructures)
 				{
@@ -1020,7 +1020,7 @@ void Renderer::drawModelVerts()
 	}
 
 	int cubeIdx = 0;
-	for (size_t i = 0; i < modelVerts.size(); i++)
+	for (size_t i = 0; i < modelVerts.size(); i++, cubeIdx++)
 	{
 		vec3 ori = modelVerts[i].pos + entOrigin;
 		float s = (ori - rend->localCameraOrigin).length() * vertExtentFactor;
@@ -1042,10 +1042,11 @@ void Renderer::drawModelVerts()
 		{
 			color = (int)i == hoverVert ? vertHoverColor : vertDimColor;
 		}
-		modelVertCubes[cubeIdx++] = cCube(min, max, color);
+
+		modelVertCubes[cubeIdx] = cCube(min, max, color);
 	}
 
-	for (size_t i = 0; i < modelEdges.size(); i++)
+	for (size_t i = 0; i < modelEdges.size(); i++, cubeIdx++)
 	{
 		vec3 ori = getEdgeControlPoint(modelVerts, modelEdges[i]) + entOrigin;
 		float s = (ori - rend->localCameraOrigin).length() * vertExtentFactor;
@@ -1067,14 +1068,14 @@ void Renderer::drawModelVerts()
 		{
 			color = (int)i == hoverEdge ? edgeHoverColor : edgeDimColor;
 		}
-		modelVertCubes[cubeIdx++] = cCube(min, max, color);
+		modelVertCubes[cubeIdx] = cCube(min, max, color);
 	}
 
 	matmodel.loadIdentity();
 	matmodel.translate(rend->renderOffset.x, rend->renderOffset.y, rend->renderOffset.z);
 	colorShader->updateMatrixes();
 
-	//modelVertBuff->uploaded = false;
+	modelVertBuff->uploaded = false;
 	modelVertBuff->drawFull();
 }
 
@@ -1254,7 +1255,7 @@ void Renderer::controls()
 
 void Renderer::vertexEditControls()
 {
-	if (transformTarget == TRANSFORM_VERTEX)
+	/*if (transformTarget == TRANSFORM_VERTEX)
 	{
 		anyEdgeSelected = false;
 		anyVertSelected = false;
@@ -1263,6 +1264,10 @@ void Renderer::vertexEditControls()
 		{
 			if (modelVerts[i].selected)
 			{
+				if (anyEdgeSelected)
+				{
+					modelEdges[i].selected = false;
+				}
 				anyVertSelected = true;
 				break;
 			}
@@ -1272,11 +1277,14 @@ void Renderer::vertexEditControls()
 		{
 			if (modelEdges[i].selected)
 			{
+				if (anyVertSelected)
+				{
+					modelEdges[i].selected = false;
+				}
 				anyEdgeSelected = true;
 			}
 		}
-
-	}
+	}*/
 
 	if (pressed[GLFW_KEY_F] && !oldPressed[GLFW_KEY_F])
 	{
@@ -1302,15 +1310,16 @@ void Renderer::cameraPickingControls()
 		last_face_idx = -1;
 	}
 
-	if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS || (curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
-	{
-		bool transforming = false;
-		bool isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
-		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
-			|| (isTransformableSolid);
-		bool isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
+	bool transforming = false;
+	bool isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
+	bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
+		|| (isTransformableSolid);
+	bool isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
 
-		if (pickMode == pick_modes::PICK_OBJECT && !movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin))
+
+	if (!pickClickHeld)
+	{
+		if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS && (pickMode == pick_modes::PICK_OBJECT && !movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin)))
 		{
 			transforming = transformAxisControls();
 		}
@@ -1318,43 +1327,49 @@ void Renderer::cameraPickingControls()
 		{
 			saveTranformResult = false;
 		}
+	}
 
+	if (curLeftMouse == GLFW_RELEASE && oldLeftMouse == GLFW_PRESS && !pickClickHeld)
+	{
 		bool anyHover = hoverVert != -1 || hoverEdge != -1;
 		if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid && anyHover)
 		{
-			if (oldLeftMouse != GLFW_PRESS)
+			if (!anyCtrlPressed)
 			{
-				if (!anyCtrlPressed)
+				anyVertSelected = false;
+				anyEdgeSelected = false;
+				for (size_t i = 0; i < modelEdges.size(); i++)
 				{
-					for (size_t i = 0; i < modelEdges.size(); i++)
-					{
-						modelEdges[i].selected = false;
-					}
-					for (size_t i = 0; i < modelVerts.size(); i++)
-					{
-						modelVerts[i].selected = false;
-					}
-					anyVertSelected = false;
-					anyEdgeSelected = false;
+					modelEdges[i].selected = false;
 				}
+				for (size_t i = 0; i < modelVerts.size(); i++)
+				{
+					modelVerts[i].selected = false;
+				}
+			}
 
-				if (hoverVert != -1 && !anyEdgeSelected)
+			if (hoverVert != -1 && hoverVert < modelVerts.size())
+			{
+				modelVerts[hoverVert].selected = !modelVerts[hoverVert].selected;
+				anyEdgeSelected = false;
+				for (size_t i = 0; i < modelEdges.size(); i++)
 				{
-					modelVerts[hoverVert].selected = !modelVerts[hoverVert].selected;
-					anyVertSelected = modelVerts[hoverVert].selected;
+					modelEdges[i].selected = false;
 				}
-				else if (hoverEdge != -1 && !(anyVertSelected && !anyEdgeSelected))
+			}
+			else if (hoverEdge != -1 && hoverEdge < modelEdges.size())
+			{
+				modelEdges[hoverEdge].selected = !modelEdges[hoverEdge].selected;
+				for (int i = 0; i < 2; i++)
 				{
-					modelEdges[hoverEdge].selected = !modelEdges[hoverEdge].selected;
-					for (int i = 0; i < 2; i++)
-					{
-						TransformVert& vert = modelVerts[modelEdges[hoverEdge].verts[i]];
-						vert.selected = modelEdges[hoverEdge].selected;
-					}
-					anyEdgeSelected = modelEdges[hoverEdge].selected;
+					TransformVert& vert = modelVerts[modelEdges[hoverEdge].verts[i]];
+					vert.selected = modelEdges[hoverEdge].selected;
 				}
-
-				vertPickCount++;
+				for (size_t i = 0; i < modelVerts.size(); i++)
+				{
+					modelVerts[i].selected = false;
+				}
+				anyVertSelected = false;
 			}
 
 			transforming = true;
@@ -1362,31 +1377,33 @@ void Renderer::cameraPickingControls()
 
 		if (transformTarget == TRANSFORM_ORIGIN && originHovered)
 		{
-			if (oldLeftMouse != GLFW_PRESS)
+			if (curLeftMouse != GLFW_PRESS)
 			{
 				originSelected = !originSelected;
 			}
 
 			transforming = true;
 		}
-
-		// object picking
-		if (!transforming && (oldLeftMouse == GLFW_RELEASE || (facePickTime > 0.0 && curTime - facePickTime > 0.05)))
-		{
-			facePickTime = -1.0;
-			/*	if (map && entIdx.size() && oldLeftMouse == GLFW_RELEASE)
-				{
-					applyTransform(map);
-				}*/
-			if (hoverAxis == -1 || (!drawingScaleAxes && !drawingMoveAxes))
-				pickObject();
-		}
-		oldTransforming = transforming;
 	}
-	else
-	{ // left mouse not pressed
+
+	// object picking
+	if (!transforming)
+	{
+		if (hoverAxis == -1 || (!drawingScaleAxes && !drawingMoveAxes))
+		{
+			if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS || (curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
+			{
+				facePickTime = -1.0;
+				pickObject();
+			}
+		}
+	}
+
+	if (curLeftMouse != GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+	{
 		pickClickHeld = false;
 	}
+
 	if (hoverAxis != -1 && curLeftMouse == GLFW_RELEASE && oldLeftMouse == GLFW_PRESS)
 	{
 		applyTransform(map, true);
@@ -1419,6 +1436,8 @@ void Renderer::revertInvalidSolid(Bsp* map, int modelIdx)
 		}
 		map->getBspRender()->refreshModel(modelIdx);
 	}
+	pickCount++;
+	vertPickCount++;
 	gui->reloadLimits();
 }
 
@@ -1491,6 +1510,7 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 			}
 		}
 
+		updateModelVerts();
 		gui->reloadLimits();
 	}
 }
@@ -1571,7 +1591,7 @@ void Renderer::cameraObjectHovering()
 	vec3 mapOffset = rend->mapOffset;
 	vec3 localCameraOrigin = rend->localCameraOrigin;
 
-	if (transformTarget == TRANSFORM_VERTEX && entIdx.size())
+	if (showDragAxes && transformTarget == TRANSFORM_VERTEX && entIdx.size())
 	{
 		vec3 pickStart, pickDir;
 		getPickRay(pickStart, pickDir);
@@ -1581,7 +1601,11 @@ void Renderer::cameraObjectHovering()
 		Entity* ent = map->ents[entIdx[0]];
 		vec3 entOrigin = ent->origin;
 
+
+
 		hoverEdge = -1;
+		hoverVert = -1;
+
 		if (!(anyVertSelected && !anyEdgeSelected))
 		{
 			for (size_t i = 0; i < modelEdges.size(); i++)
@@ -1596,19 +1620,20 @@ void Renderer::cameraObjectHovering()
 				}
 			}
 		}
-
-		hoverVert = -1;
-		if (!anyEdgeSelected)
+		else
 		{
-			for (size_t i = 0; i < modelVerts.size(); i++)
+			if (!anyEdgeSelected)
 			{
-				vec3 ori = entOrigin + modelVerts[i].pos + mapOffset;
-				float s = (ori - localCameraOrigin).length() * vertExtentFactor * 2.0f;
-				vec3 min = vec3(-s, -s, -s) + ori;
-				vec3 max = vec3(s, s, s) + ori;
-				if (pickAABB(pickStart, pickDir, min, max, vertPick.bestDist))
+				for (size_t i = 0; i < modelVerts.size(); i++)
 				{
-					hoverVert = (int)i;
+					vec3 ori = entOrigin + modelVerts[i].pos + mapOffset;
+					float s = (ori - localCameraOrigin).length() * vertExtentFactor * 2.0f;
+					vec3 min = vec3(-s, -s, -s) + ori;
+					vec3 max = vec3(s, s, s) + ori;
+					if (pickAABB(pickStart, pickDir, min, max, vertPick.bestDist))
+					{
+						hoverVert = (int)i;
+					}
 				}
 			}
 		}
@@ -1855,6 +1880,7 @@ void Renderer::pickObject()
 		}
 		map->selectModelEnt();
 		pickCount++;
+		vertPickCount++;
 		return;
 	}
 
@@ -1877,7 +1903,7 @@ void Renderer::pickObject()
 			}
 			pickInfo.selectedFaces.clear();
 		}
-		else
+		else if (curLeftMouse == GLFW_PRESS)
 		{
 			facePickTime = curTime;
 		}
@@ -1898,8 +1924,8 @@ void Renderer::pickObject()
 					last_face_idx = (int)tmpPickInfo.selectedFaces[0];
 					map->getBspRender()->highlightFace(last_face_idx, 0);
 					pickInfo.selectedFaces.erase(it);
+					facePickTime = -1.0f;
 				}
-				pickCount++;
 			}
 		}
 	}
@@ -1918,13 +1944,11 @@ void Renderer::pickObject()
 		pickInfo.selectedFaces.clear();
 		tmpPickInfo.selectedFaces.clear();
 
-		updateModelVerts();
-
 		pickClickHeld = true;
 
 		updateEntConnections();
 
-		if (curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE)
+		if (oldLeftMouse == GLFW_PRESS && curLeftMouse == GLFW_RELEASE)
 		{
 			pickCount++;
 			if (tmpPickEnt.size())
@@ -1936,6 +1960,8 @@ void Renderer::pickObject()
 			}
 		}
 	}
+	pickCount++;
+	vertPickCount++;
 }
 
 bool Renderer::transformAxisControls()
@@ -1973,6 +1999,12 @@ bool Renderer::transformAxisControls()
 
 	if (showDragAxes && !movingEnt && hoverAxis >= 0)
 	{
+		if (!modelVerts.size() && !modelFaceVerts.size())
+		{
+			updateModelVerts();
+		}
+
+
 		activeAxes.model[hoverAxis].setColor(activeAxes.hoverColor[hoverAxis]);
 
 		vec3 dragPoint = getAxisDragPoint(axisDragEntOriginStart);
@@ -1987,9 +2019,6 @@ bool Renderer::transformAxisControls()
 			retval = false;
 		else
 		{
-			if (!modelVerts.size())
-				updateModelVerts();
-
 			float moveScale = pressed[GLFW_KEY_LEFT_SHIFT] ? 2.0f : 1.0f;
 			if (pressed[GLFW_KEY_LEFT_CONTROL] == GLFW_PRESS)
 				moveScale = 0.5f;
@@ -2062,7 +2091,6 @@ bool Renderer::transformAxisControls()
 								map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);
 							}
 
-							pickCount++;
 							vertPickCount++;
 						}
 					}
@@ -2090,7 +2118,7 @@ bool Renderer::transformAxisControls()
 		}
 	}
 
-	if (curLeftMouse != GLFW_PRESS && oldLeftMouse != GLFW_RELEASE)
+	if (curLeftMouse == GLFW_RELEASE && oldLeftMouse == GLFW_PRESS)
 	{
 		if (saveTranformResult)
 		{
@@ -2157,13 +2185,13 @@ bool Renderer::transformAxisControls()
 						if (tmpent->getBspModelIdx() >= 0)
 						{
 							vec3 neworigin = gridSnappingEnabled ? snapToGrid(map->models[tmpmodelidx].vOrigin) : map->models[tmpmodelidx].vOrigin;
-							map->models[tmpmodelidx].vOrigin = neworigin;
+							map->models[tmpmodelidx].vOrigin = neworigin;/*
 							map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
-							map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);
+							map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);*/
 							updateModels = true;
 						}
 
-						pickCount++;
+						//pickCount++;
 						vertPickCount++;
 					}
 
@@ -3016,7 +3044,7 @@ void Renderer::updateSelectionSize()
 		if (cube)
 			selectionSize = cube->maxs - cube->mins;
 	}
-	else 
+	else
 	{
 		vec3 mins, maxs;
 		if (!map->get_model_vertex_bounds(modelIdx, mins, maxs))
@@ -3026,7 +3054,7 @@ void Renderer::updateSelectionSize()
 		}
 		selectionSize = maxs - mins;
 	}
-	
+
 }
 
 void Renderer::updateEntConnections()
@@ -3357,8 +3385,8 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 		{
 			modelVerts[i].pos = snapToGrid(modelVerts[i].pos);
 		}
-		if (modelVerts[i].ptr)
-			*modelVerts[i].ptr = modelVerts[i].pos;
+		/*if (modelVerts[i].ptr)
+			*modelVerts[i].ptr = modelVerts[i].pos;*/
 	}
 
 	// scale visible faces
@@ -3374,6 +3402,7 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 			*modelFaceVerts[i].ptr = modelFaceVerts[i].pos;
 	}
 
+	map->vertex_manipulation_sync(modelTransform, modelVerts, false);
 	updateSelectionSize();
 	//
 	// TODO: I have no idea what I'm doing but this code scales axis-aligned texture coord axes correctly.
@@ -3464,6 +3493,12 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 
 void Renderer::moveSelectedVerts(const vec3& delta)
 {
+	if (!SelectedMap)
+	{
+		print_log(get_localized_string(LANG_0924));
+		return;
+	}
+
 	for (size_t i = 0; i < modelVerts.size(); i++)
 	{
 		if (modelVerts[i].selected)
@@ -3706,13 +3741,19 @@ bool Renderer::splitModelFace()
 	mapRenderer->loadLightmaps();
 	mapRenderer->calcFaceMaths();
 	mapRenderer->refreshModel(modelIdx);
-	updateModelVerts();
+	pickCount++;
+	vertPickCount++;
 	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
 	return true;
 }
 
 void Renderer::scaleSelectedVerts(Bsp* map, float x, float y, float z)
 {
+	if (!map)
+	{
+		print_log(get_localized_string(LANG_0924));
+		return;
+	}
 	auto entIdx = pickInfo.selectedEnts;
 	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 	vec3 fromOrigin = activeAxes.origin;
@@ -3741,7 +3782,6 @@ void Renderer::scaleSelectedVerts(Bsp* map, float x, float y, float z)
 
 	for (size_t i = 0; i < modelVerts.size(); i++)
 	{
-
 		if (modelVerts[i].selected)
 		{
 			vec3 delta = modelVerts[i].startPos - fromOrigin;
@@ -3752,20 +3792,16 @@ void Renderer::scaleSelectedVerts(Bsp* map, float x, float y, float z)
 				*modelVerts[i].ptr = modelVerts[i].pos;
 		}
 	}
-	if (map)
+
+	map->vertex_manipulation_sync(modelTransform, modelVerts, false);
+
+	if (entIdx.size())
 	{
-		if (entIdx.size())
-		{
-			//modelIdx = map->ents[entIdx]->getBspModelIdx();
-			Entity* ent = map->ents[entIdx[0]];
-			map->getBspRender()->refreshModel(ent->getBspModelIdx());
-		}
-		updateSelectionSize();
+		//modelIdx = map->ents[entIdx]->getBspModelIdx();
+		Entity* ent = map->ents[entIdx[0]];
+		map->getBspRender()->refreshModel(ent->getBspModelIdx());
 	}
-	else
-	{
-		print_log(get_localized_string(LANG_0924));
-	}
+	updateSelectionSize();
 }
 
 vec3 Renderer::snapToGrid(vec3 pos)

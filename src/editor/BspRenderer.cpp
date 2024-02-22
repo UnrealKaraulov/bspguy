@@ -233,8 +233,8 @@ BspRenderer::BspRenderer(Bsp* _map)
 	clearDrawCache();
 	//loadTextures();
 	//loadLightmaps();
-	calcFaceMaths();
 	preRenderFaces();
+	calcFaceMaths();
 	preRenderEnts();
 
 	//numRenderClipnodes = map->modelCount;
@@ -443,10 +443,9 @@ void BspRenderer::loadTextures()
 void BspRenderer::reload()
 {
 	map->update_lump_pointers();
-	loadLightmaps();
 	reloadTextures();
+	loadLightmaps();
 	calcFaceMaths();
-	preRenderFaces();
 	preRenderEnts();
 	reloadClipnodes();
 }
@@ -645,6 +644,9 @@ void BspRenderer::loadLightmaps()
 	print_log(get_localized_string(LANG_0276), lightmapCount, atlases.size());
 
 	lightmapsGenerated = true;
+
+
+	preRenderFaces();
 }
 
 void BspRenderer::updateLightmapInfos()
@@ -1553,14 +1555,8 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 
 void BspRenderer::preRenderEnts()
 {
-	renderEnts.resize(map->ents.size());
-
-	numPointEnts = 0;
-
-	for (size_t i = 1; i < map->ents.size(); i++)
-	{
-		numPointEnts += !map->ents[i]->isBspModel();
-	}
+	if (renderEnts.size() != map->ents.size())
+		renderEnts.resize(map->ents.size());
 
 	for (size_t i = 0; i < map->ents.size(); i++)
 	{
@@ -1641,6 +1637,10 @@ void BspRenderer::refreshEnt(size_t entIdx)
 {
 	if (entIdx >= map->ents.size() || !g_app->pointEntRenderer)
 		return;
+
+	if (renderEnts.size() != map->ents.size())
+		renderEnts.resize(map->ents.size());
+
 	int skin = -1;
 	int sequence = -1;
 	int body = -1;
@@ -2111,8 +2111,6 @@ void BspRenderer::delayLoadData()
 			if (glLightmapTextures[i])
 				glLightmapTextures[i]->upload();
 		}
-
-		preRenderFaces();
 		lightmapsUploaded = true;
 	}
 

@@ -20,7 +20,7 @@ class Gui;
 
 enum transform_modes
 {
-	TRANSFORM_MODE_NONE = -1,
+	TRANSFORM_MODE_NONE = 0,
 	TRANSFORM_MODE_MOVE,
 	TRANSFORM_MODE_SCALE
 };
@@ -72,7 +72,7 @@ extern Texture* clipTex_rgba;
 
 
 
-extern int pickCount; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
+extern int pickCount; 
 extern int vertPickCount;
 
 extern size_t g_drawFrameId;
@@ -186,8 +186,8 @@ public:
 	TransformAxes scaleAxes = TransformAxes();
 	int hoverAxis; // axis being hovered
 	//int draggingAxis = -1; // axis currently being dragged by the mouse
-	bool gridSnappingEnabled = false;
-	int gridSnapLevel = 0;
+	bool gridSnappingEnabled = true;
+	int gridSnapLevel = 1;
 	float snapSize = 0.01f;
 	int transformMode = TRANSFORM_MODE_MOVE;
 	int transformTarget = TRANSFORM_OBJECT;
@@ -195,7 +195,7 @@ public:
 	bool anyPopupOpened = false;
 	int last_face_idx = 0;
 	bool blockMoving = false;
-	bool showDragAxes = true;
+	bool showDragAxes = false;
 	bool saveTranformResult = false;
 	bool pickClickHeld = true; // true if the mouse button is still held after picking an object
 	vec3 axisDragStart;
