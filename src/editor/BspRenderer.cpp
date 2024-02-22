@@ -225,8 +225,9 @@ BspRenderer::BspRenderer(Bsp* _map)
 	renderModels.clear();
 	renderClipnodes.clear();
 
+	numFaceMaths = 0;
+	numRenderModels = 0;
 	faceMaths = NULL;
-
 
 	nodesBufferCache.clear();
 	clipnodesBufferCache.clear();
@@ -236,7 +237,6 @@ BspRenderer::BspRenderer(Bsp* _map)
 	preRenderFaces();
 	calcFaceMaths();
 	preRenderEnts();
-
 	//numRenderClipnodes = map->modelCount;
 	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
 	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
@@ -445,6 +445,7 @@ void BspRenderer::reload()
 	map->update_lump_pointers();
 	reloadTextures();
 	loadLightmaps();
+	preRenderFaces();
 	calcFaceMaths();
 	preRenderEnts();
 	reloadClipnodes();
@@ -689,10 +690,10 @@ void BspRenderer::preRenderFaces()
 		RenderModel& model = renderModels[i];
 		for (int k = 0; k < model.groupCount; k++)
 		{
-			model.renderGroups[k].buffer->uploaded = false;
+			if (model.renderGroups && model.renderGroups[k].buffer)
+				model.renderGroups[k].buffer->uploaded = false;
 		}
 	}
-
 	for (auto f : g_app->pickInfo.selectedFaces)
 	{
 		highlightFace(f, 1);
@@ -703,8 +704,8 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 {
 	deleteRenderFaces();
 
-	renderModels.resize(map->modelCount);
-
+	if (renderModels.size() != map->modelCount)
+		renderModels.resize(map->modelCount);
 	renderModelCount = map->modelCount;
 
 	int worldRenderGroups = 0;
@@ -1967,7 +1968,7 @@ void BspRenderer::calcFaceMaths()
 
 void BspRenderer::refreshFace(int faceIdx)
 {
-	if (faceIdx >= numFaceMaths)
+	if (faceIdx < 0 || faceIdx >= numFaceMaths)
 	{
 		return;
 		/*FaceMath* tmpfaceMaths = new FaceMath[faceIdx + 1]{};

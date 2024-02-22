@@ -10207,7 +10207,7 @@ void Gui::drawFaceEditorWidget()
 		static bool lockRotate = true;
 		static int bestplane;
 		static bool isSpecial;
-		static float width, height;
+		static int width, height;
 		static std::vector<vec3> edgeVerts;
 		static ImTextureID textureId = NULL; // OpenGL ID
 		static char textureName[MAXTEXTURENAME];
@@ -10268,8 +10268,8 @@ void Gui::drawFaceEditorWidget()
 						if (texOffset >= 0)
 						{
 							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-							width = tex.nWidth * 1.0f;
-							height = tex.nHeight * 1.0f;
+							width = tex.nWidth;
+							height = tex.nHeight;
 							memcpy(textureName, tex.szName, MAXTEXTURENAME);
 							memcpy(textureName2, tex.szName, MAXTEXTURENAME);
 						}
@@ -10337,8 +10337,8 @@ void Gui::drawFaceEditorWidget()
 						{
 							validTexture = false;
 							textureId = NULL;
-							width = 0.f;
-							height = 0.f;
+							width = 0;
+							height = 0;
 							textureName[0] = '\0';
 						}
 					}
@@ -10353,7 +10353,8 @@ void Gui::drawFaceEditorWidget()
 			}
 			else
 			{
-				scaleX = scaleY = shiftX = shiftY = width = height = 0.f;
+				scaleX = scaleY = shiftX = shiftY = 0.0f;
+				width = height = 0;
 				textureId = NULL;
 				textureName[0] = '\0';
 			}
@@ -10542,7 +10543,7 @@ void Gui::drawFaceEditorWidget()
 		}
 
 		ImGui::SameLine();
-		ImGui::Text(get_localized_string(LANG_0893).c_str(), width, height);
+		ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0893)), width, height).c_str());
 
 
 		ImVec2 imgSize = ImVec2(inputWidth * 2 - 2, inputWidth * 2 - 2);

@@ -1018,7 +1018,6 @@ void Renderer::drawModelVerts()
 		vertDimColor = { 32, 32, 32, 255 };
 		edgeDimColor = { 64, 64, 32, 255 };
 	}
-
 	int cubeIdx = 0;
 	for (size_t i = 0; i < modelVerts.size(); i++, cubeIdx++)
 	{
@@ -1135,7 +1134,7 @@ void Renderer::drawModelOrigin(int modelIdx)
 
 void Renderer::drawTransformAxes()
 {
-	if (SelectedMap && pickInfo.selectedEnts.size() == 1 && transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT && !modelUsesSharedStructures && !invalidSolid)
+	if (showDragAxes && SelectedMap && pickInfo.selectedEnts.size() == 1 && transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT && !modelUsesSharedStructures && !invalidSolid)
 	{
 		if (SelectedMap->ents[pickInfo.selectedEnts[0]]->getBspModelIdx() > 0)
 		{
@@ -1154,24 +1153,21 @@ void Renderer::drawTransformAxes()
 			drawingScaleAxes = true;
 		}
 	}
-	if (SelectedMap && pickInfo.selectedEnts.size() > 0 && transformMode == TRANSFORM_MODE_MOVE)
+	if (showDragAxes && SelectedMap && pickInfo.selectedEnts.size() > 0 && (transformMode == TRANSFORM_MODE_MOVE || (transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_VERTEX)))
 	{
-		if (transformTarget != TRANSFORM_VERTEX || (anyVertSelected || anyEdgeSelected))
-		{
-			matmodel.loadIdentity();
-			glDepthMask(GL_FALSE);
-			glDepthFunc(GL_ALWAYS);
-			updateDragAxes();
-			vec3 ori = moveAxes.origin;
-			matmodel.translate(ori.x, ori.z, -ori.y);
-			colorShader->updateMatrixes();
-			glDisable(GL_CULL_FACE);
-			moveAxes.buffer->drawFull();
-			glEnable(GL_CULL_FACE);
-			glDepthMask(GL_TRUE);
-			glDepthFunc(GL_LESS);
-			drawingMoveAxes = true;
-		}
+		matmodel.loadIdentity();
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
+		updateDragAxes();
+		vec3 ori = moveAxes.origin;
+		matmodel.translate(ori.x, ori.z, -ori.y);
+		colorShader->updateMatrixes();
+		glDisable(GL_CULL_FACE);
+		moveAxes.buffer->drawFull();
+		glEnable(GL_CULL_FACE);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+		drawingMoveAxes = true;
 	}
 }
 
@@ -1255,37 +1251,21 @@ void Renderer::controls()
 
 void Renderer::vertexEditControls()
 {
-	/*if (transformTarget == TRANSFORM_VERTEX)
+	anyEdgeSelected = anyVertSelected = false;
+	for (size_t i = 0; i < modelEdges.size(); i++)
 	{
-		anyEdgeSelected = false;
-		anyVertSelected = false;
-
-		for (size_t i = 0; i < modelVerts.size(); i++)
+		if (modelEdges[i].selected)
 		{
-			if (modelVerts[i].selected)
-			{
-				if (anyEdgeSelected)
-				{
-					modelEdges[i].selected = false;
-				}
-				anyVertSelected = true;
-				break;
-			}
+			anyEdgeSelected = true;
 		}
-
-		for (size_t i = 0; i < modelEdges.size(); i++)
+	}
+	for (size_t i = 0; i < modelVerts.size(); i++)
+	{
+		if (modelVerts[i].selected)
 		{
-			if (modelEdges[i].selected)
-			{
-				if (anyVertSelected)
-				{
-					modelEdges[i].selected = false;
-				}
-				anyEdgeSelected = true;
-			}
+			anyVertSelected = true;
 		}
-	}*/
-
+	}
 	if (pressed[GLFW_KEY_F] && !oldPressed[GLFW_KEY_F])
 	{
 		if (!anyCtrlPressed)
@@ -1329,15 +1309,13 @@ void Renderer::cameraPickingControls()
 		}
 	}
 
-	if (curLeftMouse == GLFW_RELEASE && oldLeftMouse == GLFW_PRESS && !pickClickHeld)
+	if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS && !pickClickHeld)
 	{
 		bool anyHover = hoverVert != -1 || hoverEdge != -1;
 		if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid && anyHover)
 		{
 			if (!anyCtrlPressed)
 			{
-				anyVertSelected = false;
-				anyEdgeSelected = false;
 				for (size_t i = 0; i < modelEdges.size(); i++)
 				{
 					modelEdges[i].selected = false;
@@ -1350,34 +1328,24 @@ void Renderer::cameraPickingControls()
 
 			if (hoverVert != -1 && hoverVert < modelVerts.size())
 			{
-				modelVerts[hoverVert].selected = !modelVerts[hoverVert].selected;
-				anyEdgeSelected = false;
-				for (size_t i = 0; i < modelEdges.size(); i++)
-				{
-					modelEdges[i].selected = false;
-				}
+				modelVerts[hoverVert].selected = anyCtrlPressed ? !modelVerts[hoverVert].selected : true;
 			}
 			else if (hoverEdge != -1 && hoverEdge < modelEdges.size())
 			{
-				modelEdges[hoverEdge].selected = !modelEdges[hoverEdge].selected;
+				modelEdges[hoverEdge].selected = anyCtrlPressed ? !modelEdges[hoverEdge].selected : true;
 				for (int i = 0; i < 2; i++)
 				{
 					TransformVert& vert = modelVerts[modelEdges[hoverEdge].verts[i]];
 					vert.selected = modelEdges[hoverEdge].selected;
 				}
-				for (size_t i = 0; i < modelVerts.size(); i++)
-				{
-					modelVerts[i].selected = false;
-				}
-				anyVertSelected = false;
 			}
 
 			transforming = true;
 		}
 
-		if (transformTarget == TRANSFORM_ORIGIN && originHovered)
+		if (curLeftMouse != GLFW_PRESS)
 		{
-			if (curLeftMouse != GLFW_PRESS)
+			if (transformTarget == TRANSFORM_ORIGIN && originHovered)
 			{
 				originSelected = !originSelected;
 			}
@@ -1391,7 +1359,7 @@ void Renderer::cameraPickingControls()
 	{
 		if (hoverAxis == -1 || (!drawingScaleAxes && !drawingMoveAxes))
 		{
-			if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS || (curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
+			if ((curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE) || (pickMode != pick_modes::PICK_OBJECT && curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
 			{
 				facePickTime = -1.0;
 				pickObject();
@@ -1601,12 +1569,25 @@ void Renderer::cameraObjectHovering()
 		Entity* ent = map->ents[entIdx[0]];
 		vec3 entOrigin = ent->origin;
 
-
-
 		hoverEdge = -1;
 		hoverVert = -1;
 
-		if (!(anyVertSelected && !anyEdgeSelected))
+		if (!anyEdgeSelected)
+		{
+			for (size_t i = 0; i < modelVerts.size(); i++)
+			{
+				vec3 ori = entOrigin + modelVerts[i].pos + mapOffset;
+				float s = (ori - localCameraOrigin).length() * vertExtentFactor * 2.0f;
+				vec3 min = vec3(-s, -s, -s) + ori;
+				vec3 max = vec3(s, s, s) + ori;
+				if (pickAABB(pickStart, pickDir, min, max, vertPick.bestDist))
+				{
+					hoverVert = (int)i;
+				}
+			}
+		}
+
+		if (!anyVertSelected && !anyEdgeSelected)
 		{
 			for (size_t i = 0; i < modelEdges.size(); i++)
 			{
@@ -1617,23 +1598,6 @@ void Renderer::cameraObjectHovering()
 				if (pickAABB(pickStart, pickDir, min, max, vertPick.bestDist))
 				{
 					hoverEdge = (int)i;
-				}
-			}
-		}
-		else
-		{
-			if (!anyEdgeSelected)
-			{
-				for (size_t i = 0; i < modelVerts.size(); i++)
-				{
-					vec3 ori = entOrigin + modelVerts[i].pos + mapOffset;
-					float s = (ori - localCameraOrigin).length() * vertExtentFactor * 2.0f;
-					vec3 min = vec3(-s, -s, -s) + ori;
-					vec3 max = vec3(s, s, s) + ori;
-					if (pickAABB(pickStart, pickDir, min, max, vertPick.bestDist))
-					{
-						hoverVert = (int)i;
-					}
 				}
 			}
 		}
@@ -1948,20 +1912,14 @@ void Renderer::pickObject()
 
 		updateEntConnections();
 
-		if (oldLeftMouse == GLFW_PRESS && curLeftMouse == GLFW_RELEASE)
+		pickCount++;
+		if (tmpPickEnt.size())
+			selectEnt(SelectedMap, tmpPickEnt[0], anyCtrlPressed && tmpPickEnt[0] != 0);
+		else if (!anyCtrlPressed)
 		{
-			pickCount++;
-			if (tmpPickEnt.size())
-				selectEnt(SelectedMap, tmpPickEnt[0], anyCtrlPressed && tmpPickEnt[0] != 0);
-			else if (!anyCtrlPressed)
-			{
-				pickInfo.selectedEnts.clear();
-				pickCount++;
-			}
+			pickInfo.selectedEnts.clear();
 		}
 	}
-	pickCount++;
-	vertPickCount++;
 }
 
 bool Renderer::transformAxisControls()
@@ -2004,6 +1962,7 @@ bool Renderer::transformAxisControls()
 			updateModelVerts();
 		}
 
+		
 
 		activeAxes.model[hoverAxis].setColor(activeAxes.hoverColor[hoverAxis]);
 
@@ -2124,7 +2083,7 @@ bool Renderer::transformAxisControls()
 		{
 			if (transformMode == TRANSFORM_MODE_MOVE)
 			{
-				if (transformTarget == TRANSFORM_VERTEX)
+				if (transformTarget == TRANSFORM_VERTEX && anyVertSelected)
 				{
 					saveTranformResult = false;
 					map->regenerate_clipnodes(modelIdx, -1);
@@ -3504,8 +3463,9 @@ void Renderer::moveSelectedVerts(const vec3& delta)
 		if (modelVerts[i].selected)
 		{
 			modelVerts[i].pos += delta;
+			/*
 			if (gridSnappingEnabled)
-				modelVerts[i].pos = snapToGrid(modelVerts[i].pos);
+				modelVerts[i].pos = snapToGrid(modelVerts[i].pos);*/
 			if (modelVerts[i].ptr)
 				*modelVerts[i].ptr = modelVerts[i].pos;
 		}

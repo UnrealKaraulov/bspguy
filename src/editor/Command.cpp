@@ -553,8 +553,8 @@ void EditBspModelCommand::undo()
 	{
 		if (renderer)
 		{
-			renderer->calcFaceMaths();
 			renderer->preRenderFaces();
+			renderer->calcFaceMaths();
 		}
 	}
 
@@ -608,7 +608,6 @@ void EditBspModelCommand::refresh()
 	}
 	else
 	{
-		pickCount++;
 		vertPickCount++;
 	}
 }
