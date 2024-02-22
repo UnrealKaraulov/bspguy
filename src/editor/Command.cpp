@@ -360,7 +360,7 @@ void CreateBspModelCommand::execute()
 	//renderer->addNewRenderFace();
 	int aaatriggerIdx = getDefaultTextureIdx();
 
-	int dupLumps = FL_CLIPNODES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS;
+	int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES;
 	if (aaatriggerIdx == -1)
 	{
 		dupLumps |= FL_TEXTURES;
@@ -429,7 +429,11 @@ void CreateBspModelCommand::undo()
 	delete map->ents[map->ents.size() - 1];
 	map->ents.pop_back();
 
+	map->save_undo_lightmaps();
+	map->resize_all_lightmaps();
+
 	renderer->reload();
+
 	g_app->gui->refresh();
 	g_app->deselectObject();
 }
@@ -580,24 +584,23 @@ void EditBspModelCommand::refresh()
 		return;
 	BspRenderer* renderer = getBspRenderer();
 
+
+	if (newLumps.lumps[LUMP_LIGHTING].size())
+	{
+		map->getBspRender()->loadLightmaps();
+	}
+
+	if (newLumps.lumps[LUMP_ENTITIES].size())
+	{
+		renderer->refreshEnt(entIdx);
+	}
+
 	renderer->calcFaceMaths();
 	renderer->refreshModel(modelIdx);
 
-	for (int i = 0; i < HEADER_LUMPS; i++)
-	{
-		if (i == LUMP_LIGHTING && newLumps.lumps[i].size())
-		{
-			//	renderer->updateLightmapInfos();
-			map->getBspRender()->loadLightmaps();
-		}
-		else if (i == LUMP_ENTITIES && newLumps.lumps[i].size())
-		{
-			renderer->refreshEnt(entIdx);
-		}
-	}
-
 	g_app->gui->refresh();
-	g_app->updateModelVerts();
+	pickCount++;
+	vertPickCount++;
 }
 
 size_t EditBspModelCommand::memoryUsage()

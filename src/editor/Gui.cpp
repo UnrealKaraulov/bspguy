@@ -4435,7 +4435,6 @@ void Gui::drawMenuBar()
 
 				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
 				rend->pushUndoCommand(command);
-				map->save_undo_lightmaps();
 				delete newEnt;
 
 				newEnt = map->ents[map->ents.size() - 1];
@@ -8422,7 +8421,7 @@ void Gui::drawAbout()
 		static char author[] = "w00tguy(bspguy), karaulov(newbspguy)";
 		ImGui::InputText(get_localized_string(LANG_0823).c_str(), author, strlen(author), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
-		{
+		{	
 			ImGui::BeginTooltip();
 			ImGui::TextUnformatted(author);
 			ImGui::EndTooltip();
@@ -8451,6 +8450,7 @@ void Gui::drawAbout()
 			ImGui::TextUnformatted(help1);
 			ImGui::EndTooltip();
 		}
+
 	}
 
 	ImGui::End();
