@@ -647,7 +647,7 @@ void BspRenderer::loadLightmaps()
 	lightmapsGenerated = true;
 
 
-	preRenderFaces();
+	//preRenderFaces();
 }
 
 void BspRenderer::updateLightmapInfos()
@@ -705,7 +705,14 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 	deleteRenderFaces();
 
 	if (renderModels.size() != map->modelCount)
+	{
 		renderModels.resize(map->modelCount);
+		for (auto& r : renderModels)
+		{
+			r = RenderModel();
+		}
+	}
+
 	renderModelCount = map->modelCount;
 
 	int worldRenderGroups = 0;
@@ -728,7 +735,8 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 
 void BspRenderer::addNewRenderFace()
 {
-	renderModels.resize(map->modelCount + 1);
+	if (renderModels.size() != map->modelCount + 1)
+		renderModels.resize(map->modelCount + 1);
 	renderModels[map->modelCount] = RenderModel();
 	numRenderModels = map->modelCount + 1;
 	print_log(get_localized_string(LANG_0279));

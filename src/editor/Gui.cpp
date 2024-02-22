@@ -99,7 +99,6 @@ ImVec4 imguiColorFromConsole(unsigned int colors)
 
 void Gui::draw()
 {
-	Bsp* map = app->getSelectedMap();
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -110,6 +109,12 @@ void Gui::draw()
 	drawFpsOverlay();
 	drawToolbar();
 	drawStatusMessage();
+
+	if (mapRenderers.size() == 0)
+		return;
+
+
+	Bsp* map = app->getSelectedMap();
 
 	if (showDebugWidget)
 	{
