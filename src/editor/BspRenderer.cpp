@@ -228,6 +228,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	numFaceMaths = 0;
 	numRenderModels = 0;
 	faceMaths = NULL;
+	wadLoaded = false;
 
 	nodesBufferCache.clear();
 	clipnodesBufferCache.clear();
@@ -280,7 +281,7 @@ void BspRenderer::loadTextures()
 					foundDecalWad = true;
 			}
 
-			if (g_settings.stripWad)
+			if (g_settings.stripWad/* && wadLoaded*/)
 			{
 				std::string newWadString = "";
 
@@ -311,6 +312,9 @@ void BspRenderer::loadTextures()
 		wadNames.push_back("decals.wad");
 	}
 
+	if (wadNames.size() != 0)
+		wadLoaded = true;
+
 	for (size_t i = 0; i < wadNames.size(); i++)
 	{
 		std::string path = std::string();
@@ -328,6 +332,7 @@ void BspRenderer::loadTextures()
 		}
 		else if (path.empty())
 		{
+			wadLoaded = false;
 			print_log(get_localized_string(LANG_0268), wadNames[i]);
 			FindPathInAssets(map, wadNames[i], path, true);
 			continue;
@@ -445,7 +450,6 @@ void BspRenderer::reload()
 	map->update_lump_pointers();
 	reloadTextures();
 	loadLightmaps();
-	preRenderFaces();
 	calcFaceMaths();
 	preRenderEnts();
 	reloadClipnodes();
@@ -643,11 +647,7 @@ void BspRenderer::loadLightmaps()
 	numLightmapAtlases = atlasTextures.size();
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
 	print_log(get_localized_string(LANG_0276), lightmapCount, atlases.size());
-
 	lightmapsGenerated = true;
-
-
-	preRenderFaces();
 }
 
 void BspRenderer::updateLightmapInfos()
@@ -850,7 +850,7 @@ void BspRenderer::deleteLightmapTextures()
 		}
 		delete[] glLightmapTextures;
 	}
-
+	numLightmapAtlases = 0;
 	glLightmapTextures = NULL;
 }
 
@@ -2120,6 +2120,7 @@ void BspRenderer::delayLoadData()
 			if (glLightmapTextures[i])
 				glLightmapTextures[i]->upload();
 		}
+		preRenderFaces();
 		lightmapsUploaded = true;
 	}
 
@@ -2127,6 +2128,7 @@ void BspRenderer::delayLoadData()
 	{
 		reuploadTextures();
 		preRenderFaces();
+		texturesLoaded = true;
 	}
 
 	if (!clipnodesLoaded && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)

@@ -1665,7 +1665,7 @@ void FixupAllSystemPaths()
 	{
 		// first fix slashes and check if file exists
 		fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-		if (!fileExists(s.path))
+		if (!dirExists(s.path))
 		{
 			// relative like ./cstrike/ or valve/
 			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);

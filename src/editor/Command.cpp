@@ -570,7 +570,7 @@ void EditBspModelCommand::undo()
 	{
 		if (renderer)
 		{
-			renderer->reloadLightmaps();
+			renderer->loadLightmaps();
 		}
 	}
 }

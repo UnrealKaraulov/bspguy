@@ -1843,10 +1843,13 @@ void Gui::drawMenuBar()
 					Bsp* tmpMap = new Bsp(res.string());
 					tmpMap->is_mdl_model = true;
 					app->addMap(tmpMap);
+					app->selectMap(tmpMap);
 				}
 				else
 				{
-					app->addMap(new Bsp(res.string()));
+					Bsp* tmpMap = new Bsp(res.string());
+					app->addMap(tmpMap);
+					app->selectMap(tmpMap);
 				}
 				g_settings.lastdir = stripFileName(res.string());
 			}
