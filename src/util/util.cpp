@@ -1211,7 +1211,7 @@ void set_console_colors(unsigned int colors)
 	{
 		colors = colors ? colors : (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 		g_console_colors = colors;
-		SetConsoleTextAttribute(console, colors);
+		SetConsoleTextAttribute(console, (WORD)colors);
 	}
 }
 #else 

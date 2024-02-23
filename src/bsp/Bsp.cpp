@@ -8352,6 +8352,8 @@ void Bsp::regenerate_clipnodes(int modelIdx, int hullIdx)
 		// TODO: create clipnodes to "cap" edges that are 90+ degrees (most CSG clip types do this)
 		// that will fix broken collision around those edges (invisible solid areas)
 	}
+
+	remove_unused_model_structures(CLEAN_CLIPNODES | CLEAN_PLANES);
 }
 
 void Bsp::write_csg_outputs(const std::string& path)
@@ -8695,6 +8697,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 			BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
 			int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
 			BSPMIPTEX tex = BSPMIPTEX();
+
 			if (texOffset >= 0)
 				tex = *((BSPMIPTEX*)(textures + texOffset));
 
@@ -8892,6 +8895,158 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 	else
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0197));
+	}
+}
+
+
+void Bsp::ExportToMapWIP(const std::string& path)
+{
+	if (!createDir(path))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1039), path);
+		return;
+	}
+	FILE* f = NULL;
+	print_log(get_localized_string(LANG_1040), (bsp_name + ".map"), path);
+	fopen_s(&f, (path + bsp_name + ".map").c_str(), "wb");
+	if (f)
+	{
+		fprintf(f, "// Exported using bspguy!\n");
+
+		std::string groupname = std::string();
+
+		BspRenderer* bsprend = renderer;
+
+		int vertoffset = 1;
+
+		std::set<int> refreshedModels;
+
+		std::map<std::string, std::stringstream> output_file{};
+
+		for (int i = 0; i < faceCount; i++)
+		{
+			int mdlid = get_model_from_face(i);
+			RenderFace* rface;
+			RenderGroup* rgroup;
+
+			if (refreshedModels.find(mdlid) == refreshedModels.end())
+			{
+				//NO TRIANGULATE MODELS?
+				bsprend->refreshModel(mdlid, false,/* TRIANGULATE: true*/ true);
+				refreshedModels.insert(mdlid);
+			}
+
+			if (!bsprend->getRenderPointers(i, &rface, &rgroup))
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196));
+				break;
+			}
+			else if (rface->vertCount < 3)
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0045));
+				continue;
+			}
+
+			BSPFACE32& face = faces[i];
+			BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
+			int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
+			BSPMIPTEX tex = BSPMIPTEX();
+			strcpy(tex.szName, "AAATRIGGER");
+			if (texOffset >= 0)
+				tex = *((BSPMIPTEX*)(textures + texOffset));
+
+			std::vector<size_t> entIds = get_model_ents_ids(mdlid);
+
+			if (entIds.empty())
+			{
+				entIds.push_back(0);
+			}
+
+			for (size_t e = 0; e < entIds.size(); e++)
+			{
+				size_t tmpentid = entIds[e];
+				Entity* ent = ents[tmpentid];
+				vec3 origin_offset = ent->origin.flip();
+
+				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
+				{
+					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
+				}
+
+				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
+
+				output_file[groupname] << "{\n";
+
+				lightmapVert vert1 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + 0];
+				lightmapVert vert2 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + 1];
+				lightmapVert vert3 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + 2];
+
+				vec3 v3 = vert1.pos.unflip();
+				vec3 v2 = vert2.pos.unflip();
+				vec3 v1 = vert3.pos.unflip();
+
+				v1 += origin_offset;
+				v2 += origin_offset;
+				v3 += origin_offset;
+
+				vec3 back_vert = v1 + tmpPlane.vNormal;
+
+				float scaleS = texinfo.vS.length();
+				float scaleT = texinfo.vT.length();
+				vec3 nS = texinfo.vS.normalize();
+				vec3 nT = texinfo.vT.normalize();
+				vec3 xv, yv;
+				int val = TextureAxisFromPlane(tmpPlane, xv, yv);
+				float rotateX = AngleFromTextureAxis(texinfo.vS, true, val);
+				float rotateY = AngleFromTextureAxis(texinfo.vT, false, val);
+				float rotateTotal = rotateY - rotateX;
+
+				// front
+				output_file[groupname] << "( " << v1.x << " " << v1.y << " " << v1.z << " ) "
+					<< "( " << v2.x << " " << v2.y << " " << v2.z << " ) "
+					<< "( " << v3.x << " " << v3.y << " " << v3.z << " ) "
+					<< tex.szName << " "
+					<< "[ " << nS.x << " " << nS.y << " " << nS.z << " " << texinfo.shiftS << " ] "
+					<< "[ " << nT.x << " " << nT.y << " " << nT.z << " " << texinfo.shiftT << " ] "
+					<< rotateTotal << " " << scaleS << " " << scaleT << "\n";
+
+				//back
+				for (int n = 0; n < rface->vertCount; n++)
+				{
+					v1 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n].pos.unflip();
+					v2 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + ((n + 1) % rface->vertCount)].pos.unflip();
+
+					v1 += origin_offset;
+					v2 += origin_offset;
+
+					back_vert = v1 + tmpPlane.vNormal;
+
+					output_file[groupname] << "( " << v1.x << " " << v1.y << " " << v1.z << " ) "
+						<< "( " << v2.x << " " << v2.y << " " << v2.z << " ) "
+						<< "( " << back_vert.x << " " << back_vert.y << " " << back_vert.z << " ) "
+						<< "NULL "
+						<< "[ 0 0 0 0 ] [ 0 0 0 0] 0 1 1\n";
+				}
+				output_file[groupname] << "}\n";
+			}
+
+			vertoffset += rface->vertCount;
+		}
+
+		for (auto& out : output_file)
+		{
+			fprintf(f, out.first.c_str(), "\n");
+			fprintf(f, out.second.str().c_str(), "\n");
+		}
+
+		fclose(f);
+
+		for (auto m : refreshedModels)
+			bsprend->refreshModel(m, false);
+	}
+	else
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1041));
 	}
 }
 
@@ -9622,51 +9777,6 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 	}
 
 	return newModelIdx;
-}
-
-struct ENTDATA
-{
-	int entid;
-	std::vector<std::string> vecdata;
-};
-
-void Bsp::ExportToMapWIP(const std::string& path)
-{
-	if (!createDir(path))
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1039), path);
-		return;
-	}
-	FILE* f = NULL;
-	print_log(get_localized_string(LANG_1040), (bsp_name + ".map"), path);
-	fopen_s(&f, (path + bsp_name + ".map").c_str(), "wb");
-	if (f)
-	{
-		fprintf(f, "// Exported using bspguy!\n");
-
-		BspRenderer* bsprend = renderer;
-
-		//bsprend->reload();
-
-		for (size_t entIdx = 0; entIdx < ents.size(); entIdx++)
-		{
-			int modelIdx = is_worldspawn_ent(entIdx) ? 0 : bsprend->renderEnts[entIdx].modelIdx;
-			if (modelIdx < 0 || modelIdx > bsprend->numRenderModels)
-				continue;
-
-			for (int i = 0; i < bsprend->renderModels[modelIdx].groupCount; i++)
-			{
-				print_log(get_localized_string(LANG_0217), entIdx, modelIdx, i);
-				//RenderGroup& rgroup = bsprend->renderModels[modelIdx].renderGroups[i];
-
-			}
-		}
-		fclose(f);
-	}
-	else
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1041));
-	}
 }
 
 BspRenderer* Bsp::getBspRender()
