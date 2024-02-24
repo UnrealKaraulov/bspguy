@@ -8898,21 +8898,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 	}
 }
 
-bool isCCW(const std::vector<vec3>& vertices) {
-	if (vertices.size() < 3) {
-		return false; // Need at least 3 vertices to determine orientation
-	}
-
-	float sum = 0.0f;
-	for (size_t i = 0; i < vertices.size(); ++i) {
-		vec3 current = vertices[i];
-		vec3 next = vertices[(i + 1) % vertices.size()]; // Wrap around for last vertex
-
-		sum += (next.x - current.x) * (next.y + current.y);
-	}
-
-	return sum > 0; // If sum is positive, vertices are in CCW direction
-}
 void Bsp::ExportToMapWIP(const std::string& path)
 {
 	if (!createDir(path))
@@ -8940,6 +8925,8 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 		std::map<std::string, std::stringstream> output_file{};
 
+		std::set<int> decompiled_faces;
+
 		for (int i = 0; i < faceCount; i++)
 		{
 			int mdlid = get_model_from_face(i);
@@ -8963,6 +8950,14 @@ void Bsp::ExportToMapWIP(const std::string& path)
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0045));
 				continue;
 			}
+			else if (decompiled_faces.find(i) != decompiled_faces.end())
+			{
+				continue;
+			}
+			else
+			{
+				decompiled_faces.insert(i);
+			}
 
 			BSPFACE32& face = faces[i];
 			BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
@@ -8982,9 +8977,11 @@ void Bsp::ExportToMapWIP(const std::string& path)
 			for (size_t e = 0; e < entIds.size(); e++)
 			{
 				size_t tmpentid = entIds[e];
+				bool newDecompile = false;
 
-				if (decompiledEnts.find(tmpentid) != decompiledEnts.end())
+				if (decompiledEnts.find(tmpentid) == decompiledEnts.end())
 				{
+					newDecompile = true;
 					decompiledEnts.insert(tmpentid);
 				}
 
@@ -8996,7 +8993,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
 				}
 
-				if (output_file.find(groupname) == output_file.end())
+				if (newDecompile)
 				{
 					output_file[groupname] << "{\n";
 					auto keyOrder = ent->keyOrder;
@@ -9013,27 +9010,27 @@ void Bsp::ExportToMapWIP(const std::string& path)
 						output_file[groupname] << "\"_decompiler\" \"" << g_version_string << "\"\n";
 					}
 				}
+				// merge faces and add to decompiled_faces ?
 
 				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
-
+				tmpPlane.vNormal = vec3(tmpPlane.vNormal.x, tmpPlane.vNormal.z, -tmpPlane.vNormal.y).unflip();
 
 				std::vector<vec3> vertices;
 
-				//for (int ee = face.iFirstEdge; ee < face.iFirstEdge + face.nEdges; ee++)
-				//{
-				//	int edgeIdx = surfedges[ee];
-				//	BSPEDGE32 edge = edges[abs(edgeIdx)];
-				//	vec3 v = edgeIdx < 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
-				//	vertices.push_back(v);
-				//}
-
 				for (int v = 0; v < rface->vertCount; v++)
 				{
-					vertices.push_back(((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + v].pos.unflip());
+					vertices.push_back(((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + v].pos);
 				}
 
 				Winding tmpWinding(vertices);
 				tmpWinding.RemoveColinearPoints();
+
+				vec3 orderedVertsNormal = getNormalFromVerts(tmpWinding.m_Points);
+
+				for (auto& v : tmpWinding.m_Points)
+				{
+					v = v.unflip();
+				}
 
 				vec3 v1 = tmpWinding.m_Points[0] + origin_offset;
 				vec3 v2 = tmpWinding.m_Points[1] + origin_offset;
@@ -9041,10 +9038,12 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 				vec3 back_vert = getCenter(tmpWinding.m_Points) - tmpPlane.vNormal;
 
-				float scaleS = texinfo.vS.length();
-				float scaleT = texinfo.vT.length();
+				float scaleS = 1.0f / texinfo.vS.length();
+				float scaleT = 1.0f / texinfo.vT.length();
+
 				vec3 nS = texinfo.vS.normalize();
 				vec3 nT = texinfo.vT.normalize();
+
 				vec3 xv, yv;
 				int val = TextureAxisFromPlane(tmpPlane, xv, yv);
 				float rotateX = AngleFromTextureAxis(texinfo.vS, true, val);
@@ -9083,6 +9082,14 @@ void Bsp::ExportToMapWIP(const std::string& path)
 				//output_file[groupname] << "//CCW:" << isCCW(vertices) << " edge1:" << surfedges[face.iFirstEdge] << " edge2:" << surfedges[face.iFirstEdge + 1] << " faceside:" << face.nPlaneSide << " normal:" << tmpPlane.vNormal.toKeyvalueString() << " dist:" << tmpPlane.fDist << "\n";
 
 				output_file[groupname] << "}\n";
+
+
+
+				/*for (int ee = face.iFirstEdge; ee < face.iFirstEdge + face.nEdges; ee++)
+				{
+					int edgeIdx = surfedges[ee];
+					output_file[groupname] << "//" << (edgeIdx < 0 ? "vert[1]" : "vert[0]") << "\n";
+				}*/
 			}
 
 			vertoffset += rface->vertCount;
@@ -9105,7 +9112,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 				for (auto& keyName : keyOrder)
 				{
 					std::string keyValue = ents[i]->keyvalues[keyName];
-					fprintf(f, "%s",("\"" + keyName + "\" \"" + keyValue + "\"\n").c_str());
+					fprintf(f, "%s", ("\"" + keyName + "\" \"" + keyValue + "\"\n").c_str());
 				}
 				fprintf(f, "%s", "}\n");
 			}
