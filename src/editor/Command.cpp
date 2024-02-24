@@ -582,7 +582,6 @@ void EditBspModelCommand::refresh()
 		return;
 	BspRenderer* renderer = getBspRenderer();
 
-
 	bool updateVerts = false;
 
 	if (newLumps.lumps[LUMP_LIGHTING].size())
@@ -601,15 +600,7 @@ void EditBspModelCommand::refresh()
 
 	g_app->gui->refresh();
 
-	if (updateVerts)
-	{
-		g_app->updateModelVerts();
-		g_app->applyTransform(map, true);
-	}
-	else
-	{
-		vertPickCount++;
-	}
+	vertPickCount++;
 }
 
 size_t EditBspModelCommand::memoryUsage()

@@ -8898,7 +8898,21 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 	}
 }
 
+bool isCCW(const std::vector<vec3>& vertices) {
+	if (vertices.size() < 3) {
+		return false; // Need at least 3 vertices to determine orientation
+	}
 
+	float sum = 0.0f;
+	for (size_t i = 0; i < vertices.size(); ++i) {
+		vec3 current = vertices[i];
+		vec3 next = vertices[(i + 1) % vertices.size()]; // Wrap around for last vertex
+
+		sum += (next.x - current.x) * (next.y + current.y);
+	}
+
+	return sum > 0; // If sum is positive, vertices are in CCW direction
+}
 void Bsp::ExportToMapWIP(const std::string& path)
 {
 	if (!createDir(path))
@@ -8921,6 +8935,9 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 		std::set<int> refreshedModels;
 
+
+		std::set<size_t> decompiledEnts;
+
 		std::map<std::string, std::stringstream> output_file{};
 
 		for (int i = 0; i < faceCount; i++)
@@ -8932,7 +8949,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 			if (refreshedModels.find(mdlid) == refreshedModels.end())
 			{
 				//NO TRIANGULATE MODELS?
-				bsprend->refreshModel(mdlid, false,/* TRIANGULATE: true*/ true);
+				bsprend->refreshModel(mdlid, false,/* TRIANGULATE: true*/ false);
 				refreshedModels.insert(mdlid);
 			}
 
@@ -8965,6 +8982,12 @@ void Bsp::ExportToMapWIP(const std::string& path)
 			for (size_t e = 0; e < entIds.size(); e++)
 			{
 				size_t tmpentid = entIds[e];
+
+				if (decompiledEnts.find(tmpentid) != decompiledEnts.end())
+				{
+					decompiledEnts.insert(tmpentid);
+				}
+
 				Entity* ent = ents[tmpentid];
 				vec3 origin_offset = ent->origin.flip();
 
@@ -8973,23 +8996,50 @@ void Bsp::ExportToMapWIP(const std::string& path)
 					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
 				}
 
+				if (output_file.find(groupname) == output_file.end())
+				{
+					output_file[groupname] << "{\n";
+					auto keyOrder = ent->keyOrder;
+					std::reverse(keyOrder.begin(), keyOrder.end());
+
+					for (auto& keyName : keyOrder)
+					{
+						std::string keyValue = ent->keyvalues[keyName];
+						output_file[groupname] << "\"" << keyName << "\" \"" << keyValue << "\"\n";
+					}
+
+					if (mdlid == 0)
+					{
+						output_file[groupname] << "\"_decompiler\" \"" << g_version_string << "\"\n";
+					}
+				}
+
 				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
 
-				output_file[groupname] << "{\n";
 
-				lightmapVert vert1 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + 0];
-				lightmapVert vert2 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + 1];
-				lightmapVert vert3 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + 2];
+				std::vector<vec3> vertices;
 
-				vec3 v3 = vert1.pos.unflip();
-				vec3 v2 = vert2.pos.unflip();
-				vec3 v1 = vert3.pos.unflip();
+				//for (int ee = face.iFirstEdge; ee < face.iFirstEdge + face.nEdges; ee++)
+				//{
+				//	int edgeIdx = surfedges[ee];
+				//	BSPEDGE32 edge = edges[abs(edgeIdx)];
+				//	vec3 v = edgeIdx < 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
+				//	vertices.push_back(v);
+				//}
 
-				v1 += origin_offset;
-				v2 += origin_offset;
-				v3 += origin_offset;
+				for (int v = 0; v < rface->vertCount; v++)
+				{
+					vertices.push_back(((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + v].pos.unflip());
+				}
 
-				vec3 back_vert = v1 + tmpPlane.vNormal;
+				Winding tmpWinding(vertices);
+				tmpWinding.RemoveColinearPoints();
+
+				vec3 v1 = tmpWinding.m_Points[0] + origin_offset;
+				vec3 v2 = tmpWinding.m_Points[1] + origin_offset;
+				vec3 v3 = tmpWinding.m_Points[2] + origin_offset;
+
+				vec3 back_vert = getCenter(tmpWinding.m_Points) - tmpPlane.vNormal;
 
 				float scaleS = texinfo.vS.length();
 				float scaleT = texinfo.vT.length();
@@ -9001,6 +9051,26 @@ void Bsp::ExportToMapWIP(const std::string& path)
 				float rotateY = AngleFromTextureAxis(texinfo.vT, false, val);
 				float rotateTotal = rotateY - rotateX;
 
+				output_file[groupname] << "{\n";
+
+				// back
+				for (int n = tmpWinding.m_NumPoints - 1; n >= 0; n--)
+				{
+					vec3 v1_b = tmpWinding.m_Points[n];
+					vec3 v2_b = tmpWinding.m_Points[(n + 1) % tmpWinding.m_NumPoints];
+
+					v1_b += origin_offset;
+					v2_b += origin_offset;
+
+					vec3 v3_b = back_vert;
+
+					output_file[groupname] << "( " << v3_b.x << " " << v3_b.y << " " << v3_b.z << " ) "
+						<< "( " << v2_b.x << " " << v2_b.y << " " << v2_b.z << " ) "
+						<< "( " << v1_b.x << " " << v1_b.y << " " << v1_b.z << " ) "
+						<< "NULL "
+						<< "[ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1\n";
+				}
+
 				// front
 				output_file[groupname] << "( " << v1.x << " " << v1.y << " " << v1.z << " ) "
 					<< "( " << v2.x << " " << v2.y << " " << v2.z << " ) "
@@ -9010,23 +9080,8 @@ void Bsp::ExportToMapWIP(const std::string& path)
 					<< "[ " << nT.x << " " << nT.y << " " << nT.z << " " << texinfo.shiftT << " ] "
 					<< rotateTotal << " " << scaleS << " " << scaleT << "\n";
 
-				//back
-				for (int n = 0; n < rface->vertCount; n++)
-				{
-					v1 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n].pos.unflip();
-					v2 = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + ((n + 1) % rface->vertCount)].pos.unflip();
+				//output_file[groupname] << "//CCW:" << isCCW(vertices) << " edge1:" << surfedges[face.iFirstEdge] << " edge2:" << surfedges[face.iFirstEdge + 1] << " faceside:" << face.nPlaneSide << " normal:" << tmpPlane.vNormal.toKeyvalueString() << " dist:" << tmpPlane.fDist << "\n";
 
-					v1 += origin_offset;
-					v2 += origin_offset;
-
-					back_vert = v1 + tmpPlane.vNormal;
-
-					output_file[groupname] << "( " << v1.x << " " << v1.y << " " << v1.z << " ) "
-						<< "( " << v2.x << " " << v2.y << " " << v2.z << " ) "
-						<< "( " << back_vert.x << " " << back_vert.y << " " << back_vert.z << " ) "
-						<< "NULL "
-						<< "[ 0 0 0 0 ] [ 0 0 0 0] 0 1 1\n";
-				}
 				output_file[groupname] << "}\n";
 			}
 
@@ -9035,9 +9090,27 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 		for (auto& out : output_file)
 		{
-			fprintf(f, out.first.c_str(), "\n");
-			fprintf(f, out.second.str().c_str(), "\n");
+			fprintf(f, "%s%s", out.second.str().c_str(), "}\n");
 		}
+
+
+		for (size_t i = 0; i < ents.size(); i++)
+		{
+			if (decompiledEnts.find(i) == decompiledEnts.end())
+			{
+				auto keyOrder = ents[i]->keyOrder;
+				std::reverse(keyOrder.begin(), keyOrder.end());
+
+				fprintf(f, "%s", "{\n");
+				for (auto& keyName : keyOrder)
+				{
+					std::string keyValue = ents[i]->keyvalues[keyName];
+					fprintf(f, "%s",("\"" + keyName + "\" \"" + keyValue + "\"\n").c_str());
+				}
+				fprintf(f, "%s", "}\n");
+			}
+		}
+
 
 		fclose(f);
 

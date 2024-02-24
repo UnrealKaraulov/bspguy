@@ -17,7 +17,7 @@ class Winding
 {
 public:
 	size_t m_NumPoints;
-	vec3* m_Points;
+	std::vector<vec3> m_Points;
 
 	Winding(Bsp* bsp, const BSPFACE32& face, float epsilon = ON_EPSILON);
 	Winding(const std::vector<vec3> & points, float epsilon = ON_EPSILON);
@@ -26,7 +26,6 @@ public:
 	Winding();
 	Winding(const Winding& other);
 	void getPlane(BSPPLANE& plane);
-	virtual ~Winding();
 	Winding& operator=(const Winding& other);
 
 	void RemoveColinearPoints(float epsilon = ON_EPSILON);

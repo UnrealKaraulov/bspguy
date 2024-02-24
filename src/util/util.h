@@ -301,7 +301,6 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 
 void removeColinearPoints(std::vector<vec3>& vertices, float epsilon);
 
-vec3 getCentroid(std::vector<vec3>& hullVerts);
 
 bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2Mins, const vec3& obj2Maxs);
 
@@ -331,7 +330,9 @@ void getTrueTexSize(int& width, int& height, int maxsize = 512);
 
 
 vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& edge);
-vec3 getCentroid(std::vector<TransformVert>& hullVerts);
+
+vec3 getCentroid(const std::vector<TransformVert>& hullVerts);
+vec3 getCentroid(const std::vector<vec3>& hullVerts);
 
 std::vector<std::vector<COLOR3>> splitImage(const COLOR3* input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height);
 std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3>& input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height);

@@ -707,10 +707,6 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 	if (renderModels.size() != map->modelCount)
 	{
 		renderModels.resize(map->modelCount);
-		for (auto& r : renderModels)
-		{
-			r = RenderModel();
-		}
 	}
 
 	renderModelCount = map->modelCount;
@@ -992,7 +988,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
 			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 
-			vec3& vert = map->verts[vertIdx];
+			vec3 vert = map->verts[vertIdx];
 			verts[e].pos = vert.flip();
 
 			verts[e].r = 0.0f;

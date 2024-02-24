@@ -2140,16 +2140,6 @@ void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
 	}
 }
 
-vec3 getCentroid(std::vector<vec3>& hullVerts)
-{
-	vec3 centroid;
-	for (size_t i = 0; i < hullVerts.size(); i++)
-	{
-		centroid += hullVerts[i];
-	}
-	return centroid / (float)hullVerts.size();
-}
-
 
 bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2Mins, const vec3& obj2Maxs) {
 	// Check for overlap in x dimension
@@ -2450,7 +2440,17 @@ vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& 
 	return v0 + (v1 - v0) * 0.5f;
 }
 
-vec3 getCentroid(std::vector<TransformVert>& hullVerts)
+vec3 getCentroid(const std::vector<vec3>& hullVerts)
+{
+	vec3 centroid;
+	for (size_t i = 0; i < hullVerts.size(); i++)
+	{
+		centroid += hullVerts[i];
+	}
+	return centroid / (float)hullVerts.size();
+}
+
+vec3 getCentroid(const std::vector<TransformVert>& hullVerts)
 {
 	vec3 centroid;
 	for (size_t i = 0; i < hullVerts.size(); i++)

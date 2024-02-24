@@ -10,12 +10,12 @@ Winding& Winding::operator=(const Winding& other)
 {
 	if (&other == this)
 		return *this;
-	delete[] m_Points;
+	m_Points.clear();
 	m_NumPoints = other.m_NumPoints;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
 
-	m_Points = new vec3[m_MaxPoints];
-	memcpy(m_Points, other.m_Points, sizeof(vec3) * m_NumPoints);
+	m_Points = std::vector<vec3>(m_MaxPoints);
+	memcpy(m_Points.data(), other.m_Points.data(), sizeof(vec3) * m_NumPoints);
 	return *this;
 }
 
@@ -24,14 +24,13 @@ Winding::Winding(size_t numpoints)
 	m_NumPoints = numpoints;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
 
-	m_Points = new vec3[m_MaxPoints];
-	memset(m_Points, 0, sizeof(vec3) * m_NumPoints);
+	m_Points = std::vector<vec3>(m_MaxPoints);
 }
 
 
 Winding::Winding()
 {
-	m_Points = NULL;
+	m_Points = {};
 	m_NumPoints = 0;
 	m_MaxPoints = 0;
 }
@@ -41,14 +40,10 @@ Winding::Winding(const Winding& other)
 	m_NumPoints = other.m_NumPoints;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
 
-	m_Points = new vec3[m_MaxPoints];
-	memcpy(m_Points, other.m_Points, sizeof(vec3) * m_NumPoints);
+	m_Points = std::vector<vec3>(m_MaxPoints);
+	memcpy(m_Points.data(), other.m_Points.data(), sizeof(vec3) * m_NumPoints);
 }
 
-Winding::~Winding()
-{
-	delete[] m_Points;
-}
 
 Winding::Winding(const BSPPLANE& plane, float epsilon)
 {
@@ -102,7 +97,7 @@ Winding::Winding(const BSPPLANE& plane, float epsilon)
 		// project a really big     axis aligned box onto the plane
 		m_NumPoints = 4;
 		m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
-		m_Points = new vec3[m_MaxPoints];
+		m_Points = std::vector<vec3>(m_MaxPoints);
 
 		VectorSubtract(org, vright, m_Points[0]);
 		VectorAdd(m_Points[0], vup, m_Points[0]);
@@ -145,7 +140,7 @@ Winding::Winding(const std::vector<vec3>& points, float epsilon)
 {
 	m_NumPoints = points.size();
 	m_MaxPoints = (m_NumPoints + 3) & ~3;
-	m_Points = new vec3[m_NumPoints];
+	m_Points = std::vector<vec3>(m_NumPoints);
 
 	unsigned i;
 	for (i = 0; i < m_NumPoints && i < points.size(); i++)
@@ -166,7 +161,7 @@ Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 
 	m_NumPoints = face.nEdges;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;
-	m_Points = new vec3[m_NumPoints];
+	m_Points = std::vector<vec3>(m_NumPoints);
 
 	unsigned i;
 	for (i = 0; i < m_NumPoints && i < face.nEdges; i++)
@@ -260,8 +255,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 
 	if (!counts[0])
 	{
-		delete[] m_Points;
-		m_Points = NULL;
+		m_Points.clear();
 		m_NumPoints = 0;
 		return false;
 	}
@@ -273,8 +267,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 
 	size_t maxpts = m_NumPoints + 4; // can't use counts[0]+2 because of fp grouping errors
 	unsigned newNumPoints = 0;
-	vec3* newPoints = new vec3[maxpts];
-	memset(newPoints, 0, sizeof(vec3) * maxpts);
+	std::vector<vec3> newPoints = std::vector<vec3>(maxpts);
 
 	for (i = 0; i < m_NumPoints; i++)
 	{
@@ -325,7 +318,6 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 		print_log(get_localized_string(LANG_1009));
 	}
 
-	delete[] m_Points;
 	m_Points = newPoints;
 	m_NumPoints = newNumPoints;
 
@@ -334,8 +326,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 	);
 	if (m_NumPoints == 0)
 	{
-		delete[] m_Points;
-		m_Points = NULL;
+		m_Points.clear();
 		return false;
 	}
 

@@ -3373,16 +3373,6 @@ void Gui::drawMenuBar()
 							rend->renderEnts[ent].mdl = NULL;
 
 							map->update_ent_lump();
-							map->save_undo_lightmaps();
-							map->resize_all_lightmaps();
-
-							rend->reuploadTextures();
-
-							rend->loadLightmaps();
-							rend->calcFaceMaths();
-							rend->refreshEnt(ent);
-
-
 							map->remove_unused_model_structures();
 
 							if (!is_valid_nodes && generateClipnodes)
@@ -3587,12 +3577,20 @@ void Gui::drawMenuBar()
 								map->remove_unused_model_structures();
 							}
 
+							map->save_undo_lightmaps();
+							map->resize_all_lightmaps();
+
+							rend->reuploadTextures();
+							rend->loadLightmaps();
+							rend->calcFaceMaths();
+
+
+							rend->preRenderFaces();
+							rend->preRenderEnts();
 
 							rend->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 
-							app->reloading = true;
-							rend->reload();
-							app->reloading = false;
+							map->write(map->bsp_path);
 						}
 					}
 				}

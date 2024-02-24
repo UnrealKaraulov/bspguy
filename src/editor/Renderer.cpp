@@ -581,9 +581,10 @@ void Renderer::renderLoop()
 				isTransformingWorld = modelIdx == 0 || ent && ent->isWorldSpawn();
 
 				invalidSolid = false;
-				if (ent && modelIdx > 0)
+
+				if (ent && modelIdx != 0)
 				{
-					invalidSolid = !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
+					invalidSolid = modelIdx > 0 && !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
 					showDragAxes = transformMode != TRANSFORM_MODE_NONE;
 				}
 				else
@@ -1962,7 +1963,7 @@ bool Renderer::transformAxisControls()
 			updateModelVerts();
 		}
 
-		
+
 
 		activeAxes.model[hoverAxis].setColor(activeAxes.hoverColor[hoverAxis]);
 
