@@ -110,12 +110,6 @@ void Gui::draw()
 	drawToolbar();
 	drawStatusMessage();
 
-	if (mapRenderers.size() == 0)
-		return;
-
-
-	Bsp* map = app->getSelectedMap();
-
 	if (showDebugWidget)
 	{
 		drawDebugWidget();
@@ -176,32 +170,38 @@ void Gui::draw()
 	{
 		drawGOTOWidget();
 	}
-	if (map && map->is_mdl_model)
-	{
-		drawMDLWidget();
-	}
 
-	if (openEmptyContext != -2)
+	if (mapRenderers.size() != 0)
 	{
-		if (app->pickMode == PICK_OBJECT)
+		Bsp* map = app->getSelectedMap();
+
+		if (map && map->is_mdl_model)
 		{
-			if (openEmptyContext == 0)
+			drawMDLWidget();
+		}
+
+		if (openEmptyContext != -2)
+		{
+			if (app->pickMode == PICK_OBJECT)
 			{
-				ImGui::OpenPopup("empty_context");
+				if (openEmptyContext == 0)
+				{
+					ImGui::OpenPopup("empty_context");
+				}
+				else
+				{
+					ImGui::OpenPopup("ent_context");
+				}
 			}
 			else
 			{
-				ImGui::OpenPopup("ent_context");
+				ImGui::OpenPopup("face_context");
 			}
+			openEmptyContext = -2;
 		}
-		else
-		{
-			ImGui::OpenPopup("face_context");
-		}
-		openEmptyContext = -2;
-	}
 
-	drawBspContexMenu();
+		drawBspContexMenu();
+	}
 
 	app->anyPopupOpened = imgui_io->WantCaptureMouse;
 
@@ -1856,7 +1856,7 @@ void Gui::drawMenuBar()
 			ifd::FileDialog::Instance().Close();
 		}
 
-		if (ImGui::BeginMenu(get_localized_string(LANG_0478).c_str(), map))
+		if (ImGui::BeginMenu(get_localized_string(LANG_0478).c_str()))
 		{
 			if (ImGui::MenuItem(get_localized_string(LANG_0479).c_str(), NULL, false, map && !map->is_mdl_model && !app->isLoading))
 			{
@@ -3116,10 +3116,10 @@ void Gui::drawMenuBar()
 #else 
 					std::quick_exit(0);
 #endif
-				}
 			}
-			ImGui::EndMenu();
 		}
+			ImGui::EndMenu();
+	}
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
 		{
@@ -4920,7 +4920,7 @@ void Gui::drawMenuBar()
 		}
 
 		ImGui::EndMainMenuBar();
-	}
+}
 
 	if (ImGui::BeginViewportSideBar("BottomBar", ImGui::GetMainViewport(), ImGuiDir_Down, ImGui::GetTextLineHeightWithSpacing(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar))
 	{
@@ -7180,9 +7180,9 @@ void Gui::drawTransformWidget()
 				ImGui::EndDisabled();
 			}
 			ImGui::Text(get_localized_string(LANG_0698).c_str()); ImGui::NextColumn();
-			ImGui::RadioButton(get_localized_string(LANG_1110).c_str(), &app->transformMode, TRANSFORM_MODE_NONE); 
+			ImGui::RadioButton(get_localized_string(LANG_1110).c_str(), &app->transformMode, TRANSFORM_MODE_NONE);
 			ImGui::NextColumn();
-			ImGui::RadioButton(get_localized_string(LANG_1111).c_str(), &app->transformMode, TRANSFORM_MODE_MOVE); 
+			ImGui::RadioButton(get_localized_string(LANG_1111).c_str(), &app->transformMode, TRANSFORM_MODE_MOVE);
 			ImGui::NextColumn();
 			if (modelIdx < 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
@@ -7190,7 +7190,7 @@ void Gui::drawTransformWidget()
 					app->transformMode = TRANSFORM_MODE_MOVE;
 				ImGui::BeginDisabled();
 			}
-			ImGui::RadioButton(get_localized_string(LANG_1112).c_str(), &app->transformMode, TRANSFORM_MODE_SCALE); 
+			ImGui::RadioButton(get_localized_string(LANG_1112).c_str(), &app->transformMode, TRANSFORM_MODE_SCALE);
 			ImGui::NextColumn();
 			if (modelIdx < 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
@@ -8419,7 +8419,7 @@ void Gui::drawAbout()
 		static char author[] = "w00tguy(bspguy), karaulov(newbspguy)";
 		ImGui::InputText(get_localized_string(LANG_0823).c_str(), author, strlen(author), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
-		{	
+		{
 			ImGui::BeginTooltip();
 			ImGui::TextUnformatted(author);
 			ImGui::EndTooltip();
