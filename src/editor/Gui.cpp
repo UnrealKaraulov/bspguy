@@ -1253,6 +1253,79 @@ void Gui::drawBspContexMenu()
 				ImGui::EndTooltip();
 			}
 
+			if (ImGui::BeginMenu("Select Linked"))
+			{
+				for (int i = 0; i < 5; i++)
+				{
+					if (ImGui::MenuItem(fmt::format("Depth {}", (i + 1)).c_str()))
+					{
+						for (int n = 0; n <= i; n++)
+						{
+							std::vector<int> surfEdges;
+							std::vector<int> vertices;
+							for (auto f : app->pickInfo.selectedFaces)
+							{
+								BSPFACE32 face = map->faces[f];
+
+								for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
+								{
+									int edgeIdx = map->surfedges[e];
+									surfEdges.push_back(edgeIdx);
+
+									for (int v = 0; v < 2; v++)
+									{
+										int vertIdx = map->edges[abs(edgeIdx)].iVertex[v];
+										vertices.push_back(vertIdx);
+									}
+								}
+							}
+
+							for (int f = 0; f < map->faceCount; f++)
+							{
+								BSPFACE32 face = map->faces[f];
+
+								if (std::find(app->pickInfo.selectedFaces.begin(), app->pickInfo.selectedFaces.end(), f) != app->pickInfo.selectedFaces.end())
+								{
+									continue;
+								}
+
+								bool found = false;
+
+								for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
+								{
+									int edgeIdx = map->surfedges[e];
+									if (std::find(surfEdges.begin(), surfEdges.end(), edgeIdx) != surfEdges.end())
+									{
+										found = true;
+										app->pickInfo.selectedFaces.push_back(f);
+										rend->highlightFace(f, 1);
+										break;
+									}
+
+									for (int v = 0; v < 2; v++)
+									{
+										int vertIdx = map->edges[abs(edgeIdx)].iVertex[v];
+										
+										if (std::find(vertices.begin(), vertices.end(), vertIdx) != vertices.end())
+										{
+											found = true;
+											app->pickInfo.selectedFaces.push_back(f);
+											rend->highlightFace(f, 1);
+											break;
+										}
+									}
+								}
+
+								if (found)
+									continue;
+							}
+						}
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndPopup();
 		}
 	}
@@ -2754,7 +2827,7 @@ void Gui::drawMenuBar()
 					{
 						map->ExportToMapWIP(g_working_dir, false);
 					}
-					else if(ImGui::MenuItem("Selected faces"))
+					else if (ImGui::MenuItem("Selected faces"))
 					{
 						map->ExportToMapWIP(g_working_dir, true);
 					}
@@ -3093,7 +3166,7 @@ void Gui::drawMenuBar()
 					reloadSettings = true;
 				}
 				showSettingsWidget = true;
-			}
+		}
 			ImGui::Separator();
 			if (ImGui::MenuItem(get_localized_string(LANG_0555).c_str(), NULL))
 			{
@@ -3124,8 +3197,8 @@ void Gui::drawMenuBar()
 #else 
 					std::quick_exit(0);
 #endif
+				}
 			}
-		}
 			ImGui::EndMenu();
 	}
 

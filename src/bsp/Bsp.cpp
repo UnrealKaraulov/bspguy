@@ -9127,32 +9127,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 				}
 
 				// merge faces and add to decompiled_faces ?
-
 				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
-
-				if (!offset.IsZero())
-				{
-					vec3 newPlaneOri = offset + (tmpPlane.vNormal * tmpPlane.fDist);
-					tmpPlane.fDist = dotProduct(tmpPlane.vNormal, newPlaneOri) / dotProduct(tmpPlane.vNormal, tmpPlane.vNormal);
-				}
-				//if (std::abs(tmpPlane.vNormal.x) < EPSILON)
-				//{
-				//	tmpPlane.vNormal.x = 0.0f;
-				//	tmpPlane.vNormal = tmpPlane.vNormal.normalize();
-				//}
-
-				//if (std::abs(tmpPlane.vNormal.y) < EPSILON)
-				//{
-				//	tmpPlane.vNormal.y = 0.0f;
-				//	tmpPlane.vNormal = tmpPlane.vNormal.normalize();
-				//}
-
-				//if (std::abs(tmpPlane.vNormal.z) < EPSILON)
-				//{
-				//	tmpPlane.vNormal.z = 0.0f;
-				//	tmpPlane.vNormal = tmpPlane.vNormal.normalize();
-				//}
-
 
 				Winding tmpWinding(this, face);
 
@@ -9186,9 +9161,9 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 
 				// front
 				output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
-					v3.x, v3.y, v3.z,
-					v1.x, v1.y, v1.z,
-					v2.x, v2.y, v2.z,
+					(double)v3.x, (double)v3.y, (double)v3.z,
+					(double)v1.x, (double)v1.y, (double)v1.z,
+					(double)v2.x, (double)v2.y, (double)v2.z,
 					tex.szName,
 					nS.x, nS.y, nS.z, texinfo.shiftS,
 					nT.x, nT.y, nT.z, texinfo.shiftT,
@@ -9210,10 +9185,10 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 					xv = xv.normalize();
 					yv = yv.normalize();
 					output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
-						v2_b.x, v2_b.y, v2_b.z,
-						v1_b.x, v1_b.y, v1_b.z,
-						v3_b.x, v3_b.y, v3_b.z,
-						"SKIP",
+						(double)v2_b.x, (double)v2_b.y, (double)v2_b.z,
+						(double)v1_b.x, (double)v1_b.y, (double)v1_b.z,
+						(double)v3_b.x, (double)v3_b.y, (double)v3_b.z,
+						"AAATRIGGER",
 						xv.x, xv.y, xv.z, 0,
 						yv.x, yv.y, yv.z, 0,
 						rotateTotal, 1.0f, 1.0f);
