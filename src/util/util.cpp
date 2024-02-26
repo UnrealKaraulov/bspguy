@@ -518,6 +518,23 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 	return true;
 }
 
+vec3 findCenter(const std::vector<vec3>& points) 
+{
+	vec3 center = { 0, 0, 0 };
+	for (const auto& point : points) {
+		center.x += point.x;
+		center.y += point.y;
+		center.z += point.z;
+	}
+	int totalPoints = points.size();
+	if (totalPoints > 0) {
+		center.x /= totalPoints;
+		center.y /= totalPoints;
+		center.z /= totalPoints;
+	}
+	return center;
+}
+
 vec2 getCenter(const std::vector<vec2>& verts)
 {
 	vec2 maxs = vec2(-FLT_MAX, -FLT_MAX);
@@ -1443,16 +1460,6 @@ bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpat
 	}
 	if (tracesearch)
 	{
-		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_working_dir + filename) << "]\n";
-	}
-	if (fileExists(g_working_dir + filename))
-	{
-		outpath = g_working_dir + filename;
-		return true;
-	}
-
-	if (tracesearch)
-	{
 		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_game_dir + filename) << "]\n";
 	}
 	if (fileExists(g_game_dir + filename))
@@ -1579,6 +1586,18 @@ bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpat
 			return true;
 		}
 	}
+
+	// Search in working directory
+	if (tracesearch)
+	{
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (g_working_dir + filename) << "]\n";
+	}
+	if (fileExists(g_working_dir + filename))
+	{
+		outpath = g_working_dir + filename;
+		return true;
+	}
+
 
 	if (tracesearch)
 	{

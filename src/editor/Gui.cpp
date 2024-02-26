@@ -2748,15 +2748,23 @@ void Gui::drawMenuBar()
 				}
 
 
-				if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL, false, map && !map->is_mdl_model))
+				if (ImGui::BeginMenu("ValveHammerEditor (.map) [WIP]", map && !map->is_mdl_model))
 				{
-					map->ExportToMapWIP(g_working_dir);
+					if (ImGui::MenuItem("Full .map"))
+					{
+						map->ExportToMapWIP(g_working_dir, false);
+					}
+					else if(ImGui::MenuItem("Selected faces"))
+					{
+						map->ExportToMapWIP(g_working_dir, true);
+					}
+					ImGui::EndMenu();
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
 					ImGui::BeginTooltip();
-					ImGui::TextUnformatted("Export .map ( NOT WORKING at this time:) )");
+					ImGui::TextUnformatted("Export .map ( WIP )");
 					ImGui::EndTooltip();
 				}
 
@@ -3574,8 +3582,9 @@ void Gui::drawMenuBar()
 								map->models[models_to_merge_pass3[0]].nVisLeafs = 0;
 
 								print_log(PRINT_BLUE, "Very bad clipnodes regenerated with {} errors!\n", errors);
-								map->remove_unused_model_structures();
 							}
+
+							map->remove_unused_model_structures();
 
 							map->save_undo_lightmaps();
 							map->resize_all_lightmaps();
@@ -3589,8 +3598,6 @@ void Gui::drawMenuBar()
 							rend->preRenderEnts();
 
 							rend->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
-
-							map->write(map->bsp_path);
 						}
 					}
 				}
@@ -5278,7 +5285,7 @@ void Gui::drawDebugWidget()
 				ImGui::Text(fmt::format("canControl:{}\noldControl:{}\nNo WantTextInput:{}", app->canControl, app->oldControl, !imgui_io->WantTextInput).c_str());
 				ImGui::Text(fmt::format("No WantCaptureMouseUnlessPopupClose:{}", !imgui_io->WantCaptureMouseUnlessPopupClose).c_str());
 				ImGui::Text(fmt::format("No WantCaptureMouse:{}", !imgui_io->WantCaptureMouse).c_str());
-				ImGui::Text(fmt::format("BlockMoving:{}", app->blockMoving).c_str());
+				//ImGui::Text(fmt::format("BlockMoving:{}", app->blockMoving).c_str());
 				ImGui::Text(fmt::format("MoveDir: [{}]", app->getMoveDir().toString()).c_str());
 
 				static double movemulttime = app->curTime;

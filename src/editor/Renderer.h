@@ -194,7 +194,7 @@ public:
 	int pickMode = PICK_OBJECT;
 	bool anyPopupOpened = false;
 	int last_face_idx = 0;
-	bool blockMoving = false;
+	//bool blockMoving = false;
 	bool showDragAxes = false;
 	bool saveTranformResult = false;
 	bool pickClickHeld = true; // true if the mouse button is still held after picking an object

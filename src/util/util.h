@@ -237,6 +237,7 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int height, int bytesPerPixel);
 
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv);
+int TextureAxisFromPlane(const vec3& pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);
 vec3 AxisFromTextureAngle(float angle, bool x, int type);
 
@@ -341,3 +342,4 @@ std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, 
 bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles);
 
 std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<vec3>& gl_triangles, int& max_row);
+vec3 findCenter(const std::vector<vec3>& points);

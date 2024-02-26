@@ -330,7 +330,7 @@ Renderer::Renderer()
 
 	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;
 
-	blockMoving = false;
+	//blockMoving = false;
 
 	gui->init();
 
@@ -1184,15 +1184,15 @@ void Renderer::drawEntConnections()
 
 void Renderer::controls()
 {
-	if (blockMoving)
+	/*if (blockMoving)
 	{
 		if (!anyCtrlPressed || !pressed[GLFW_KEY_A])
 			blockMoving = false;
-	}
+	}*/
 
-	if (canControl && !blockMoving)
+	if (canControl/* && !blockMoving*/)
 	{
-		if (anyCtrlPressed && anyAltPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
+	/*	if (anyCtrlPressed && anyAltPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
 			&& pickMode != PICK_OBJECT && pickInfo.selectedFaces.size() == 1)
 		{
 			Bsp* map = SelectedMap;
@@ -1213,7 +1213,7 @@ void Renderer::controls()
 					}
 				}
 			}
-		}
+		}*/
 
 		cameraOrigin += getMoveDir() * (float)(curTime - oldTime) * moveSpeed;
 
@@ -1239,7 +1239,7 @@ void Renderer::controls()
 	}
 	else
 	{
-		if (oldControl && !blockMoving && curLeftMouse == GLFW_PRESS)
+		if (oldControl/* && !blockMoving*/ && curLeftMouse == GLFW_PRESS)
 		{
 			curLeftMouse = GLFW_RELEASE;
 			oldLeftMouse = GLFW_PRESS;

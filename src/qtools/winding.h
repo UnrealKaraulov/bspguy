@@ -30,7 +30,7 @@ public:
 
 	void RemoveColinearPoints(float epsilon = ON_EPSILON);
 	bool Clip(BSPPLANE& split, bool keepon, float epsilon = ON_EPSILON);
-
+	void Round(float epsilon = ON_EPSILON);
 
 protected:
 	unsigned int  m_MaxPoints;

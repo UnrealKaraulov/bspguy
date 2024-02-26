@@ -788,6 +788,31 @@ int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv)
 	return bestaxis;
 }
 
+int TextureAxisFromPlane(const vec3& pln, vec3& xv, vec3& yv)
+{
+	int             bestaxis;
+	float           dot, best;
+	int             i;
+
+	best = 0;
+	bestaxis = 0;
+
+	for (i = 0; i < 6; i++)
+	{
+		dot = dotProduct(pln, s_baseaxis[i * 3]);
+		if (dot > best)
+		{
+			best = dot;
+			bestaxis = i;
+		}
+	}
+
+	xv = s_baseaxis[bestaxis * 3 + 1];
+	yv = s_baseaxis[bestaxis * 3 + 2];
+
+	return bestaxis;
+}
+
 float VectorLength(const vec3& v)
 {
 	int		i;

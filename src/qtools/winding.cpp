@@ -47,72 +47,72 @@ Winding::Winding(const Winding& other)
 
 Winding::Winding(const BSPPLANE& plane, float epsilon)
 {
-		int             i;
-		float           max, v;
-		vec3  org, vright, vup;
+	int             i;
+	float           max, v;
+	vec3  org, vright, vup;
 
-		org = vright = vup = vec3();
-		// find the major axis               
+	org = vright = vup = vec3();
+	// find the major axis               
 
-		max = -BOGUS_RANGE;
-		int x = -1;
-		for (i = 0; i < 3; i++)
+	max = -BOGUS_RANGE;
+	int x = -1;
+	for (i = 0; i < 3; i++)
+	{
+		v = fabs(plane.vNormal[i]);
+		if (v > max)
 		{
-			v = fabs(plane.vNormal[i]);
-			if (v > max)
-			{
-				max = v;
-				x = i;
-			}
+			max = v;
+			x = i;
 		}
-		if (x == -1)
-		{
-			print_log(get_localized_string(LANG_1008));
-		}
+	}
+	if (x == -1)
+	{
+		print_log(get_localized_string(LANG_1008));
+	}
 
-		
 
-		switch (x)
-		{
-			case 0:
-			case 1:
-				vup[2] = 1;
-				break;
-			case 2:
-				vup[0] = 1;
-				break;
-		}
 
-		v = DotProduct(vup, plane.vNormal);
-		VectorMA(vup, -v, plane.vNormal, vup);
-		VectorNormalize(vup);
+	switch (x)
+	{
+	case 0:
+	case 1:
+		vup[2] = 1;
+		break;
+	case 2:
+		vup[0] = 1;
+		break;
+	}
 
-		VectorScale(plane.vNormal, plane.fDist, org);
+	v = DotProduct(vup, plane.vNormal);
+	VectorMA(vup, -v, plane.vNormal, vup);
+	VectorNormalize(vup);
 
-		CrossProduct(vup, plane.vNormal, vright);
+	VectorScale(plane.vNormal, plane.fDist, org);
 
-		VectorScale(vup, BOGUS_RANGE, vup);
-		VectorScale(vright, BOGUS_RANGE, vright);
+	CrossProduct(vup, plane.vNormal, vright);
 
-		// project a really big     axis aligned box onto the plane
-		m_NumPoints = 4;
-		m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
-		m_Points = std::vector<vec3>(m_MaxPoints);
+	VectorScale(vup, BOGUS_RANGE, vup);
+	VectorScale(vright, BOGUS_RANGE, vright);
 
-		VectorSubtract(org, vright, m_Points[0]);
-		VectorAdd(m_Points[0], vup, m_Points[0]);
+	// project a really big     axis aligned box onto the plane
+	m_NumPoints = 4;
+	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
+	m_Points = std::vector<vec3>(m_MaxPoints);
 
-		VectorAdd(org, vright, m_Points[1]);
-		VectorAdd(m_Points[1], vup, m_Points[1]);
+	VectorSubtract(org, vright, m_Points[0]);
+	VectorAdd(m_Points[0], vup, m_Points[0]);
 
-		VectorAdd(org, vright, m_Points[2]);
-		VectorSubtract(m_Points[2], vup, m_Points[2]);
+	VectorAdd(org, vright, m_Points[1]);
+	VectorAdd(m_Points[1], vup, m_Points[1]);
 
-		VectorSubtract(org, vright, m_Points[3]);
-		VectorSubtract(m_Points[3], vup, m_Points[3]);
+	VectorAdd(org, vright, m_Points[2]);
+	VectorSubtract(m_Points[2], vup, m_Points[2]);
+
+	VectorSubtract(org, vright, m_Points[3]);
+	VectorSubtract(m_Points[3], vup, m_Points[3]);
 }
 
-void Winding::getPlane(BSPPLANE& plane) 
+void Winding::getPlane(BSPPLANE& plane)
 {
 	vec3          v1, v2;
 	vec3          plane_normal;
@@ -190,7 +190,7 @@ void Winding::RemoveColinearPoints(float epsilon)
 {
 	int	i;
 	vec3 v1, v2;
-	vec3 p1,  p2,  p3;
+	vec3 p1, p2, p3;
 	for (i = 0; i < m_NumPoints; i++)
 	{
 		p1 = m_Points[(i + m_NumPoints - 1) % m_NumPoints];
@@ -331,4 +331,15 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 	}
 
 	return true;
+}
+
+void Winding::Round(float epsilon)
+{
+	for (auto& p : m_Points)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			p[j] = round(p[j] / epsilon) * epsilon;
+		}
+	}
 }

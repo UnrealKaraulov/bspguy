@@ -118,6 +118,7 @@ public:
 	// if modelIdx=0, the world is moved and all entities along with it
 	bool move(vec3 offset, int modelIdx = 0, bool onlyModel = false, bool forceMove = false, bool logged = true);
 
+	void move_texinfo(BSPTEXTUREINFO& info, vec3 offset);
 	void move_texinfo(int idx, vec3 offset);
 	void write(const std::string& path);
 
@@ -226,7 +227,7 @@ public:
 	void create_solid_nodes(Solid& solid, BSPMODEL* targetModel);
 	// returns index of the solid node
 
-	int create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, bool empty = false);
+	int create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, bool empty = false, int leafIdx = 0);
 	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false, bool empty = false);
 	// copies a model from the sourceMap into this one
 	void add_model(Bsp* sourceMap, int modelIdx);
@@ -317,7 +318,7 @@ public:
 
 	void ExportToObjWIP(const std::string& path, int iscale = 1, bool lightmap_mode = false);
 
-	void ExportToMapWIP(const std::string& path);
+	void ExportToMapWIP(const std::string& path, bool selected);
 
 	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool & valid_nodes);
 
@@ -343,6 +344,10 @@ public:
 	std::vector<int> getFacesFromPlane(int iPlane);
 	bool is_texture_with_pal(int textureid);
 	int getBspTextureSize(int textureid);
+	size_t getEmbeddedTexCount();
+
+	int getWorlspawnEntId();
+	Entity * getWorldspawnEnt();
 
 	void save_undo_lightmaps(bool logged = false);
 	void resize_all_lightmaps(bool logged = false);
