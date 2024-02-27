@@ -153,11 +153,10 @@ Winding::Winding(const std::vector<vec3>& points, float epsilon)
 	);
 }
 
+
 Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 {
 	int             se;
-	vec3* dv;
-	int             v;
 
 	m_NumPoints = face.nEdges;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;
@@ -167,6 +166,9 @@ Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 	for (i = 0; i < m_NumPoints && i < face.nEdges; i++)
 	{
 		se = bsp->surfedges[face.iFirstEdge + i];
+
+		int v;
+
 		if (se < 0)
 		{
 			v = bsp->edges[-se].iVertex[1];
@@ -176,13 +178,28 @@ Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 			v = bsp->edges[se].iVertex[0];
 		}
 
-		dv = &bsp->verts[v];
-		VectorCopy((float*)dv, m_Points[i]);
+		m_Points[i] = bsp->verts[v];
 	}
 
 	RemoveColinearPoints(
 		epsilon
 	);
+}
+
+
+void Winding::MergeVerts(Bsp* src, float epsilon)
+{
+	for (auto& v : m_Points)
+	{
+		for (int v2 = src->vertCount - 1; v2 >= 0; v2--)
+		{
+			if (src->verts[v2].equal(v, epsilon))
+			{
+				v = src->verts[v2];
+				break;
+			}
+		}
+	}
 }
 
 // Remove the colinear point of any three points that forms a triangle which is thinner than ON_EPSILON

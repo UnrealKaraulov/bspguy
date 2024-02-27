@@ -865,6 +865,12 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 	if (modelIdx < 0)
 		return 0;
 
+	while (modelIdx >= renderModels.size())
+	{
+		print_log(get_localized_string(LANG_0280));
+		addNewRenderFace();
+	}
+
 	BSPMODEL& model = map->models[modelIdx];
 	RenderModel* renderModel = &renderModels[modelIdx];
 
@@ -1651,8 +1657,6 @@ void BspRenderer::refreshEnt(size_t entIdx)
 	int body = -1;
 
 	Entity* ent = map->ents[entIdx];
-
-	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
 	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
 	renderEnts[entIdx].isDuplicateModel = false;
 
@@ -2293,7 +2297,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	static double leafUpdTime = 0.0;
 
-	if (fabs(g_app->curTime - leafUpdTime) > 0.25)
+	if (map->models && fabs(g_app->curTime - leafUpdTime) > 0.25 )
 	{
 		leafUpdTime = g_app->curTime;
 		std::vector<int> nodeBranch;

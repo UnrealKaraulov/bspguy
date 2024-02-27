@@ -1120,7 +1120,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	return true;
 }
 
-void Bsp::move_texinfo(BSPTEXTUREINFO & info, vec3 offset)
+void Bsp::move_texinfo(BSPTEXTUREINFO& info, vec3 offset)
 {
 	if (info.iMiptex < 0 || info.iMiptex >= textureCount)
 		return;
@@ -4553,14 +4553,16 @@ bool Bsp::validate()
 		print_log(PRINT_RED | PRINT_INTENSITY, "Overflowed entities !!!\n");
 	}
 
-	unsigned int newVisRowSize = ((leafCount + 63) & ~63) >> 3;
-	int decompressedVisSize = leafCount * newVisRowSize;
-	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
-	memset(decompressedVis, 0xFF, decompressedVisSize);
-	decompress_vis_lump(this, leaves, visdata, decompressedVis,
-		models[0].nVisLeafs, leafCount - 1, leafCount - 1, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
-	delete[] decompressedVis;
-
+	if (leaves)
+	{
+		unsigned int newVisRowSize = ((leafCount + 63) & ~63) >> 3;
+		int decompressedVisSize = leafCount * newVisRowSize;
+		unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
+		memset(decompressedVis, 0xFF, decompressedVisSize);
+		decompress_vis_lump(this, leaves, visdata, decompressedVis,
+			models[0].nVisLeafs, leafCount - 1, leafCount - 1, decompressedVisSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
+		delete[] decompressedVis;
+	}
 	return isValid;
 }
 
@@ -8944,6 +8946,65 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 	}
 }
 
+void placePointsToPlane(std::vector<vec3>& points, const BSPPLANE& plane)
+{
+	for (auto& point : points)
+	{
+		double distance = (point.x * plane.vNormal.x + point.y * plane.vNormal.y + point.z * plane.vNormal.z - plane.fDist);
+		point.x -= (float)(distance * plane.vNormal.x);
+		point.y -= (float)(distance * plane.vNormal.y);
+		point.z -= (float)(distance * plane.vNormal.z);
+	}
+}
+
+vec3 findCenter(const std::vector<vec3>& points) {
+	vec3 center = { 0, 0, 0 };
+
+	if (points.size() > 0) {
+		for (const auto& point : points) {
+			center.x += point.x;
+			center.y += point.y;
+			center.z += point.z;
+		}
+		center.x /= points.size();
+		center.y /= points.size();
+		center.z /= points.size();
+	}
+	return center;
+}
+
+vec3 findClosestEdgePoint(std::vector<vec3>& points) {
+	if (points.size() < 2) {
+		return { 0, 0, 0 }; // Возвращаем точку по умолчанию, если точек недостаточно
+	}
+
+	float minDistance = std::numeric_limits<float>::max();
+	vec3 closestPoint1, closestPoint2;
+
+	for (size_t i = 0; i < points.size(); ++i)
+	{
+		for (size_t j = 0; j < points.size(); ++j)
+		{
+			if (j != i)
+			{
+				float dist = points[i].dist(points[j]);
+				if (dist < minDistance) {
+					minDistance = dist;
+					closestPoint1 = points[i];
+					closestPoint2 = points[j];
+				}
+			}
+		}
+	}
+
+	vec3 faceCenterPoint = getCentroid(points);
+
+	vec3 finalCenter = getCentroid({ closestPoint1,closestPoint2 });
+	finalCenter = getCentroid({ getCentroid({finalCenter, faceCenterPoint}), faceCenterPoint });
+
+	return finalCenter;
+}
+
 void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 {
 	if (!createDir(path))
@@ -8976,16 +9037,16 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 		vec3 w_mins, w_maxs;
 		get_bounding_box(w_mins, w_maxs);
 
-		w_mins -= 4.5f;
-		w_maxs += 4.5f;
+		w_mins -= 10.0f;
+		w_maxs += 10.0f;
 		update_lump_pointers();
 
 		int newModelIdx = create_model();
 
 		int null_tex_id = -1;
-		if (!find_embedded_texture("BLACK", null_tex_id) && !find_embedded_wad_texture("BLACK", null_tex_id))
+		if (!find_embedded_texture("SKY", null_tex_id) && !find_embedded_wad_texture("SKY", null_tex_id))
 		{
-			null_tex_id = add_texture("BLACK", NULL, 64, 64);
+			null_tex_id = add_texture("SKY", NULL, 64, 64);
 		}
 
 		create_inside_box(w_mins, w_maxs, &models[newModelIdx], null_tex_id);
@@ -9004,6 +9065,10 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 			std::iota(faceList.begin(), faceList.end(), 0);
 		}
 
+		std::set<int> refreshedModels;
+
+
+
 		for (size_t f = 0; f < faceList.size(); f++)
 		{
 			size_t i = faceList[f];
@@ -9017,6 +9082,21 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 			else
 			{
 				decompiled_faces.insert(i);
+			}
+
+			RenderFace* rface;
+			RenderGroup* rgroup;
+
+			if (refreshedModels.find(mdlid) == refreshedModels.end())
+			{
+				bsprend->refreshModel(mdlid, false, false);
+				refreshedModels.insert(mdlid);
+			}
+
+			if (!bsprend->getRenderPointers(i, &rface, &rgroup))
+			{
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196));
+				break;
 			}
 
 			BSPFACE32& face = faces[i];
@@ -9126,10 +9206,27 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 					}
 				}
 
+
+				std::vector<lightmapVert> lm_points = std::vector<lightmapVert>(&((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset], &((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + rface->vertCount]);
+
+				std::vector<vec3> points(rface->vertCount);
+				for (int p = 0; p < rface->vertCount; p++)
+				{
+					points[p] = lm_points[p].pos.unflip();
+				}
+
 				// merge faces and add to decompiled_faces ?
 				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
 
-				Winding tmpWinding(this, face);
+				placePointsToPlane(points, tmpPlane);
+
+				Winding tmpWinding(points);
+				tmpWinding.RemoveColinearPoints();
+				// merge 
+				/*tmpWinding.MergeVerts(this,0.0001f);
+				tmpWinding.RemoveColinearPoints();*/
+
+				//tmpWinding.Round(EPSILON);
 
 				if (tmpWinding.m_NumPoints < 3)
 				{
@@ -9141,7 +9238,9 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 				vec3 v2 = tmpWinding.m_Points[1] + offset;
 				vec3 v3 = tmpWinding.m_Points[2] + offset;
 
-				vec3 back_vert = findCenter(tmpWinding.m_Points) - tmpPlane.vNormal.normalize() * 3.0f;
+				vec3 centoid = getCentroid(tmpWinding.m_Points);
+
+				vec3 back_vert = centoid - tmpPlane.vNormal.normalize() * 4.0f;
 
 				back_vert += offset;
 
@@ -9157,13 +9256,35 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 				float rotateY = AngleFromTextureAxis(texinfo.vT, false, val);
 				float rotateTotal = rotateY - rotateX;
 
+				bool back_face_is_empty = !selected;
+
+				if (back_face_is_empty)
+				{
+					for (int test = 2; test < 5; test++)
+					{
+						vec3 test_vert = centoid - tmpPlane.vNormal.normalize() * (test * 1.0f);
+
+						std::vector<int> nodeBranch;
+						int leafIdx;
+						int childIdx = -1;
+						int headNode = models[0].iHeadnodes[0];
+						int contents = pointContents(headNode, test_vert, i, nodeBranch, leafIdx, childIdx);
+
+						if (pointContents(models[0].iHeadnodes[0], test_vert, 0) != CONTENTS_SOLID && leafIdx != 0)
+						{
+							back_face_is_empty = false;
+							break;
+						}
+					}
+				}
+
 				output_file[groupname] << "{\n";
 
 				// front
 				output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
-					(double)v3.x, (double)v3.y, (double)v3.z,
-					(double)v1.x, (double)v1.y, (double)v1.z,
-					(double)v2.x, (double)v2.y, (double)v2.z,
+					v3.x, v3.y, v3.z,
+					v1.x, v1.y, v1.z,
+					v2.x, v2.y, v2.z,
 					tex.szName,
 					nS.x, nS.y, nS.z, texinfo.shiftS,
 					nT.x, nT.y, nT.z, texinfo.shiftT,
@@ -9185,10 +9306,10 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 					xv = xv.normalize();
 					yv = yv.normalize();
 					output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
-						(double)v2_b.x, (double)v2_b.y, (double)v2_b.z,
-						(double)v1_b.x, (double)v1_b.y, (double)v1_b.z,
-						(double)v3_b.x, (double)v3_b.y, (double)v3_b.z,
-						"AAATRIGGER",
+						v2_b.x, v2_b.y, v2_b.z,
+						v1_b.x, v1_b.y, v1_b.z,
+						v3_b.x, v3_b.y, v3_b.z,
+						texinfo.nFlags & TEX_SPECIAL || back_face_is_empty ? "NULL" : "AAATRIGGER"/*"BEVEL"*/,
 						xv.x, xv.y, xv.z, 0,
 						yv.x, yv.y, yv.z, 0,
 						rotateTotal, 1.0f, 1.0f);

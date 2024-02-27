@@ -342,4 +342,4 @@ std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, 
 bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles);
 
 std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<vec3>& gl_triangles, int& max_row);
-vec3 findCenter(const std::vector<vec3>& points);
+vec3 findBestBrushCenter(std::vector<vec3>& points);

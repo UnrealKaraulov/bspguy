@@ -518,19 +518,34 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 	return true;
 }
 
-vec3 findCenter(const std::vector<vec3>& points) 
+vec3 findBestBrushCenter( std::vector<vec3>& points) 
 {
-	vec3 center = { 0, 0, 0 };
-	for (const auto& point : points) {
-		center.x += point.x;
-		center.y += point.y;
-		center.z += point.z;
-	}
-	int totalPoints = points.size();
-	if (totalPoints > 0) {
-		center.x /= totalPoints;
-		center.y /= totalPoints;
-		center.z /= totalPoints;
+	vec3 center{};
+
+	if (points.size() > 0)
+	{
+		for (const auto& point : points) {
+			center += point;
+		}
+		center /= points.size();
+
+		if (points.size() > 2)
+		{
+			float minDistance = std::numeric_limits<float>::max();
+			vec3 closestPoint{};
+
+			for (size_t i = 0; i < points.size(); ++i) {
+				for (size_t j = i + 1; j < points.size(); ++j) {
+					float dist = points[i].dist(points[j]);
+					if (dist < minDistance) {
+						minDistance = dist;
+						closestPoint = (points[i] + points[j]) / 2.0f;
+					}
+				}
+			}
+
+			return getCenter(center, closestPoint);
+		}
 	}
 	return center;
 }
@@ -2461,7 +2476,7 @@ vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& 
 
 vec3 getCentroid(const std::vector<vec3>& hullVerts)
 {
-	vec3 centroid;
+	vec3 centroid{};
 	for (size_t i = 0; i < hullVerts.size(); i++)
 	{
 		centroid += hullVerts[i];
@@ -2471,7 +2486,7 @@ vec3 getCentroid(const std::vector<vec3>& hullVerts)
 
 vec3 getCentroid(const std::vector<TransformVert>& hullVerts)
 {
-	vec3 centroid;
+	vec3 centroid{};
 	for (size_t i = 0; i < hullVerts.size(); i++)
 	{
 		centroid += hullVerts[i].pos;

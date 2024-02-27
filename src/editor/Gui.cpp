@@ -4108,7 +4108,7 @@ void Gui::drawMenuBar()
 						int bmaxs[2];
 						if (!GetFaceExtents(map, i, bmins, bmaxs))
 						{
-							info.nFlags += TEX_SPECIAL;
+							info.nFlags |= TEX_SPECIAL;
 						}
 					}
 				}

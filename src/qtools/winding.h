@@ -28,6 +28,7 @@ public:
 	void getPlane(BSPPLANE& plane);
 	Winding& operator=(const Winding& other);
 
+	void MergeVerts(Bsp * src, float epsilon = ON_EPSILON);
 	void RemoveColinearPoints(float epsilon = ON_EPSILON);
 	bool Clip(BSPPLANE& split, bool keepon, float epsilon = ON_EPSILON);
 	void Round(float epsilon = ON_EPSILON);
