@@ -1919,12 +1919,12 @@ bool operator == (BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2)
 		struct1.nFlags == struct2.nFlags &&
 		std::abs(struct1.shiftS - struct2.shiftS) < EPSILON &&
 		std::abs(struct1.shiftT - struct2.shiftT) < EPSILON &&
-		struct1.vS.equal(struct2.vS) && struct1.vT.equal(struct2.vT);
+		struct1.vS.equal(struct2.vS, EPSILON) && struct1.vT.equal(struct2.vT, EPSILON);
 }
 
-void Bsp::clean_unused_texinfos()
+int Bsp::merge_all_texinfos()
 {
-	//int unusedtexinfos = 0;
+	int unusedtexinfos = 0;
 	for (int i = 0; i < faceCount; i++)
 	{
 		if (faces[i].iTextureInfo >= 0)
@@ -1935,19 +1935,25 @@ void Bsp::clean_unused_texinfos()
 			{
 				if (n != texInfoIdx && texInfo == texinfos[n])
 				{
+					bool merge = false;
 					for (int z = 0; z < faceCount; z++)
 					{
 						if (z == i)
 							continue;
+
+						merge = true;
 						if (faces[z].iTextureInfo == n)
 						{
 							faces[z].iTextureInfo = texInfoIdx;
 						}
 					}
+					if (merge)
+						unusedtexinfos++;
 				}
 			}
 		}
 	}
+	return unusedtexinfos;
 }
 
 int Bsp::merge_all_verts(float epsilon)
@@ -1990,8 +1996,12 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 
 	update_lump_pointers();
 
-	if (g_settings.mark_unused_texinfos && target & CLEAN_TEXINFOS)
-		clean_unused_texinfos();
+	int clean_texinfos = 0;
+
+	if (target & CLEAN_TEXINFOS_FORCE || (g_settings.mark_unused_texinfos && target & CLEAN_TEXINFOS))
+	{
+		clean_texinfos = merge_all_texinfos();
+	}
 
 	int merged_verts = 0;
 	if (g_settings.merge_verts && target & CLEAN_VERTICES)
@@ -2000,7 +2010,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 		merged_verts = merge_all_verts();
 	}
 
-	if (g_settings.merge_edges && target & CLEAN_EDGES)
+	if (target & CLEAN_EDGES_FORCE || (g_settings.merge_edges && target & CLEAN_EDGES))
 	{
 		for (int n = 0; n < surfedgeCount; n++)
 		{
@@ -2030,14 +2040,17 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	STRUCTUSAGE usedStructures(this);
 
 	bool* usedModels = new bool[modelCount + 1];
-	memset(usedModels, 0, sizeof(bool) * modelCount);
-	usedModels[0] = true; // never delete worldspawn
-	for (int i = 0; i < (int)ents.size(); i++)
+	if (target & CLEAN_MODELS)
 	{
-		int modelIdx = ents[i]->getBspModelIdx();
-		if (modelIdx >= 0 && modelIdx < modelCount)
+		memset(usedModels, 0, sizeof(bool) * modelCount);
+		usedModels[0] = true; // never delete worldspawn
+		for (int i = 0; i < (int)ents.size(); i++)
 		{
-			usedModels[modelIdx] = true;
+			int modelIdx = ents[i]->getBspModelIdx();
+			if (modelIdx >= 0 && modelIdx < modelCount)
+			{
+				usedModels[modelIdx] = true;
+			}
 		}
 	}
 
@@ -2046,13 +2059,20 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	{
 		for (int i = modelCount - 1; i >= 0; i--)
 		{
-			if (!usedModels[i])
+			if (!(target & CLEAN_MODELS))
 			{
-				delete_model(i);
+				mark_model_structures(i, &usedStructures, false);
 			}
 			else
 			{
-				mark_model_structures(i, &usedStructures, false);
+				if (!usedModels[i])
+				{
+					delete_model(i);
+				}
+				else
+				{
+					mark_model_structures(i, &usedStructures, false);
+				}
 			}
 		}
 	}
@@ -2098,9 +2118,9 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 		removeCount.faces = remove_unused_structs(LUMP_FACES, usedStructures.faces, remap.faces);
 	if (target & CLEAN_SURFEDGES)
 		removeCount.surfEdges = remove_unused_structs(LUMP_SURFEDGES, usedStructures.surfEdges, remap.surfEdges);
-	if (target & CLEAN_TEXINFOS)
+	if (target & CLEAN_TEXINFOS_FORCE || target & CLEAN_TEXINFOS)
 		removeCount.texInfos = remove_unused_structs(LUMP_TEXINFO, usedStructures.texInfo, remap.texInfo);
-	if (target & CLEAN_EDGES)
+	if (target & CLEAN_EDGES_FORCE || target & CLEAN_EDGES)
 		removeCount.edges = remove_unused_structs(LUMP_EDGES, usedStructures.edges, remap.edges);
 	if (target & CLEAN_VERTICES)
 		removeCount.verts = remove_unused_structs(LUMP_VERTICES, usedStructures.verts, remap.verts) + merged_verts;
@@ -8238,6 +8258,41 @@ int Bsp::get_model_from_leaf(int leafIdx)
 	return -1;
 }
 
+std::vector<int> Bsp::get_face_edges(int faceIdx)
+{
+	std::vector<int> out;
+	for (int e = faces[faceIdx].iFirstEdge; e < faces[faceIdx].iFirstEdge + faces[faceIdx].nEdges; e++)
+	{
+		out.push_back(abs(surfedges[e]));
+	}
+	return out;
+}
+
+std::vector<vec3> Bsp::get_face_verts(int faceIdx)
+{
+	std::vector<vec3> out;
+	for (int e = faces[faceIdx].iFirstEdge; e < faces[faceIdx].iFirstEdge + faces[faceIdx].nEdges; e++)
+	{
+		int edgeIdx = surfedges[e];
+		BSPEDGE32& edge = edges[abs(edgeIdx)];
+		vec3 v = edgeIdx < 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
+		out.push_back(v);
+	}
+	return out;
+}
+
+std::vector<int> Bsp::get_face_verts_idx(int faceIdx)
+{
+	std::vector<int> out;
+	for (int e = faces[faceIdx].iFirstEdge; e < faces[faceIdx].iFirstEdge + faces[faceIdx].nEdges; e++)
+	{
+		int edgeIdx = surfedges[e];
+		BSPEDGE32& edge = edges[abs(edgeIdx)];
+		out.push_back(edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0]);
+	}
+	return out;
+}
+
 bool Bsp::is_worldspawn_ent(size_t entIdx)
 {
 	if (entIdx >= (int)ents.size())
@@ -8738,7 +8793,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 			if (!bsprend->getRenderPointers(i, &rface, &rgroup))
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196));
-				break;
+				continue;
 			}
 
 			BSPFACE32& face = faces[i];
@@ -8951,11 +9006,30 @@ void placePointsToPlane(std::vector<vec3>& points, const BSPPLANE& plane)
 	for (auto& point : points)
 	{
 		double distance = (point.x * plane.vNormal.x + point.y * plane.vNormal.y + point.z * plane.vNormal.z - plane.fDist);
-		point.x -= (float)(distance * plane.vNormal.x);
-		point.y -= (float)(distance * plane.vNormal.y);
-		point.z -= (float)(distance * plane.vNormal.z);
+		if (std::abs(distance) > FLT_MIN)
+		{
+			point.x -= (float)(distance * plane.vNormal.x);
+			point.y -= (float)(distance * plane.vNormal.y);
+			point.z -= (float)(distance * plane.vNormal.z);
+		}
 	}
 }
+
+
+bool isPointsToPlane(const std::vector<vec3>& points, const BSPPLANE& plane)
+{
+	for (auto& point : points)
+	{
+		double distance = (point.x * plane.vNormal.x + point.y * plane.vNormal.y + point.z * plane.vNormal.z - plane.fDist);
+		if (std::abs(distance) > mON_EPSILON)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 
 vec3 findCenter(const std::vector<vec3>& points) {
 	vec3 center = { 0, 0, 0 };
@@ -9005,6 +9079,45 @@ vec3 findClosestEdgePoint(std::vector<vec3>& points) {
 	return finalCenter;
 }
 
+bool isCCW(const vec3& a, const vec3& b, const vec3& c) {
+	return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
+}
+
+bool extractConvexParts(const std::vector<vec3>& points, std::vector<std::vector<vec3>>& parts) {
+	std::vector<vec3> sortedPoints = points;
+	std::sort(sortedPoints.begin(), sortedPoints.end(), [](const vec3& a, const vec3& b) {
+		return a.x < b.x || (a.x == b.x && a.y < b.y);
+		});
+
+	std::function<void(size_t, size_t, std::deque<vec3>&)> buildConvexHull = [&](size_t start, size_t end, std::deque<vec3>& hull) {
+		for (size_t i = start; i <= end; ++i) {
+			vec3& pt = sortedPoints[i];
+			while (hull.size() > 1 && !isCCW(hull[hull.size() - 2], hull[hull.size() - 1], pt)) {
+				hull.pop_back();
+			}
+			hull.push_back(pt);
+		}
+		};
+
+	std::function<void(size_t, size_t)> divideAndConquer = [&](size_t start, size_t end) {
+		if (end - start < 2) {
+			std::deque<vec3> hull;
+			hull.push_front(sortedPoints[start]);
+			buildConvexHull(start, end, hull);
+			parts.push_back(std::vector<vec3>(hull.begin(), hull.end()));
+			return;
+		}
+
+		size_t mid = start + (end - start) / 2;
+		divideAndConquer(start, mid);
+		divideAndConquer(mid + 1, end);
+		};
+
+	divideAndConquer(0, sortedPoints.size() - 1);
+
+	return !parts.empty();
+}
+
 void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 {
 	if (!createDir(path))
@@ -9017,16 +9130,31 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 	fopen_s(&file, (path + bsp_name + ".map").c_str(), "wb");
 	if (file)
 	{
-		if (!selected)
+		BspRenderer* bsprend = renderer;
+
+		if (!selected && leafCount > 2 && marksurfCount > 2)
 		{
 			remove_faces_by_content(CONTENTS_SKY);
 			remove_faces_by_content(CONTENTS_SOLID);
+
+			remove_unused_model_structures();
 		}
+
+
+		remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
+
+		save_undo_lightmaps();
+		resize_all_lightmaps();
+		bsprend->reuploadTextures();
+		bsprend->loadLightmaps();
+		bsprend->calcFaceMaths();
+
+		update_ent_lump();
+		update_lump_pointers();
+
 		fprintf(file, "// Exported using bspguy!\n");
 
 		std::string groupname = std::string();
-
-		BspRenderer* bsprend = renderer;
 
 		std::set<size_t> decompiledEnts;
 
@@ -9040,6 +9168,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 		w_mins -= 10.0f;
 		w_maxs += 10.0f;
 		update_lump_pointers();
+
 
 		int newModelIdx = create_model();
 
@@ -9069,6 +9198,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 
 
 
+		std::vector<int> mergedFaces(modelCount);
+
 		for (size_t f = 0; f < faceList.size(); f++)
 		{
 			size_t i = faceList[f];
@@ -9096,7 +9227,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 			if (!bsprend->getRenderPointers(i, &rface, &rgroup))
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196));
-				break;
+				continue;
 			}
 
 			BSPFACE32& face = faces[i];
@@ -9215,107 +9346,255 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 					points[p] = lm_points[p].pos.unflip();
 				}
 
+
+				//print_log(PRINT_GREEN | PRINT_INTENSITY, "Merged {} faces!\n", merged_faces);
+
 				// merge faces and add to decompiled_faces ?
 				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
 
 				placePointsToPlane(points, tmpPlane);
 
+				//Winding tmpPlaneWinding(points);
 				Winding tmpWinding(points);
 				tmpWinding.RemoveColinearPoints();
-				// merge 
-				/*tmpWinding.MergeVerts(this,0.0001f);
-				tmpWinding.RemoveColinearPoints();*/
 
+				points = tmpWinding.m_Points;
+
+				/*	if (isConvex(tmpWinding.m_Points))
+					{
+						print_log(PRINT_GREEN, "YEESYEESYEESYEESYEESYEESYEESYEES\n");
+					}
+					else
+					{
+						print_log(PRINT_RED, "NOOONOOONOOONOOONOOONOOONOOO\n");
+					}*/
+
+				bool found_non_convex = false;
+
+				//std::vector<int> face_edges = get_face_edges(i);
+
+				//bool one_face_merged = true;
+				//int merged_faces = 0;
+
+				//while (one_face_merged)
+				//{
+				//	one_face_merged = true;
+				//	int tmpMergedCount = merged_faces;
+				//	while (one_face_merged)
+				//	{
+				//		one_face_merged = false;
+				//		for (size_t nf = 0; nf < faceList.size(); nf++)
+				//		{
+				//			if (!decompiled_faces.count(nf))
+				//			{
+				//				// Optimized map can share edges between two bspmodels
+				//				if (faces[nf].nPlaneSide != faces[i].nPlaneSide ||
+				//					faces[nf].iPlane != faces[i].iPlane ||
+				//					faces[nf].iTextureInfo != faces[i].iTextureInfo ||
+				//					get_model_from_face(nf) != mdlid)
+				//				{
+				//					continue;
+				//				}
+
+
+				//				bool same_edge_found = false;
+				//				std::vector<int> tmp_face_edges = get_face_edges(nf);
+				//				for (int e2 : tmp_face_edges)
+				//				{
+				//					if (std::find(face_edges.begin(), face_edges.end(), e2) != face_edges.end())
+				//					{
+				//						same_edge_found = true;
+				//						break;
+				//					}
+				//				}
+
+				//				if (same_edge_found)
+				//				{
+				//					for (int e2 : tmp_face_edges)
+				//					{
+				//						if (std::find(face_edges.begin(), face_edges.end(), e2) == face_edges.end())
+				//						{
+				//							face_edges.push_back(e2);
+				//						}
+				//					}
+
+				//					RenderFace* rface2;
+				//					RenderGroup* rgroup2;
+				//					if (!bsprend->getRenderPointers(nf, &rface2, &rgroup2))
+				//					{
+				//						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196) + "(merge)");
+				//						continue;
+				//					}
+
+				//					std::vector<lightmapVert> lm_points2 = std::vector<lightmapVert>(&((lightmapVert*)rgroup2->buffer->get_data())[rface2->vertOffset], &((lightmapVert*)rgroup2->buffer->get_data())[rface2->vertOffset + rface2->vertCount]);
+
+				//					std::vector<vec3> backup_points = points;
+
+				//					for (int p = 0; p < rface2->vertCount; p++)
+				//					{
+				//						vec3 newPoint = lm_points2[p].pos.unflip();
+
+				//						if (std::find(points.begin(), points.end(), newPoint) == points.end())
+				//							points.push_back(newPoint);
+				//					}
+
+				//					placePointsToPlane(points, tmpPlane);
+
+				//					Winding newWinding(points);
+				//					std::vector<std::vector<vec3>> convex_list;
+
+				//					if (getConvexPolies(newWinding.m_Points, tmpPlane.vNormal, convex_list) && convex_list.size() > 1)
+				//					{
+				//						found_non_convex = true;
+				//						points = newWinding.m_Points;
+				//						decompiled_faces.insert(nf);
+				//						mergedFaces[mdlid]++;
+				//						merged_faces++;
+				//						one_face_merged = true;
+				//					}
+				//					else
+				//					{
+				//						points = backup_points;
+				//					}
+
+				//					/*if (tryMergeWinding)
+				//					{
+				//						tryMergeWinding->RemoveColinearPoints();
+
+				//						if (tryMergeWinding->m_Points.size() >= 3 && isPointsToPlane(tryMergeWinding->m_Points, tmpPlane))
+				//						{
+				//							tmpWinding = *tryMergeWinding;
+				//							decompiled_faces.insert(nf);
+				//							mergedFaces[mdlid]++;
+				//							merged_faces++;
+				//							one_face_merged = true;
+				//						}
+				//						else
+				//						{
+				//							print_log(PRINT_RED, "REVERT BACK!\n");
+				//						}
+
+				//						delete tryMergeWinding;
+				//					}*/
+				//				}
+				//			}
+				//		}
+				//	}
+				//	if (tmpMergedCount == merged_faces)
+				//	{
+				//		break;
+				//	}
+				//	else
+				//	{
+				//		print_log(PRINT_BLUE, "CONTINUE!!!!!!!!!!!!!!\n");
+				//	}
+				//}
+
+
+				std::vector<std::vector<vec3>> convex_list;
+
+				if (found_non_convex)
+				{
+					//getConvexPolies(points, tmpPlane.vNormal, convex_list);
+				}
+				else
+				{
+					convex_list.push_back(points);
+				}
+				// merge 
 				//tmpWinding.Round(EPSILON);
 
-				if (tmpWinding.m_NumPoints < 3)
+				for (auto& tempFace : convex_list)
 				{
-					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0045));
-					continue;
-				}
-
-				vec3 v1 = tmpWinding.m_Points[0] + offset;
-				vec3 v2 = tmpWinding.m_Points[1] + offset;
-				vec3 v3 = tmpWinding.m_Points[2] + offset;
-
-				vec3 centoid = getCentroid(tmpWinding.m_Points);
-
-				vec3 back_vert = centoid - tmpPlane.vNormal.normalize() * 4.0f;
-
-				back_vert += offset;
-
-				float scaleS = 1.0f / texinfo.vS.length();
-				float scaleT = 1.0f / texinfo.vT.length();
-
-				vec3 nS = texinfo.vS.normalize();
-				vec3 nT = texinfo.vT.normalize();
-
-				vec3 xv, yv;
-				int val = TextureAxisFromPlane(tmpPlane, xv, yv);
-				float rotateX = AngleFromTextureAxis(texinfo.vS, true, val);
-				float rotateY = AngleFromTextureAxis(texinfo.vT, false, val);
-				float rotateTotal = rotateY - rotateX;
-
-				bool back_face_is_empty = !selected;
-
-				if (back_face_is_empty)
-				{
-					for (int test = 2; test < 5; test++)
+					if (tempFace.size() < 3)
 					{
-						vec3 test_vert = centoid - tmpPlane.vNormal.normalize() * (test * 1.0f);
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0045));
+						continue;
+					}
 
-						std::vector<int> nodeBranch;
-						int leafIdx;
-						int childIdx = -1;
-						int headNode = models[0].iHeadnodes[0];
-						int contents = pointContents(headNode, test_vert, i, nodeBranch, leafIdx, childIdx);
+					vec3 v1 = tempFace[0] + offset;
+					vec3 v2 = tempFace[1] + offset;
+					vec3 v3 = tempFace[2] + offset;
 
-						if (pointContents(models[0].iHeadnodes[0], test_vert, 0) != CONTENTS_SOLID && leafIdx != 0)
+					vec3 centoid = getCentroid(tempFace);
+
+					vec3 back_vert = centoid - tmpPlane.vNormal.normalize() * 4.0f;
+
+					back_vert += offset;
+
+					float scaleS = 1.0f / texinfo.vS.length();
+					float scaleT = 1.0f / texinfo.vT.length();
+
+					vec3 nS = texinfo.vS.normalize();
+					vec3 nT = texinfo.vT.normalize();
+
+					vec3 xv, yv;
+					int val = TextureAxisFromPlane(tmpPlane, xv, yv);
+					float rotateX = AngleFromTextureAxis(texinfo.vS, true, val);
+					float rotateY = AngleFromTextureAxis(texinfo.vT, false, val);
+					float rotateTotal = rotateY - rotateX;
+
+					bool back_face_is_empty = !selected;
+
+					if (back_face_is_empty)
+					{
+						for (int test = 2; test < 5; test++)
 						{
-							back_face_is_empty = false;
-							break;
+							vec3 test_vert = centoid - tmpPlane.vNormal.normalize() * (test * 1.0f);
+
+							std::vector<int> nodeBranch;
+							int leafIdx;
+							int childIdx = -1;
+							int headNode = models[0].iHeadnodes[0];
+							int contents = pointContents(headNode, test_vert, i, nodeBranch, leafIdx, childIdx);
+
+							if (pointContents(models[0].iHeadnodes[0], test_vert, 0) != CONTENTS_SOLID && leafIdx != 0)
+							{
+								back_face_is_empty = false;
+								break;
+							}
 						}
 					}
-				}
 
-				output_file[groupname] << "{\n";
+					output_file[groupname] << "{\n";
 
-				// front
-				output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
-					v3.x, v3.y, v3.z,
-					v1.x, v1.y, v1.z,
-					v2.x, v2.y, v2.z,
-					tex.szName,
-					nS.x, nS.y, nS.z, texinfo.shiftS,
-					nT.x, nT.y, nT.z, texinfo.shiftT,
-					rotateTotal, scaleS, scaleT);
-
-				// back
-				for (int n = tmpWinding.m_NumPoints - 1; n >= 0; n--)
-				{
-					vec3 v1_b = tmpWinding.m_Points[n] + offset;
-					vec3 v2_b = tmpWinding.m_Points[(n + 1) % tmpWinding.m_NumPoints] + offset;
-
-					vec3 v3_b = back_vert;
-
-					vec3 edge1 = v2_b - v1_b;
-					vec3 edge2 = v3_b - v1_b;
-
-					vec3 normal = crossProduct(edge1, edge2).normalize();
-					TextureAxisFromPlane(normal, xv, yv);
-					xv = xv.normalize();
-					yv = yv.normalize();
+					// front
 					output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
-						v2_b.x, v2_b.y, v2_b.z,
-						v1_b.x, v1_b.y, v1_b.z,
-						v3_b.x, v3_b.y, v3_b.z,
-						texinfo.nFlags & TEX_SPECIAL || back_face_is_empty ? "NULL" : "AAATRIGGER"/*"BEVEL"*/,
-						xv.x, xv.y, xv.z, 0,
-						yv.x, yv.y, yv.z, 0,
-						rotateTotal, 1.0f, 1.0f);
-				}
+						v3.x, v3.y, v3.z,
+						v1.x, v1.y, v1.z,
+						v2.x, v2.y, v2.z,
+						tex.szName,
+						nS.x, nS.y, nS.z, texinfo.shiftS,
+						nT.x, nT.y, nT.z, texinfo.shiftT,
+						rotateTotal, scaleS, scaleT);
 
-				output_file[groupname] << "}\n";
+					// back
+					for (int n = tempFace.size() - 1; n >= 0; n--)
+					{
+						vec3 v1_b = tempFace[n] + offset;
+						vec3 v2_b = tempFace[(n + 1) % tempFace.size()] + offset;
+
+						vec3 v3_b = back_vert;
+
+						vec3 edge1 = v2_b - v1_b;
+						vec3 edge2 = v3_b - v1_b;
+
+						vec3 normal = crossProduct(edge1, edge2).normalize();
+						TextureAxisFromPlane(normal, xv, yv);
+						xv = xv.normalize();
+						yv = yv.normalize();
+						output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
+							v2_b.x, v2_b.y, v2_b.z,
+							v1_b.x, v1_b.y, v1_b.z,
+							v3_b.x, v3_b.y, v3_b.z,
+							texinfo.nFlags & TEX_SPECIAL || back_face_is_empty ? "NULL" : "AAATRIGGER"/*"BEVEL"*/,
+							xv.x, xv.y, xv.z, 0,
+							yv.x, yv.y, yv.z, 0,
+							rotateTotal, 1.0f, 1.0f);
+					}
+
+					output_file[groupname] << "}\n";
+				}
 			}
 		}
 
@@ -9353,12 +9632,14 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 
 		update_ent_lump();
 		update_lump_pointers();
-		remove_unused_model_structures(0);
+
+		remove_unused_model_structures(CLEAN_MODELS);
 
 		if (!selected)
 		{
 			save_undo_lightmaps();
 			resize_all_lightmaps();
+			bsprend->reloadTextures();
 			bsprend->loadLightmaps();
 			bsprend->calcFaceMaths();
 
@@ -9371,7 +9652,18 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 			std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4) + "_emb.wad";
 			createDir(g_working_dir);
 			ExportEmbeddedWad(g_working_dir + basename(targetMapFileName));
+			print_log(PRINT_BLUE, "Export {} wad!\n", targetMapFileName);
 		}
+
+		for (int i = 0; i < modelCount; i++)
+		{
+			if (mergedFaces[i] > 0)
+			{
+				print_log(PRINT_GREEN, "Merged {} faces for {} model!\n", mergedFaces[i], i);
+			}
+		}
+
+		renderer->pushModelUndoState("EXPORT .MAP EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 	}
 	else
 	{
@@ -10042,7 +10334,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 		leaf_add_face(i, leafCount - 1);
 	}
 
-	unsigned int startNode = nodeCount;
+	/*unsigned int startNode = nodeCount;
 	{
 		int newnodecount = nodeCount + modelFaces + 2;
 		BSPNODE32* newNodes = new BSPNODE32[newnodecount];
@@ -10105,12 +10397,12 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 		replace_lump(LUMP_NODES, newNodes, newnodecount * sizeof(BSPNODE32));
 	}
 
-	models[newModelIdx].iHeadnodes[0] = startNode;
+	models[newModelIdx].iHeadnodes[0] = startNode;*/
 	models[newModelIdx].iHeadnodes[1] = CONTENTS_EMPTY;
 	models[newModelIdx].iHeadnodes[2] = CONTENTS_EMPTY;
 	models[newModelIdx].iHeadnodes[3] = CONTENTS_EMPTY;
 
-
+	/*
 	std::vector<TransformVert> hullVerts;
 	if (getModelPlaneIntersectVerts(newModelIdx, hullVerts))
 	{
@@ -10119,11 +10411,11 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 		validNodes = true;
 	}
 	else
-	{
-		print_log(PRINT_RED, "No intersect verts for model %d\n", newModelIdx);
-		create_node_box(models[newModelIdx].nMins, models[newModelIdx].nMaxs, &models[newModelIdx], true, empty_leaf);
-		validNodes = false;
-	}
+	{*/
+	// print_log(PRINT_RED, "No intersect verts for model %d\n", newModelIdx);
+	create_node_box(models[newModelIdx].nMins, models[newModelIdx].nMaxs, &models[newModelIdx], true, empty_leaf);
+	validNodes = false;
+	/*}*/
 
 	return newModelIdx;
 }

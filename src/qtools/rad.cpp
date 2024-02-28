@@ -140,20 +140,20 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 	}
 
 	Winding facewinding(bsp, *f);
-	Winding texwinding(facewinding.m_NumPoints);
-	for (int x = 0; x < facewinding.m_NumPoints; x++)
+	Winding texwinding(facewinding.m_Points.size());
+	for (int x = 0; x < facewinding.m_Points.size(); x++)
 	{
 		ApplyMatrix(worldtotex, facewinding.m_Points[x], texwinding.m_Points[x]);
 		texwinding.m_Points[x][2] = 0.0;
 	}
 	texwinding.RemoveColinearPoints();
 
-	if (texwinding.m_NumPoints == 0)
+	if (texwinding.m_Points.size() == 0)
 	{
 		return false;
 	}
 
-	for (int x = 0; x < texwinding.m_NumPoints; x++)
+	for (int x = 0; x < texwinding.m_Points.size(); x++)
 	{
 		for (int k = 0; k < 2; k++)
 		{

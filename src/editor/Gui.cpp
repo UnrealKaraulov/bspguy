@@ -5030,6 +5030,20 @@ void Gui::drawMenuBar()
 				{
 					ImGui::TextUnformatted(fmt::format("Classname [{}]", selectedMap->ents[g_app->pickInfo.selectedEnts[0]]->classname).c_str());
 				}
+
+
+				if (DebugKeyPressed && g_app->pickInfo.selectedFaces.size() == 1)
+				{
+					int face = g_app->pickInfo.selectedFaces[0];
+					RenderFace* rface;
+					RenderGroup* rgroup;
+					rend->getRenderPointers(face, &rface, &rgroup);
+
+					if (rface && rgroup)
+					{
+						ImGui::TextUnformatted(fmt::format("Rend group [{}]", rface->group).c_str());
+					}
+				}
 			}
 
 			ImGui::EndMenuBar();

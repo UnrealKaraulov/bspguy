@@ -16,7 +16,6 @@ struct BSPFACE32;
 class Winding
 {
 public:
-	size_t m_NumPoints;
 	std::vector<vec3> m_Points;
 
 	Winding(Bsp* bsp, const BSPFACE32& face, float epsilon = ON_EPSILON);
@@ -28,11 +27,11 @@ public:
 	void getPlane(BSPPLANE& plane);
 	Winding& operator=(const Winding& other);
 
+	Winding * Merge(const Winding& other, const BSPPLANE& plane, float epsilon = ON_EPSILON);
+
+	bool IsConvex(const BSPPLANE& plane, float epsilon = ON_EPSILON);
 	void MergeVerts(Bsp * src, float epsilon = ON_EPSILON);
 	void RemoveColinearPoints(float epsilon = ON_EPSILON);
 	bool Clip(BSPPLANE& split, bool keepon, float epsilon = ON_EPSILON);
 	void Round(float epsilon = ON_EPSILON);
-
-protected:
-	unsigned int  m_MaxPoints;
 };

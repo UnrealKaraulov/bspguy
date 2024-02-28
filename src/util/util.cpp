@@ -2481,7 +2481,7 @@ vec3 getCentroid(const std::vector<vec3>& hullVerts)
 	{
 		centroid += hullVerts[i];
 	}
-	return centroid / (float)hullVerts.size();
+	return centroid / static_cast<float>(hullVerts.size());
 }
 
 vec3 getCentroid(const std::vector<TransformVert>& hullVerts)
@@ -2491,7 +2491,7 @@ vec3 getCentroid(const std::vector<TransformVert>& hullVerts)
 	{
 		centroid += hullVerts[i].pos;
 	}
-	return centroid / (float)hullVerts.size();
+	return centroid / static_cast<float>(hullVerts.size());
 }
 
 std::vector<std::vector<COLOR3>> splitImage(const COLOR3* input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height)

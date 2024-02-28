@@ -201,9 +201,9 @@ public:
 	// delete structures not used by the map (needed after deleting models/hulls)
 	STRUCTCOUNT remove_unused_model_structures(unsigned int target = CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES |
 		CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
+		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MODELS);
 	void delete_model(int modelIdx);
-	void clean_unused_texinfos();
+	int merge_all_texinfos();
 	int merge_all_verts(float epsilon = 1.0f);
 
 	// conditionally deletes hulls for entities that aren't using them
@@ -284,6 +284,9 @@ public:
 	int get_model_from_face(int faceIdx);
 	int get_model_from_leaf(int leafIdx);
 
+	std::vector<int> get_face_edges(int faceIdx);
+	std::vector<vec3> get_face_verts(int faceIdx);
+	std::vector<int> get_face_verts_idx(int faceIdx);
 
 	bool is_worldspawn_ent(size_t entIdx);
 

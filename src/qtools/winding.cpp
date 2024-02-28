@@ -10,38 +10,24 @@ Winding& Winding::operator=(const Winding& other)
 {
 	if (&other == this)
 		return *this;
-	m_Points.clear();
-	m_NumPoints = other.m_NumPoints;
-	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
-
-	m_Points = std::vector<vec3>(m_MaxPoints);
-	memcpy(m_Points.data(), other.m_Points.data(), sizeof(vec3) * m_NumPoints);
+	m_Points = other.m_Points;
 	return *this;
 }
 
 Winding::Winding(size_t numpoints)
 {
-	m_NumPoints = numpoints;
-	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
-
-	m_Points = std::vector<vec3>(m_MaxPoints);
+	m_Points = std::vector<vec3>(numpoints);
 }
 
 
 Winding::Winding()
 {
 	m_Points = {};
-	m_NumPoints = 0;
-	m_MaxPoints = 0;
 }
 
 Winding::Winding(const Winding& other)
 {
-	m_NumPoints = other.m_NumPoints;
-	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
-
-	m_Points = std::vector<vec3>(m_MaxPoints);
-	memcpy(m_Points.data(), other.m_Points.data(), sizeof(vec3) * m_NumPoints);
+	m_Points = other.m_Points;
 }
 
 
@@ -95,9 +81,7 @@ Winding::Winding(const BSPPLANE& plane, float epsilon)
 	VectorScale(vright, BOGUS_RANGE, vright);
 
 	// project a really big     axis aligned box onto the plane
-	m_NumPoints = 4;
-	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
-	m_Points = std::vector<vec3>(m_MaxPoints);
+	m_Points = std::vector<vec3>(4);
 
 	VectorSubtract(org, vright, m_Points[0]);
 	VectorAdd(m_Points[0], vup, m_Points[0]);
@@ -119,7 +103,7 @@ void Winding::getPlane(BSPPLANE& plane)
 	v1 = v2 = plane_normal = vec3();
 	//hlassert(m_NumPoints >= 3);
 
-	if (m_NumPoints >= 3)
+	if (m_Points.size() >= 3)
 	{
 		VectorSubtract(m_Points[2], m_Points[1], v1);
 		VectorSubtract(m_Points[0], m_Points[1], v2);
@@ -138,15 +122,7 @@ void Winding::getPlane(BSPPLANE& plane)
 
 Winding::Winding(const std::vector<vec3>& points, float epsilon)
 {
-	m_NumPoints = points.size();
-	m_MaxPoints = (m_NumPoints + 3) & ~3;
-	m_Points = std::vector<vec3>(m_NumPoints);
-
-	unsigned i;
-	for (i = 0; i < m_NumPoints && i < points.size(); i++)
-	{
-		m_Points[i] = points[i];
-	}
+	m_Points = points;
 
 	RemoveColinearPoints(
 		epsilon
@@ -158,12 +134,12 @@ Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 {
 	int             se;
 
-	m_NumPoints = face.nEdges;
-	m_MaxPoints = (m_NumPoints + 3) & ~3;
-	m_Points = std::vector<vec3>(m_NumPoints);
+	const size_t NumPoints = face.nEdges;
+
+	m_Points = std::vector<vec3>(NumPoints);
 
 	unsigned i;
-	for (i = 0; i < m_NumPoints && i < face.nEdges; i++)
+	for (i = 0; i < NumPoints && i < face.nEdges; i++)
 	{
 		se = bsp->surfedges[face.iFirstEdge + i];
 
@@ -208,11 +184,14 @@ void Winding::RemoveColinearPoints(float epsilon)
 	int	i;
 	vec3 v1, v2;
 	vec3 p1, p2, p3;
-	for (i = 0; i < m_NumPoints; i++)
+
+	size_t NumPoints = m_Points.size();
+
+	for (i = 0; i < NumPoints; i++)
 	{
-		p1 = m_Points[(i + m_NumPoints - 1) % m_NumPoints];
+		p1 = m_Points[(i + NumPoints - 1) % NumPoints];
 		p2 = m_Points[i];
-		p3 = m_Points[(i + 1) % m_NumPoints];
+		p3 = m_Points[(i + 1) % NumPoints];
 		VectorSubtract(p2, p1, v1);
 		VectorSubtract(p3, p2, v2);
 		// v1 or v2 might be close to 0
@@ -220,8 +199,8 @@ void Winding::RemoveColinearPoints(float epsilon)
 			- epsilon * epsilon * (DotProduct(v1, v1) + DotProduct(v2, v2) + epsilon * epsilon))
 			// v2 == k * v1 + v3 && abs (v3) < ON_EPSILON || v1 == k * v2 + v3 && abs (v3) < ON_EPSILON
 		{
-			m_NumPoints--;
-			for (; i < m_NumPoints; i++)
+			NumPoints--;
+			for (; i < NumPoints; i++)
 			{
 				VectorCopy(m_Points[i + 1], m_Points[i]);
 			}
@@ -229,6 +208,8 @@ void Winding::RemoveColinearPoints(float epsilon)
 			continue;
 		}
 	}
+
+	m_Points.resize(NumPoints);
 }
 
 bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
@@ -243,7 +224,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 
 	// determine sides for each point
 	// do this exactly, with no epsilon so tiny portals still work
-	for (i = 0; i < m_NumPoints; i++)
+	for (i = 0; i < m_Points.size(); i++)
 	{
 		dot = DotProduct(m_Points[i], split.vNormal);
 		dot -= split.fDist;
@@ -273,7 +254,6 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 	if (!counts[0])
 	{
 		m_Points.clear();
-		m_NumPoints = 0;
 		return false;
 	}
 
@@ -282,11 +262,11 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 		return true;
 	}
 
-	size_t maxpts = m_NumPoints + 4; // can't use counts[0]+2 because of fp grouping errors
+	size_t maxpts = m_Points.size() + 4; // can't use counts[0]+2 because of fp grouping errors
 	unsigned newNumPoints = 0;
 	std::vector<vec3> newPoints = std::vector<vec3>(maxpts);
 
-	for (i = 0; i < m_NumPoints; i++)
+	for (i = 0; i < m_Points.size(); i++)
 	{
 		vec3 p1 = m_Points[i];
 
@@ -310,7 +290,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 		// generate a split point
 		vec3 mid;
 		unsigned int tmp = i + 1;
-		if (tmp >= m_NumPoints)
+		if (tmp >= m_Points.size())
 		{
 			tmp = 0;
 		}
@@ -336,14 +316,12 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 	}
 
 	m_Points = newPoints;
-	m_NumPoints = newNumPoints;
 
 	RemoveColinearPoints(
 		epsilon
 	);
-	if (m_NumPoints == 0)
+	if (m_Points.empty() == 0)
 	{
-		m_Points.clear();
 		return false;
 	}
 
@@ -359,4 +337,150 @@ void Winding::Round(float epsilon)
 			p[j] = round(p[j] / epsilon) * epsilon;
 		}
 	}
+}
+
+bool Winding::IsConvex(const BSPPLANE& plane, float epsilon)
+{
+	vec3 normal = plane.vNormal;
+	vec3 delta;
+	float dot;
+
+	for (int i = 0; i < m_Points.size(); i++)
+	{
+		delta = m_Points[i] - m_Points[(i + 1) % m_Points.size()];
+		dot = dotProduct(delta, normal);
+		if (dot > epsilon)
+			return false;
+	}
+
+	return true;
+}
+
+bool ArePointsOnALine(const std::vector<vec3>& points)
+{
+	if (points.size() < 3)
+		return true;
+
+	// Choose two reference points
+	vec3 p1 = points[0];
+	vec3 p2 = points[1];
+
+	// Calculate the vector between the reference points
+	vec3 v = p2 - p1;
+
+	// Calculate the cross product of v and the vector between each other point and p1
+	for (int i = 2; i < points.size(); i++)
+	{
+		vec3 u = points[i] - p1;
+		vec3 cross = crossProduct(v, u);
+
+		// If the cross product is zero, the points are on the same line
+		if (cross.length() < EPSILON)
+			return true;
+	}
+
+	// If the cross product is not zero for any pair of points, the points are not on the same line
+	return false;
+}
+
+
+Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsilon)
+{
+	vec3 p1, p2, p3, p4, back;
+	Winding* newf = NULL;
+	int			i, j, k, l;
+	vec3		normal, delta;
+	float		dot;
+	bool	keep1, keep2;
+
+
+	//
+	// find a common edge
+	//
+	p1 = p2 = vec3();
+	j = 0;
+
+	for (i = 0; i < m_Points.size(); i++)
+	{
+		p1 = m_Points[i];
+		p2 = m_Points[(i + 1) % m_Points.size()];
+		for (j = 0; j < other.m_Points.size(); j++)
+		{
+			p3 = other.m_Points[j];
+			p4 = other.m_Points[(j + 1) % other.m_Points.size()];
+			for (k = 0; k < 3; k++)
+			{
+				if (ArePointsOnALine({ p1, p2, p3, p4
+					}))
+					break;
+			} //end for
+			if (k == 3)
+				break;
+		} //end for
+		if (j < other.m_Points.size())
+			break;
+	} //end for
+
+	if (i == m_Points.size())
+	{
+		return NULL;			// no matching edges
+	}
+
+	//
+	// check slope of connected lines
+	// if the slopes are colinear, the point can be removed
+	//
+	back = m_Points[(i + m_Points.size() - 1) % m_Points.size()];
+	p1 = back - delta;
+	vec3 planenormal = crossProduct(delta, normal);
+	VectorNormalize(normal);
+
+	back = other.m_Points[(j + 2) % other.m_Points.size()];
+	back = p1 - delta;
+	dot = dotProduct(delta, normal);
+	if (dot > epsilon)
+		return NULL;			// not a convex polygon
+	keep1 = (dot < -epsilon);
+
+	back = m_Points[(i + 2) % m_Points.size()];
+	back = p2 - delta;
+	planenormal = crossProduct(delta, normal);
+	VectorNormalize(normal);
+
+	back = other.m_Points[(j + other.m_Points.size() - 1) % other.m_Points.size()];
+	back = p2 - delta;
+	dot = dotProduct(delta, normal);
+	if (dot > epsilon)
+		return NULL;			// not a convex polygon
+	keep2 = (dot < -epsilon);
+	
+	//
+	// build the new polygon
+	//
+	newf = new Winding();
+
+	// copy first polygon
+	for (k = (i + 1) % m_Points.size(); k != i; k = (k + 1) % m_Points.size())
+	{
+		if (k == (i + 1) % m_Points.size() && !keep2)
+			continue;
+
+		newf->m_Points.push_back(m_Points[k]);
+	}
+
+	// copy second polygon
+	for (l = (j + 1) % other.m_Points.size(); l != j; l = (l + 1) % other.m_Points.size())
+	{
+		if (l == (j + 1) % other.m_Points.size() && !keep1)
+			continue;
+		newf->m_Points.push_back(other.m_Points[l]);
+	}
+
+	if (!newf->IsConvex(plane, epsilon))
+	{
+		delete newf;
+		return NULL;
+	}
+
+	return newf;
 }
