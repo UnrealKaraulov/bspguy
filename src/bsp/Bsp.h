@@ -272,6 +272,7 @@ public:
 	bool leaf_del_face(int faceIdx, int leafIdx);
 	bool remove_face(int faceid);
 	void remove_faces_by_content(int content);
+	std::vector<int> getFaceContents(int faceIdx);
 	int clone_world_leaf(int oldleafIdx);
 	int merge_two_models_ents(size_t src_ent, size_t dst_ent, int &try_again);
 	int merge_two_models_idx(int src_model, int dst_model, int &try_again);
@@ -321,7 +322,7 @@ public:
 
 	void ExportToObjWIP(const std::string& path, int iscale = 1, bool lightmap_mode = false);
 
-	void ExportToMapWIP(const std::string& path, bool selected);
+	void ExportToMapWIP(const std::string& path, bool selected, bool merge_faces);
 
 	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool & valid_nodes);
 

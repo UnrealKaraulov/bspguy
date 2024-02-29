@@ -321,7 +321,8 @@ struct BSPCLIPNODE32
 
 /* other */
 
-bool operator ==(const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
+bool operator ==(BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2);
+bool operator ==(BSPPLANE& struct1, BSPPLANE& struct2);
 
 
 struct CSGPLANE

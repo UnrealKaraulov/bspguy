@@ -1922,6 +1922,11 @@ bool operator == (BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2)
 		struct1.vS.equal(struct2.vS, EPSILON) && struct1.vT.equal(struct2.vT, EPSILON);
 }
 
+bool operator ==(BSPPLANE& struct1, BSPPLANE& struct2)
+{
+	return struct1.vNormal.equal(struct2.vNormal, EPSILON) && std::abs(struct1.fDist - struct2.fDist) < EPSILON;
+}
+
 int Bsp::merge_all_texinfos()
 {
 	int unusedtexinfos = 0;
@@ -7379,6 +7384,20 @@ bool Bsp::leaf_del_face(int faceIdx, int leafIdx)
 	return true;
 }
 
+std::vector<int> Bsp::getFaceContents(int faceIdx)
+{
+	std::vector<int> out;
+	auto face_leafs = getFaceLeafs(faceIdx);
+	for (auto l : face_leafs)
+	{
+		if (std::find(out.begin(), out.end(), leaves[l].nContents) == out.end())
+		{
+			out.push_back(leaves[l].nContents);
+		}
+	}
+	return out;
+}
+
 void Bsp::remove_faces_by_content(int content)
 {
 	std::vector<int> faces_to_remove;
@@ -8596,7 +8615,7 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 				}
 			}
 
-			fprintf(polyfile, "%i %i %u %i %u\n", detaillevel, iPlane, face.iTextureInfo, faceContents, face.nEdges);
+			fprintf(polyfile, "%i %i %i %i %i\n", detaillevel, iPlane, face.iTextureInfo, faceContents, face.nEdges);
 
 			if (flipped)
 			{
@@ -9079,46 +9098,7 @@ vec3 findClosestEdgePoint(std::vector<vec3>& points) {
 	return finalCenter;
 }
 
-bool isCCW(const vec3& a, const vec3& b, const vec3& c) {
-	return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
-}
-
-bool extractConvexParts(const std::vector<vec3>& points, std::vector<std::vector<vec3>>& parts) {
-	std::vector<vec3> sortedPoints = points;
-	std::sort(sortedPoints.begin(), sortedPoints.end(), [](const vec3& a, const vec3& b) {
-		return a.x < b.x || (a.x == b.x && a.y < b.y);
-		});
-
-	std::function<void(size_t, size_t, std::deque<vec3>&)> buildConvexHull = [&](size_t start, size_t end, std::deque<vec3>& hull) {
-		for (size_t i = start; i <= end; ++i) {
-			vec3& pt = sortedPoints[i];
-			while (hull.size() > 1 && !isCCW(hull[hull.size() - 2], hull[hull.size() - 1], pt)) {
-				hull.pop_back();
-			}
-			hull.push_back(pt);
-		}
-		};
-
-	std::function<void(size_t, size_t)> divideAndConquer = [&](size_t start, size_t end) {
-		if (end - start < 2) {
-			std::deque<vec3> hull;
-			hull.push_front(sortedPoints[start]);
-			buildConvexHull(start, end, hull);
-			parts.push_back(std::vector<vec3>(hull.begin(), hull.end()));
-			return;
-		}
-
-		size_t mid = start + (end - start) / 2;
-		divideAndConquer(start, mid);
-		divideAndConquer(mid + 1, end);
-		};
-
-	divideAndConquer(0, sortedPoints.size() - 1);
-
-	return !parts.empty();
-}
-
-void Bsp::ExportToMapWIP(const std::string& path, bool selected)
+void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_faces)
 {
 	if (!createDir(path))
 	{
@@ -9338,171 +9318,164 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 				}
 
 
-				std::vector<lightmapVert> lm_points = std::vector<lightmapVert>(&((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset], &((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + rface->vertCount]);
+				/*std::vector<lightmapVert> lm_points = std::vector<lightmapVert>(&((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset], &((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + rface->vertCount]);*/
 
-				std::vector<vec3> points(rface->vertCount);
+			/*	std::vector<vec3> points(rface->vertCount);
 				for (int p = 0; p < rface->vertCount; p++)
 				{
 					points[p] = lm_points[p].pos.unflip();
-				}
+				}*/
 
+				std::vector<int> faceContents = getFaceContents(i);
 
-				//print_log(PRINT_GREEN | PRINT_INTENSITY, "Merged {} faces!\n", merged_faces);
-
-				// merge faces and add to decompiled_faces ?
 				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
+
+				std::vector<vec3> points = get_face_verts(i);
 
 				placePointsToPlane(points, tmpPlane);
 
-				//Winding tmpPlaneWinding(points);
-				Winding tmpWinding(points);
-				tmpWinding.RemoveColinearPoints();
+				Winding winding(points);
 
-				points = tmpWinding.m_Points;
+				std::vector<int> face_edges = get_face_edges(i);
 
-				/*	if (isConvex(tmpWinding.m_Points))
+				bool one_face_merged = true;
+				int merged_faces = 0;
+
+				while (merge_faces && one_face_merged)
+				{
+					one_face_merged = true;
+					int tmpMergedCount = merged_faces;
+					while (one_face_merged)
 					{
-						print_log(PRINT_GREEN, "YEESYEESYEESYEESYEESYEESYEESYEES\n");
+						one_face_merged = false;
+						for (size_t nf = 0; nf < faceList.size(); nf++)
+						{
+							if (!decompiled_faces.count(nf))
+							{
+								BSPFACE32& face2 = faces[nf];
+
+								BSPPLANE tmpPlane2 = getPlaneFromFace(this, &face2);
+
+								// Optimized map can share edges between two bspmodels
+								if ((faces[nf].nPlaneSide != faces[i].nPlaneSide && tmpPlane != tmpPlane2) ||
+									(faces[nf].iPlane != faces[i].iPlane && planes[faces[nf].iPlane] != planes[faces[i].iPlane]) ||
+									(faces[nf].iTextureInfo != faces[i].iTextureInfo && texinfos[faces[nf].iTextureInfo] != texinfos[faces[i].iTextureInfo]) ||
+									get_model_from_face(nf) != mdlid)
+								{
+									continue;
+								}
+
+								std::vector<int> face2_contents = getFaceContents(nf);
+
+								if (face2_contents.size() && faceContents.size())
+								{
+									bool sameContents = false;
+									for (auto& c1 : face2_contents)
+									{
+										for (auto& c2 : faceContents)
+										{
+											if (c1 == c2)
+											{
+												sameContents = true;
+												break;
+											}
+										}
+										if (sameContents)
+											break;
+									}
+
+									if (!sameContents)
+									{
+										continue;
+									}
+								}
+
+								bool same_edge_found = false;
+								std::vector<int> tmp_face_edges = get_face_edges(nf);
+
+								int edges_num = 0;
+
+								for (int e2 : tmp_face_edges)
+								{
+									if (std::find(face_edges.begin(), face_edges.end(), e2) != face_edges.end())
+									{
+										edges_num++;
+										if (edges_num > 2)
+											break;
+									}
+								}
+
+								if (edges_num == 1)
+								{
+									for (int e2 : tmp_face_edges)
+									{
+										if (std::find(face_edges.begin(), face_edges.end(), e2) == face_edges.end())
+										{
+											face_edges.push_back(e2);
+										}
+									}
+
+									RenderFace* rface2;
+									RenderGroup* rgroup2;
+									if (!bsprend->getRenderPointers(nf, &rface2, &rgroup2))
+									{
+										print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196) + "(merge)");
+										continue;
+									}
+
+									/*std::vector<lightmapVert> lm_points2 = std::vector<lightmapVert>(&((lightmapVert*)rgroup2->buffer->get_data())[rface2->vertOffset], &((lightmapVert*)rgroup2->buffer->get_data())[rface2->vertOffset + rface2->vertCount]);
+
+									std::vector<vec3> new_points(lm_points2.size());
+									for (size_t p = 0; p < lm_points2.size(); p++)
+									{
+										new_points[p] = lm_points2[p].pos.unflip();
+									}*/
+
+									std::vector<vec3> new_points = get_face_verts(nf);
+
+									placePointsToPlane(new_points, tmpPlane);
+
+									Winding newWinding(new_points);
+
+									Winding tmpWinding = winding;
+
+									Winding* tryMergeWinding = tmpWinding.Merge(newWinding, tmpPlane);
+
+									if (tryMergeWinding)
+									{
+										tryMergeWinding->RemoveColinearPoints();
+										auto testPoints = getSortedPlanarVertOrder(tryMergeWinding->m_Points);
+
+										if (tryMergeWinding->m_Points.size() >= 3 && testPoints.size() >= 3)
+										{
+											winding = Winding(*tryMergeWinding);
+											decompiled_faces.insert(nf);
+											mergedFaces[mdlid]++;
+											merged_faces++;
+											one_face_merged = true;
+										}
+										else
+										{
+											print_log(PRINT_RED, "ERROR REVERT BACK[ONE BRUSH CAN BE BROKEN!]!\n");
+										}
+
+										delete tryMergeWinding;
+									}
+								}
+							}
+						}
 					}
-					else
+					if (tmpMergedCount == merged_faces)
 					{
-						print_log(PRINT_RED, "NOOONOOONOOONOOONOOONOOONOOO\n");
-					}*/
-
-				bool found_non_convex = false;
-
-				//std::vector<int> face_edges = get_face_edges(i);
-
-				//bool one_face_merged = true;
-				//int merged_faces = 0;
-
-				//while (one_face_merged)
-				//{
-				//	one_face_merged = true;
-				//	int tmpMergedCount = merged_faces;
-				//	while (one_face_merged)
-				//	{
-				//		one_face_merged = false;
-				//		for (size_t nf = 0; nf < faceList.size(); nf++)
-				//		{
-				//			if (!decompiled_faces.count(nf))
-				//			{
-				//				// Optimized map can share edges between two bspmodels
-				//				if (faces[nf].nPlaneSide != faces[i].nPlaneSide ||
-				//					faces[nf].iPlane != faces[i].iPlane ||
-				//					faces[nf].iTextureInfo != faces[i].iTextureInfo ||
-				//					get_model_from_face(nf) != mdlid)
-				//				{
-				//					continue;
-				//				}
-
-
-				//				bool same_edge_found = false;
-				//				std::vector<int> tmp_face_edges = get_face_edges(nf);
-				//				for (int e2 : tmp_face_edges)
-				//				{
-				//					if (std::find(face_edges.begin(), face_edges.end(), e2) != face_edges.end())
-				//					{
-				//						same_edge_found = true;
-				//						break;
-				//					}
-				//				}
-
-				//				if (same_edge_found)
-				//				{
-				//					for (int e2 : tmp_face_edges)
-				//					{
-				//						if (std::find(face_edges.begin(), face_edges.end(), e2) == face_edges.end())
-				//						{
-				//							face_edges.push_back(e2);
-				//						}
-				//					}
-
-				//					RenderFace* rface2;
-				//					RenderGroup* rgroup2;
-				//					if (!bsprend->getRenderPointers(nf, &rface2, &rgroup2))
-				//					{
-				//						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196) + "(merge)");
-				//						continue;
-				//					}
-
-				//					std::vector<lightmapVert> lm_points2 = std::vector<lightmapVert>(&((lightmapVert*)rgroup2->buffer->get_data())[rface2->vertOffset], &((lightmapVert*)rgroup2->buffer->get_data())[rface2->vertOffset + rface2->vertCount]);
-
-				//					std::vector<vec3> backup_points = points;
-
-				//					for (int p = 0; p < rface2->vertCount; p++)
-				//					{
-				//						vec3 newPoint = lm_points2[p].pos.unflip();
-
-				//						if (std::find(points.begin(), points.end(), newPoint) == points.end())
-				//							points.push_back(newPoint);
-				//					}
-
-				//					placePointsToPlane(points, tmpPlane);
-
-				//					Winding newWinding(points);
-				//					std::vector<std::vector<vec3>> convex_list;
-
-				//					if (getConvexPolies(newWinding.m_Points, tmpPlane.vNormal, convex_list) && convex_list.size() > 1)
-				//					{
-				//						found_non_convex = true;
-				//						points = newWinding.m_Points;
-				//						decompiled_faces.insert(nf);
-				//						mergedFaces[mdlid]++;
-				//						merged_faces++;
-				//						one_face_merged = true;
-				//					}
-				//					else
-				//					{
-				//						points = backup_points;
-				//					}
-
-				//					/*if (tryMergeWinding)
-				//					{
-				//						tryMergeWinding->RemoveColinearPoints();
-
-				//						if (tryMergeWinding->m_Points.size() >= 3 && isPointsToPlane(tryMergeWinding->m_Points, tmpPlane))
-				//						{
-				//							tmpWinding = *tryMergeWinding;
-				//							decompiled_faces.insert(nf);
-				//							mergedFaces[mdlid]++;
-				//							merged_faces++;
-				//							one_face_merged = true;
-				//						}
-				//						else
-				//						{
-				//							print_log(PRINT_RED, "REVERT BACK!\n");
-				//						}
-
-				//						delete tryMergeWinding;
-				//					}*/
-				//				}
-				//			}
-				//		}
-				//	}
-				//	if (tmpMergedCount == merged_faces)
-				//	{
-				//		break;
-				//	}
-				//	else
-				//	{
-				//		print_log(PRINT_BLUE, "CONTINUE!!!!!!!!!!!!!!\n");
-				//	}
-				//}
+						break;
+					}
+				}
 
 
 				std::vector<std::vector<vec3>> convex_list;
 
-				if (found_non_convex)
-				{
-					//getConvexPolies(points, tmpPlane.vNormal, convex_list);
-				}
-				else
-				{
-					convex_list.push_back(points);
-				}
-				// merge 
-				//tmpWinding.Round(EPSILON);
+
+				convex_list.push_back(winding.m_Points);
 
 				for (auto& tempFace : convex_list)
 				{
@@ -9516,9 +9489,10 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 					vec3 v2 = tempFace[1] + offset;
 					vec3 v3 = tempFace[2] + offset;
 
+
 					vec3 centoid = getCentroid(tempFace);
 
-					vec3 back_vert = centoid - tmpPlane.vNormal.normalize() * 4.0f;
+					vec3 back_vert = centoid - tmpPlane.vNormal.normalize() * std::max(2.0f, getMaxDistPoints(tempFace) / 100.0f);
 
 					back_vert += offset;
 
@@ -9558,18 +9532,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 
 					output_file[groupname] << "{\n";
 
-					// front
-					output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
-						v3.x, v3.y, v3.z,
-						v1.x, v1.y, v1.z,
-						v2.x, v2.y, v2.z,
-						tex.szName,
-						nS.x, nS.y, nS.z, texinfo.shiftS,
-						nT.x, nT.y, nT.z, texinfo.shiftT,
-						rotateTotal, scaleS, scaleT);
-
 					// back
-					for (int n = tempFace.size() - 1; n >= 0; n--)
+					for (int n =0; n < tempFace.size(); n++)
 					{
 						vec3 v1_b = tempFace[n] + offset;
 						vec3 v2_b = tempFace[(n + 1) % tempFace.size()] + offset;
@@ -9587,11 +9551,21 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected)
 							v2_b.x, v2_b.y, v2_b.z,
 							v1_b.x, v1_b.y, v1_b.z,
 							v3_b.x, v3_b.y, v3_b.z,
-							texinfo.nFlags & TEX_SPECIAL || back_face_is_empty ? "NULL" : "AAATRIGGER"/*"BEVEL"*/,
+							texinfo.nFlags & TEX_SPECIAL || back_face_is_empty ? "NULL" : tex.szName,
 							xv.x, xv.y, xv.z, 0,
 							yv.x, yv.y, yv.z, 0,
 							rotateTotal, 1.0f, 1.0f);
 					}
+
+					// front
+					output_file[groupname] << fmt::format("( {} {} {} ) ( {} {} {} ) ( {} {} {} ) {} [ {} {} {} {} ] [ {} {} {} {} ] {} {} {}\n",
+						v3.x, v3.y, v3.z,
+						v1.x, v1.y, v1.z,
+						v2.x, v2.y, v2.z,
+						tex.szName,
+						nS.x, nS.y, nS.z, texinfo.shiftS,
+						nT.x, nT.y, nT.z, texinfo.shiftT,
+						rotateTotal, scaleS, scaleT);
 
 					output_file[groupname] << "}\n";
 				}

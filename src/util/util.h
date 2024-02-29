@@ -343,3 +343,6 @@ bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles);
 
 std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<vec3>& gl_triangles, int& max_row);
 vec3 findBestBrushCenter(std::vector<vec3>& points);
+
+
+float getMaxDistPoints(std::vector<vec3>& points); 

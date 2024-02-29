@@ -2690,3 +2690,17 @@ std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<v
 
 	return all_boxes;
 }
+
+float getMaxDistPoints(std::vector<vec3>& points) 
+{
+	float maxDistance = 0.0f;
+	for (size_t i = 0; i < points.size(); ++i) {
+		for (size_t j = i + 1; j < points.size(); ++j) {
+			float distance = points[i].dist(points[j]);
+			if (distance > maxDistance) {
+				maxDistance = distance;
+			}
+		}
+	}
+	return maxDistance;
+}

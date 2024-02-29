@@ -2820,16 +2820,23 @@ void Gui::drawMenuBar()
 					ImGui::EndTooltip();
 				}
 
+				static bool merge_faces = false;
 
 				if (ImGui::BeginMenu("ValveHammerEditor (.map) [WIP]", map && !map->is_mdl_model))
 				{
+					if (ImGui::MenuItem("Merge faces", NULL, &merge_faces))
+					{
+						// merge_faces = !merge_faces
+					}
+
+
 					if (ImGui::MenuItem("Full .map"))
 					{
-						map->ExportToMapWIP(g_working_dir, false);
+						map->ExportToMapWIP(g_working_dir, false, merge_faces);
 					}
 					else if (ImGui::MenuItem("Selected faces"))
 					{
-						map->ExportToMapWIP(g_working_dir, true);
+						map->ExportToMapWIP(g_working_dir, true, merge_faces);
 					}
 					ImGui::EndMenu();
 				}

@@ -386,19 +386,19 @@ bool ArePointsOnALine(const std::vector<vec3>& points)
 
 Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsilon)
 {
-	vec3 p1, p2, p3, p4, back;
+
 	Winding* newf = NULL;
-	int			i, j, k, l;
-	vec3		normal, delta;
-	float		dot;
-	bool	keep1, keep2;
 
 
 	//
 	// find a common edge
 	//
-	p1 = p2 = vec3();
-	j = 0;
+	vec3 p1 = vec3();
+	vec3 p2 = vec3();
+
+
+	int i = 0;
+	int j = 0;
 
 	for (i = 0; i < m_Points.size(); i++)
 	{
@@ -406,16 +406,13 @@ Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsil
 		p2 = m_Points[(i + 1) % m_Points.size()];
 		for (j = 0; j < other.m_Points.size(); j++)
 		{
-			p3 = other.m_Points[j];
-			p4 = other.m_Points[(j + 1) % other.m_Points.size()];
-			for (k = 0; k < 3; k++)
-			{
-				if (ArePointsOnALine({ p1, p2, p3, p4
-					}))
-					break;
-			} //end for
-			if (k == 3)
+			vec3 p3 = other.m_Points[j];
+			vec3 p4 = other.m_Points[(j + 1) % other.m_Points.size()];
+
+
+			if (p1.equal(p4, epsilon) && p2.equal(p3, epsilon))
 				break;
+
 		} //end for
 		if (j < other.m_Points.size())
 			break;
@@ -430,37 +427,34 @@ Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsil
 	// check slope of connected lines
 	// if the slopes are colinear, the point can be removed
 	//
-	back = m_Points[(i + m_Points.size() - 1) % m_Points.size()];
-	p1 = back - delta;
-	vec3 planenormal = crossProduct(delta, normal);
-	VectorNormalize(normal);
+
+	vec3 back = m_Points[(i + m_Points.size() - 1) % m_Points.size()];
+	vec3 normal = crossProduct(plane.vNormal, p1 - back).normalize();
 
 	back = other.m_Points[(j + 2) % other.m_Points.size()];
-	back = p1 - delta;
-	dot = dotProduct(delta, normal);
+	float dot = dotProduct(back - p1, normal);
 	if (dot > epsilon)
 		return NULL;			// not a convex polygon
-	keep1 = (dot < -epsilon);
+
+	bool keep1 = (dot < -epsilon);
 
 	back = m_Points[(i + 2) % m_Points.size()];
-	back = p2 - delta;
-	planenormal = crossProduct(delta, normal);
-	VectorNormalize(normal);
+	normal = crossProduct(plane.vNormal, back - p2).normalize();
 
 	back = other.m_Points[(j + other.m_Points.size() - 1) % other.m_Points.size()];
-	back = p2 - delta;
-	dot = dotProduct(delta, normal);
+	dot = dotProduct(back - p2, normal);
 	if (dot > epsilon)
 		return NULL;			// not a convex polygon
-	keep2 = (dot < -epsilon);
-	
+
+	bool keep2 = (dot < -epsilon);
+
 	//
 	// build the new polygon
 	//
 	newf = new Winding();
 
 	// copy first polygon
-	for (k = (i + 1) % m_Points.size(); k != i; k = (k + 1) % m_Points.size())
+	for (int k = (i + 1) % m_Points.size(); k != i; k = (k + 1) % m_Points.size())
 	{
 		if (k == (i + 1) % m_Points.size() && !keep2)
 			continue;
@@ -469,17 +463,11 @@ Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsil
 	}
 
 	// copy second polygon
-	for (l = (j + 1) % other.m_Points.size(); l != j; l = (l + 1) % other.m_Points.size())
+	for (int l = (j + 1) % other.m_Points.size(); l != j; l = (l + 1) % other.m_Points.size())
 	{
 		if (l == (j + 1) % other.m_Points.size() && !keep1)
 			continue;
 		newf->m_Points.push_back(other.m_Points[l]);
-	}
-
-	if (!newf->IsConvex(plane, epsilon))
-	{
-		delete newf;
-		return NULL;
 	}
 
 	return newf;
