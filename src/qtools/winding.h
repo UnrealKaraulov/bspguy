@@ -24,14 +24,15 @@ public:
 	Winding(const BSPPLANE& plane, float epsilon = ON_EPSILON);
 	Winding();
 	Winding(const Winding& other);
-	void getPlane(BSPPLANE& plane);
+	void getPlane(BSPPLANE& plane) const;
 	Winding& operator=(const Winding& other);
 
 	Winding * Merge(const Winding& other, const BSPPLANE& plane, float epsilon = ON_EPSILON);
 
-	bool IsConvex(const BSPPLANE& plane, float epsilon = ON_EPSILON);
+	bool IsConvex();
 	void MergeVerts(Bsp * src, float epsilon = ON_EPSILON);
 	void RemoveColinearPoints(float epsilon = ON_EPSILON);
 	bool Clip(BSPPLANE& split, bool keepon, float epsilon = ON_EPSILON);
 	void Round(float epsilon = ON_EPSILON);
+	void Offset(vec3 offset);
 };

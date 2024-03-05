@@ -2779,9 +2779,9 @@ void Gui::drawMenuBar()
 						if (map->ents.size())
 						{
 							std::string wadstr = map->ents[0]->keyvalues["wad"];
-							if (wadstr.find(map->bsp_name + ".wad" + ";") == std::string::npos)
+							if (wadstr.find(map->bsp_name + ".wad;") == std::string::npos)
 							{
-								map->ents[0]->keyvalues["wad"] += map->bsp_name + ".wad" + ";";
+								map->ents[0]->keyvalues["wad"] += map->bsp_name + ".wad;";
 							}
 						}
 					}
@@ -2820,7 +2820,7 @@ void Gui::drawMenuBar()
 					ImGui::EndTooltip();
 				}
 
-				static bool merge_faces = false;
+				static bool merge_faces = true;
 
 				if (ImGui::BeginMenu("ValveHammerEditor (.map) [WIP]", map && !map->is_mdl_model))
 				{
@@ -2828,7 +2828,6 @@ void Gui::drawMenuBar()
 					{
 						// merge_faces = !merge_faces
 					}
-
 
 					if (ImGui::MenuItem("Full .map"))
 					{

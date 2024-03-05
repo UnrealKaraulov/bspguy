@@ -215,7 +215,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts);
 vec3 getNormalFromVerts(std::vector<vec3>& verts);
 
 // transforms verts onto a plane (which is defined by the verts themselves)
-std::vector<vec2> localizeVerts( std::vector<vec3>& verts);
+std::vector<vec2> localizeVerts(std::vector<vec3>& verts);
 
 // Returns CCW sorted indexes into the verts, as viewed on the plane the verts define
 std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts);
@@ -277,8 +277,8 @@ float floatRound(float f);
 std::string GetExecutableDir(std::string arg_0);
 std::string GetExecutableDir(std::wstring arg_0);
 
-std::vector<vec3> stretch_model(const std::vector<vec3>& vertices, float stretch_value);
-std::vector<cVert> stretch_model(const std::vector<cVert>& vertices, float stretch_value);
+std::vector<vec3> scaleVerts(const std::vector<vec3>& vertices, float stretch_value);
+std::vector<cVert> scaleVerts(const std::vector<cVert>& vertices, float stretch_value);
 
 BSPPLANE getSeparatePlane(vec3 amin, vec3 amax, vec3 bmin, vec3 bmax, bool force = false);
 
@@ -334,6 +334,7 @@ vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& 
 
 vec3 getCentroid(const std::vector<TransformVert>& hullVerts);
 vec3 getCentroid(const std::vector<vec3>& hullVerts);
+vec3 getCentroid(const std::vector<cVert>& hullVerts);
 
 std::vector<std::vector<COLOR3>> splitImage(const COLOR3* input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height);
 std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3>& input, int input_width, int input_height, int x_parts, int y_parts, int& out_part_width, int& out_part_height);
@@ -345,4 +346,42 @@ std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<v
 vec3 findBestBrushCenter(std::vector<vec3>& points);
 
 
-float getMaxDistPoints(std::vector<vec3>& points); 
+float getMaxDistPoints(std::vector<vec3>& points);
+
+
+class JackWriter {
+public:
+	JackWriter(const std::string& filename) : file(filename, std::ios::binary) {}
+
+	~JackWriter() {
+		if (file.is_open()) {
+			file.close();
+		}
+	}
+
+	template <typename T>
+	void write(const T& value) {
+		file.write(reinterpret_cast<const char*>(&value), sizeof(T));
+	}
+
+	void writeLenStr(const std::string& str) {
+		int size = (int)str.length();
+		//write(size);
+		write<int>(size);
+		if (size > 0)
+			file.write(str.data(), size);
+	}
+
+	void writeKeyVal(const std::string& key, const std::string& val) 
+	{
+		writeLenStr(key);
+		writeLenStr(val);
+	}
+
+	bool is_open() const {
+		return file && file.is_open();
+	}
+
+private:
+	std::ofstream file;
+};

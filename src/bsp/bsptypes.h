@@ -170,6 +170,7 @@ struct BSPPLANE
 	int nType;
 
 	// returns true if the plane was flipped
+	bool update_plane(bool flip);
 	bool update_plane(vec3 newNormal, float fdist, bool flip = true);
 
 	BSPPLANE() :vNormal(vec3())

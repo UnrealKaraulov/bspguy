@@ -518,7 +518,7 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 	return true;
 }
 
-vec3 findBestBrushCenter( std::vector<vec3>& points) 
+vec3 findBestBrushCenter(std::vector<vec3>& points)
 {
 	vec3 center{};
 
@@ -718,7 +718,7 @@ std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE>& planes) {
 
 	size_t numPlanes = planes.size();
 
-	if (numPlanes < 3) { 
+	if (numPlanes < 3) {
 		return intersectVerts;
 	}
 
@@ -890,7 +890,6 @@ std::vector<vec2> localizeVerts(std::vector<vec3>& verts)
 
 std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 {
-
 	std::vector<vec2> localVerts = localizeVerts(verts);
 	if (localVerts.empty())
 	{
@@ -1873,9 +1872,9 @@ std::string GetExecutableDir(std::wstring arg_0)
 
 
 
-std::vector<vec3> stretch_model(const std::vector<vec3>& vertices, float stretch_value)
+std::vector<vec3> scaleVerts(const std::vector<vec3>& vertices, float stretch_value)
 {
-	vec3 center_model = getCenter(vertices);
+	vec3 center_model = getCentroid(vertices);
 
 	std::vector<vec3> stretched_vertices;
 
@@ -1891,9 +1890,9 @@ std::vector<vec3> stretch_model(const std::vector<vec3>& vertices, float stretch
 	return stretched_vertices;
 }
 
-std::vector<cVert> stretch_model(const std::vector<cVert>& vertices, float stretch_value)
+std::vector<cVert> scaleVerts(const std::vector<cVert>& vertices, float stretch_value)
 {
-	vec3 center_model = getCenter(vertices);
+	vec3 center_model = getCentroid(vertices);
 
 	std::vector<cVert> stretched_vertices;
 
@@ -2474,6 +2473,17 @@ vec3 getEdgeControlPoint(const std::vector<TransformVert>& hullVerts, HullEdge& 
 	return v0 + (v1 - v0) * 0.5f;
 }
 
+
+vec3 getCentroid(const std::vector<cVert>& hullVerts)
+{
+	vec3 centroid{};
+	for (size_t i = 0; i < hullVerts.size(); i++)
+	{
+		centroid += hullVerts[i].pos;
+	}
+	return centroid / static_cast<float>(hullVerts.size());
+}
+
 vec3 getCentroid(const std::vector<vec3>& hullVerts)
 {
 	vec3 centroid{};
@@ -2691,14 +2701,20 @@ std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<v
 	return all_boxes;
 }
 
-float getMaxDistPoints(std::vector<vec3>& points) 
+float getMaxDistPoints(std::vector<vec3>& points)
 {
 	float maxDistance = 0.0f;
-	for (size_t i = 0; i < points.size(); ++i) {
-		for (size_t j = i + 1; j < points.size(); ++j) {
-			float distance = points[i].dist(points[j]);
-			if (distance > maxDistance) {
-				maxDistance = distance;
+	for (size_t i = 0; i < points.size(); i++) 
+	{
+		for (size_t j = 0; j < points.size(); j++) 
+		{
+			if (j != i)
+			{
+				float distance = points[i].dist(points[j]);
+				if (distance > maxDistance) 
+				{
+					maxDistance = distance;
+				}
 			}
 		}
 	}

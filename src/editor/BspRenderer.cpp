@@ -1381,16 +1381,19 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			}
 
 			std::vector<vec3> faceVerts;
+			g_mutex_list[2].lock();
 			for (auto vertIdx : uniqueFaceVerts)
 			{
 				faceVerts.push_back(mesh.verts[vertIdx].pos);
 			}
+			g_mutex_list[2].unlock();
 
 			if (faceVerts.size() < 1)
 			{
 				// print_log(get_localized_string(LANG_0282));
 				continue;
 			}
+
 
 			faceVerts = getSortedPlanarVerts(faceVerts);
 
@@ -1484,8 +1487,8 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 	/*if (modelIdx > 0 && hullIdx == 0)
 	{
-		allVerts = stretch_model(allVerts, 0.1f);
-		wireframeVerts = stretch_model(wireframeVerts, 0.1f);
+		allVerts = scaleVerts(allVerts, 0.1f);
+		wireframeVerts = scaleVerts(wireframeVerts, 0.1f);
 	}*/
 
 	cVert* output = new cVert[allVerts.size()];

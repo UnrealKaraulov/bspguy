@@ -177,7 +177,7 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 	up = vec3(u.x, u.y, u.z);
 }
 
-vec3 vec3::normalize(float length)
+vec3 vec3::normalize(float length) const
 {
 	if (std::abs(x) < EPSILON2 && std::abs(y) < EPSILON2 && std::abs(z) < EPSILON2)
 		return vec3();
@@ -316,7 +316,7 @@ float vec3::sizeXY_test()
 	return x + y;
 }
 
-float vec3::dist(vec3 to)
+float vec3::dist(vec3 to) const
 {
 	return sqrt(pow(x - to.x, 2.0f) + pow(y - to.y, 2.0f) + pow(z - to.z, 2.0f));
 }

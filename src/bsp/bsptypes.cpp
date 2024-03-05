@@ -82,6 +82,13 @@ bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 	return shouldFlip;
 }
 
+
+bool BSPPLANE::update_plane(bool flip)
+{
+	return update_plane(vNormal, fDist, flip);
+}
+
+
 bool BSPLEAF16::isEmpty()
 {
 	BSPLEAF16 emptyLeaf;

@@ -205,6 +205,7 @@ public:
 	void delete_model(int modelIdx);
 	int merge_all_texinfos();
 	int merge_all_verts(float epsilon = 1.0f);
+	void round_all_verts(int digits = 8);
 
 	// conditionally deletes hulls for entities that aren't using them
 	STRUCTCOUNT delete_unused_hulls(bool noProgress = false);
