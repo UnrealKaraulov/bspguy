@@ -9628,6 +9628,12 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			jack_mesh_data[ents[ent]] = std::vector<MapBrush>();
 		}
 
+		Entity* worldEnt = getWorldspawnEnt();
+		if (worldEnt)
+		{
+			worldEnt->setOrAddKeyvalue("mapversion", "220");
+		}
+
 		g_progress.update("Export to .map...", (int)toExport.size());
 
 		for (auto& brush : toExport)
@@ -9709,12 +9715,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 				if (selected)
 				{
 					mdlid = 0;
-				}
-
-				if (mdlid == 0)
-				{
 					ent->setOrAddKeyvalue("mapversion", "220");
-					update_ent_lump();
 				}
 
 				if (newDecompile)
@@ -9824,13 +9825,11 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			}
 		}
 
-
-		Entity* worldEnt = getWorldspawnEnt();
-
 		if (!worldEnt)
 		{
 			map_file << "{\n";
 			map_file << "\"classname\" \"" << "worldspawn" << "\"\n";
+			map_file << "\"mapversion\" \"" << "220" << "\"\n";
 			map_file << "\"_decompiler\" \"" << g_version_string << "\"\n";
 			map_file << "\"wad\" \"" << bsp_name + "_emb.wad;" << "\"\n";
 			map_file << "}\n";
