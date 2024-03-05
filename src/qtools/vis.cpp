@@ -199,6 +199,8 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 			if ((i + 1) * (int)sizeof(BSPLEAF32) >= leafMemSize)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0994), i + 1, leafMemSize / sizeof(BSPLEAF32));
+				g_progress.clear();
+				g_progress = ProgressMeter();
 				return;
 			}
 
@@ -212,6 +214,8 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 			if (leafLump[i + 1].nVisOffset >= visLumpMemSize)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0995), leafLump[i + 1].nVisOffset, visLumpMemSize);
+				g_progress.clear();
+				g_progress = ProgressMeter();
 				return;
 			}
 			// Tracing ... 
@@ -232,6 +236,8 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 		else
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0997));
+			g_progress.clear();
+			g_progress = ProgressMeter();
 			return;
 		}
 	}

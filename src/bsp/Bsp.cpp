@@ -64,7 +64,7 @@ void Bsp::init_empty_bsp()
 	ent->setOrAddKeyvalue("classname", "worldspawn");
 	ents.push_back(ent);
 
-	create_leaf(CONTENTS_EMPTY);
+	create_leaf(CONTENTS_EMPTY);	
 	update_ent_lump();
 	update_lump_pointers();
 
@@ -9272,11 +9272,13 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 		int bad_tries = 0;
 
+		g_progress.update("Preparing map brushes...", (int)faceList.size());
 
 		std::vector<MapBrush> toExport;
 
 		for (size_t f = 0; f < faceList.size(); f++)
 		{
+			g_progress.tick();
 			size_t i = faceList[f];
 
 			int mdlid = get_model_from_face(i);
@@ -9346,15 +9348,20 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 
 		bool one_brush_merged = true;
+		int pass_num = 0;
 
 		while (merge_faces && one_brush_merged)
 		{
 			one_brush_merged = false;
 
 			std::set<size_t> decompiledBrushes;
+			pass_num++;
+
+			g_progress.update(fmt::format("Merge faces pass {}", pass_num),(int) toExport.size());
 
 			for (size_t b1 = 0; b1 < toExport.size(); b1++)
 			{
+				g_progress.tick();
 				if (decompiledBrushes.count(b1))
 					continue;
 
@@ -9407,7 +9414,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 						if (std::find(brush2.wind.m_Points.begin(), brush2.wind.m_Points.end(), v1) != brush2.wind.m_Points.end())
 						{
 							connected_edges++;
-							if (connected_edges > 2)
+							if (connected_edges == 2)
 								break;
 						}
 					}
@@ -9434,13 +9441,13 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 								decompiledBrushes.insert(b2);
 								one_brush_merged = true;
 								brush2.wind = Winding(0);
+								break;
 							}
 							else
 							{
 								print_log(PRINT_RED, "ERROR [2] REVERT BACK[ONE BRUSH CAN BE BROKEN!]!\n");
 								bad_tries++;
 							}
-							delete tryMergeWinding;
 						}
 					}
 				}
@@ -9460,9 +9467,12 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			}
 		}
 
+		g_progress.update("Generate back verts...", (int)toExport.size());
+
 		// Genereate backWinds using bruteforce
 		for (auto& brush : toExport)
 		{
+			g_progress.tick();
 			if (brush.wind.m_Points.size() == 0)
 			{
 				continue;
@@ -9507,7 +9517,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 					vec3 v3_b = back_vert1;
 					test_vert = v3_b;
 
-					Winding tmpWind({ v2_b, v1_b, v3_b });
+					Winding tmpWind{};
+					tmpWind.m_Points = { v2_b, v1_b, v3_b };
 					tmpWind.getPlane(plane);
 
 					for (auto& p : planesForTest)
@@ -9544,7 +9555,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 						test_vert = v3_b;
 
-						Winding tmpWind({ v2_b, v1_b, v3_b });
+						Winding tmpWind{};
+						tmpWind.m_Points = { v2_b, v1_b, v3_b };
 						tmpWind.getPlane(plane);
 
 						for (auto& p : planesForTest)
@@ -9616,9 +9628,11 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			jack_mesh_data[ents[ent]] = std::vector<MapBrush>();
 		}
 
+		g_progress.update("Export to .map...", (int)toExport.size());
 
 		for (auto& brush : toExport)
 		{
+			g_progress.tick();
 			if (brush.wind.m_Points.size() == 0)
 			{
 				continue;
@@ -9692,14 +9706,15 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 					offset = vec3();
 				}
 
-				if (mdlid == 0)
-				{
-					ent->setOrAddKeyvalue("mapversion", "220");
-				}
-
 				if (selected)
 				{
 					mdlid = 0;
+				}
+
+				if (mdlid == 0)
+				{
+					ent->setOrAddKeyvalue("mapversion", "220");
+					update_ent_lump();
 				}
 
 				if (newDecompile)
@@ -9842,7 +9857,6 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			}
 		}
 
-		map_file.flush();
 
 		auto processEntry = [&](const std::pair<Entity*, std::vector<MapBrush>>& out)
 			{
@@ -10154,16 +10168,20 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 				}
 			}
 		}
+		g_progress.update("Export to .jmf...", (int)toExport.size());
 
 		// other ents
 		for (auto& out : jack_mesh_data)
 		{
+			g_progress.tick();
 			if (!worldEnt || out.first != worldEnt)
 			{
 				processEntry(out);
 			}
 		}
 
+		g_progress.clear();
+		g_progress = ProgressMeter();
 
 		if (!selected)
 		{
@@ -10184,6 +10202,10 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 				}
 			}
 		}
+
+
+		map_file.flush();
+		map_file.close();
 
 		if (bsp_path.length() <= 4)
 		{

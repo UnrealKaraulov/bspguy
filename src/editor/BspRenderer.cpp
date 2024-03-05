@@ -343,6 +343,8 @@ void BspRenderer::loadTextures()
 	int missingCount = 0;
 	int embedCount = 0;
 
+	map->update_lump_pointers();
+
 	glTexturesSwap = new Texture * [map->textureCount];
 	for (int i = 0; i < map->textureCount; i++)
 	{
