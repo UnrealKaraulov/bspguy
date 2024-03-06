@@ -995,8 +995,9 @@ bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 #define MAX_NUMBER_OF_COLORS 0
 #define ALL_COLORS_REQUIRED 0
 
-void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int height, int bytesPerPixel)
+void WriteBMP_RGB(const std::string& fileName, unsigned char* pixels_rgb, int width, int height)
 {
+	const int bytesPerPixel = 3;
 	FILE* outputFile = NULL;
 	fopen_s(&outputFile, fileName.c_str(), "wb");
 	if (!outputFile)
@@ -1031,8 +1032,8 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 	//write image size(in bytes)
 	int imageSize = width * height * bytesPerPixel;
 	fwrite(&imageSize, 4, 1, outputFile);
-	int resolutionX = 11811; //300 dpi
-	int resolutionY = 11811; //300 dpi
+	int resolutionX = 0; //300 dpi
+	int resolutionY = 0; //300 dpi
 	fwrite(&resolutionX, 4, 1, outputFile);
 	fwrite(&resolutionY, 4, 1, outputFile);
 	int colorsUsed = MAX_NUMBER_OF_COLORS;
@@ -1044,10 +1045,74 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 	for (i = 0; i < height; i++)
 	{
 		int pixelOffset = ((height - i) - 1) * unpaddedRowSize;
-		fwrite(&pixels[pixelOffset], 1, paddedRowSize, outputFile);
+		fwrite(&pixels_rgb[pixelOffset], 1, paddedRowSize, outputFile);
 	}
 	fclose(outputFile);
 }
+
+void WriteBMP_PAL(const std::string& fileName, unsigned char* pixels_indexes, int width, int height, COLOR3 * pal)
+{
+	FILE* outputFile = NULL;
+	fopen_s(&outputFile, fileName.c_str(), "wb");
+	if (!outputFile)
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1013));
+		return;
+	}
+	//*****HEADER************//
+	const char* BM = "BM";
+	fwrite(&BM[0], 1, 1, outputFile);
+	fwrite(&BM[1], 1, 1, outputFile);
+	int paddedRowSize = (int)(4 * ceil((float)width / 4.0f));
+	int dataOffset = HEADER_SIZE + INFO_HEADER_SIZE + 256 * sizeof(COLOR4);
+	int fileSize = paddedRowSize * height + dataOffset;
+	fwrite(&fileSize, 4, 1, outputFile);
+	int reserved = 0x0000;
+	fwrite(&reserved, 4, 1, outputFile);
+	fwrite(&dataOffset, 4, 1, outputFile);
+
+	//*******INFO*HEADER******//
+	int infoHeaderSize = INFO_HEADER_SIZE;
+	fwrite(&infoHeaderSize, 4, 1, outputFile);
+	fwrite(&paddedRowSize, 4, 1, outputFile);
+	fwrite(&height, 4, 1, outputFile);
+	short planes = 1; //always 1
+	fwrite(&planes, 2, 1, outputFile);
+	short bitsPerPixel = (short)(8);
+	fwrite(&bitsPerPixel, 2, 1, outputFile);
+	//write compression
+	int compression = NO_COMPRESION;
+	fwrite(&compression, 4, 1, outputFile);
+	//write image size(in bytes)
+	int imageSize = 0;
+	fwrite(&imageSize, 4, 1, outputFile);
+	int resolutionX = 0; //300 dpi
+	int resolutionY = 0; //300 dpi
+	fwrite(&resolutionX, 4, 1, outputFile);
+	fwrite(&resolutionY, 4, 1, outputFile);
+	int colorsUsed = 256;
+	fwrite(&colorsUsed, 4, 1, outputFile);
+	int importantColors = ALL_COLORS_REQUIRED;
+	fwrite(&importantColors, 4, 1, outputFile);
+	
+	COLOR4 pal4[256];
+	for (int i = 0; i < 256; i++)
+	{
+		pal4[i] = pal[i];
+		std::swap(pal4[i].b, pal4[i].r);
+	}
+	fwrite(pal4, sizeof(COLOR4), 256, outputFile);
+
+	int i = 0;
+	int unpaddedRowSize = width;
+	for (i = 0; i < height; i++)
+	{
+		int pixelOffset = ((height - i) - 1) * unpaddedRowSize;
+		fwrite(&pixels_indexes[pixelOffset], 1, paddedRowSize, outputFile);
+	}
+	fclose(outputFile);
+}
+
 
 int ArrayXYtoId(int w, int x, int y)
 {
@@ -2704,14 +2769,14 @@ std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<v
 float getMaxDistPoints(std::vector<vec3>& points)
 {
 	float maxDistance = 0.0f;
-	for (size_t i = 0; i < points.size(); i++) 
+	for (size_t i = 0; i < points.size(); i++)
 	{
-		for (size_t j = 0; j < points.size(); j++) 
+		for (size_t j = 0; j < points.size(); j++)
 		{
 			if (j != i)
 			{
 				float distance = points[i].dist(points[j]);
-				if (distance > maxDistance) 
+				if (distance > maxDistance)
 				{
 					maxDistance = distance;
 				}

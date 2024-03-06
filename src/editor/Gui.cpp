@@ -2786,6 +2786,27 @@ void Gui::drawMenuBar()
 						}
 					}
 				}
+
+				static bool splitSmd = true;
+				static bool oneRoot = true;
+
+				if (ImGui::BeginMenu("StudioModel Data (.smd) [WIP]", map && !map->is_mdl_model))
+				{
+					if (ImGui::MenuItem("Split to 2000", NULL, &splitSmd))
+					{
+						//splitSmd
+					}
+					if (ImGui::MenuItem("Only root bone", NULL, &oneRoot))
+					{
+						//oneRoot
+					}
+
+					if (ImGui::MenuItem("Do Export", NULL))
+					{
+						map->ExportToSmdWIP(g_working_dir, splitSmd, oneRoot);
+					}
+					ImGui::EndMenu();
+				}
 				if (ImGui::BeginMenu("Wavefront (.obj) [WIP]", map && !map->is_mdl_model))
 				{
 					if (ImGui::MenuItem(get_localized_string(LANG_0535).c_str(), NULL))
@@ -2821,6 +2842,7 @@ void Gui::drawMenuBar()
 				}
 
 				static bool merge_faces = true;
+				static bool use_one_back_vert = false;
 
 				if (ImGui::BeginMenu("ValveHammerEditor (.map) [WIP]", map && !map->is_mdl_model))
 				{
@@ -2829,13 +2851,18 @@ void Gui::drawMenuBar()
 						// merge_faces = !merge_faces
 					}
 
+					if (ImGui::MenuItem("One back vert", NULL, &use_one_back_vert))
+					{
+						// merge_faces = !merge_faces
+					}
+
 					if (ImGui::MenuItem("Full .map"))
 					{
-						map->ExportToMapWIP(g_working_dir, false, merge_faces);
+						map->ExportToMapWIP(g_working_dir, false, merge_faces, use_one_back_vert);
 					}
 					else if (ImGui::MenuItem("Selected faces"))
 					{
-						map->ExportToMapWIP(g_working_dir, true, merge_faces);
+						map->ExportToMapWIP(g_working_dir, true, merge_faces, use_one_back_vert);
 					}
 					ImGui::EndMenu();
 				}

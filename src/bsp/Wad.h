@@ -50,6 +50,16 @@ struct WADTEX
 
 	WADTEX(BSPMIPTEX* tex, unsigned char* palette = NULL, unsigned short colors = 256)
 	{
+		if (!tex || tex->nWidth == 0 || tex->nHeight == 0)
+		{
+			dataLen = 0;
+			needclean = false;
+			szName[0] = '\0';
+			data = NULL;
+			nWidth = nHeight = 0;
+			nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
+			return;
+		}
 		memcpy(szName, tex->szName, MAXTEXTURENAME);
 
 		nWidth = tex->nWidth;

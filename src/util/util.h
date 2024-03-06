@@ -234,7 +234,8 @@ enum class FIXUPPATH_SLASH
 };
 void fixupPath(char* path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash);
 void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash);
-void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int height, int bytesPerPixel);
+void WriteBMP_RGB(const std::string& fileName, unsigned char* pixels_rgb, int width, int height);
+void WriteBMP_PAL(const std::string& fileName, unsigned char* pixels_indexes, int width, int height, COLOR3* pal);
 
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv);
 int TextureAxisFromPlane(const vec3& pln, vec3& xv, vec3& yv);
