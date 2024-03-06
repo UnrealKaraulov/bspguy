@@ -36,50 +36,50 @@ tCube::tCube(vec3 mins, vec3 maxs)
 {
 	// Left side
 	left = {
-		tVert(mins.x, maxs.y, maxs.z, 0.0f, 1.0f),
-		tVert(mins.x, maxs.y, mins.z, 1.0f, 1.0f),
-		tVert(mins.x, mins.y, mins.z, 1.0f, 0.0f),
-		tVert(mins.x, mins.y, maxs.z, 0.0f, 0.0f)
+		tVert(mins.x, maxs.y, maxs.z, 0.0f, 0.0f),
+		tVert(mins.x, maxs.y, mins.z, 1.0f, 0.0f),
+		tVert(mins.x, mins.y, mins.z, 1.0f, 1.0f),
+		tVert(mins.x, mins.y, maxs.z, 0.0f, 1.0f)
 	};
 
 	// Right side
 	right = {
-		tVert(maxs.x, maxs.y, mins.z, 0.0f, 1.0f),
-		tVert(maxs.x, maxs.y, maxs.z, 1.0f, 1.0f),
-		tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f),
-		tVert(maxs.x, mins.y, mins.z, 0.0f, 0.0f)
+		tVert(maxs.x, maxs.y, mins.z, 0.0f, 0.0f),
+		tVert(maxs.x, maxs.y, maxs.z, 1.0f, 0.0f),
+		tVert(maxs.x, mins.y, maxs.z, 1.0f, 1.0f),
+		tVert(maxs.x, mins.y, mins.z, 0.0f, 1.0f)
 	};
 
 	// Bottom side
 	bottom = {
-		tVert(mins.x, mins.y, mins.z, 0.0f, 0.0f),
-		tVert(maxs.x, mins.y, mins.z, 1.0f, 0.0f),
-		tVert(maxs.x, mins.y, maxs.z, 1.0f, 1.0f),
-		tVert(mins.x, mins.y, maxs.z, 0.0f, 1.0f)
+		tVert(mins.x, mins.y, mins.z, 0.0f, 1.0f),
+		tVert(maxs.x, mins.y, mins.z, 1.0f, 1.0f),
+		tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f),
+		tVert(mins.x, mins.y, maxs.z, 0.0f, 0.0f)
 	};
 
 	// Top side
 	top = {
-		tVert(mins.x, maxs.y, maxs.z, 0.0f, 1.0f),
-		tVert(maxs.x, maxs.y, maxs.z, 1.0f, 1.0f),
-		tVert(maxs.x, maxs.y, mins.z, 1.0f, 0.0f),
-		tVert(mins.x, maxs.y, mins.z, 0.0f, 0.0f)
+		tVert(mins.x, maxs.y, maxs.z, 0.0f, 0.0f),
+		tVert(maxs.x, maxs.y, maxs.z, 1.0f, 0.0f),
+		tVert(maxs.x, maxs.y, mins.z, 1.0f, 1.0f),
+		tVert(mins.x, maxs.y, mins.z, 0.0f, 1.0f)
 	};
 
 	// Front side
 	front = {
-		tVert(mins.x, maxs.y, mins.z, 0.0f, 1.0f),
-		tVert(maxs.x, maxs.y, mins.z, 1.0f, 1.0f),
-		tVert(maxs.x, mins.y, mins.z, 1.0f, 0.0f),
-		tVert(mins.x, mins.y, mins.z, 0.0f, 0.0f)
+		tVert(mins.x, maxs.y, mins.z, 0.0f, 0.0f),
+		tVert(maxs.x, maxs.y, mins.z, 1.0f, 0.0f),
+		tVert(maxs.x, mins.y, mins.z, 1.0f, 1.0f),
+		tVert(mins.x, mins.y, mins.z, 0.0f, 1.0f)
 	};
 
 	// Back side
 	back = {
-		tVert(maxs.x, maxs.y, maxs.z, 1.0f, 1.0f),
-		tVert(mins.x, maxs.y, maxs.z, 0.0f, 1.0f),
-		tVert(mins.x, mins.y, maxs.z, 0.0f, 0.0f),
-		tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f)
+		tVert(maxs.x, maxs.y, maxs.z, 1.0f, 0.0f),
+		tVert(mins.x, maxs.y, maxs.z, 0.0f, 0.0f),
+		tVert(mins.x, mins.y, maxs.z, 0.0f, 1.0f),
+		tVert(maxs.x, mins.y, maxs.z, 1.0f, 1.0f)
 	};
 }
 

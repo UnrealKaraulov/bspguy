@@ -9407,7 +9407,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 							continue;
 					}
 
-					int connected_edges = 0;
+					/*int connected_edges = 0;
 
 					for (auto& v1 : brush.wind.m_Points)
 					{
@@ -9420,16 +9420,16 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 					}
 
 					if (connected_edges == 2)
-					{
+					{*/
 						Winding wind1(brush.wind);
 						Winding wind2(brush2.wind);
 
 						Winding* tryMergeWinding = wind1.Merge(wind2, brush.plane);
 
-						if (!tryMergeWinding)
+						/*if (!tryMergeWinding)
 						{
 							tryMergeWinding = wind2.Merge(wind1, brush.plane);
-						}
+						}*/
 
 						if (tryMergeWinding)
 						{
@@ -9449,7 +9449,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 								bad_tries++;
 							}
 						}
-					}
+					//}
 				}
 			}
 		}
@@ -9506,8 +9506,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 				bool foundCoplanar = false;
 
-				back_vert1 = centoid_real - brush.plane.vNormal.normalize() * brush.back_dist;
-				back_vert2 = centoid_smaller - brush.plane.vNormal.normalize() * brush.back_dist;
+				back_vert1 = centoid_smaller - brush.plane.vNormal.normalize() * brush.back_dist;
+				back_vert2 = centoid_real - brush.plane.vNormal.normalize() * brush.back_dist;
 
 				for (int n = 0; n < brush.wind.m_Points.size(); n++)
 				{
@@ -9585,6 +9585,23 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 					}
 					else if (i + 1 == 20)
 					{
+						brush.backWinds.clear();
+						brush.back_dist = 5.0f;
+						back_vert2 = centoid_real - brush.plane.vNormal.normalize() * brush.back_dist;
+						for (int n = 0; n < brush.wind.m_Points.size(); n++)
+						{
+							vec3 v1_b = brush.wind.m_Points[n];
+							vec3 v2_b = brush.wind.m_Points[(n + 1) % brush.wind.m_Points.size()];
+							vec3 v3_b = back_vert2;
+
+							test_vert = v3_b;
+
+							Winding tmpWind{};
+							tmpWind.m_Points = { v2_b, v1_b, v3_b };
+							tmpWind.getPlane(plane);
+
+							brush.backWinds.push_back(tmpWind);
+						}
 						break;
 					}
 					else
