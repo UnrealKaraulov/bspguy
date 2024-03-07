@@ -75,25 +75,26 @@ struct WADTEX
 			return;
 		}
 
-		int w = tex->nWidth;
-		int h = tex->nHeight;
-		int sz = w * h;	   // miptex 0
-		int sz2 = sz / 4;  // miptex 1
-		int sz3 = sz2 / 4; // miptex 2
-		int sz4 = sz3 / 4; // miptex 3
-		int szAll = sz + sz2 + sz3 + sz4;
+		int sz = 0;
+		for (int i = 0; i < MIPLEVELS; i++)
+		{
+			int div = 1 << i;
+			int mipWidth = tex->nWidth / div;
+			int mipHeight = tex->nHeight / div;
+			sz += mipWidth * mipHeight;
+		}
 
-		dataLen = szAll + sizeof(short) + sizeof(COLOR3) * 256;
+		dataLen = sz + sizeof(short) + sizeof(COLOR3) * 256;
 		data = new unsigned char[dataLen];
 		memset(data, 0, dataLen);
 
 		unsigned char* texdata = ((unsigned char*)tex) + tex->nOffsets[0];
 
-		memcpy(data, texdata, palette ? szAll : dataLen);
+		memcpy(data, texdata, palette ? sz : dataLen);
 		if (palette)
 		{
-			*(unsigned short*)(data + szAll) = colors;
-			memcpy(data + szAll + sizeof(short), palette, sizeof(COLOR3) * colors);
+			*(unsigned short*)(data + sz) = colors;
+			memcpy(data + sz + sizeof(short), palette, sizeof(COLOR3) * colors);
 		}
 
 		needclean = true;

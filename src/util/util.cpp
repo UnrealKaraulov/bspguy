@@ -2272,7 +2272,7 @@ bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2
 
 std::string Process::quoteIfNecessary(std::string toQuote)
 {
-	if (toQuote.find(" ") != std::string::npos)
+	if (toQuote.find(' ') != std::string::npos)
 	{
 		toQuote = '\"' + toQuote + '\"';
 	}

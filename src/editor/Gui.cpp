@@ -2788,11 +2788,11 @@ void Gui::drawMenuBar()
 				}
 
 				static bool splitSmd = true;
-				static bool oneRoot = true;
+				static bool oneRoot = false;
 
 				if (ImGui::BeginMenu("StudioModel Data (.smd) [WIP]", map && !map->is_mdl_model))
 				{
-					if (ImGui::MenuItem("Split to 2000", NULL, &splitSmd))
+					if (ImGui::MenuItem("Split to goldsrc", NULL, &splitSmd))
 					{
 						//splitSmd
 					}
@@ -4304,6 +4304,18 @@ void Gui::drawMenuBar()
 								memset(newlump, 0, dataOffset + texOffset + texlen);
 								memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
 								map->replace_lump(LUMP_TEXTURES, newlump, dataOffset + texOffset + texlen);
+								foundfixes = true;
+							}
+							int texdata = (int)(((unsigned char*)tex) - map->textures) + tex->nOffsets[0] + texlen - sizeof(BSPMIPTEX);
+							if (texdata > map->bsp_header.lump[LUMP_TEXTURES].nLength)
+							{
+								print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0364), i, map->bsp_header.lump[LUMP_TEXTURES].nLength, texdata);
+
+								char* newlump = new char[texdata];
+								memset(newlump, 0, texdata);
+								memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
+								map->replace_lump(LUMP_TEXTURES, newlump, texdata);
+
 								foundfixes = true;
 							}
 						}

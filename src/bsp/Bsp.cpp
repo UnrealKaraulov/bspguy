@@ -1208,7 +1208,7 @@ void Bsp::save_undo_lightmaps(bool logged)
 {
 	if (logged)
 	{
-		g_progress.update(fmt::format("Undo lightmaps ({})", faceCount).c_str(), faceCount);
+		g_progress.update(fmt::format("Undo lightmaps ({})", faceCount), faceCount);
 	}
 	if (undo_lightmaps != NULL)
 	{
@@ -1983,32 +1983,40 @@ int Bsp::merge_all_verts(float epsilon)
 {
 	int merged_verts = 0;
 
+	g_progress.update("Merge vertices " + std::to_string(epsilon) + "...", vertCount);
+
 	for (int v = 0; v < vertCount; v++)
 	{
+		g_progress.tick();
 		bool found1 = false;
 		bool found2 = false;
-		for (int i = 0; i < edgeCount; i++)
-		{
-			if (!found1 && edges[i].iVertex[0] != v && verts[edges[i].iVertex[0]].equal(verts[v], epsilon))
-			{
-				edges[i].iVertex[0] = v;
-				merged_verts++;
-				found1 = true;
-			}
-			if (!found2 && edges[i].iVertex[1] != v && verts[edges[i].iVertex[1]].equal(verts[v], epsilon))
-			{
-				edges[i].iVertex[1] = v;
-				merged_verts++;
-				found2 = true;
-			}
 
-			if (found1 && found2)
+		std::vector<size_t> edges_FOR(edgeCount);
+		std::iota(edges_FOR.begin(), edges_FOR.end(), 0);
+
+		std::for_each(std::execution::par_unseq, edges_FOR.begin(), edges_FOR.end(), [&](size_t i)
 			{
-				break;
-			}
-		}
+				if (!found1 && edges[i].iVertex[0] != v && verts[edges[i].iVertex[0]].equal(verts[v], epsilon))
+				{
+					edges[i].iVertex[0] = v;
+					merged_verts++;
+					found1 = true;
+				}
+				if (!found2 && edges[i].iVertex[1] != v && verts[edges[i].iVertex[1]].equal(verts[v], epsilon))
+				{
+					edges[i].iVertex[1] = v;
+					merged_verts++;
+					found2 = true;
+				}
+
+				if (found1 && found2)
+				{
+					return;
+				}
+			});
 	}
-
+	g_progress.clear();
+	g_progress = ProgressMeter();
 	return merged_verts;
 }
 
@@ -4511,6 +4519,16 @@ bool Bsp::validate()
 				isValid = false;
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string("LANG_ERROR_TEXLEN"), i);
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
+			}
+			else if (tex->nOffsets[0] > 0)
+			{
+				int texdata = (int)(((unsigned char*)tex) - textures) + tex->nOffsets[0] + texlen - sizeof(BSPMIPTEX);
+				if (texdata > bsp_header.lump[LUMP_TEXTURES].nLength)
+				{
+					isValid = false;
+					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0135), i, texdata, bsp_header.lump[LUMP_TEXTURES].nLength);
+					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
+				}
 			}
 		}
 	}
@@ -8786,24 +8804,45 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 		return;
 	}
 
-	std::vector<SMD_Triangle> toExport;
+	std::deque<SMD_Triangle> toExport;
 
-	if (!createDir(path))
+	if (!createDir(path + bsp_name + ".smd/"))
 	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0193), path);
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0193), path + bsp_name + ".smd/");
 		return;
 	}
 
 	print_log(get_localized_string(LANG_0194), bsp_name + ".smd", path);
-	std::string groupname = std::string();
 
 	BspRenderer* bsprend = renderer;
+
+	remove_faces_by_content(CONTENTS_SKY);
+	remove_faces_by_content(CONTENTS_SOLID);
+
+	remove_unused_model_structures();
+
+	int merged = merge_all_verts(0.1f);
+	print_log(PRINT_RED, " Merged {} verts \n", merged);
+	remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
+
+	save_undo_lightmaps();
+	resize_all_lightmaps();
+	bsprend->reuploadTextures();
+	bsprend->loadLightmaps();
+	bsprend->calcFaceMaths();
+
+	update_ent_lump();
+	update_lump_pointers();
 
 	//g_app->reloading = true;
 	//bsprend->reload();
 	//g_app->reloading = false;
 
-	createDir(path + "textures");
+	if (!createDir(path + bsp_name + ".smd/tex_8bit/"))
+	{
+		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0193), path + bsp_name + ".smd/tex_8bit/");
+		return;
+	}
 
 	int vertoffset = 1;
 
@@ -8833,10 +8872,10 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 		BSPFACE32& face = faces[i];
 		BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
 		int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
-		BSPMIPTEX tex = BSPMIPTEX();
+		BSPMIPTEX* tex = NULL;
 
 		if (texOffset >= 0)
-			tex = *((BSPMIPTEX*)(textures + texOffset));
+			tex = ((BSPMIPTEX*)(textures + texOffset));
 
 		std::vector<size_t> entIds = get_model_ents_ids(mdlid);
 
@@ -8845,9 +8884,9 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 			entIds.push_back(0);
 		}
 
-		if (!fileExists(path + std::string("textures/") + tex.szName + std::string(".bmp")))
+		if (tex && !fileExists(path + bsp_name + std::string(".smd/tex_8bit/") + tex->szName + std::string(".bmp")))
 		{
-			if (tex.nOffsets[0] > 0)
+			if (tex->nOffsets[0] > 0)
 			{
 				if (texOffset >= 0)
 				{
@@ -8856,22 +8895,22 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 					{
 						if (g_settings.pal_id >= 0)
 						{
-							wadTex = new WADTEX(&tex, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors);
+							wadTex = new WADTEX(tex, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors);
 						}
 						else
 						{
-							wadTex = new WADTEX(&tex, g_settings.palette_default);
+							wadTex = new WADTEX(tex, g_settings.palette_default);
 						}
 					}
 					else
 					{
-						wadTex = new WADTEX(&tex);
+						wadTex = new WADTEX(tex);
 					}
 					int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
 					COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 					unsigned char* src = wadTex->data;
 
-					WriteBMP_PAL(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)src, tex.nWidth, tex.nHeight, palette);
+					WriteBMP_PAL(path + bsp_name + std::string(".smd/tex_8bit/") + tex->szName + std::string(".bmp"), (unsigned char*)src, tex->nWidth, tex->nHeight, palette);
 
 					delete wadTex;
 				}
@@ -8883,16 +8922,16 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 				{
 					for (size_t k = 0; k < mapRenderers[r]->wads.size(); k++)
 					{
-						if (mapRenderers[r]->wads[k]->hasTexture(tex.szName))
+						if (mapRenderers[r]->wads[k]->hasTexture(tex->szName))
 						{
 							foundInWad = true;
 
-							WADTEX* wadTex = mapRenderers[r]->wads[k]->readTexture(tex.szName);
+							WADTEX* wadTex = mapRenderers[r]->wads[k]->readTexture(tex->szName);
 							int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
 							COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
 							unsigned char* src = wadTex->data;
 
-							WriteBMP_PAL(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)src, wadTex->nWidth, wadTex->nHeight, palette);
+							WriteBMP_PAL(path + bsp_name + std::string(".smd/tex_8bit/") + tex->szName + std::string(".bmp"), (unsigned char*)src, wadTex->nWidth, wadTex->nHeight, palette);
 
 							delete wadTex;
 							break;
@@ -8902,47 +8941,49 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 			}
 		}
 
-
-		for (size_t e = 0; e < entIds.size(); e++)
+		if (tex)
 		{
-			size_t tmpentid = entIds[e];
-			Entity* ent = ents[tmpentid];
-			vec3 origin_offset = ent->origin.flip();
-
-			if (bonemap.find(tmpentid) == bonemap.end())
+			for (size_t e = 0; e < entIds.size(); e++)
 			{
-				lastboneid++;
-				bonemap[tmpentid] = lastboneid;
-			}
+				size_t tmpentid = entIds[e];
+				Entity* ent = ents[tmpentid];
+				vec3 origin_offset = ent->origin.flip();
 
-			BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
-
-			for (int v = 0; v < rface->vertCount; v += 3)
-			{
-				SMD_Triangle tmpTriangle;
-				tmpTriangle.texName = std::string(tex.szName) + ".bmp";
-				tmpTriangle.norm = tmpPlane.vNormal;
-				tmpTriangle.boneid = bonemap[tmpentid];
-				for (int n = 0; n < 3; n++)
+				if (bonemap.find(tmpentid) == bonemap.end())
 				{
-					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + (3 - (n + 1)) + v];
-
-					vec3 org_pos = vert.pos.unflip() + origin_offset;
-					vec3 pos = vert.pos.unflip();
-
-					float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
-					float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
-					fU /= (float)tex.nWidth;
-					fV /= -(float)tex.nHeight;
-
-
-					tmpTriangle.verts[n] = org_pos;
-					tmpTriangle.u[n] = fU;
-					tmpTriangle.v[n] = fV;
+					lastboneid++;
+					bonemap[tmpentid] = lastboneid;
 				}
-				toExport.push_back(tmpTriangle);
+
+				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
+
+				for (int v = 0; v < rface->vertCount; v += 3)
+				{
+					SMD_Triangle tmpTriangle;
+					tmpTriangle.texName = std::string(tex->szName) + ".bmp";
+					tmpTriangle.norm = tmpPlane.vNormal;
+					tmpTriangle.boneid = bonemap[tmpentid];
+					for (int n = 0; n < 3; n++)
+					{
+						lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + (3 - (n + 1)) + v];
+
+						vec3 org_pos = vert.pos.unflip() + origin_offset;
+						vec3 pos = vert.pos.unflip();
+
+						float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
+						float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
+						fU /= (float)tex->nWidth;
+						fV /= -(float)tex->nHeight;
+
+
+						tmpTriangle.verts[n] = org_pos;
+						tmpTriangle.u[n] = fU;
+						tmpTriangle.v[n] = fV;
+					}
+					toExport.push_back(tmpTriangle);
+				}
+				vertoffset += rface->vertCount;
 			}
-			vertoffset += rface->vertCount;
 		}
 	}
 
@@ -8951,29 +8992,43 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	for (auto m : refreshedModels)
 		bsprend->refreshModel(m, false);
 
-	std::ofstream outQC(path + bsp_name + ".qc");
+	std::ofstream outQC(path + bsp_name + ".smd/" + bsp_name + "_part1.qc");
 
-	int collections = 1;
-	int triangles = 0;
+	int smd_parts = 1;
+	int smd_saved_parts = 1;
+
+	int qc_part = 1;
+
+	const int MAX_SMD_VERTS = 2047;
+	const int MAX_MDL_MESHES = 63;
+	const int MAX_MDL_TEXTURES = 99;
+	const int MAX_MDL_BONES = 127;
 
 	std::map<int, int> bones_to;
-	std::ofstream outSMD_file(path + bsp_name + "_" + std::to_string(collections) + ".smd");
+	int cur_bone_id = 1;
+
+	std::ofstream outSMD_file(path + bsp_name + ".smd/" + bsp_name + "_" + std::to_string(smd_parts) + ".smd");
 
 	std::ostringstream outSMD;
 	outSMD << "triangles" << std::endl;
+
+	std::vector<vec3> total_verts;
+	std::vector<vec3> total_normals;
+	std::set<std::string> total_textures;
 
 	g_progress.update("Export smd", toExport.size());
 	while (toExport.size())
 	{
 		g_progress.tick();
-		auto& t = toExport[0];
+		auto t = toExport[0];
 		toExport.erase(toExport.begin());
 
 		outSMD << t.texName << std::endl;
 
 		if (bones_to.find(t.boneid) == bones_to.end())
 		{
-			bones_to[t.boneid] = bones_to.size() + 1;
+			bones_to[t.boneid] = cur_bone_id;
+			cur_bone_id++;
 		}
 
 		for (int v = 0; v < 3; v++)
@@ -8983,12 +9038,45 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 			outSMD << t.norm.toKeyvalueString() << " ";
 			outSMD << std::to_string(t.u[v]) << " ";
 			outSMD << std::to_string(t.v[v]) << std::endl;
+			bool found = false;
+			for (auto& vert : total_verts)
+			{
+				if (t.verts[v].x == vert.x &&
+					t.verts[v].y == vert.y &&
+					t.verts[v].z == vert.z)
+				{
+					found = true;
+				}
+			}
+			if (!found)
+				total_verts.push_back(t.verts[v]);
 		}
-		triangles++;
+
+		bool found = false;
+		for (auto& vert : total_normals)
+		{
+			if (t.norm.x == vert.x &&
+				t.norm.y == vert.y &&
+				t.norm.z == vert.z)
+			{
+				found = true;
+			}
+		}
+		if (!found)
+			total_normals.push_back(t.norm);
+
+
+		if (!total_textures.count(t.texName))
+			total_textures.insert(t.texName);
+
 
 		if (split)
 		{
-			if (bones_to.size() >= 128 || triangles >= 2000)
+			if (bones_to.size() >= MAX_MDL_BONES ||
+				total_verts.size() >= MAX_SMD_VERTS ||
+				total_normals.size() >= MAX_SMD_VERTS ||
+				total_textures.size() >= MAX_MDL_TEXTURES ||
+				std::abs(smd_parts - smd_saved_parts) >= MAX_MDL_MESHES)
 			{
 				outSMD << "end" << std::endl;
 
@@ -9020,12 +9108,40 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 				outSMD.clear();
 
 				outSMD << "triangles" << std::endl;
-				bones_to.clear();
-				triangles = 0;
+
+				//clear smd limits
+				total_verts.clear();
+				total_normals.clear();
+
+				//small fix for latest triangle
 				if (toExport.size())
 				{
-					collections++;
-					outSMD_file = std::ofstream(path + bsp_name + "_" + std::to_string(collections) + ".smd");
+					smd_parts++;
+					outSMD_file = std::ofstream(path + bsp_name + ".smd/" + bsp_name + "_" + std::to_string(smd_parts) + ".smd");
+
+					if (bones_to.size() >= MAX_MDL_BONES ||
+						total_textures.size() >= MAX_MDL_TEXTURES ||
+						std::abs(smd_parts - smd_saved_parts) >= MAX_MDL_MESHES)
+					{
+						bones_to.clear();
+						cur_bone_id = 1;
+						total_textures.clear();
+						qc_part++;
+
+						outQC << "$modelname " << bsp_name << "_" << std::to_string(qc_part - 1) << std::endl;
+						outQC << "$cd ." << std::endl;
+						outQC << "$cdtexture ./tex_8bit" << std::endl;
+
+						for (int i = smd_saved_parts; i < smd_parts; i++)
+						{
+							outQC << "$body \"" << bsp_name << "\" \"" << (bsp_name + "_" + std::to_string(i)) << "\"" << std::endl;
+							smd_saved_parts++;
+						}
+						outQC.flush();
+						outQC.close();
+
+						outQC = std::ofstream(path + bsp_name + ".smd/" + bsp_name + "_part" + std::to_string(qc_part) + ".qc");
+					}
 				}
 				else
 				{
@@ -9034,6 +9150,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 			}
 		}
 	}
+
 	if (outSMD_file.is_open())
 	{
 		outSMD << "end" << std::endl;
@@ -9063,19 +9180,37 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 		outSMD_file.close();
 	}
 
-	outQC << "$modelname " << bsp_name << std::endl;
-	outQC << "$cd ." << std::endl;
-	outQC << "$cdtexture ./textures" << std::endl;
+	smd_parts++;
+	qc_part++;
 
-	for (int i = 1; i <= collections; i++)
+	outQC << "$modelname " << bsp_name << "_" << std::to_string(qc_part - 1) << std::endl;
+	outQC << "$cd ." << std::endl;
+	outQC << "$cdtexture ./tex_8bit" << std::endl;
+
+	for (int i = smd_saved_parts; i < smd_parts; i++)
 	{
 		outQC << "$body \"" << bsp_name << "\" \"" << (bsp_name + "_" + std::to_string(i)) << "\"" << std::endl;
-
+		smd_saved_parts++;
 	}
 	outQC.flush();
 	outQC.close();
+
 	g_progress.clear();
 	g_progress = ProgressMeter();
+
+	update_ent_lump();
+	update_lump_pointers();
+
+	remove_unused_model_structures(CLEAN_MODELS);
+	save_undo_lightmaps();
+	resize_all_lightmaps();
+	bsprend->reloadTextures();
+	bsprend->loadLightmaps();
+	bsprend->calcFaceMaths();
+
+	update_ent_lump();
+	update_lump_pointers();
+	renderer->pushModelUndoState("EXPORT .SMD EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 }
 
 void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
@@ -9484,7 +9619,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 		std::map<Entity*, std::stringstream> map_text_data{};
 
-		std::map<Entity*, std::vector<MapBrush>> jack_mesh_data{};
+		std::map<Entity*, std::deque<MapBrush>> jack_mesh_data{};
 
 		vec3 w_mins, w_maxs;
 		get_bounding_box(w_mins, w_maxs);
@@ -9563,11 +9698,12 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 		std::set<size_t> decompiled_faces;
 
-		std::vector<size_t> faceList;
+		std::deque<size_t> faceList;
 
 		if (selected)
 		{
-			faceList = g_app->pickInfo.selectedFaces;
+			for (auto& f : g_app->pickInfo.selectedFaces)
+				faceList.push_back(f);
 		}
 		else
 		{
@@ -9576,14 +9712,14 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		}
 
 
-		std::vector<int> mergedFaces(modelCount);
+		std::deque<int> mergedFaces(modelCount);
 
 
 		int bad_tries = 0;
 
 		g_progress.update("Preparing map brushes...", (int)faceList.size());
 
-		std::vector<MapBrush> toExport;
+		std::deque<MapBrush> toExport;
 
 		for (size_t f = 0; f < faceList.size(); f++)
 		{
@@ -9735,14 +9871,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 						Winding* tryMergeWinding = wind1.Merge(wind2, brush.plane);
 
-						/*if (!tryMergeWinding)
-						{
-							tryMergeWinding = wind2.Merge(wind1, brush.plane);
-						}*/
-
 						if (tryMergeWinding)
 						{
-							std::vector<vec3> copyVerts = tryMergeWinding->m_Points;
 							if (tryMergeWinding->m_Points.size() >= 3)
 							{
 								brush.wind = Winding(*tryMergeWinding);
@@ -10021,7 +10151,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		for (size_t ent = 0; ent < ents.size(); ent++)
 		{
 			brushNumbers[ent] = 0;
-			jack_mesh_data[ents[ent]] = std::vector<MapBrush>();
+			jack_mesh_data[ents[ent]] = std::deque<MapBrush>();
 		}
 
 		Entity* worldEnt = getWorldspawnEnt();
@@ -10257,7 +10387,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		}
 
 
-		auto processEntry = [&](const std::pair<Entity*, std::vector<MapBrush>>& out)
+		auto processEntry = [&](const std::pair<Entity*, std::deque<MapBrush>>& out)
 			{
 				//classname
 				jack_file.writeLenStr(out.first->classname);
@@ -10561,7 +10691,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		if (!worldEnt)
 		{
 			Entity* tmpEnt = new Entity("worldspawn");
-			processEntry({ tmpEnt,std::vector<MapBrush>() });
+			processEntry({ tmpEnt,std::deque<MapBrush>() });
 		}
 
 		// worldspawn
