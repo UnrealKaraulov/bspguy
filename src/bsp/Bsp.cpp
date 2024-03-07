@@ -8821,8 +8821,8 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 
 	remove_unused_model_structures();
 
-	int merged = merge_all_verts(0.1f);
-	print_log(PRINT_RED, " Merged {} verts \n", merged);
+	//int merged = merge_all_verts(0.1f);
+	//print_log(PRINT_RED, " Merged {} verts \n", merged);
 	remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
 
 	save_undo_lightmaps();
@@ -9012,7 +9012,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	std::ostringstream outSMD;
 	outSMD << "triangles" << std::endl;
 
-	std::vector<vec3> total_verts;
+	std::vector<std::pair<vec3, int>> total_verts;
 	std::vector<vec3> total_normals;
 	std::set<std::string> total_textures;
 
@@ -9041,15 +9041,15 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 			bool found = false;
 			for (auto& vert : total_verts)
 			{
-				if (t.verts[v].x == vert.x &&
-					t.verts[v].y == vert.y &&
-					t.verts[v].z == vert.z)
+				if (t.verts[v].x == vert.first.x &&
+					t.verts[v].y == vert.first.y &&
+					t.verts[v].z == vert.first.z && vert.second == bones_to[t.boneid])
 				{
 					found = true;
 				}
 			}
 			if (!found)
-				total_verts.push_back(t.verts[v]);
+				total_verts.push_back({ t.verts[v],bones_to[t.boneid] });
 		}
 
 		bool found = false;
