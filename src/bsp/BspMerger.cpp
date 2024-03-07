@@ -123,6 +123,19 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 		update_map_series_entity_logic(output, flattenedBlocks, maps, output_name, maps[0]->bsp_name, noscript);
 	}
 
+	// move func water origin to center mins maxs
+	for (auto& ent : output->ents)
+	{
+		if (ent->classname == "func_water")
+		{
+			int mdlid = ent->getBspModelIdx();
+			if (mdlid > 0)
+			{
+				output->models[mdlid].vOrigin = getCenter(output->models[mdlid].nMins, output->models[mdlid].nMaxs);
+			}
+		}
+	}
+
 	return output;
 }
 

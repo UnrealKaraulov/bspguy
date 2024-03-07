@@ -3065,6 +3065,7 @@ void Gui::drawMenuBar()
 							char* newlump = loadFile(entFilePath, len);
 							map->replace_lump(LUMP_ENTITIES, newlump, len);
 							map->load_ents();
+							g_app->updateEnts();
 							app->reloading = true;
 							for (size_t i = 0; i < mapRenderers.size(); i++)
 							{
@@ -3072,6 +3073,7 @@ void Gui::drawMenuBar()
 								mapRender->reload();
 							}
 							app->reloading = false;
+							g_app->reloadBspModels();
 						}
 						else
 						{
@@ -4625,6 +4627,38 @@ void Gui::drawMenuBar()
 					model.iFirstFace = 0;
 					model.nFaces = 0;
 				}
+				map->remove_unused_model_structures(CLEAN_FACES | CLEAN_MARKSURFACES);
+			}
+
+			if (ImGui::MenuItem("BSP Clip model", 0, false, !app->isLoading && map))
+			{
+				vec3 origin = cameraOrigin + app->cameraForward * 100;
+				if (app->gridSnappingEnabled)
+					origin = app->snapToGrid(origin);
+
+				Entity* newEnt = new Entity();
+				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
+				newEnt->addKeyvalue("classname", "func_wall");
+
+				float snapSize = app->snapSize;
+				if (snapSize < 16)
+				{
+					snapSize = 16;
+				}
+
+				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
+				rend->pushUndoCommand(command);
+
+				delete newEnt;
+
+				newEnt = map->ents[map->ents.size() - 1];
+				if (newEnt && newEnt->getBspModelIdx() >= 0)
+				{
+					BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
+					model.iFirstFace = 0;
+					model.nFaces = 0;
+				}
+				map->remove_unused_model_structures(CLEAN_FACES | CLEAN_MARKSURFACES);
 			}
 
 			ImGui::EndMenu();

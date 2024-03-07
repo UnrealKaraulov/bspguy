@@ -5379,8 +5379,14 @@ int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool e
 
 	create_primitive_box(mins, maxs, &newModel, textureIdx);
 	//regenerate_clipnodes(newModelIdx, -1);
-	create_clipnode_box(mins, maxs, &newModel, 0, false, empty);
-
+	if (!empty)
+	{
+		create_clipnode_box(mins, maxs, &newModel, 0, false, empty);
+	}
+	else
+	{
+		newModel.iHeadnodes[1] = newModel.iHeadnodes[2] = newModel.iHeadnodes[3] = CONTENTS_EMPTY;
+	}
 	//remove_unused_model_structures(CLEAN_VISDATA | CLEAN_LEAVES); 
 
 	return newModelIdx;
