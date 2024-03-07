@@ -19,6 +19,7 @@
 #include <execution>
 #include <unordered_set>
 #include <fstream>
+#include <deque>
 
 typedef std::map< std::string, vec3 > mapStringToVector;
 
