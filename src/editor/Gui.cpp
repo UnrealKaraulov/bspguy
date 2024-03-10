@@ -3862,6 +3862,63 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
+			if (ImGui::MenuItem("Mirror map x/y [WIP]", NULL, false, map))
+			{
+				for (int i = 0; i < map->vertCount; i++)
+				{
+					std::swap(map->verts[i].x, map->verts[i].y);
+				}
+
+				for (int i = 0; i < map->faceCount; i++)
+				{
+					int* start = &map->surfedges[map->faces[i].iFirstEdge];
+					int* end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
+					std::reverse(start, end);
+				}
+
+				for (int i = 0; i < map->planeCount; i++)
+				{
+					std::swap(map->planes[i].vNormal.x, map->planes[i].vNormal.y);
+					map->planes[i].update_plane(false);
+				}
+
+				for (int i = 0; i < map->texinfoCount; i++)
+				{
+					std::swap(map->texinfos[i].vS.x, map->texinfos[i].vS.y);
+					std::swap(map->texinfos[i].vT.x, map->texinfos[i].vT.y);
+				}
+
+				for (int i = 0; i < map->ents.size(); i++)
+				{
+					if (!map->ents[i]->origin.IsZero())
+					{
+						std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
+						map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
+					}
+				}
+
+				for (int i = 0; i < map->leafCount; i++)
+				{
+					std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
+					std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
+				}
+
+				for (int i = 0; i < map->modelCount; i++)
+				{
+					std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
+					std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
+				}
+
+				for (int i = 0; i < map->nodeCount; i++)
+				{
+					std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
+					std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
+				}
+				app->reloading = true;
+				rend->reload();
+				app->reloading = false;
+			}
+
 			if (ImGui::BeginMenu("Scale map (WIP)", map))
 			{
 				static bool ScaleOnlySelected = false;
@@ -4782,11 +4839,9 @@ void Gui::drawMenuBar()
 							{
 								int w = tex->nWidth;
 								int h = tex->nHeight;
-								int sz = w * h;	   // miptex 0
-								int sz2 = sz / 4;  // miptex 1
-								int sz3 = sz2 / 4; // miptex 2
-								int sz4 = sz3 / 4; // miptex 3
-								int szAll = sz + sz2 + sz3 + sz4;
+
+								int szAll = calcMipsSize(w,h);
+
 								unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 								colors = (int)*(unsigned short*)(texdata + szAll);
 							}

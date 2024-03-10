@@ -3,6 +3,7 @@
 #include <string>
 #include "bsplimits.h"
 #include "bsptypes.h"
+int calcMipsSize(int w, int h);
 
 #pragma pack(push, 1)
 
@@ -75,14 +76,7 @@ struct WADTEX
 			return;
 		}
 
-		int sz = 0;
-		for (int i = 0; i < MIPLEVELS; i++)
-		{
-			int div = 1 << i;
-			int mipWidth = tex->nWidth / div;
-			int mipHeight = tex->nHeight / div;
-			sz += mipWidth * mipHeight;
-		}
+		int sz = calcMipsSize(tex->nWidth,tex->nHeight);
 
 		dataLen = sz + sizeof(short) + sizeof(COLOR3) * 256;
 		data = new unsigned char[dataLen];

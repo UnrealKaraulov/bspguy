@@ -348,6 +348,7 @@ vec3 findBestBrushCenter(std::vector<vec3>& points);
 
 
 float getMaxDistPoints(std::vector<vec3>& points);
+int calcMipsSize(int w, int h);
 
 
 class JackWriter {
@@ -385,4 +386,44 @@ public:
 
 private:
 	std::ofstream file;
+};
+
+class JackReader {
+public:
+	JackReader(const std::string& filename) : file(filename, std::ios::binary) {}
+
+	~JackReader() {
+		if (file.is_open()) {
+			file.close();
+		}
+	}
+
+	template <typename T>
+	bool read(T& value) {
+		file.read(reinterpret_cast<char*>(&value), sizeof(T));
+		return file.good();
+	}
+
+	bool readLenStr(std::string& str) {
+		int size = 0;
+		if (!read<int>(size)) {
+			return false;
+		}
+		str.resize(size);
+		if (size > 0) {
+			file.read(&str[0], size);
+		}
+		return file.good();
+	}
+
+	bool readKeyVal(std::string& key, std::string& val) {
+		return readLenStr(key) && readLenStr(val);
+	}
+
+	bool is_open() const {
+		return file && file.is_open();
+	}
+
+private:
+	std::ifstream file;
 };

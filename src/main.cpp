@@ -22,7 +22,6 @@
 // update merge logic for v2 scripts
 // abort scale/vertex edits if an overflow occurs
 // 3d axes don't appear until moving mouse over 3D view sometimes
-// "Hide" axes setting not loaded properly
 // crash using 3d scale axes
 
 // todo:
@@ -30,21 +29,15 @@
 // merge redundant submodels and duplicate structures
 // no lightmap renders black faces if no lightmap data for face
 // select overlapping entities by holding mouse down
-// multi-select with ctrl
-// recalculate lightmaps when scaling objects
 // normalized clip type for clipnode regeneration (fixes broken collision around 90+ degree angle edges)
 // lerp plane distance in regenerated clipnodes between bbox height and width
 // uniform scaling
 // highlight non-planar faces in vertex edit mode
 // subdivided faces can't be transformed in verte edit mode
 // auto-clean after a while? Unused data will pile up after a lot of face splitting
-// scale fps overlay + toolbar offset with font size
 // reference aaatrigger from wad instead of embedding it if it doesnt exist
 // red highlight not working with lightmaps disabled
-// undo history
-// invalid solid log spam
 // scaling allowing concave solids (merge0.bsp angled wedge)
-// can't select faces sometimes
 // make all commands available in the 3d editor
 // transforms gradually waste more and more planes+clipnodes until the map overflows (need smarter updates)
 // "Validate" doesn't return any response.. -Sparks (add a results window or something for that + clean/optimize)
@@ -98,7 +91,7 @@
 // Removing HULL 0 from solid model crashes game when standing on it
 
 
-std::string g_version_string = "NewBSPGuy v4.19";
+std::string g_version_string = "NewBSPGuy v4.20";
 
 bool g_verbose = false;
 
@@ -131,16 +124,12 @@ bool start_viewer(const char* map)
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 #endif
 
-	//TestSprite();
 	renderer.renderLoop();
 	return true;
 }
 
 int test()
 {
-	//start_viewer("hl_c09.bsp");
-	//return 0;
-
 	std::vector<Bsp*> maps;
 
 	for (int i = 1; i < 22; i++)
@@ -148,11 +137,6 @@ int test()
 		Bsp* map = new Bsp("2nd/saving_the_2nd_amendment" + (i > 1 ? std::to_string(i) : "") + ".bsp");
 		maps.push_back(map);
 	}
-
-	//maps.push_back(new Bsp("op4/of1a1.bsp"));
-	//maps.push_back(new Bsp("op4/of1a2.bsp"));
-	//maps.push_back(new Bsp("op4/of1a3.bsp"));
-	//maps.push_back(new Bsp("op4/of1a4.bsp"));
 
 	STRUCTCOUNT removed;
 	memset(&removed, 0, sizeof(removed));
@@ -974,27 +958,6 @@ struct UVVERT {
 vec3 vec3mix(const vec3& a, const vec3& b, float t) {
 	return a * (1.0f - t) + b * t;
 }
-//void WriteObjFile(const std::vector<UVVERT>& vertices, const std::string& filename) {
-//	std::ofstream objFile(filename);
-//	if (!objFile.is_open()) return;
-//
-//	for (const auto& vert : vertices) {
-//		objFile << "v " << vert.vert.x << " " << vert.vert.y << " " << vert.vert.z << "\n";
-//	}
-//
-//	// Writing texture names for each vertex
-//	for (const auto& vert : vertices) {
-//		objFile << "vt " << vert.texname << "\n";
-//	}
-//
-//	// Assuming all vertices are part of a single object
-//	// Writing faces (triangles) assuming vertices are in order
-//	for (size_t i = 0; i < vertices.size(); i += 3) {
-//		objFile << "f " << (i + 1) << "/" << (i + 1) << " " << (i + 2) << "/" << (i + 2) << " " << (i + 3) << "/" << (i + 3) << "\n";
-//	}
-//
-//	objFile.close();
-//}
 
 void CreateSkybox(std::vector<UVVERT>& vertices, vec3 mins, vec3 maxs) {
 	std::string sides[6] = { "right", "left", "up", "down", "front", "back" };
@@ -1049,12 +1012,10 @@ int main(int argc, char* argv[])
 	setlocale(LC_ALL, ".utf8");
 	setlocale(LC_NUMERIC, "C");
 
-	//set_console_colors;
-
 	set_console_colors(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY);
 	std::cout << "BSPGUY:" << g_version_string << std::endl;
 	set_console_colors();
-	//std::fesetround(FE_TONEAREST);
+
 	try
 	{
 #ifdef WIN32
@@ -1129,6 +1090,16 @@ int main(int argc, char* argv[])
 		if (cli.hasOption("-v") || cli.hasOption("-verbose"))
 		{
 			g_verbose = true;
+		}
+
+		if constexpr (sizeof(vec4) != 16 || 
+			sizeof(vec3) != 12 ||
+			sizeof(vec2) != 8 ||
+			sizeof(COLOR3) != 3 ||
+			sizeof(COLOR4) != 4 )
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "sizeof() fatal error!\n");
+			return 1;
 		}
 
 		g_progress.simpleMode = false;

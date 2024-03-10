@@ -2785,3 +2785,16 @@ float getMaxDistPoints(std::vector<vec3>& points)
 	}
 	return maxDistance;
 }
+
+int calcMipsSize(int w, int h)
+{
+	int sz = 0;
+	for (int i = 0; i < MIPLEVELS; i++)
+	{
+		int div = 1 << i;
+		int mipWidth = w / div;
+		int mipHeight = h / div;
+		sz += mipWidth * mipHeight;
+	}
+	return sz;
+}

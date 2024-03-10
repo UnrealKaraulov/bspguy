@@ -11719,13 +11719,7 @@ int Bsp::getBspTextureSize(int textureid)
 			sz += sizeof(COLOR3) * 256; // pallette
 		}
 
-		for (int i = 0; i < MIPLEVELS; i++)
-		{
-			int div = 1 << i;
-			int mipWidth = tex->nWidth / div;
-			int mipHeight = tex->nHeight / div;
-			sz += mipWidth * mipHeight;
-		}
+		sz += calcMipsSize(tex->nWidth, tex->nHeight);
 	}
 	return sz;
 }
