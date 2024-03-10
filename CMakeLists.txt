@@ -95,6 +95,9 @@ include_directories(imgui/misc/cpp)
 include_directories(imgui/backends)
 include_directories(glew/include)
 
+find_package(TBB REQUIRED)
+include_directories(${TBB_INCLUDE_DIRS})
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
 add_subdirectory(fmt)
@@ -238,7 +241,7 @@ else()
 		add_definitions(-DWIN32)
 		add_definitions(-DMINGW)
 	else()
-		target_link_libraries(${PROJECT_NAME} GL GLU fmt::fmt glfw Xxf86vm Xrandr pthread Xi GLEW stdc++fs )
+		target_link_libraries(${PROJECT_NAME} GL GLU fmt::fmt glfw Xxf86vm Xrandr pthread Xi GLEW stdc++fs tbb)
 	endif()
 	set(CMAKE_CXX_STANDARD 20)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
