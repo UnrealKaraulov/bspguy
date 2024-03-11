@@ -28,7 +28,6 @@ int pickCount = 0; // used to give unique IDs to text inputs so switching ents d
 // also used to refresh pick models
 int vertPickCount = 0; // used to refresh solid state
 
-
 size_t g_drawFrameId = 0;
 
 Texture* whiteTex = NULL;
@@ -361,7 +360,6 @@ Renderer::~Renderer()
 
 void Renderer::updateWindowTitle(double _curTime)
 {
-	static double lastTitleTime = 0.0f;
 	if (_curTime - lastTitleTime > 0.25)
 	{
 		lastTitleTime = _curTime;
@@ -446,15 +444,6 @@ void Renderer::renderLoop()
 	curTime = oldTime;
 
 	glfwSwapInterval(0);
-	static int vsync = -1;
-
-
-	static int tmpPickIdx = -1, tmpVertPickIdx = -1, tmpTransformTarget = -1, tmpModelIdx = -1;
-
-	static bool isScalingObject = false;
-	static bool isMovingOrigin = false;
-	static bool isTransformingValid = false;
-	static bool isTransformingWorld = false;
 
 	memset(pressed, 0, sizeof(pressed));
 	memset(oldPressed, 0, sizeof(oldPressed));
@@ -489,7 +478,7 @@ void Renderer::renderLoop()
 	while (!glfwWindowShouldClose(window))
 	{
 		curTime = glfwGetTime();
-		if (vsync != 0 || std::abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
+		if (g_rend_vsync != 0 || std::abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
 		{
 
 			if (std::abs(curTime - fpsTime) >= 0.50)
@@ -819,10 +808,10 @@ void Renderer::renderLoop()
 
 			if (std::abs(curTime - mouseTime) >= 0.016)
 			{
-				if (vsync != (g_settings.vsync ? 1 : 0))
+				if (g_rend_vsync != (g_settings.vsync ? 1 : 0))
 				{
 					glfwSwapInterval(g_settings.vsync);
-					vsync = (g_settings.vsync ? 1 : 0);
+					g_rend_vsync = (g_settings.vsync ? 1 : 0);
 				}
 
 				mouseTime = curTime;
@@ -1282,7 +1271,7 @@ void Renderer::vertexEditControls()
 
 void Renderer::cameraPickingControls()
 {
-	static bool oldTransforming = false;
+
 	Bsp* map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
 
@@ -1292,10 +1281,11 @@ void Renderer::cameraPickingControls()
 	}
 
 	bool transforming = false;
-	bool isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
-	bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
-		|| (isTransformableSolid);
-	bool isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
+
+	//isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
+	//isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
+	//	|| (isTransformableSolid);
+	//isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
 
 
 	if (!pickClickHeld)
@@ -2345,9 +2335,15 @@ BspRenderer* Renderer::getMapContainingCamera()
 	return NULL;
 }
 
-void Renderer::setupView()
+void Renderer::setupView(int forceW, int forceH)
 {
-	glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+	if (forceW == 0 || forceH == 0)
+		glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+	else
+	{
+		windowWidth = forceW;
+		windowHeight = forceH;
+	}
 
 	glViewport(0, 0, windowWidth, windowHeight);
 

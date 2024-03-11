@@ -155,6 +155,10 @@ public:
 	void updateEnts();
 	bool isEntTransparent(const char* classname);
 	bool SelectedMapChanged = false;
+	
+	//Waning: not thread safe.
+	bool MakeScreenshotMap(int mapid, bool & finish);
+
 	Bsp* SelectedMap = NULL;
 	PointEntRenderer* pointEntRenderer;
 	PointEntRenderer* swapPointEntRenderer = NULL;
@@ -267,6 +271,15 @@ public:
 	int clipnodeRenderHull = -1;
 	GLfloat lineWidthRange[2];
 
+	double lastTitleTime = 0.0f;
+	int g_rend_vsync = -1;
+	int tmpPickIdx = -1, tmpVertPickIdx = -1, tmpTransformTarget = -1, tmpModelIdx = -1;
+	bool isScalingObject = false;
+	bool isMovingOrigin = false;
+	bool isTransformingValid = false;
+	bool isTransformingWorld = false;
+	bool oldTransforming = false;
+
 	vec3 getMoveDir();
 	void controls();
 	void cameraPickingControls();
@@ -280,7 +293,7 @@ public:
 	void pickObject(); // select stuff with the mouse
 	bool transformAxisControls(); // true if grabbing axes
 	void applyTransform(Bsp* map, bool forceUpdate = false);
-	void setupView();
+	void setupView(int forceW = 0, int forceH = 0);
 	void getPickRay(vec3& start, vec3& pickDir);
 	void revertInvalidSolid(Bsp* map, int modelIdx);
 

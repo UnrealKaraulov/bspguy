@@ -3930,6 +3930,8 @@ void Gui::drawMenuBar()
 						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
 						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
 					}
+
+					map->update_ent_lump();
 					app->reloading = true;
 					rend->reload();
 					app->reloading = false;
@@ -4019,6 +4021,7 @@ void Gui::drawMenuBar()
 						map->nodes[i].nMins.x *= -1;
 						map->nodes[i].nMaxs.x *= -1;
 					}
+					map->update_ent_lump();
 					app->reloading = true;
 					rend->reload();
 					app->reloading = false;
@@ -4107,6 +4110,7 @@ void Gui::drawMenuBar()
 						map->nodes[i].nMins.y *= -1;
 						map->nodes[i].nMaxs.y *= -1;
 					}
+					map->update_ent_lump();
 					app->reloading = true;
 					rend->reload();
 					app->reloading = false;
@@ -5937,16 +5941,11 @@ void Gui::drawDebugWidget()
 			float mb = renderer->undoMemoryUsage / (1024.0f * 1024.0f);
 			ImGui::Text(get_localized_string(LANG_0639).c_str(), mb);
 
-			bool isScalingObject = app->transformMode == TRANSFORM_MODE_SCALE && app->transformTarget == TRANSFORM_OBJECT;
-			bool isMovingOrigin = app->transformMode == TRANSFORM_MODE_MOVE && app->transformTarget == TRANSFORM_ORIGIN && app->originSelected;
-			bool isTransformingValid = !(app->modelUsesSharedStructures && app->transformMode != TRANSFORM_MODE_MOVE) && (app->isTransformableSolid || isScalingObject);
-			bool isTransformingWorld = entIdx.empty() && app->transformTarget != TRANSFORM_OBJECT;
-
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0388)), app->isTransformableSolid).c_str());
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0389)), isScalingObject).c_str());
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0390)), isMovingOrigin).c_str());
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0391)), isTransformingValid).c_str());
-			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0392)), isTransformingWorld).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0389)), app->isScalingObject).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0390)), app->isMovingOrigin).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0391)), app->isTransformingValid).c_str());
+			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0392)), app->isTransformingWorld).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0393)), app->transformMode).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0394)), app->transformTarget).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0395)), app->modelUsesSharedStructures).c_str());
