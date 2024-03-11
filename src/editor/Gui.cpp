@@ -1305,7 +1305,7 @@ void Gui::drawBspContexMenu()
 									for (int v = 0; v < 2; v++)
 									{
 										int vertIdx = map->edges[abs(edgeIdx)].iVertex[v];
-										
+
 										if (std::find(vertices.begin(), vertices.end(), vertIdx) != vertices.end())
 										{
 											found = true;
@@ -3201,7 +3201,7 @@ void Gui::drawMenuBar()
 					reloadSettings = true;
 				}
 				showSettingsWidget = true;
-		}
+			}
 			ImGui::Separator();
 			if (ImGui::MenuItem(get_localized_string(LANG_0555).c_str(), NULL))
 			{
@@ -3235,7 +3235,7 @@ void Gui::drawMenuBar()
 				}
 			}
 			ImGui::EndMenu();
-	}
+		}
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
 		{
@@ -3862,94 +3862,304 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::MenuItem("Mirror map x/y [WIP]", NULL, false, map))
+			if (ImGui::BeginMenu("MAP TRANFORMATION [WIP]", map))
 			{
-				for (int i = 0; i < map->vertCount; i++)
+				if (ImGui::MenuItem("Mirror map x/y", NULL, false, map))
 				{
-					std::swap(map->verts[i].x, map->verts[i].y);
-				}
-
-				for (int i = 0; i < map->faceCount; i++)
-				{
-					int* start = &map->surfedges[map->faces[i].iFirstEdge];
-					int* end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
-					std::reverse(start, end);
-				}
-
-				for (int i = 0; i < map->planeCount; i++)
-				{
-					std::swap(map->planes[i].vNormal.x, map->planes[i].vNormal.y);
-					map->planes[i].update_plane(false);
-				}
-
-				for (int i = 0; i < map->texinfoCount; i++)
-				{
-					std::swap(map->texinfos[i].vS.x, map->texinfos[i].vS.y);
-					std::swap(map->texinfos[i].vT.x, map->texinfos[i].vT.y);
-				}
-
-				for (int i = 0; i < map->ents.size(); i++)
-				{
-					if (!map->ents[i]->origin.IsZero())
+					for (int i = 0; i < map->vertCount; i++)
 					{
-						std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
-						map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
+						std::swap(map->verts[i].x, map->verts[i].y);
 					}
-				}
 
-				for (int i = 0; i < map->leafCount; i++)
-				{
-					std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
-					std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
-				}
-
-				for (int i = 0; i < map->modelCount; i++)
-				{
-					std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
-					std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
-				}
-
-				for (int i = 0; i < map->nodeCount; i++)
-				{
-					std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
-					std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
-				}
-				app->reloading = true;
-				rend->reload();
-				app->reloading = false;
-			}
-
-			if (ImGui::BeginMenu("Scale map (WIP)", map))
-			{
-				static bool ScaleOnlySelected = false;
-
-				if (ImGui::MenuItem("Scale selected", NULL, &ScaleOnlySelected))
-				{
-					//ScaleOnlySelected = !ScaleOnlySelected;
-				}
-
-				for (float scale_val = 0.25f; scale_val <= 2.0f; scale_val += 0.25f)
-				{
-					if (std::abs(scale_val - 1.0f) > EPSILON && ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
+					for (int i = 0; i < map->faceCount; i++)
 					{
-						if (ScaleOnlySelected)
-						{
-							STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
-							std::set<int> models;
+						int* start = &map->surfedges[map->faces[i].iFirstEdge];
+						int* end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
+						std::reverse(start, end);
+					}
 
-							for (auto s : app->pickInfo.selectedEnts)
+					for (int i = 0; i < map->planeCount; i++)
+					{
+						std::swap(map->planes[i].vNormal.x, map->planes[i].vNormal.y);
+						map->planes[i].update_plane(false);
+					}
+
+					for (int i = 0; i < map->texinfoCount; i++)
+					{
+						std::swap(map->texinfos[i].vS.x, map->texinfos[i].vS.y);
+						std::swap(map->texinfos[i].vT.x, map->texinfos[i].vT.y);
+					}
+
+					for (int i = 0; i < map->ents.size(); i++)
+					{
+						if (!map->ents[i]->origin.IsZero())
+						{
+							std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
+							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
+						}
+					}
+
+					for (int i = 0; i < map->leafCount; i++)
+					{
+						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
+						std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
+					}
+
+					for (int i = 0; i < map->modelCount; i++)
+					{
+						std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
+						std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
+					}
+
+					for (int i = 0; i < map->nodeCount; i++)
+					{
+						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
+						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
+					}
+					app->reloading = true;
+					rend->reload();
+					app->reloading = false;
+				}
+
+				if (ImGui::MenuItem("Rotate map +90", NULL, false, map))
+				{
+					for (int i = 0; i < map->vertCount; i++)
+					{
+						std::swap(map->verts[i].x, map->verts[i].y);
+
+						map->verts[i].x *= -1;
+					}
+
+					/*for (int i = 0; i < map->faceCount; i++)
+					{
+						int* start = &map->surfedges[map->faces[i].iFirstEdge];
+						int* end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
+						std::reverse(start, end);
+					}*/
+
+					for (int i = 0; i < map->planeCount; i++)
+					{
+						std::swap(map->planes[i].vNormal.x, map->planes[i].vNormal.y);
+						map->planes[i].vNormal.x *= -1;
+						map->planes[i].update_plane(false);
+					}
+
+					for (int i = 0; i < map->texinfoCount; i++)
+					{
+						std::swap(map->texinfos[i].vS.x, map->texinfos[i].vS.y);
+						std::swap(map->texinfos[i].vT.x, map->texinfos[i].vT.y);
+
+						map->texinfos[i].vS.x *= -1;
+						map->texinfos[i].vT.x *= -1;
+					}
+
+					for (int i = 0; i < map->ents.size(); i++)
+					{
+						if (!map->ents[i]->origin.IsZero())
+						{
+							std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
+							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
+
+							map->ents[i]->origin.x *= -1;
+						}
+					}
+
+					for (int i = 0; i < map->leafCount; i++)
+					{
+						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
+						std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
+
+						map->leaves[i].nMins.x *= -1;
+						map->leaves[i].nMaxs.x *= -1;
+					}
+
+					for (int i = 0; i < map->modelCount; i++)
+					{
+						std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
+						std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
+
+						map->models[i].nMins.x *= -1;
+						map->models[i].nMaxs.x *= -1;
+					}
+
+					for (int i = 0; i < map->nodeCount; i++)
+					{
+						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
+						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
+
+						map->nodes[i].nMins.x *= -1;
+						map->nodes[i].nMaxs.x *= -1;
+					}
+					app->reloading = true;
+					rend->reload();
+					app->reloading = false;
+				}
+
+				if (ImGui::MenuItem("Rotate map -90", NULL, false, map))
+				{
+					for (int i = 0; i < map->vertCount; i++)
+					{
+						std::swap(map->verts[i].x, map->verts[i].y);
+
+						map->verts[i].y *= -1;
+					}
+
+					/*for (int i = 0; i < map->faceCount; i++)
+					{
+						int* start = &map->surfedges[map->faces[i].iFirstEdge];
+						int* end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
+						std::reverse(start, end);
+					}*/
+
+					for (int i = 0; i < map->planeCount; i++)
+					{
+						std::swap(map->planes[i].vNormal.x, map->planes[i].vNormal.y);
+
+						map->planes[i].vNormal.y *= -1;
+						map->planes[i].update_plane(false);
+					}
+
+					for (int i = 0; i < map->texinfoCount; i++)
+					{
+						std::swap(map->texinfos[i].vS.x, map->texinfos[i].vS.y);
+						std::swap(map->texinfos[i].vT.x, map->texinfos[i].vT.y);
+
+						map->texinfos[i].vS.y *= -1;
+						map->texinfos[i].vT.y *= -1;
+					}
+
+					for (int i = 0; i < map->ents.size(); i++)
+					{
+						if (!map->ents[i]->origin.IsZero())
+						{
+							std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
+							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
+
+							map->ents[i]->origin.y *= -1;
+						}
+					}
+
+					for (int i = 0; i < map->leafCount; i++)
+					{
+						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
+						std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
+
+						map->leaves[i].nMins.y *= -1;
+						map->leaves[i].nMaxs.y *= -1;
+					}
+
+					for (int i = 0; i < map->modelCount; i++)
+					{
+						std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
+						std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
+
+						map->models[i].nMins.y *= -1;
+						map->models[i].nMaxs.y *= -1;
+					}
+
+					for (int i = 0; i < map->nodeCount; i++)
+					{
+						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
+						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
+
+						map->nodes[i].nMins.y *= -1;
+						map->nodes[i].nMaxs.y *= -1;
+					}
+					app->reloading = true;
+					rend->reload();
+					app->reloading = false;
+				}
+
+				if (ImGui::BeginMenu("Scale map", map))
+				{
+					static bool ScaleOnlySelected = false;
+
+					if (ImGui::MenuItem("Scale selected", NULL, &ScaleOnlySelected))
+					{
+						//ScaleOnlySelected = !ScaleOnlySelected;
+					}
+
+					for (float scale_val = 0.25f; scale_val <= 2.0f; scale_val += 0.25f)
+					{
+						if (std::abs(scale_val - 1.0f) > EPSILON && ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
+						{
+							if (ScaleOnlySelected)
 							{
-								int modelIdx = map->ents[s]->getBspModelIdx();
-								if (modelIdx >= 0)
+								STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
+								std::set<int> models;
+
+								for (auto s : app->pickInfo.selectedEnts)
 								{
-									models.insert(modelIdx);
-									map->mark_model_structures(modelIdx, &modelUsage, true);
+									int modelIdx = map->ents[s]->getBspModelIdx();
+									if (modelIdx >= 0)
+									{
+										models.insert(modelIdx);
+										map->mark_model_structures(modelIdx, &modelUsage, true);
+									}
+								}
+
+								for (int i = 0; i < map->modelCount; i++)
+								{
+									if (models.count(i))
+									{
+										map->models[i].nMaxs *= scale_val;
+										map->models[i].nMins *= scale_val;
+
+										vec3 neworigin = map->models[i].vOrigin * scale_val;
+										map->models[i].vOrigin = neworigin;
+									}
+								}
+								for (int i = 0; i < map->vertCount; i++)
+								{
+									if (modelUsage.verts[i])
+									{
+										map->verts[i] *= scale_val;
+									}
+								}
+								for (int i = 0; i < map->texinfoCount; i++)
+								{
+									if (modelUsage.texInfo[i])
+									{
+										map->texinfos[i].vS /= scale_val;
+										map->texinfos[i].vT /= scale_val;
+									}
+								}
+								for (size_t i = 0; i < map->ents.size(); i++)
+								{
+									if (app->pickInfo.IsSelectedEnt(i))
+									{
+										vec3 neworigin = map->ents[i]->origin * scale_val;
+										neworigin.z += std::abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
+										map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
+									}
+								}
+								for (int i = 0; i < map->nodeCount; i++)
+								{
+									if (modelUsage.nodes[i])
+									{
+										map->nodes[i].nMaxs *= scale_val;
+										map->nodes[i].nMins *= scale_val;
+									}
+								}
+								for (int i = 0; i < map->leafCount; i++)
+								{
+									if (modelUsage.leaves[i])
+									{
+										map->leaves[i].nMaxs *= scale_val;
+										map->leaves[i].nMins *= scale_val;
+									}
+								}
+								for (int i = 0; i < map->planeCount; i++)
+								{
+									if (modelUsage.planes[i])
+									{
+										map->planes[i].fDist *= scale_val;
+									}
 								}
 							}
-
-							for (int i = 0; i < map->modelCount; i++)
+							else
 							{
-								if (models.count(i))
+								for (int i = 0; i < map->modelCount; i++)
 								{
 									map->models[i].nMaxs *= scale_val;
 									map->models[i].nMins *= scale_val;
@@ -3957,112 +4167,54 @@ void Gui::drawMenuBar()
 									vec3 neworigin = map->models[i].vOrigin * scale_val;
 									map->models[i].vOrigin = neworigin;
 								}
-							}
-							for (int i = 0; i < map->vertCount; i++)
-							{
-								if (modelUsage.verts[i])
+								for (int i = 0; i < map->vertCount; i++)
 								{
 									map->verts[i] *= scale_val;
 								}
-							}
-							for (int i = 0; i < map->texinfoCount; i++)
-							{
-								if (modelUsage.texInfo[i])
+								for (int i = 0; i < map->texinfoCount; i++)
 								{
 									map->texinfos[i].vS /= scale_val;
 									map->texinfos[i].vT /= scale_val;
 								}
-							}
-							for (size_t i = 0; i < map->ents.size(); i++)
-							{
-								if (app->pickInfo.IsSelectedEnt(i))
+								for (size_t i = 0; i < map->ents.size(); i++)
 								{
 									vec3 neworigin = map->ents[i]->origin * scale_val;
 									neworigin.z += std::abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
 									map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
 								}
-							}
-							for (int i = 0; i < map->nodeCount; i++)
-							{
-								if (modelUsage.nodes[i])
+								for (int i = 0; i < map->nodeCount; i++)
 								{
 									map->nodes[i].nMaxs *= scale_val;
 									map->nodes[i].nMins *= scale_val;
 								}
-							}
-							for (int i = 0; i < map->leafCount; i++)
-							{
-								if (modelUsage.leaves[i])
+								for (int i = 0; i < map->leafCount; i++)
 								{
 									map->leaves[i].nMaxs *= scale_val;
 									map->leaves[i].nMins *= scale_val;
 								}
-							}
-							for (int i = 0; i < map->planeCount; i++)
-							{
-								if (modelUsage.planes[i])
+								for (int i = 0; i < map->planeCount; i++)
 								{
+									//map->planes[i].update_plane(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
 									map->planes[i].fDist *= scale_val;
 								}
 							}
+							map->resize_all_lightmaps();
+
+							rend->loadLightmaps();
+							rend->calcFaceMaths();
+							rend->preRenderEnts();
+							rend->reloadClipnodes();
+
+							map->update_ent_lump();
+							map->update_lump_pointers();
+
+							rend->pushModelUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
 						}
-						else
-						{
-							for (int i = 0; i < map->modelCount; i++)
-							{
-								map->models[i].nMaxs *= scale_val;
-								map->models[i].nMins *= scale_val;
-
-								vec3 neworigin = map->models[i].vOrigin * scale_val;
-								map->models[i].vOrigin = neworigin;
-							}
-							for (int i = 0; i < map->vertCount; i++)
-							{
-								map->verts[i] *= scale_val;
-							}
-							for (int i = 0; i < map->texinfoCount; i++)
-							{
-								map->texinfos[i].vS /= scale_val;
-								map->texinfos[i].vT /= scale_val;
-							}
-							for (size_t i = 0; i < map->ents.size(); i++)
-							{
-								vec3 neworigin = map->ents[i]->origin * scale_val;
-								neworigin.z += std::abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
-								map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
-							}
-							for (int i = 0; i < map->nodeCount; i++)
-							{
-								map->nodes[i].nMaxs *= scale_val;
-								map->nodes[i].nMins *= scale_val;
-							}
-							for (int i = 0; i < map->leafCount; i++)
-							{
-								map->leaves[i].nMaxs *= scale_val;
-								map->leaves[i].nMins *= scale_val;
-							}
-							for (int i = 0; i < map->planeCount; i++)
-							{
-								//map->planes[i].update_plane(map->planes[i].vNormal, map->planes[i].fDist *= scale_val);
-								map->planes[i].fDist *= scale_val;
-							}
-						}
-						map->resize_all_lightmaps();
-
-						rend->loadLightmaps();
-						rend->calcFaceMaths();
-						rend->preRenderEnts();
-						rend->reloadClipnodes();
-
-						map->update_ent_lump();
-						map->update_lump_pointers();
-
-						rend->pushModelUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
+					ImGui::EndMenu();
 				}
 				ImGui::EndMenu();
 			}
-
 			if (ImGui::BeginMenu("Delete cull faces", map))
 			{
 				if (ImGui::MenuItem("Delete from [SKY LEAFS]"))
@@ -4840,7 +4992,7 @@ void Gui::drawMenuBar()
 								int w = tex->nWidth;
 								int h = tex->nHeight;
 
-								int szAll = calcMipsSize(w,h);
+								int szAll = calcMipsSize(w, h);
 
 								unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 								colors = (int)*(unsigned short*)(texdata + szAll);
@@ -5134,7 +5286,7 @@ void Gui::drawMenuBar()
 		}
 
 		ImGui::EndMainMenuBar();
-}
+	}
 
 	if (ImGui::BeginViewportSideBar("BottomBar", ImGui::GetMainViewport(), ImGuiDir_Down, ImGui::GetTextLineHeightWithSpacing(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar))
 	{
