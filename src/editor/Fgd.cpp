@@ -386,7 +386,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 
 			if (nums.size() == 3)
 			{
-				fgdClass.color = { (unsigned char)atoi(nums[0].c_str()), (unsigned char)atoi(nums[1].c_str()), (unsigned char)atoi(nums[2].c_str()) };
+				fgdClass.color = { (unsigned char)str_to_int(nums[0]), (unsigned char)str_to_int(nums[1]), (unsigned char)str_to_int(nums[2]) };
 			}
 			else
 			{
@@ -400,7 +400,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 
 			if (nums.size() == 3)
 			{
-				fgdClass.offset = { (float)atof(nums[0].c_str()), (float)atof(nums[1].c_str()),(float)atof(nums[2].c_str()) };
+				fgdClass.offset = { str_to_float(nums[0]), str_to_float(nums[1]),str_to_float(nums[2]) };
 			}
 			else
 			{
@@ -419,11 +419,11 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		}
 		else if (lpart.starts_with("sequence("))
 		{
-			fgdClass.modelSequence = atoi(getValueInParens(typeParts[i]).c_str());
+			fgdClass.modelSequence = str_to_int(getValueInParens(typeParts[i]));
 		}
 		else if (lpart.starts_with("body("))
 		{
-			fgdClass.modelBody = atoi(getValueInParens(typeParts[i]).c_str());
+			fgdClass.modelBody = str_to_int(getValueInParens(typeParts[i]));
 		}
 		else if (lpart.starts_with("iconsprite("))
 		{
@@ -571,7 +571,7 @@ void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
 	else
 	{
 		def.svalue = trimSpaces(keyParts[0]);
-		def.ivalue = atoi(keyParts[0].c_str());
+		def.ivalue = str_to_int(keyParts[0]);
 		def.isInteger = true;
 	}
 
@@ -735,7 +735,7 @@ void Fgd::processClassInheritance()
 						{
 							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
 							{
-								classes[i]->modelSequence = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
+								classes[i]->modelSequence = str_to_int(classes[i]->keyvalues[c].defaultValue);
 							}
 						}
 					}
@@ -745,7 +745,7 @@ void Fgd::processClassInheritance()
 						{
 							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
 							{
-								classes[i]->modelBody = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
+								classes[i]->modelBody = str_to_int(classes[i]->keyvalues[c].defaultValue);
 							}
 						}
 					}
@@ -755,15 +755,13 @@ void Fgd::processClassInheritance()
 						{
 							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
 							{
-								classes[i]->modelSkin = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
+								classes[i]->modelSkin = str_to_int(classes[i]->keyvalues[c].defaultValue);
 							}
 						}
 					}
 				}
 			}
-
 		}
-
 	}
 }
 

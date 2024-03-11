@@ -444,7 +444,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 		std::string cname = ent->keyvalues["classname"];
 		std::string tname = ent->keyvalues["targetname"];
 		std::string source_map = ent->keyvalues["$s_bspguy_map_source"];
-		int spawnflags = atoi(ent->keyvalues["spawnflags"].c_str());
+		int spawnflags = str_to_int(ent->keyvalues["spawnflags"]);
 		bool isInFirstMap = toLowerCase(source_map) == toLowerCase(firstMapName);
 		vec3 origin;
 
@@ -1056,7 +1056,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 			continue;
 		}
 
-		size_t newModelIdx = atoi(modelIdxStr.c_str()) + otherModelCount;
+		size_t newModelIdx = str_to_int(modelIdxStr) + otherModelCount;
 		mapA.ents[i]->keyvalues["model"] = "*" + std::to_string(newModelIdx);
 
 		g_progress.tick();

@@ -99,7 +99,7 @@ std::string CommandLine::getOption(const std::string& optionName)
 
 int CommandLine::getOptionInt(const std::string& optionName)
 {
-	return atoi(optionVals[optionName].c_str());
+	return str_to_int(optionVals[optionName]);
 }
 
 vec3 CommandLine::getOptionVector(const std::string& optionName)
@@ -113,9 +113,9 @@ vec3 CommandLine::getOptionVector(const std::string& optionName)
 		return ret;
 	}
 
-	ret.x = (float)atof(parts[0].c_str());
-	ret.y = (float)atof(parts[1].c_str());
-	ret.z = (float)atof(parts[2].c_str());
+	ret.x = str_to_float(parts[0]);
+	ret.y = str_to_float(parts[1]);
+	ret.z = str_to_float(parts[2]);
 
 	return ret;
 }

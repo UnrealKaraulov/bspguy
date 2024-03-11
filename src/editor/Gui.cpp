@@ -3897,6 +3897,20 @@ void Gui::drawMenuBar()
 							std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
 							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
 						}
+
+						if (map->ents[i]->hasKey("angle"))
+						{
+							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
+							angle = 90.0f - angle;
+							map->ents[i]->setOrAddKeyvalue("angle", std::to_string(fullnormalizeangle(angle)));
+						}
+
+						if (map->ents[i]->hasKey("angles"))
+						{
+							vec3 angles = parseVector(map->ents[i]->keyvalues["angles"]);
+							angles[1] = 90.0f - angles[1];
+							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
+						}
 					}
 
 					for (int i = 0; i < map->leafCount; i++)
@@ -3961,6 +3975,21 @@ void Gui::drawMenuBar()
 							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
 
 							map->ents[i]->origin.x *= -1;
+						}
+
+						if (map->ents[i]->hasKey("angle"))
+						{
+							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
+							angle += 90.0f;
+							map->ents[i]->setOrAddKeyvalue("angle", std::to_string(fullnormalizeangle(angle)));
+						}
+
+						if (map->ents[i]->hasKey("angles"))
+						{
+							vec3 angles = parseVector(map->ents[i]->keyvalues["angles"]);
+							angles[1] += 90.0f;
+							angles[2] *= -1;
+							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
 					}
 
@@ -4036,6 +4065,19 @@ void Gui::drawMenuBar()
 							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
 
 							map->ents[i]->origin.y *= -1;
+						}
+						if (map->ents[i]->hasKey("angle"))
+						{
+							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
+							angle -= 90.0f;
+							map->ents[i]->setOrAddKeyvalue("angle", std::to_string(fullnormalizeangle(angle)));
+						}
+
+						if (map->ents[i]->hasKey("angles"))
+						{
+							vec3 angles = parseVector(map->ents[i]->keyvalues["angles"]);
+							angles[1] -= 90.0f;
+							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
 					}
 
@@ -6389,7 +6431,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(size_t entIdx)
 			if (keyvalue.iType == FGD_KEY_CHOICES && !keyvalue.choices.empty())
 			{
 				std::string selectedValue = keyvalue.choices[0].name;
-				int ikey = atoi(value.c_str());
+				int ikey = str_to_int(value);
 
 				for (size_t k = 0; k < keyvalue.choices.size(); k++)
 				{
@@ -8820,8 +8862,8 @@ void Gui::drawAbout()
 			ImGui::TextUnformatted(url2);
 			ImGui::EndTooltip();
 		}
-		static char help1[] = "https://t.me/ninjac0w, https://github.com/Qwertyus3D, etc";
-		ImGui::InputText("Thanks list:", help1, strlen(help1), ImGuiInputTextFlags_ReadOnly);
+		static char help1[] = "https://t.me/ninjac0w, https://github.com/Qwertyus3D, twhl community, etc";
+		ImGui::InputText("Special thanks:", help1, strlen(help1), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();

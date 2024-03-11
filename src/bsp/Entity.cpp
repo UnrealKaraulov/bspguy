@@ -266,7 +266,7 @@ int Entity::getBspModelIdx()
 		cachedModelIdx = -1;
 		return -1;
 	}
-	cachedModelIdx = atoi(modelIdxStr.c_str());
+	cachedModelIdx = str_to_int(modelIdxStr);
 	return cachedModelIdx;
 }
 
@@ -293,7 +293,7 @@ int Entity::getBspModelIdxForce()
 	{
 		return -1;
 	}
-	return atoi(modelIdxStr.c_str());
+	return str_to_int(modelIdxStr);
 }
 
 bool Entity::isBspModel()
@@ -632,17 +632,17 @@ void Entity::updateRenderModes()
 	rendermode = kRenderNormal;
 	if (hasKey("rendermode"))
 	{
-		rendermode = atoi(keyvalues["rendermode"].c_str());
+		rendermode = str_to_int(keyvalues["rendermode"]);
 	}
 	renderamt = 0;
 	if (hasKey("renderamt"))
 	{
-		renderamt = atoi(keyvalues["renderamt"].c_str());
+		renderamt = str_to_int(keyvalues["renderamt"]);
 	}
 	renderfx = kRenderFxNone;
 	if (hasKey("renderfx"))
 	{
-		renderfx = atoi(keyvalues["renderfx"].c_str());
+		renderfx = str_to_int(keyvalues["renderfx"]);
 	}
 	rendercolor = vec3(1.0, 1.0, 1.0);
 	if (hasKey("rendercolor"))

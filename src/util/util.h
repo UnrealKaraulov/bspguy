@@ -427,3 +427,6 @@ public:
 private:
 	std::ifstream file;
 };
+
+int str_to_int(const std::string& s);
+float str_to_float(const std::string& s);

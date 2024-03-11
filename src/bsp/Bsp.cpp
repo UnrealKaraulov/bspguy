@@ -2499,7 +2499,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		{
 			std::string cname = usageEnts[k]->keyvalues["classname"];
 			std::string tname = usageEnts[k]->keyvalues["targetname"];
-			int spawnflags = atoi(usageEnts[k]->keyvalues["spawnflags"].c_str());
+			int spawnflags = str_to_int(usageEnts[k]->keyvalues["spawnflags"]);
 
 			if (k != 0)
 			{
@@ -2662,9 +2662,9 @@ bool Bsp::is_invisible_solid(Entity* ent)
 		return false;
 
 	std::string tname = ent->keyvalues["targetname"];
-	int rendermode = atoi(ent->keyvalues["rendermode"].c_str());
-	int renderamt = atoi(ent->keyvalues["renderamt"].c_str());
-	int renderfx = atoi(ent->keyvalues["renderfx"].c_str());
+	int rendermode = str_to_int(ent->keyvalues["rendermode"]);
+	int renderamt = str_to_int(ent->keyvalues["renderamt"]);
+	int renderfx = str_to_int(ent->keyvalues["renderfx"]);
 
 	if (rendermode == RenderMode::kRenderNormal || renderamt != 0)
 	{
@@ -3103,6 +3103,27 @@ void Bsp::write(const std::string& path)
 		std::swap(lumps[LUMP_PLANES], lumps[LUMP_ENTITIES]);
 	}
 
+	if (is_protected)
+	{
+		if (surfedgeCount > 0)
+		{
+			if (surfedges[surfedgeCount - 1] != 0)
+			{
+				int* newsurfs = new int[surfedgeCount + 1];
+				memcpy(newsurfs, surfedges, surfedgeCount * sizeof(int));
+				newsurfs[surfedgeCount] = 0;
+				if (replacedLump[LUMP_SURFEDGES])
+				{
+					delete[] lumps[LUMP_SURFEDGES];
+					replacedLump[LUMP_SURFEDGES] = true;
+				}
+				lumps[LUMP_SURFEDGES] = (unsigned char*)newsurfs;
+				surfedgeCount++;
+				bsp_header.lump[LUMP_SURFEDGES].nLength = (surfedgeCount) * sizeof(int);
+			}
+		}
+	}
+
 	if (g_settings.preserveCrc32 && !force_skip_crc)
 	{
 		if (world && world->hasKey("CRC"))
@@ -3167,24 +3188,6 @@ void Bsp::write(const std::string& path)
 			}
 
 			print_log(get_localized_string(LANG_0079), reverse_bits(crc32));
-		}
-	}
-
-	if (is_protected)
-	{
-		if (surfedgeCount > 0)
-		{
-			if (surfedges[surfedgeCount - 1] != 0)
-			{
-				int* newsurfs = new int[surfedgeCount + 1];
-				memset(newsurfs, 0, (surfedgeCount + 1) * sizeof(int));
-				memcpy(newsurfs, surfedges, surfedgeCount * sizeof(int));
-				if (replacedLump[LUMP_SURFEDGES])
-					delete[] lumps[LUMP_SURFEDGES];
-				lumps[LUMP_SURFEDGES] = (unsigned char*)newsurfs;
-				surfedgeCount++;
-				bsp_header.lump[LUMP_SURFEDGES].nLength = (surfedgeCount) * sizeof(int);
-			}
 		}
 	}
 

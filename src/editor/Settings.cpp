@@ -351,103 +351,103 @@ void AppSettings::load()
 
 		if (key == "window_width")
 		{
-			g_settings.windowWidth = atoi(val.c_str());
+			g_settings.windowWidth = str_to_int(val);
 		}
 		else if (key == "window_height")
 		{
-			g_settings.windowHeight = atoi(val.c_str());
+			g_settings.windowHeight = str_to_int(val);
 		}
 		else if (key == "window_x")
 		{
-			g_settings.windowX = atoi(val.c_str());
+			g_settings.windowX = str_to_int(val);
 		}
 		else if (key == "window_y")
 		{
-			g_settings.windowY = atoi(val.c_str());
+			g_settings.windowY = str_to_int(val);
 		}
 		else if (key == "window_maximized")
 		{
-			g_settings.maximized = atoi(val.c_str());
+			g_settings.maximized = str_to_int(val);
 		}
 		else if (key == "save_windows")
 		{
-			g_settings.save_windows = atoi(val.c_str()) != 0;
+			g_settings.save_windows = str_to_int(val) != 0;
 		}
 		else if (key == "debug_open")
 		{
-			g_settings.debug_open = atoi(val.c_str()) != 0 && save_windows;
+			g_settings.debug_open = str_to_int(val) != 0 && save_windows;
 		}
 		else if (key == "keyvalue_open")
 		{
-			g_settings.keyvalue_open = atoi(val.c_str()) != 0 && save_windows;
+			g_settings.keyvalue_open = str_to_int(val) != 0 && save_windows;
 		}
 		else if (key == "transform_open")
 		{
-			g_settings.transform_open = atoi(val.c_str()) != 0 && save_windows;
+			g_settings.transform_open = str_to_int(val) != 0 && save_windows;
 		}
 		else if (key == "log_open")
 		{
-			g_settings.log_open = atoi(val.c_str()) != 0 && save_windows;
+			g_settings.log_open = str_to_int(val) != 0 && save_windows;
 		}
 		else if (key == "limits_open")
 		{
-			g_settings.limits_open = atoi(val.c_str()) != 0 && save_windows;
+			g_settings.limits_open = str_to_int(val) != 0 && save_windows;
 		}
 		else if (key == "entreport_open")
 		{
-			g_settings.entreport_open = atoi(val.c_str()) != 0 && save_windows;
+			g_settings.entreport_open = str_to_int(val) != 0 && save_windows;
 		}
 		else if (key == "texbrowser_open")
 		{
-			g_settings.texbrowser_open = atoi(val.c_str()) != 0 && save_windows;
+			g_settings.texbrowser_open = str_to_int(val) != 0 && save_windows;
 		}
 		else if (key == "goto_open")
 		{
-			g_settings.goto_open = atoi(val.c_str()) != 0 && save_windows;
+			g_settings.goto_open = str_to_int(val) != 0 && save_windows;
 		}
 		else if (key == "settings_tab")
 		{
 			if (save_windows)
-				g_settings.settings_tab = atoi(val.c_str());
+				g_settings.settings_tab = str_to_int(val);
 		}
 		else if (key == "vsync")
 		{
-			g_settings.vsync = atoi(val.c_str()) != 0;
+			g_settings.vsync = str_to_int(val) != 0;
 		}
 		else if (key == "mark_unused_texinfos")
 		{
-			g_settings.mark_unused_texinfos = atoi(val.c_str()) != 0;
+			g_settings.mark_unused_texinfos = str_to_int(val) != 0;
 		}
 		else if (key == "merge_verts")
 		{
-			g_settings.merge_verts = atoi(val.c_str()) != 0;
+			g_settings.merge_verts = str_to_int(val) != 0;
 		}
 		else if (key == "merge_edges")
 		{
-			g_settings.merge_edges = atoi(val.c_str()) != 0;
+			g_settings.merge_edges = str_to_int(val) != 0;
 		}
 		else if (key == "start_at_entity")
 		{
-			g_settings.start_at_entity = atoi(val.c_str()) != 0;
+			g_settings.start_at_entity = str_to_int(val) != 0;
 		}
 		else if (key == "verbose_logs")
 		{
-			g_settings.verboseLogs = atoi(val.c_str()) != 0;
+			g_settings.verboseLogs = str_to_int(val) != 0;
 #ifndef NDEBUG
 			g_settings.verboseLogs = true;
 #endif
 		}
 		else if (key == "fov")
 		{
-			g_settings.fov = (float)atof(val.c_str());
+			g_settings.fov = str_to_float(val);
 		}
 		else if (key == "zfar")
 		{
-			g_settings.zfar = (float)atof(val.c_str());
+			g_settings.zfar = str_to_float(val);
 		}
 		else if (key == "move_speed")
 		{
-			g_settings.moveSpeed = (float)atof(val.c_str());
+			g_settings.moveSpeed = str_to_float(val);
 			if (g_settings.moveSpeed < 100)
 			{
 				print_log(get_localized_string(LANG_0927));
@@ -456,23 +456,23 @@ void AppSettings::load()
 		}
 		else if (key == "rot_speed")
 		{
-			g_settings.rotSpeed = (float)atof(val.c_str());
+			g_settings.rotSpeed = str_to_float(val);
 		}
 		else if (key == "renders_flags")
 		{
-			g_settings.render_flags = atoi(val.c_str());
+			g_settings.render_flags = str_to_int(val);
 		}
 		else if (key == "font_size")
 		{
-			g_settings.fontSize = (float)atof(val.c_str());
+			g_settings.fontSize = str_to_float(val);
 		}
 		else if (key == "undo_levels")
 		{
-			g_settings.undoLevels = atoi(val.c_str());
+			g_settings.undoLevels = str_to_int(val);
 		}
 		else if (key == "fpslimit")
 		{
-			g_settings.fpslimit = atoi(val.c_str());
+			g_settings.fpslimit = str_to_int(val);
 			if (g_settings.fpslimit < 30)
 				g_settings.fpslimit = 30;
 			if (g_settings.fpslimit > 1000)
@@ -543,88 +543,88 @@ void AppSettings::load()
 		}
 		else if (key == "savebackup")
 		{
-			g_settings.backUpMap = atoi(val.c_str()) != 0;
+			g_settings.backUpMap = str_to_int(val) != 0;
 		}
 		else if (key == "save_crc")
 		{
-			g_settings.preserveCrc32 = atoi(val.c_str()) != 0;
+			g_settings.preserveCrc32 = str_to_int(val) != 0;
 		}
 		else if (key == "save_cam")
 		{
-			g_settings.save_cam = atoi(val.c_str()) != 0;
+			g_settings.save_cam = str_to_int(val) != 0;
 		}
 		else if (key == "auto_import_ent")
 		{
-			g_settings.autoImportEnt = atoi(val.c_str()) != 0;
+			g_settings.autoImportEnt = str_to_int(val) != 0;
 		}
 		else if (key == "same_dir_for_ent")
 		{
-			g_settings.sameDirForEnt = atoi(val.c_str()) != 0;
+			g_settings.sameDirForEnt = str_to_int(val) != 0;
 		}
 		else if (key == "reload_ents_list")
 		{
-			entListReload = atoi(val.c_str()) != 0;
+			entListReload = str_to_int(val) != 0;
 		}
 		else if (key == "strip_wad_path")
 		{
-			stripWad = atoi(val.c_str()) != 0;
+			stripWad = str_to_int(val) != 0;
 		}
 		else if (key == "default_is_empty")
 		{
-			defaultIsEmpty = atoi(val.c_str()) != 0;
+			defaultIsEmpty = str_to_int(val) != 0;
 		}
 		else if (key == "FLT_MAX_COORD")
 		{
-			FLT_MAX_COORD = (float)atof(val.c_str());
+			FLT_MAX_COORD = str_to_float(val);
 		}
 		else if (key == "MAX_MAP_MODELS")
 		{
-			MAX_MAP_MODELS = atoi(val.c_str());
+			MAX_MAP_MODELS = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_NODES")
 		{
-			MAX_MAP_NODES = atoi(val.c_str());
+			MAX_MAP_NODES = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_CLIPNODES")
 		{
-			MAX_MAP_CLIPNODES = atoi(val.c_str());
+			MAX_MAP_CLIPNODES = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_LEAVES")
 		{
-			MAX_MAP_LEAVES = atoi(val.c_str());
+			MAX_MAP_LEAVES = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_VISDATA")
 		{
-			MAX_MAP_VISDATA = atoi(val.c_str()) * (1024 * 1024);
+			MAX_MAP_VISDATA = str_to_int(val) * (1024 * 1024);
 		}
 		else if (key == "MAX_MAP_ENTS")
 		{
-			MAX_MAP_ENTS = atoi(val.c_str());
+			MAX_MAP_ENTS = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_SURFEDGES")
 		{
-			MAX_MAP_SURFEDGES = atoi(val.c_str());
+			MAX_MAP_SURFEDGES = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_EDGES")
 		{
-			MAX_MAP_EDGES = atoi(val.c_str());
+			MAX_MAP_EDGES = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_TEXTURES")
 		{
-			MAX_MAP_TEXTURES = atoi(val.c_str());
+			MAX_MAP_TEXTURES = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_LIGHTDATA")
 		{
-			MAX_MAP_LIGHTDATA = atoi(val.c_str()) * (1024 * 1024);
+			MAX_MAP_LIGHTDATA = str_to_int(val) * (1024 * 1024);
 		}
 		else if (key == "MAX_TEXTURE_DIMENSION")
 		{
-			MAX_TEXTURE_DIMENSION = atoi(val.c_str());
+			MAX_TEXTURE_DIMENSION = str_to_int(val);
 			MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
 		}
 		else if (key == "TEXTURE_STEP")
 		{
-			TEXTURE_STEP = atoi(val.c_str());
+			TEXTURE_STEP = str_to_int(val);
 		}
 		else if (key == "optimizer_cond_ents")
 		{

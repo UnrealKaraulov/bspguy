@@ -105,7 +105,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 				}
 				if (foundEnt->keyOrder[i] == "angle")
 				{
-					float y = (float)atof(foundEnt->keyvalues["angle"].c_str());
+					float y = str_to_float(foundEnt->keyvalues["angle"]);
 
 					if (y >= 0.0f)
 					{
@@ -147,7 +147,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 					}
 					if (ent->keyOrder[i] == "angle")
 					{
-						float y = (float)atof(ent->keyvalues["angle"].c_str());
+						float y = str_to_float(ent->keyvalues["angle"]);
 
 						if (y >= 0.0f)
 						{
@@ -1703,7 +1703,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 		if (ent->keyOrder[i] == "angle")
 		{
 			setAngles = true;
-			float y = (float)atof(ent->keyvalues["angle"].c_str());
+			float y = str_to_float(ent->keyvalues["angle"]);
 
 			if (y >= 0.0f)
 			{
@@ -1725,7 +1725,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 		if (ent->classname.size() && ent->classname.find("light") != std::string::npos && ent->keyOrder[i] == "pitch")
 		{
 			setAngles = true;
-			float x = (float)atof(ent->keyvalues["pitch"].c_str());
+			float x = str_to_float(ent->keyvalues["pitch"]);
 			renderEnts[entIdx].angles.x = -x;
 		}
 	}
@@ -1734,7 +1734,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 	{
 		if (ent->hasKey("sequence") && isNumeric(ent->keyvalues["sequence"]))
 		{
-			sequence = atoi(ent->keyvalues["sequence"].c_str());
+			sequence = str_to_int(ent->keyvalues["sequence"]);
 		}
 		if (sequence <= 0 && g_app->fgd)
 		{
@@ -1750,7 +1750,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 	{
 		if (ent->hasKey("skin") && isNumeric(ent->keyvalues["skin"]))
 		{
-			skin = atoi(ent->keyvalues["skin"].c_str());
+			skin = str_to_int(ent->keyvalues["skin"]);
 		}
 		if (skin <= 0 && g_app->fgd)
 		{
@@ -1766,7 +1766,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 	{
 		if (ent->hasKey("body") && isNumeric(ent->keyvalues["body"]))
 		{
-			body = atoi(ent->keyvalues["body"].c_str());
+			body = str_to_int(ent->keyvalues["body"]);
 		}
 		if (body == 0 && g_app->fgd)
 		{

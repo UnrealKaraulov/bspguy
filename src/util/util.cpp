@@ -290,9 +290,9 @@ vec3 parseVector(const std::string& s)
 		parts.push_back("0");
 	}
 
-	v.x = (float)atof(parts[0].c_str());
-	v.y = (float)atof(parts[1].c_str());
-	v.z = (float)atof(parts[2].c_str());
+	v.x = (float)str_to_float(parts[0]);
+	v.y = (float)str_to_float(parts[1]);
+	v.z = (float)str_to_float(parts[2]);
 	return v;
 }
 
@@ -2797,4 +2797,34 @@ int calcMipsSize(int w, int h)
 		sz += mipWidth * mipHeight;
 	}
 	return sz;
+}
+
+float str_to_float(const std::string& s)
+{
+	if (s.empty())
+		return 0.0f;
+	try
+	{
+		return std::stof(s);
+	}
+	catch (...)
+	{
+
+	}
+	return 0.0f;
+}
+
+int str_to_int(const std::string& s)
+{
+	if (s.empty())
+		return 0;
+	try
+	{
+		return std::stoi(s);
+	}
+	catch (...)
+	{
+
+	}
+	return 0;
 }

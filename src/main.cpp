@@ -1109,7 +1109,7 @@ int main(int argc, char* argv[])
 			int scale = 1;
 			if (cli.hasOption("-scale"))
 			{
-				scale = std::atoi(getValueInQuotes(cli.getOption("-scale")).c_str());
+				scale = str_to_int(getValueInQuotes(cli.getOption("-scale")));
 			}
 			Bsp* tmpBsp = new Bsp(cli.bspfile);
 			tmpBsp->ExportToObjWIP(cli.bspfile);
@@ -1160,7 +1160,7 @@ int main(int argc, char* argv[])
 			int leafIdx = 0;
 			if (cli.hasOption("-leaf"))
 			{
-				leafIdx = std::atoi(getValueInQuotes(cli.getOption("-leaf")).c_str());
+				leafIdx = str_to_int(getValueInQuotes(cli.getOption("-leaf")));
 			}
 			Bsp* tmpBsp = new Bsp(cli.bspfile);
 			tmpBsp->cull_leaf_faces(leafIdx);
