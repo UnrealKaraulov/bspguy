@@ -4000,8 +4000,10 @@ void Gui::drawMenuBar()
 						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
 						std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
 
+
 						map->leaves[i].nMins.x *= -1;
 						map->leaves[i].nMaxs.x *= -1;
+						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMaxs.x);
 					}
 
 					for (int i = 0; i < map->modelCount; i++)
@@ -4009,8 +4011,10 @@ void Gui::drawMenuBar()
 						std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
 						std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
 
-						map->models[i].nMins.x *= -1;
-						map->models[i].nMaxs.x *= -1;
+
+						map->leaves[i].nMins.x *= -1;
+						map->leaves[i].nMaxs.x *= -1;
+						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMaxs.x);
 					}
 
 					for (int i = 0; i < map->nodeCount; i++)
@@ -4018,8 +4022,9 @@ void Gui::drawMenuBar()
 						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
 						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
 
-						map->nodes[i].nMins.x *= -1;
-						map->nodes[i].nMaxs.x *= -1;
+						map->leaves[i].nMins.x *= -1;
+						map->leaves[i].nMaxs.x *= -1;
+						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMaxs.x);
 					}
 					map->update_ent_lump();
 					app->reloading = true;
@@ -4091,6 +4096,7 @@ void Gui::drawMenuBar()
 
 						map->leaves[i].nMins.y *= -1;
 						map->leaves[i].nMaxs.y *= -1;
+						std::swap(map->leaves[i].nMins.y, map->leaves[i].nMaxs.y);
 					}
 
 					for (int i = 0; i < map->modelCount; i++)
@@ -4100,6 +4106,7 @@ void Gui::drawMenuBar()
 
 						map->models[i].nMins.y *= -1;
 						map->models[i].nMaxs.y *= -1;
+						std::swap(map->models[i].nMins.y, map->models[i].nMaxs.y);
 					}
 
 					for (int i = 0; i < map->nodeCount; i++)
@@ -4109,6 +4116,7 @@ void Gui::drawMenuBar()
 
 						map->nodes[i].nMins.y *= -1;
 						map->nodes[i].nMaxs.y *= -1;
+						std::swap(map->nodes[i].nMins.y, map->nodes[i].nMaxs.y);
 					}
 					map->update_ent_lump();
 					app->reloading = true;
