@@ -3937,27 +3937,33 @@ void Gui::drawMenuBar()
 					app->reloading = false;
 				}
 
-				if (ImGui::MenuItem("Rotate map +90", NULL, false, map))
+				if (ImGui::MenuItem("Rotate Counter Clockwise 90", NULL, false, map))
 				{
 					for (int i = 0; i < map->vertCount; i++)
 					{
 						std::swap(map->verts[i].x, map->verts[i].y);
-
 						map->verts[i].x *= -1;
 					}
 
-					/*for (int i = 0; i < map->faceCount; i++)
-					{
-						int* start = &map->surfedges[map->faces[i].iFirstEdge];
-						int* end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
-						std::reverse(start, end);
-					}*/
+					std::set<int> flipped;
 
 					for (int i = 0; i < map->planeCount; i++)
 					{
 						std::swap(map->planes[i].vNormal.x, map->planes[i].vNormal.y);
 						map->planes[i].vNormal.x *= -1;
-						map->planes[i].update_plane(false);
+
+						bool flip = map->planes[i].update_plane(true);
+
+						if (flip)
+						{
+							flipped.insert(i);
+						}
+					}
+
+					for (int i = 0; i < map->faceCount; i++)
+					{
+						if (flipped.count(map->faces[i].iPlane))
+							map->faces[i].nPlaneSide = map->faces[i].nPlaneSide ? 0 : 1;
 					}
 
 					for (int i = 0; i < map->texinfoCount; i++)
@@ -3971,18 +3977,20 @@ void Gui::drawMenuBar()
 
 					for (int i = 0; i < map->ents.size(); i++)
 					{
-						if (!map->ents[i]->origin.IsZero())
+						if (map->ents[i]->hasKey("origin"))
 						{
+							map->ents[i]->origin = parseVector(map->ents[i]->keyvalues["origin"]);
+
 							std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
-							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
-
 							map->ents[i]->origin.x *= -1;
-						}
 
+							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
+						}
 						if (map->ents[i]->hasKey("angle"))
 						{
 							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
 							angle += 90.0f;
+
 							map->ents[i]->setOrAddKeyvalue("angle", std::to_string(fullnormalizeangle(angle)));
 						}
 
@@ -3990,70 +3998,87 @@ void Gui::drawMenuBar()
 						{
 							vec3 angles = parseVector(map->ents[i]->keyvalues["angles"]);
 							angles[1] += 90.0f;
-							angles[2] *= -1;
+
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
 					}
 
 					for (int i = 0; i < map->leafCount; i++)
 					{
+						std::swap(map->leaves[i].nMins.y, map->leaves[i].nMaxs.y);
+
 						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
-						std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
-
-
 						map->leaves[i].nMins.x *= -1;
+						std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
 						map->leaves[i].nMaxs.x *= -1;
-						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMaxs.x);
 					}
 
 					for (int i = 0; i < map->modelCount; i++)
 					{
+						std::swap(map->models[i].nMins.y, map->models[i].nMaxs.y);
+
 						std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
+						map->models[i].nMins.x *= -1;
 						std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
-
-
-						map->leaves[i].nMins.x *= -1;
-						map->leaves[i].nMaxs.x *= -1;
-						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMaxs.x);
+						map->models[i].nMaxs.x *= -1;
 					}
 
 					for (int i = 0; i < map->nodeCount; i++)
 					{
-						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
-						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
+						std::swap(map->nodes[i].nMins.y, map->nodes[i].nMaxs.y);
 
-						map->leaves[i].nMins.x *= -1;
-						map->leaves[i].nMaxs.x *= -1;
-						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMaxs.x);
+						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
+						map->nodes[i].nMins.x *= -1;
+						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
+						map->nodes[i].nMaxs.x *= -1;
+
+						if (flipped.count(map->nodes[i].iPlane))
+						{
+							std::swap(map->nodes[i].iChildren[0], map->nodes[i].iChildren[1]);
+						}
 					}
+
+					for (int i = 0; i < map->clipnodeCount; i++)
+					{
+						if (flipped.count(map->clipnodes[i].iPlane))
+						{
+							std::swap(map->clipnodes[i].iChildren[0], map->clipnodes[i].iChildren[1]);
+						}
+					}
+
 					map->update_ent_lump();
 					app->reloading = true;
 					rend->reload();
 					app->reloading = false;
 				}
 
-				if (ImGui::MenuItem("Rotate map -90", NULL, false, map))
+				if (ImGui::MenuItem("Rotate Clockwise 90", NULL, false, map))
 				{
 					for (int i = 0; i < map->vertCount; i++)
 					{
 						std::swap(map->verts[i].x, map->verts[i].y);
-
 						map->verts[i].y *= -1;
 					}
 
-					/*for (int i = 0; i < map->faceCount; i++)
-					{
-						int* start = &map->surfedges[map->faces[i].iFirstEdge];
-						int* end = &map->surfedges[map->faces[i].iFirstEdge + map->faces[i].nEdges];
-						std::reverse(start, end);
-					}*/
+					std::set<int> flipped;
 
 					for (int i = 0; i < map->planeCount; i++)
 					{
 						std::swap(map->planes[i].vNormal.x, map->planes[i].vNormal.y);
-
 						map->planes[i].vNormal.y *= -1;
-						map->planes[i].update_plane(false);
+
+						bool flip = map->planes[i].update_plane(true);
+
+						if (flip)
+						{
+							flipped.insert(i);
+						}
+					}
+
+					for (int i = 0; i < map->faceCount; i++)
+					{
+						if (flipped.count(map->faces[i].iPlane))
+							map->faces[i].nPlaneSide = map->faces[i].nPlaneSide ? 0 : 1;
 					}
 
 					for (int i = 0; i < map->texinfoCount; i++)
@@ -4067,17 +4092,20 @@ void Gui::drawMenuBar()
 
 					for (int i = 0; i < map->ents.size(); i++)
 					{
-						if (!map->ents[i]->origin.IsZero())
+						if (map->ents[i]->hasKey("origin"))
 						{
-							std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
-							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
+							map->ents[i]->origin = parseVector(map->ents[i]->keyvalues["origin"]);
 
+							std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
 							map->ents[i]->origin.y *= -1;
+
+							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
 						}
 						if (map->ents[i]->hasKey("angle"))
 						{
 							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
 							angle -= 90.0f;
+
 							map->ents[i]->setOrAddKeyvalue("angle", std::to_string(fullnormalizeangle(angle)));
 						}
 
@@ -4085,39 +4113,54 @@ void Gui::drawMenuBar()
 						{
 							vec3 angles = parseVector(map->ents[i]->keyvalues["angles"]);
 							angles[1] -= 90.0f;
+
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
 					}
 
 					for (int i = 0; i < map->leafCount; i++)
 					{
-						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
-						std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
+						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMaxs.x);
 
+						std::swap(map->leaves[i].nMins.x, map->leaves[i].nMins.y);
 						map->leaves[i].nMins.y *= -1;
+						std::swap(map->leaves[i].nMaxs.x, map->leaves[i].nMaxs.y);
 						map->leaves[i].nMaxs.y *= -1;
-						std::swap(map->leaves[i].nMins.y, map->leaves[i].nMaxs.y);
 					}
 
 					for (int i = 0; i < map->modelCount; i++)
 					{
-						std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
-						std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
+						std::swap(map->models[i].nMins.x, map->models[i].nMaxs.x);
 
+						std::swap(map->models[i].nMins.x, map->models[i].nMins.y);
 						map->models[i].nMins.y *= -1;
+						std::swap(map->models[i].nMaxs.x, map->models[i].nMaxs.y);
 						map->models[i].nMaxs.y *= -1;
-						std::swap(map->models[i].nMins.y, map->models[i].nMaxs.y);
 					}
 
 					for (int i = 0; i < map->nodeCount; i++)
 					{
-						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
-						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
+						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMaxs.x);
 
+						std::swap(map->nodes[i].nMins.x, map->nodes[i].nMins.y);
 						map->nodes[i].nMins.y *= -1;
+						std::swap(map->nodes[i].nMaxs.x, map->nodes[i].nMaxs.y);
 						map->nodes[i].nMaxs.y *= -1;
-						std::swap(map->nodes[i].nMins.y, map->nodes[i].nMaxs.y);
+
+						if (flipped.count(map->nodes[i].iPlane))
+						{
+							std::swap(map->nodes[i].iChildren[0], map->nodes[i].iChildren[1]);
+						}
 					}
+
+					for (int i = 0; i < map->clipnodeCount; i++)
+					{
+						if (flipped.count(map->clipnodes[i].iPlane))
+						{
+							std::swap(map->clipnodes[i].iChildren[0], map->clipnodes[i].iChildren[1]);
+						}
+					}
+
 					map->update_ent_lump();
 					app->reloading = true;
 					rend->reload();
@@ -8853,6 +8896,7 @@ void Gui::drawAbout()
 			ImGui::TextUnformatted(author);
 			ImGui::EndTooltip();
 		}
+
 		static char url[] = "https://github.com/wootguy/bspguy";
 		ImGui::InputText(get_localized_string(LANG_0824).c_str(), url, strlen(url), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
@@ -8861,6 +8905,7 @@ void Gui::drawAbout()
 			ImGui::TextUnformatted(url);
 			ImGui::EndTooltip();
 		}
+
 		static char url2[] = "https://github.com/UnrealKaraulov/newbspguy";
 		ImGui::InputText((get_localized_string(LANG_0824) + "##2").c_str(), url2, strlen(url2), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
@@ -8869,6 +8914,7 @@ void Gui::drawAbout()
 			ImGui::TextUnformatted(url2);
 			ImGui::EndTooltip();
 		}
+
 		static char help1[] = "https://t.me/ninjac0w, https://github.com/Qwertyus3D, twhl community, etc";
 		ImGui::InputText("Special thanks:", help1, strlen(help1), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
@@ -8878,6 +8924,14 @@ void Gui::drawAbout()
 			ImGui::EndTooltip();
 		}
 
+		static char bad1[] = "Empty";
+		ImGui::InputText("Very bad objects:", help1, strlen(help1), ImGuiInputTextFlags_ReadOnly);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted(help1);
+			ImGui::EndTooltip();
+		}
 	}
 
 	ImGui::End();

@@ -89,9 +89,10 @@
 // Notes:
 // Removing HULL 0 from any model crashes when shooting unless it's EF_NODRAW or renderamt=0
 // Removing HULL 0 from solid model crashes game when standing on it
+// Solve: 
+// Create empty hull 0 box ?
 
-
-std::string g_version_string = "NewBSPGuy v4.21fix";
+std::string g_version_string = "NewBSPGuy v4.22";
 
 bool g_verbose = false;
 
