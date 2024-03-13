@@ -3911,6 +3911,12 @@ void Gui::drawMenuBar()
 							angles[1] = 90.0f - angles[1];
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
+						else if (!map->ents[i]->hasKey("angle") && !map->ents[i]->isBspModel())
+						{
+							vec3 angles = vec3();
+							angles[1] = 90.0f - angles[1];
+							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
+						}
 					}
 
 					for (int i = 0; i < map->leafCount; i++)
@@ -4001,7 +4007,7 @@ void Gui::drawMenuBar()
 
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
-						else if (!map->ents[i]->hasKey("angle"))
+						else if (!map->ents[i]->hasKey("angle") && !map->ents[i]->isBspModel())
 						{
 							vec3 angles = vec3();
 							angles[1] += 90.0f;
@@ -4122,7 +4128,7 @@ void Gui::drawMenuBar()
 
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
-						else if (!map->ents[i]->hasKey("angle"))
+						else if (!map->ents[i]->hasKey("angle") && !map->ents[i]->isBspModel())
 						{
 							vec3 angles = vec3();
 							angles[1] -= 90.0f;
