@@ -4001,6 +4001,12 @@ void Gui::drawMenuBar()
 
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
+						else if (!map->ents[i]->hasKey("angle"))
+						{
+							vec3 angles = vec3();
+							angles[1] += 90.0f;
+							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
+						}
 					}
 
 					for (int i = 0; i < map->leafCount; i++)
@@ -4114,6 +4120,12 @@ void Gui::drawMenuBar()
 							vec3 angles = parseVector(map->ents[i]->keyvalues["angles"]);
 							angles[1] -= 90.0f;
 
+							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
+						}
+						else if (!map->ents[i]->hasKey("angle"))
+						{
+							vec3 angles = vec3();
+							angles[1] -= 90.0f;
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
 					}
@@ -8916,7 +8928,6 @@ void Gui::drawAbout()
 		}
 
 		static char help1[] = "https://t.me/ninjac0w, https://github.com/Qwertyus3D, twhl community, etc";
-		ImGui::InputText("Special thanks:", help1, strlen(help1), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
