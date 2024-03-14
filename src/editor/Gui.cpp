@@ -3898,6 +3898,11 @@ void Gui::drawMenuBar()
 							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
 						}
 
+						if (map->ents[i]->isBspModel())
+						{
+							continue;
+						}
+
 						if (map->ents[i]->hasKey("angle"))
 						{
 							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
@@ -3911,7 +3916,7 @@ void Gui::drawMenuBar()
 							angles[1] = 90.0f - angles[1];
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
-						else if (!map->ents[i]->hasKey("angle") && !map->ents[i]->isBspModel())
+						else if (!map->ents[i]->hasKey("angle"))
 						{
 							vec3 angles = vec3();
 							angles[1] = 90.0f - angles[1];
@@ -3992,6 +3997,12 @@ void Gui::drawMenuBar()
 
 							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
 						}
+
+						if (map->ents[i]->isBspModel())
+						{
+							continue;
+						}
+
 						if (map->ents[i]->hasKey("angle"))
 						{
 							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
@@ -4007,7 +4018,7 @@ void Gui::drawMenuBar()
 
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
-						else if (!map->ents[i]->hasKey("angle") && !map->ents[i]->isBspModel())
+						else if (!map->ents[i]->hasKey("angle"))
 						{
 							vec3 angles = vec3();
 							angles[1] += 90.0f;
@@ -4113,6 +4124,12 @@ void Gui::drawMenuBar()
 
 							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
 						}
+
+						if (map->ents[i]->isBspModel())
+						{
+							continue;
+						}
+
 						if (map->ents[i]->hasKey("angle"))
 						{
 							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
@@ -4128,7 +4145,7 @@ void Gui::drawMenuBar()
 
 							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
-						else if (!map->ents[i]->hasKey("angle") && !map->ents[i]->isBspModel())
+						else if (!map->ents[i]->hasKey("angle"))
 						{
 							vec3 angles = vec3();
 							angles[1] -= 90.0f;
@@ -4985,6 +5002,17 @@ void Gui::drawMenuBar()
 				map->remove_unused_model_structures(CLEAN_FACES | CLEAN_MARKSURFACES);
 			}
 
+			if (DebugKeyPressed)
+			{
+				if (ImGui::BeginMenu("Other"))
+				{
+					if (ImGui::MenuItem("Random DM spawn points"))
+					{
+
+					}
+					ImGui::EndMenu();
+				}
+			}
 			ImGui::EndMenu();
 		}
 
