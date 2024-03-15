@@ -5008,7 +5008,14 @@ void Gui::drawMenuBar()
 				{
 					if (ImGui::MenuItem("Random DM spawn points"))
 					{
-
+						for (int i = map->ents.size() - 1; i >= 0; i--)
+						{
+							if (map->ents[i]->classname == "info_player_deathmatch" ||
+								map->ents[i]->classname == "info_player_start")
+							{
+								map->ents.erase(map->ents.begin() + i);
+							}
+						}
 					}
 					ImGui::EndMenu();
 				}

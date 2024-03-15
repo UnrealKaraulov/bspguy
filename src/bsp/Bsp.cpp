@@ -121,6 +121,7 @@ Bsp::Bsp()
 
 	is_bsp30ext = false;
 	is_bsp2 = false;
+	is_bsp_pathos = false;
 	is_bsp2_old = false;
 	is_32bit_clipnodes = false;
 	is_bsp29 = false;
@@ -156,6 +157,7 @@ Bsp::Bsp(std::string fpath)
 
 	is_bsp30ext = false;
 	is_bsp2 = false;
+	is_bsp_pathos = false;
 	is_bsp2_old = false;
 	is_32bit_clipnodes = false;
 	is_bsp29 = false;
@@ -2849,6 +2851,10 @@ void Bsp::write(const std::string& path)
 		return;
 	}
 
+	if (!is_bsp2 || !is_bsp2_old)
+	{
+		is_bsp_pathos = false;
+	}
 	//if (is_bsp2_old)
 	//{
 	//	is_bsp2_old = false;
@@ -2889,7 +2895,7 @@ void Bsp::write(const std::string& path)
 
 	unsigned char* nulls = new unsigned char[sizeof(BSPHEADER) + sizeof(BSPHEADER_EX)];
 
-	file.write((const char*)nulls, is_bsp30ext && extralumps ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
+	file.write((const char*)nulls, is_bsp30ext && extralumps ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER) + (is_bsp_pathos ? 4 : 0));
 
 	delete[] nulls;
 
@@ -3193,7 +3199,7 @@ void Bsp::write(const std::string& path)
 
 	print_log(get_localized_string(LANG_0080), bsp_path);
 	// calculate lump offsets
-	int offset = sizeof(BSPHEADER);
+	int offset = sizeof(BSPHEADER) + (is_bsp_pathos ? 4 : 0);
 
 	if (is_bsp30ext && extralumps)
 	{
@@ -3243,7 +3249,15 @@ void Bsp::write(const std::string& path)
 	}
 
 	file.seekp(0);
+
+	if (is_bsp_pathos)
+	{
+		const char* pathosname = "PBSP";
+		file.write(pathosname, 4);
+	}
+
 	file.write((char*)&bsp_header, sizeof(BSPHEADER));
+
 	if (is_bsp30ext && extralumps)
 	{
 		file.write((char*)&bsp_header_ex, sizeof(BSPHEADER_EX));
@@ -3356,6 +3370,16 @@ bool Bsp::load_lumps(std::string fpath)
 		is_bsp2_old = true;
 		print_log(get_localized_string(LANG_0084));
 	}
+
+	if (bsp_header.nVersion == 'PSBP')
+	{
+		is_bsp_pathos = true;
+		is_bsp2 = true;
+		is_bsp2_old = true;
+		fin.read((char*)&bsp_header.nVersion, sizeof(int));
+		print_log("PATHOS bsp v{}\n", bsp_header.nVersion);
+	}
+
 
 	if (bsp_header.nVersion == 29)
 	{
@@ -4342,7 +4366,7 @@ bool Bsp::validate()
 		{
 			if (leaves[i].nMins[n] > leaves[i].nMaxs[n])
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
+				print_log(PRINT_RED | PRINT_INTENSITY, "backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
 					leaves[i].nMaxs[0], leaves[i].nMaxs[1], leaves[i].nMaxs[2]);
 				isValid = false;
 			}
@@ -9890,12 +9914,14 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 								decompiledBrushes.insert(b2);
 								one_brush_merged = true;
 								brush2.wind = Winding(0);
+								delete tryMergeWinding;
 								break;
 							}
 							else
 							{
 								print_log(PRINT_RED, "ERROR [2] REVERT BACK[ONE BRUSH CAN BE BROKEN!]!\n");
 								bad_tries++;
+								delete tryMergeWinding;
 							}
 						}
 					}
@@ -9997,6 +10023,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 					vec3 v3_b = v2_b - normal;
 					Winding tmpWind{};
 					tmpWind.m_Points = { v3_b, v2_b, v1_b };
+
 					brush.backWinds.push_back(tmpWind);
 				}
 
@@ -10039,6 +10066,11 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 					Winding tmpWind{};
 					tmpWind.m_Points = { v2_b, v1_b, v3_b };
 					tmpWind.getPlane(plane);
+
+					/*if (tmpWind.IsTiny())
+					{
+						print_log(PRINT_RED, "TINY2\n");
+					}*/
 
 					for (auto& p : planesForTest)
 					{

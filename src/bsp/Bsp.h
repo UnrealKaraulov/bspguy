@@ -48,6 +48,7 @@ public:
 
 	bool is_bsp30ext;
 
+	bool is_bsp_pathos;
 	bool is_bsp2;
 	bool is_bsp2_old;
 	bool is_bsp29;
