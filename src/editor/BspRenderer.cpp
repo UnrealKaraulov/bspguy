@@ -608,6 +608,17 @@ void BspRenderer::loadLightmaps()
 			{
 				if (face.nStyles[s] == 255)
 					continue;
+
+				if (map->is_bsp_pathos)
+				{
+					if (face.nStyles[s] == LM_AMBIENT_STYLE ||
+						face.nStyles[s] == LM_DIFFUSE_STYLE ||
+						face.nStyles[s] == LM_LIGHTVECS_STYLE)
+					{
+						info.atlasId[s] = 0;
+						continue;
+					}
+				}
 				size_t atlasId = atlases.size() - 1;
 
 				// TODO: Try fitting in earlier atlases before using the latest one
@@ -961,6 +972,16 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
+			if (map->is_bsp_pathos)
+			{
+				if (face.nStyles[s] == LM_AMBIENT_STYLE ||
+					face.nStyles[s] == LM_DIFFUSE_STYLE ||
+					face.nStyles[s] == LM_LIGHTVECS_STYLE)
+				{
+					lightmapAtlas[s] = NULL;
+					continue;
+				}
+			}
 			lightmapAtlas[s] = hasLighting && lmap ? glLightmapTextures[lmap->atlasId[s]] : NULL;
 		}
 
@@ -2322,7 +2343,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	static double leafUpdTime = 0.0;
 
-	if (map->models && fabs(g_app->curTime - leafUpdTime) > 0.25 )
+	if (map->models && fabs(g_app->curTime - leafUpdTime) > 0.25)
 	{
 		leafUpdTime = g_app->curTime;
 		std::vector<int> nodeBranch;

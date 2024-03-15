@@ -3536,6 +3536,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 					lumps[i] = (unsigned char*)tmpnodes;
 					bsp_header.lump[i].nLength = nodeCount * sizeof(BSPNODE32);
+					print_log(get_localized_string(LANG_0093) + "[OLD]");
 				}
 				else
 				{
@@ -3844,7 +3845,7 @@ bool Bsp::load_lumps(std::string fpath)
 	int lightmap4_bytes = lightmap1_bytes * sizeof(COLOR4);
 
 	is_colored_lightmap = lightdata == NULL || abs(lightmap1_bytes - lightDataLength) > abs(lightmap3_bytes - lightDataLength);
-
+		
 	bool is_fuck_rgba_lightmap = false;
 
 	if (is_colored_lightmap && lightdata != NULL)

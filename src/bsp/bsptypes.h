@@ -107,6 +107,11 @@ enum clean_unused_lump
 // maximum x/y hull dimension a pushable can have before it starts using hull 2
 #define MAX_HULL1_SIZE_PUSHABLE 34.0f
 
+
+#define LM_AMBIENT_STYLE 61
+#define LM_DIFFUSE_STYLE 62
+#define LM_LIGHTVECS_STYLE 63
+
 static const char* g_lump_names[HEADER_LUMPS] = {
 	"ENTITIES",
 	"PLANES",
