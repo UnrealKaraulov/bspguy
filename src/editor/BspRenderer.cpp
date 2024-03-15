@@ -299,7 +299,7 @@ void BspRenderer::loadTextures()
 	}
 
 	std::vector<std::string> tryPaths{};
-	tryPaths.push_back("./");
+	tryPaths.push_back("");
 
 	for (auto& path : g_settings.resPaths)
 	{
@@ -312,30 +312,50 @@ void BspRenderer::loadTextures()
 		wadNames.push_back("decals.wad");
 	}
 
-	if (wadNames.size() != 0)
-		wadLoaded = true;
-
-	for (size_t i = 0; i < wadNames.size(); i++)
+	if (map->is_bsp_pathos)
 	{
-		std::string path = std::string();
-		if (FindPathInAssets(map, wadNames[i], path))
+		for (auto wadname : wadNames)
 		{
-			print_log(get_localized_string(LANG_0269), path);
-			Wad* wad = new Wad(path);
-			if (wad->readInfo())
-				wads.push_back(wad);
-			else
+			if (wadname.size() > 4)
 			{
-				print_log(get_localized_string(LANG_0270), path);
-				delete wad;
+				wadname.pop_back();
+				wadname.pop_back();
+				wadname.pop_back();
+				wadname.pop_back();
 			}
+			tryPaths.push_back("textures/world/" + wadname + "/");
 		}
-		else if (path.empty())
+	}
+
+
+
+	wadLoaded = false;
+
+	for (auto& dir_path : tryPaths)
+	{
+		for (size_t i = 0; i < wadNames.size(); i++)
 		{
-			wadLoaded = false;
-			print_log(get_localized_string(LANG_0268), wadNames[i]);
-			FindPathInAssets(map, wadNames[i], path, true);
-			continue;
+			std::string path = std::string();
+			if (FindPathInAssets(map, dir_path + wadNames[i], path))
+			{
+				wadLoaded = true;
+				print_log(get_localized_string(LANG_0269), path);
+				Wad* wad = new Wad(path);
+				if (wad->readInfo())
+					wads.push_back(wad);
+				else
+				{
+					print_log(get_localized_string(LANG_0270), path);
+					delete wad;
+				}
+				break;
+			}
+			else if (path.empty())
+			{
+				print_log(get_localized_string(LANG_0268), wadNames[i]);
+				FindPathInAssets(map, dir_path + wadNames[i], path, true);
+				continue;
+			}
 		}
 	}
 
