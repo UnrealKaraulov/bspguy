@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 #include "Bsp.h"
 #include "Texture.h"
 #include "ShaderProgram.h"
@@ -176,7 +177,6 @@ public:
 	vec3 localCameraOrigin;
 
 	int curLeafIdx;
-	bool wadLoaded;
 
 	bool lightEnableFlags[4] = { true,true,true,true };
 	std::vector<Wad*> wads;

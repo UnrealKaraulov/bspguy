@@ -1511,10 +1511,13 @@ bool FindPathInAssets(Bsp* map, const std::string& filename, std::string& outpat
 
 	tracesearch = tracesearch && g_settings.verboseLogs;
 
-	if (traced_path_list.count(filename))
-		tracesearch = false;
-	else
-		traced_path_list.insert(filename);
+	if (tracesearch)
+	{
+		if (traced_path_list.count(filename))
+			tracesearch = false;
+		else
+			traced_path_list.insert(filename);
+	}
 
 	std::ostringstream outTrace;
 	// First search path directly

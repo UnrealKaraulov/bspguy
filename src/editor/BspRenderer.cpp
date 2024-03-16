@@ -228,7 +228,6 @@ BspRenderer::BspRenderer(Bsp* _map)
 	numFaceMaths = 0;
 	numRenderModels = 0;
 	faceMaths = NULL;
-	wadLoaded = false;
 
 	nodesBufferCache.clear();
 	clipnodesBufferCache.clear();
@@ -281,7 +280,7 @@ void BspRenderer::loadTextures()
 					foundDecalWad = true;
 			}
 
-			if (g_settings.stripWad/* && wadLoaded*/)
+			if (g_settings.stripWad)
 			{
 				std::string newWadString = "";
 
@@ -298,47 +297,27 @@ void BspRenderer::loadTextures()
 		}
 	}
 
-	std::vector<std::string> tryPaths{};
-	tryPaths.push_back("");
-
-	for (auto& path : g_settings.resPaths)
-	{
-		if (path.enabled)
-			tryPaths.push_back(path.path);
-	}
-
 	if (foundInfoDecals && !foundDecalWad)
 	{
 		wadNames.push_back("decals.wad");
 	}
 
-	if (map->is_bsp_pathos)
+	for (size_t i = 0; i < wadNames.size(); i++)
 	{
-		for (auto wadname : wadNames)
+		std::string path = std::string();
+
+		if (map->is_bsp_pathos && wadNames[i].size() > 4)
 		{
-			if (wadname.size() > 4)
+			std::string wadDirName = wadNames[i];
+
+			wadDirName.pop_back();
+			wadDirName.pop_back();
+			wadDirName.pop_back();
+			wadDirName.pop_back();
+
+
+			if (FindPathInAssets(map, "textures/world/" + wadDirName + "/" + wadNames[i], path))
 			{
-				wadname.pop_back();
-				wadname.pop_back();
-				wadname.pop_back();
-				wadname.pop_back();
-			}
-			tryPaths.push_back("textures/world/" + wadname + "/");
-		}
-	}
-
-
-
-	wadLoaded = false;
-
-	for (auto& dir_path : tryPaths)
-	{
-		for (size_t i = 0; i < wadNames.size(); i++)
-		{
-			std::string path = std::string();
-			if (FindPathInAssets(map, dir_path + wadNames[i], path))
-			{
-				wadLoaded = true;
 				print_log(get_localized_string(LANG_0269), path);
 				Wad* wad = new Wad(path);
 				if (wad->readInfo())
@@ -348,14 +327,28 @@ void BspRenderer::loadTextures()
 					print_log(get_localized_string(LANG_0270), path);
 					delete wad;
 				}
-				break;
 			}
-			else if (path.empty())
+		}
+
+		if (path.empty() && FindPathInAssets(map, wadNames[i], path))
+		{
+			print_log(get_localized_string(LANG_0269), path);
+			Wad* wad = new Wad(path);
+			if (wad->readInfo())
+				wads.push_back(wad);
+			else
 			{
-				print_log(get_localized_string(LANG_0268), wadNames[i]);
-				FindPathInAssets(map, dir_path + wadNames[i], path, true);
-				continue;
+				print_log(get_localized_string(LANG_0270), path);
+				delete wad;
 			}
+		}
+		else if (path.empty())
+		{
+
+
+			print_log(get_localized_string(LANG_0268), wadNames[i]);
+			FindPathInAssets(map, wadNames[i], path, true);
+			continue;
 		}
 	}
 
