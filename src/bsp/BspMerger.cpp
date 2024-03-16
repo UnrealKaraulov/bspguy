@@ -1071,7 +1071,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 
 	for (int i = 0; i < mapA.faceCount; i++)
 	{
-		for (int s = 0; s < MAX_LIGHTSTYLES; s++)
+		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
 			int style = mapA.faces[i].nStyles[s];
 
@@ -1093,7 +1093,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 
 	for (int i = 0; i < mapB.faceCount; i++)
 	{
-		for (int s = 0; s < MAX_LIGHTSTYLES; s++)
+		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
 			int style = mapB.faces[i].nStyles[s];
 
@@ -1487,9 +1487,26 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB)
 		if (i < worldFaceCountA || i >= worldFaceCountA + mapB.faceCount)
 			continue;
 
+
 		BSPFACE32& face = newFaces[i];
+
+		if (face.iPlane >= planeRemap.size())
+		{
+			print_log(PRINT_RED, "FATAL ERROR! Invalid plane remap {}\n", face.iPlane);
+			continue;
+		}
+
+
 		face.iPlane = planeRemap[face.iPlane];
 		face.iFirstEdge = face.iFirstEdge + thisSurfEdgeCount;
+
+
+		if (face.iTextureInfo >= texInfoRemap.size())
+		{
+			print_log(PRINT_RED, "FATAL ERROR! Invalid texinfo remap {}\n", face.iTextureInfo);
+			continue;
+		}
+
 		face.iTextureInfo = texInfoRemap[face.iTextureInfo];
 		g_progress.tick();
 	}

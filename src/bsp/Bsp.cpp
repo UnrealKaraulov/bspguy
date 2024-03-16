@@ -3121,8 +3121,8 @@ void Bsp::write(const std::string& path)
 				if (replacedLump[LUMP_SURFEDGES])
 				{
 					delete[] lumps[LUMP_SURFEDGES];
-					replacedLump[LUMP_SURFEDGES] = true;
 				}
+				replacedLump[LUMP_SURFEDGES] = true;
 				lumps[LUMP_SURFEDGES] = (unsigned char*)newsurfs;
 				surfedgeCount++;
 				bsp_header.lump[LUMP_SURFEDGES].nLength = (surfedgeCount) * sizeof(int);

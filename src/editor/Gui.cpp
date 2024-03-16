@@ -8991,8 +8991,8 @@ void Gui::drawAbout()
 
 void Gui::drawMergeWindow()
 {
-	ImGui::SetNextWindowSize(ImVec2(500.f, 240.f), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(500.f, 240.f), ImVec2(500.f, 240.f));
+	ImGui::SetNextWindowSize(ImVec2(600.f, 250.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(600.f, 250.f), ImVec2(600.f, 500.f));
 	static std::string outPath = "outbsp.bsp";
 	static std::vector<std::string> inPaths;
 	static bool DeleteUnusedInfo = true;
@@ -9002,6 +9002,9 @@ void Gui::drawMergeWindow()
 	static bool NoScript = true;
 
 	bool addNew = false;
+
+	static int select_path = 0;
+	
 	if (inPaths.size() < 1)
 	{
 		inPaths.push_back(std::string(""));
@@ -9009,17 +9012,40 @@ void Gui::drawMergeWindow()
 
 	if (ImGui::Begin(fmt::format("{}###MERGE_WIDGET", get_localized_string(LANG_0825)).c_str(), &showMergeMapWidget))
 	{
+		if (ifd::FileDialog::Instance().IsDone("BspMergeDialog"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+			{
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				inPaths[select_path] = res.string();
+				g_settings.lastdir = stripFileName(res.string());
+			}
+			ifd::FileDialog::Instance().Close();
+		}
+
 		for (size_t i = 0; i < inPaths.size(); i++)
 		{
 			std::string& s = inPaths[i];
-			ImGui::InputText(fmt::format(fmt::runtime(get_localized_string(LANG_0826)), i).c_str(), &s);
+			ImGui::SetNextItemWidth(280);
+			ImGui::InputText(fmt::format(fmt::runtime("##inpath{}"), i).c_str(), &s);
+			ImGui::SameLine();
+			if (ImGui::Button((get_localized_string(LANG_0834) +"##" + std::to_string(i)).c_str()))
+			{
+				select_path = i;
+				ifd::FileDialog::Instance().Open("BspMergeDialog", "Opep bsp model", "BSP file (*.bsp){.bsp},.*", false, g_settings.lastdir);
+			}
+			ImGui::SameLine();
+			ImGui::TextUnformatted(fmt::format(fmt::runtime(get_localized_string(LANG_0826)), i).c_str());
+
 			if (s.length() > 1 && i + 1 == inPaths.size())
 			{
 				addNew = true;
 			}
 		}
 
+		ImGui::SetNextItemWidth(280);
 		ImGui::InputText(get_localized_string(LANG_0828).c_str(), &outPath);
+
 		ImGui::Checkbox(get_localized_string(LANG_0829).c_str(), &DeleteUnusedInfo);
 		ImGui::Checkbox(get_localized_string(LANG_1121).c_str(), &Optimize);
 		ImGui::Checkbox(get_localized_string(LANG_0830).c_str(), &DeleteHull2);

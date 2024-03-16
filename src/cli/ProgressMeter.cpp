@@ -44,7 +44,7 @@ void ProgressMeter::tick()
 		last_progress = now;
 	}
 
-	if (simpleMode)
+	if (simpleMode && g_app)
 	{
 		g_app->updateWindowTitle(glfwGetTime());
 		return;
