@@ -1062,6 +1062,92 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
+
+	const int start_toggle_lightstyle = 32;
+
+	g_progress.update("Merging lightstyles", (int)(mapA.faceCount + mapB.faceCount));
+	std::set<int> mapA_light_styles;
+	std::map<int, int> remap_light_styles;
+
+	for (int i = 0; i < mapA.faceCount; i++)
+	{
+		for (int s = 0; s < MAX_LIGHTSTYLES; s++)
+		{
+			int style = mapA.faces[i].nStyles[s];
+
+			if (style != 255 &&
+				style >= start_toggle_lightstyle &&
+				!mapA_light_styles.count(style))
+			{
+				mapA_light_styles.insert(style);
+			}
+		}
+
+
+		g_progress.tick();
+	}
+
+	int remapped_lightstyles = 0;
+
+	int remapped_lightfaces = 0;
+
+	for (int i = 0; i < mapB.faceCount; i++)
+	{
+		for (int s = 0; s < MAX_LIGHTSTYLES; s++)
+		{
+			int style = mapB.faces[i].nStyles[s];
+
+			if (style != 255 &&
+				style >= start_toggle_lightstyle &&
+				mapA_light_styles.count(style))
+			{
+				if (remap_light_styles.find(style) != remap_light_styles.end())
+				{
+					mapB.faces[i].nStyles[s] = remap_light_styles[style];
+					remapped_lightfaces++;
+					continue;
+				}
+
+				remapped_lightstyles++;
+				int newstyle = 32;
+				for (; newstyle < 255; newstyle++)
+				{
+					if (!mapA_light_styles.count(style))
+					{
+						break;
+					}
+				}
+
+				remap_light_styles[style] = newstyle;
+				mapB.faces[i].nStyles[s] = newstyle;
+
+				mapA_light_styles.insert(newstyle);
+			}
+		}
+
+		g_progress.tick();
+	}
+
+	int remapped_lightents = 0;
+
+	for (size_t i = 0; i < mapB.ents.size(); i++)
+	{
+		if (mapB.ents[i]->keyvalues["classname"].find("light") != std::string::npos)
+		{
+			if (mapB.ents[i]->hasKey("style"))
+			{
+				int style = str_to_int(mapB.ents[i]->keyvalues["style"]);
+				if (remap_light_styles.find(style) != remap_light_styles.end())
+				{
+					remapped_lightents++;
+					mapB.ents[i]->setOrAddKeyvalue("style", std::to_string(remap_light_styles[style]));
+				}
+			}
+		}
+	}
+
+	print_log(PRINT_BLUE, "Remapped {} light styles in {} entities and {} faces!\n", remapped_lightstyles, remapped_lightents, remapped_lightfaces);
+
 	for (size_t i = 0; i < mapB.ents.size(); i++)
 	{
 		if (mapB.ents[i]->keyvalues["classname"] == "worldspawn")
