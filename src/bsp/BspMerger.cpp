@@ -1110,9 +1110,9 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 
 				remapped_lightstyles++;
 				int newstyle = 32;
-				for (; newstyle < 255; newstyle++)
+				for (; newstyle < 254; newstyle++)
 				{
-					if (!mapA_light_styles.count(style))
+					if (!mapA_light_styles.count(newstyle))
 					{
 						break;
 					}
