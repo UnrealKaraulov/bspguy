@@ -116,8 +116,7 @@ Bsp::Bsp()
 	is_mdl_model = false;
 	mdl = NULL;
 
-	undo_lightmaps = NULL;
-	undo_lightmaps_count = 0;
+	undo_lightmaps.clear();
 
 	is_bsp30ext = false;
 	is_bsp2 = false;
@@ -154,8 +153,7 @@ Bsp::Bsp(std::string fpath)
 	is_mdl_model = false;
 	mdl = NULL;
 
-	undo_lightmaps = NULL;
-	undo_lightmaps_count = 0;
+	undo_lightmaps.clear();
 
 	is_bsp30ext = false;
 	is_bsp2 = false;
@@ -954,6 +952,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 		return false;
 	}
 
+	if (logged)
+	{
+		save_undo_lightmaps();
+		g_progress.update("Moving structures", (int)(ents.size() - 1));
+	}
+
 	BSPMODEL& target = models[modelIdx];
 
 	// all ents should be moved if the world is being moved
@@ -968,8 +972,6 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	if (!forceMove && does_model_use_shared_structures(modelIdx))
 		split_shared_model_structures(modelIdx);
 
-	if (logged)
-		g_progress.update("Moving structures", (int)(ents.size() - 1));
 
 	if (movingWorld)
 	{
@@ -1118,7 +1120,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	// need update all lighting offsets!!!!
 	if (logged)
 	{
-		//resize_all_lightmaps();
+		resize_all_lightmaps();
 		g_progress.clear();
 		g_progress = ProgressMeter();
 	}
@@ -1183,6 +1185,7 @@ void Bsp::move_texinfo(int idx, vec3 offset)
 
 	float scaleS = info.vS.length();
 	float scaleT = info.vT.length();
+
 	vec3 nS = info.vS.normalize();
 	vec3 nT = info.vT.normalize();
 
@@ -1215,12 +1218,8 @@ void Bsp::save_undo_lightmaps(bool logged)
 	{
 		g_progress.update(fmt::format("Undo lightmaps ({})", faceCount), faceCount);
 	}
-	if (undo_lightmaps != NULL)
-	{
-		delete[] undo_lightmaps;
-	}
-	undo_lightmaps = new LIGHTMAP[faceCount];
-	undo_lightmaps_count = faceCount;
+	undo_lightmaps.clear();
+	undo_lightmaps.resize(faceCount);
 
 	for (int i = 0; i < faceCount; i++)
 	{
@@ -1258,7 +1257,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 {
 	if (logged)
 		g_progress.update("Resize lightmaps", faceCount);
-	if (!undo_lightmaps)
+	if (!undo_lightmaps.size())
 		save_undo_lightmaps(true);
 	std::vector<COLOR3> newLightData;
 
@@ -1271,9 +1270,16 @@ void Bsp::resize_all_lightmaps(bool logged)
 			if (face.nStyles[lightId] == 255 || face.nLightmapOffset < 0)
 				continue;
 			int size[2];
-			size[0] = undo_lightmaps[faceId].width;
-			size[1] = undo_lightmaps[faceId].height;
 
+			if (faceId < undo_lightmaps.size())
+			{
+				size[0] = undo_lightmaps[faceId].width;
+				size[1] = undo_lightmaps[faceId].height;
+			}
+			else
+			{
+				size[0] = size[1] = 0;
+			}
 			int newsize[2];
 			GetFaceLightmapSize(faceId, newsize);
 
@@ -1298,7 +1304,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 			}
 			else
 			{
-				if (lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers)
+				if (lightmapSz > 0 && lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers)
 				{
 					scaleImage(data, newdata, size[0], size[1], newsize[0], newsize[1]);
 				}
@@ -4346,7 +4352,8 @@ bool Bsp::validate()
 			isValid = !is_face_duplicate_edges(i);
 			if (!isValid && g_settings.verboseLogs)
 			{
-				print_log("Warn: Face {} has duplicate verts!\n", i);
+				print_log("Warn: Face {} has duplicate verts! Fixed!\n", i);
+				face_fix_duplicate_edges(i);
 			}
 			isValid = true;
 		}
@@ -4365,19 +4372,19 @@ bool Bsp::validate()
 			isValid = false;
 		}
 
+		bool swapped = false;
 		for (int n = 0; n < 3; n++)
 		{
-			bool swapped = false;
 			if (leaves[i].nMins[n] > leaves[i].nMaxs[n])
 			{
 				swapped = true;
 				isValid = false;
 			}
-			if (swapped)
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, "backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
-					leaves[i].nMaxs[0], leaves[i].nMaxs[1], leaves[i].nMaxs[2]);
-			}
+		}
+		if (swapped)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
+				leaves[i].nMaxs[0], leaves[i].nMaxs[1], leaves[i].nMaxs[2]);
 		}
 	}
 	for (int i = 0; i < edgeCount; i++)
@@ -6843,6 +6850,33 @@ int Bsp::create_node(bool force_reversed, int reversed_id)
 	return reversed_id;
 }
 
+int Bsp::create_edge()
+{
+	BSPEDGE32* newEdges = new BSPEDGE32[edgeCount + 1];
+	memcpy(newEdges, edges, edgeCount * sizeof(BSPEDGE32));
+	newEdges[edgeCount] = BSPEDGE32();
+	replace_lump(LUMP_EDGES, newEdges, (edgeCount + 1) * sizeof(BSPEDGE32));
+	return edgeCount - 1;
+}
+
+int Bsp::create_vert()
+{
+	vec3* newVerts = new vec3[vertCount + 1];
+	memcpy(newVerts, verts, vertCount * sizeof(vec3));
+	newVerts[vertCount] = vec3();
+	replace_lump(LUMP_VERTICES, newVerts, (vertCount + 1) * sizeof(vec3));
+	return vertCount - 1;
+}
+
+int Bsp::create_surfedge()
+{
+	int* newSurfedges = new int[surfedgeCount + 1];
+	memcpy(newSurfedges, surfedges, surfedgeCount * sizeof(int));
+	newSurfedges[surfedgeCount] = 0;
+	replace_lump(LUMP_SURFEDGES, newSurfedges, (surfedgeCount + 1) * sizeof(int));
+	return surfedgeCount - 1;
+}
+
 int Bsp::create_plane()
 {
 	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 1];
@@ -6866,15 +6900,6 @@ int Bsp::create_model()
 	return modelCount - 1;
 }
 
-
-int Bsp::create_vert()
-{
-	vec3* newVerts = new vec3[vertCount + 1];
-	memcpy(newVerts, verts, vertCount * sizeof(vec3));
-	newVerts[vertCount] = vec3();
-	replace_lump(LUMP_VERTICES, newVerts, (vertCount + 1) * sizeof(vec3));
-	return vertCount - 1;
-}
 
 int Bsp::create_texinfo()
 {
@@ -11792,6 +11817,51 @@ bool Bsp::is_texture_with_pal(int textureid)
 	}
 
 	return is_texture_has_pal;
+}
+
+void Bsp::face_fix_duplicate_edges(int faceIdx)
+{
+	if (faceIdx < 0 || faceIdx >= faceCount)
+	{
+		return;
+	}
+
+	std::set<int> verts_usage;
+	BSPFACE32 face = faces[faceIdx];
+
+	for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
+	{
+		int & edgeIdx = surfedges[e];
+		BSPEDGE32 edge = edges[abs(edgeIdx)];
+		int vert = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+		if (verts_usage.count(vert))
+		{
+			int newedge_id = create_edge();
+
+			if (edgeIdx >= 0)
+			{
+				edgeIdx = newedge_id;
+			}
+			else
+			{
+				edgeIdx = -newedge_id;
+			}
+
+			BSPEDGE32 & newedge = edges[newedge_id];
+			newedge = edge;
+
+			int v1 = create_vert();
+			verts[v1] = verts[edge.iVertex[0]];
+			newedge.iVertex[0] = v1;
+
+			int v2 = create_vert();
+			verts[v2] = verts[edge.iVertex[1]];
+			newedge.iVertex[1] = v1;
+
+			continue;
+		}
+		verts_usage.insert(vert);
+	}
 }
 
 bool Bsp::is_face_duplicate_edges(int faceIdx)

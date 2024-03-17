@@ -41,8 +41,7 @@ public:
 	unsigned char** lumps;
 	unsigned char** extralumps;
 
-	LIGHTMAP* undo_lightmaps;
-	int undo_lightmaps_count;
+	std::vector<LIGHTMAP> undo_lightmaps;
 
 	bool is_protected;
 
@@ -157,6 +156,7 @@ public:
 
 	// face has duplicate verts, this is bad?
 	bool is_face_duplicate_edges(int faceIdx);
+	void face_fix_duplicate_edges(int faceIdx);
 
 	// get all verts used by this model
 	// TODO: split any verts shared with other models!
@@ -263,6 +263,8 @@ public:
 	int create_model();
 	int create_vert();
 	int create_texinfo();
+	int create_edge();
+	int create_surfedge();
 
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 		std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,

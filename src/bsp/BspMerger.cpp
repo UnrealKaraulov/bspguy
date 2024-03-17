@@ -30,7 +30,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 				{
 					print_log("    Apply offset ({:6.0f}, {:6.0f}, {:6.0f}) to {}\n",
 						block.offset.x, block.offset.y, block.offset.z, block.map->bsp_name.c_str());
-					block.map->move(block.offset);
+					block.map->move(block.offset/*,0,false,true*/);
 				}
 
 				if (!noripent)
@@ -978,10 +978,13 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 	// base structures (they don't reference any other structures)
 	if (shouldMerge[LUMP_ENTITIES] && !modelMerge)
 		merge_ents(mapA, mapB);
+
 	if (shouldMerge[LUMP_PLANES])
 		merge_planes(mapA, mapB);
+
 	if (shouldMerge[LUMP_TEXTURES])
 		merge_textures(mapA, mapB);
+
 	if (shouldMerge[LUMP_VERTICES])
 		merge_vertices(mapA, mapB);
 
@@ -1067,6 +1070,8 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 
 	g_progress.update("Merging lightstyles", (int)(mapA.faceCount + mapB.faceCount));
 
+	mapB.save_undo_lightmaps();
+
 	std::set<int> usage_lightstyles;
 	std::map<unsigned char, unsigned char> remap_light_styles;
 
@@ -1151,8 +1156,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 	print_log(PRINT_BLUE, "MapA used {} light styles. MapB used {} light styles!\n", usage_lightstyles.size(), remap_light_styles.size());
 	print_log(PRINT_BLUE, "Remapped {} light styles in {} entities and {} faces!\n", remapped_lightstyles, remapped_lightents, remapped_lightfaces);
 
-	/*mapB.save_undo_lightmaps();
-	mapB.resize_all_lightmaps();*/
+	mapB.resize_all_lightmaps();
 
 	for (size_t i = 0; i < mapB.ents.size(); i++)
 	{
