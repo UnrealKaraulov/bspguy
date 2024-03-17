@@ -4725,6 +4725,7 @@ void Gui::drawMenuBar()
 					ImGui::EndTooltip();
 				}
 
+				//face_fix_duplicate_edges(i);
 				ImGui::BeginDisabled();
 				if (ImGui::MenuItem("Fix light entities[+TEXTURE]"))
 				{
@@ -12550,7 +12551,7 @@ void Gui::checkFaceErrors()
 		map->GetFaceLightmapSize((int)app->pickInfo.selectedFaces[i], size);
 		if ((size[0] > MAX_SURFACE_EXTENT) || (size[1] > MAX_SURFACE_EXTENT) || size[0] < 0 || size[1] < 0)
 		{
-			//print_log(get_localized_string(LANG_0426),size[0],size[1]);
+			print_log(get_localized_string(LANG_0426),size[0],size[1]);
 			size[0] = std::min(size[0], MAX_SURFACE_EXTENT);
 			size[1] = std::min(size[1], MAX_SURFACE_EXTENT);
 			badSurfaceExtents = true;

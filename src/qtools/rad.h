@@ -124,3 +124,4 @@ struct LIGHTMAP
 
 
 float CalculatePointVecsProduct(const volatile float* point, const volatile float* vecs);
+bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2]);

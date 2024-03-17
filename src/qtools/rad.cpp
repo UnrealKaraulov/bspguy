@@ -99,10 +99,9 @@ void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
 	m.v[3][2] = -fp.fDist;
 }
 
-bool CanFindFacePosition(Bsp* bsp, int facenum)
+bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 {
 	float texmins[2]{}, texmaxs[2]{};
-	int imins[2]{}, imaxs[2]{};
 
 	matrix_t worldtotex;
 	matrix_t textoworld;
@@ -112,6 +111,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 	{
 		return false;
 	}
+
 	BSPTEXTUREINFO& tex = bsp->texinfos[f->iTextureInfo];
 
 	TranslateWorldToTex(bsp, facenum, worldtotex);
@@ -146,7 +146,6 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 	}
 
 	unsigned int tmpTextureStep = bsp->CalcFaceTextureStep(facenum);
-
 
 	for (int k = 0; k < 2; k++)
 	{

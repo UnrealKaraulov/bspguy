@@ -4346,14 +4346,15 @@ bool Bsp::validate()
 		int bmaxs[2];
 		if (isValid)
 			isValid = GetFaceExtents(i, bmins, bmaxs);
+		else
+			print_log(PRINT_RED | PRINT_INTENSITY, "Bad face {} extents\n", i);
 
 		if (isValid)
 		{
 			isValid = !is_face_duplicate_edges(i);
 			if (!isValid && g_settings.verboseLogs)
 			{
-				print_log("Warn: Face {} has duplicate verts! Fixed!\n", i);
-				face_fix_duplicate_edges(i);
+				print_log("Warn: Face {} has duplicate verts!\n", i);
 			}
 			isValid = true;
 		}
@@ -11937,56 +11938,21 @@ bool Bsp::CalcFaceExtents(lightinfo_t* l)
 
 bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 {
-	float mins[2], maxs[2], val;
-
+	bool findpos = CanFindFacePosition(this, facenum, mins_out, maxs_out);
 	bool retval = true;
 
-	mins[0] = mins[1] = 999999.0f;
-	maxs[0] = maxs[1] = -999999.0f;
-
 	BSPFACE32& face = faces[facenum];
-
 	BSPTEXTUREINFO tex = texinfos[face.iTextureInfo];
-
-	for (int i = 0; i < face.nEdges; i++)
-	{
-		vec3 v = vec3();
-		int e = surfedges[face.iFirstEdge + i];
-		if (e >= 0)
-		{
-			v = verts[edges[e].iVertex[0]];
-		}
-		else
-		{
-			v = verts[edges[-e].iVertex[1]];
-		}
-		for (int j = 0; j < 2; j++)
-		{
-			float* axis = j == 0 ? (float*)&tex.vS : (float*)&tex.vT;
-			val = CalculatePointVecsProduct((float*)&v, axis);
-
-			if (val < mins[j])
-			{
-				mins[j] = val;
-			}
-			if (val > maxs[j])
-			{
-				maxs[j] = val;
-			}
-		}
-	}
 
 	for (int i = 0; i < 2; i++)
 	{
 		int tmpTextureStep = CalcFaceTextureStep(facenum);
 
-		mins_out[i] = (int)floor(mins[i] / tmpTextureStep);
-		maxs_out[i] = (int)ceil(maxs[i] / tmpTextureStep);
-
 		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * tmpTextureStep > (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT))
 		{
 			retval = false;
 			print_log(get_localized_string("BAD_SURFACE_EXT"), facenum, (int)((maxs_out[i] - mins_out[i]) * tmpTextureStep), (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT));
+			print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
 			mins_out[i] = 1;
 			maxs_out[i] = 1;
 		}
