@@ -1066,40 +1066,39 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 	const int start_toggle_lightstyle = 32;
 
 	g_progress.update("Merging lightstyles", (int)(mapA.faceCount + mapB.faceCount));
-	std::set<int> mapA_light_styles;
-	std::map<int, int> remap_light_styles;
+
+	std::set<int> usage_lightstyles;
+	std::map<unsigned char, unsigned char> remap_light_styles;
 
 	for (int i = 0; i < mapA.faceCount; i++)
 	{
 		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
-			int style = mapA.faces[i].nStyles[s];
+			unsigned char style = mapA.faces[i].nStyles[s];
 
-			if (style != 255 &&
+			if (style < 255 &&
 				style >= start_toggle_lightstyle &&
-				!mapA_light_styles.count(style))
+				!usage_lightstyles.count(style))
 			{
-				mapA_light_styles.insert(style);
+				usage_lightstyles.insert(style);
 			}
 		}
-
 
 		g_progress.tick();
 	}
 
 	int remapped_lightstyles = 0;
-
 	int remapped_lightfaces = 0;
 
 	for (int i = 0; i < mapB.faceCount; i++)
 	{
 		for (int s = 0; s < MAX_LIGHTMAPS; s++)
 		{
-			int style = mapB.faces[i].nStyles[s];
+			unsigned char style = mapB.faces[i].nStyles[s];
 
-			if (style != 255 &&
+			if (style < 255 &&
 				style >= start_toggle_lightstyle &&
-				mapA_light_styles.count(style))
+				usage_lightstyles.count(style))
 			{
 				if (remap_light_styles.find(style) != remap_light_styles.end())
 				{
@@ -1109,10 +1108,11 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 				}
 
 				remapped_lightstyles++;
-				int newstyle = 32;
+				unsigned char newstyle = 32;
 				for (; newstyle < 254; newstyle++)
 				{
-					if (!mapA_light_styles.count(newstyle))
+					if (!usage_lightstyles.count(newstyle)
+						&& remap_light_styles.find(style) == remap_light_styles.end())
 					{
 						break;
 					}
@@ -1120,8 +1120,6 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 
 				remap_light_styles[style] = newstyle;
 				mapB.faces[i].nStyles[s] = newstyle;
-
-				mapA_light_styles.insert(newstyle);
 			}
 		}
 
@@ -1137,7 +1135,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 			if (mapB.ents[i]->hasKey("style"))
 			{
 				int style = str_to_int(mapB.ents[i]->keyvalues["style"]);
-				if (remap_light_styles.find(style) != remap_light_styles.end())
+				if (style < 255 && style >= start_toggle_lightstyle && remap_light_styles.find((unsigned char)style) != remap_light_styles.end())
 				{
 					remapped_lightents++;
 					mapB.ents[i]->setOrAddKeyvalue("style", std::to_string(remap_light_styles[style]));
@@ -1146,6 +1144,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 		}
 	}
 
+	print_log(PRINT_BLUE, "MapA used {} light styles. MapB used {} light styles!\n", usage_lightstyles.size(), remap_light_styles.size());
 	print_log(PRINT_BLUE, "Remapped {} light styles in {} entities and {} faces!\n", remapped_lightstyles, remapped_lightents, remapped_lightfaces);
 
 	for (size_t i = 0; i < mapB.ents.size(); i++)
