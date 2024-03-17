@@ -149,8 +149,8 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 
 	for (int k = 0; k < 2; k++)
 	{
-		imins[k] = (int)floor(texmins[k] / tmpTextureStep + 0.5 - ON_EPSILON);
-		imaxs[k] = (int)ceil(texmaxs[k] / tmpTextureStep - 0.5 + ON_EPSILON);
+		imins[k] = (int)floor(texmins[k] / tmpTextureStep);
+		imaxs[k] = (int)ceil(texmaxs[k] / tmpTextureStep );
 	}
 
 	int w = imaxs[0] - imins[0] + 1;
