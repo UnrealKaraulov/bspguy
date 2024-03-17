@@ -4,13 +4,22 @@
 #include "util.h"
 #include "bsptypes.h"
 
-#define MAX_SINGLEMAP ((MAX_SURFACE_EXTENT+1)*(MAX_SURFACE_EXTENT+1))
 // if lightmap extent exceeds 16, the map will not be able to load in 'Software' renderer and HLDS.
-#define MAX_SURFACE_EXTENT  64
+// #define MAX_SURFACE_EXTENT  64
 // max pixels in a single lightmap
 #define MAX_LUXELS 1600
+
+#define MAX_SINGLEMAP ((MAX_SURFACE_EXTENT+1)*(MAX_SURFACE_EXTENT+1))
 // sky or slime or null, no lightmap or 256 subdivision
-#define TEX_SPECIAL     1
+
+#define TEX_SPECIAL				1U << ( 0 )	// sky or slime, no lightmap or 256 subdivision
+
+//XASH
+#define TEX_WORLD_LUXELS		1U << ( 1 )	// alternative lightmap matrix will be used (luxels per world units instead of luxels per texels)
+#define TEX_AXIAL_LUXELS		1U << ( 2 )	// force world luxels to axial positive scales
+#define TEX_EXTRA_LIGHTMAP		1U << ( 3 )	// bsp31 legacy - using 8 texels per luxel instead of 16 texels per luxel
+#define TEX_SCROLL				1U << ( 6 )	// Doom special FX
+
 
 #define assume(exp, message) {if (!(exp)) {print_log(get_localized_string(LANG_0001),#exp,__FILE__,__LINE__,message); }}
 #define hlassume(exp, message) {if (!(exp)) {print_log(get_localized_string(LANG_1016),#exp,__FILE__,__LINE__,#message); }}
@@ -113,12 +122,5 @@ struct LIGHTMAP
 	}
 };
 
-class Bsp;
 
-const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE32* const face);
-
-void GetFaceLightmapSize(Bsp* bsp, int facenum, int size[2]);
-int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum);
-int GetFaceSingleLightmapSizeBytes(Bsp* bsp, int facenum);
-bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2]);
-bool CalcFaceExtents(Bsp* bsp, lightinfo_t* l);
+float CalculatePointVecsProduct(const volatile float* point, const volatile float* vecs);

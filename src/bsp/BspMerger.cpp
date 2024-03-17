@@ -1062,7 +1062,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-
+	
 	const int start_toggle_lightstyle = 32;
 
 	g_progress.update("Merging lightstyles", (int)(mapA.faceCount + mapB.faceCount));
@@ -1101,7 +1101,8 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 				usage_lightstyles.count(style))
 			{
 				if (remap_light_styles.find(style) != remap_light_styles.end())
-				{
+				{/*
+					print_log(PRINT_GREEN,"REMAP {} TO {}\n", mapB.faces[i].nStyles[s], remap_light_styles[style]);*/
 					mapB.faces[i].nStyles[s] = remap_light_styles[style];
 					remapped_lightfaces++;
 					continue;
@@ -1119,6 +1120,9 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 				}
 
 				remap_light_styles[style] = newstyle;
+
+
+				//print_log(PRINT_GREEN, "REMAP2  {} TO {}\n", mapB.faces[i].nStyles[s], remap_light_styles[style]);
 				mapB.faces[i].nStyles[s] = newstyle;
 			}
 		}
@@ -1146,6 +1150,9 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 
 	print_log(PRINT_BLUE, "MapA used {} light styles. MapB used {} light styles!\n", usage_lightstyles.size(), remap_light_styles.size());
 	print_log(PRINT_BLUE, "Remapped {} light styles in {} entities and {} faces!\n", remapped_lightstyles, remapped_lightents, remapped_lightfaces);
+
+	/*mapB.save_undo_lightmaps();
+	mapB.resize_all_lightmaps();*/
 
 	for (size_t i = 0; i < mapB.ents.size(); i++)
 	{

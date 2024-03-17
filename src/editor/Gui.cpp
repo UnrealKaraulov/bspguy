@@ -283,7 +283,7 @@ void Gui::copyLightmap()
 	copiedLightmap.face = (int)app->pickInfo.selectedFaces[0];
 
 	int size[2];
-	GetFaceLightmapSize(map, copiedLightmap.face, size);
+	map->GetFaceLightmapSize(copiedLightmap.face, size);
 	copiedLightmap.width = size[0];
 	copiedLightmap.height = size[1];
 	copiedLightmap.layers = map->lightmap_count((int)app->pickInfo.selectedFaces[0]);
@@ -305,7 +305,7 @@ void Gui::pasteLightmap()
 	int faceIdx = (int)app->pickInfo.selectedFaces[0];
 
 	int size[2];
-	GetFaceLightmapSize(map, faceIdx, size);
+	map->GetFaceLightmapSize(faceIdx, size);
 
 	if (size[0] != copiedLightmap.width || size[1] != copiedLightmap.height)
 	{
@@ -4482,7 +4482,7 @@ void Gui::drawMenuBar()
 						}
 						int bmins[2];
 						int bmaxs[2];
-						if (!GetFaceExtents(map, i, bmins, bmaxs))
+						if (!map->GetFaceExtents(i, bmins, bmaxs))
 						{
 							info.nFlags |= TEX_SPECIAL;
 						}
@@ -8442,7 +8442,7 @@ void Gui::drawSettings()
 			}
 
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::Checkbox("Merge edges [WIP]", &g_settings.merge_verts);
+			ImGui::Checkbox("Merge edges [WIP]", &g_settings.merge_edges);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted("Warning! This option can add visual glitches to map.");
@@ -8603,6 +8603,8 @@ void Gui::drawSettings()
 			ImGui::DragFloat(get_localized_string(LANG_0761).c_str(), &FLT_MAX_COORD, 64.f, 512.f, 2147483647.f, "%.0f");
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::DragInt(get_localized_string(LANG_0762).c_str(), (int*)&MAX_MAP_MODELS, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX SURFACE EXTENTS", (int*)&MAX_SURFACE_EXTENT, 1, 4, 1024, "%i");
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::DragInt(get_localized_string(LANG_0763).c_str(), (int*)&MAX_MAP_ENTS, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
@@ -8968,7 +8970,8 @@ void Gui::drawAbout()
 			ImGui::EndTooltip();
 		}
 
-		static char help1[] = "https://t.me/ninjac0w, https://github.com/Qwertyus3D, twhl community, etc";
+		static char help1[] = "https://t.me/ninjac0w\nhttps://github.com/Qwertyus3D\nhttps://hlfx.ru/forum/member.php?action=getinfo&userid=3\ntwhl community\netc";
+		ImGui::InputTextMultiline("Special thanks to:", help1, strlen(help1), ImVec2(0, 45), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
@@ -8977,11 +8980,11 @@ void Gui::drawAbout()
 		}
 
 		static char bad1[] = "Empty";
-		ImGui::InputText("Very bad objects:", help1, strlen(help1), ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText("Very bad objects:", bad1, strlen(bad1), ImGuiInputTextFlags_ReadOnly);
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
-			ImGui::TextUnformatted(help1);
+			ImGui::TextUnformatted(bad1);
 			ImGui::EndTooltip();
 		}
 	}
@@ -9004,7 +9007,7 @@ void Gui::drawMergeWindow()
 	bool addNew = false;
 
 	static int select_path = 0;
-	
+
 	if (inPaths.size() < 1)
 	{
 		inPaths.push_back(std::string(""));
@@ -9029,7 +9032,7 @@ void Gui::drawMergeWindow()
 			ImGui::SetNextItemWidth(280);
 			ImGui::InputText(fmt::format(fmt::runtime("##inpath{}"), i).c_str(), &s);
 			ImGui::SameLine();
-			if (ImGui::Button((get_localized_string(LANG_0834) +"##" + std::to_string(i)).c_str()))
+			if (ImGui::Button((get_localized_string(LANG_0834) + "##" + std::to_string(i)).c_str()))
 			{
 				select_path = i;
 				ifd::FileDialog::Instance().Open("BspMergeDialog", "Opep bsp model", "BSP file (*.bsp){.bsp},.*", false, g_settings.lastdir);
@@ -10270,7 +10273,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 					continue;
 
 				int size[2];
-				GetFaceLightmapSize(map, (int)faceIdx, size);
+				map->GetFaceLightmapSize((int)faceIdx, size);
 
 				int sizeX = size[0], sizeY = size[1];
 
@@ -10384,7 +10387,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 				continue;
 
 			int size[2];
-			GetFaceLightmapSize(map, (int)faceIdx, size);
+			map->GetFaceLightmapSize((int)faceIdx, size);
 
 			int sizeX = size[0], sizeY = size[1];
 
@@ -10423,7 +10426,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 void ExportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 {
 	int size[2];
-	GetFaceLightmapSize(map, faceIdx, size);
+	map->GetFaceLightmapSize(faceIdx, size);
 	std::string filename;
 
 	for (int i = 0; i < MAX_LIGHTMAPS; i++)
@@ -10442,7 +10445,7 @@ void ImportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 {
 	std::string filename;
 	int size[2];
-	GetFaceLightmapSize(map, faceIdx, size);
+	map->GetFaceLightmapSize(faceIdx, size);
 	for (int i = 0; i < MAX_LIGHTMAPS; i++)
 	{
 		if (face.nStyles[i] == 255)
@@ -10519,7 +10522,7 @@ void Gui::drawLightMapTool()
 			if (faceIdx >= 0)
 			{
 				face = &map->faces[faceIdx];
-				GetFaceLightmapSize(map, faceIdx, size);
+				map->GetFaceLightmapSize(faceIdx, size);
 			}
 			else
 			{
@@ -10880,7 +10883,7 @@ void Gui::drawFaceEditorWidget()
 					lightmapSizes.clear();
 
 					int lmSize[2];
-					GetFaceLightmapSize(map, faceIdx, lmSize);
+					map->GetFaceLightmapSize(faceIdx, lmSize);
 					lightmapSizes.push_back({ lmSize[0],lmSize[1] });
 
 
@@ -10888,7 +10891,7 @@ void Gui::drawFaceEditorWidget()
 					for (size_t i = 1; i < app->pickInfo.selectedFaces.size(); i++)
 					{
 						size_t faceIdx2 = app->pickInfo.selectedFaces[i];
-						GetFaceLightmapSize(map, (int)faceIdx2, lmSize);
+						map->GetFaceLightmapSize((int)faceIdx2, lmSize);
 						lightmapSizes.push_back({ lmSize[0],lmSize[1] });
 						BSPFACE32& face2 = map->faces[faceIdx2];
 						BSPTEXTUREINFO& texinfo2 = map->texinfos[face2.iTextureInfo];
@@ -11325,7 +11328,10 @@ void Gui::drawFaceEditorWidget()
 
 				if (toggledFlags)
 				{
-					texinfo->nFlags = isSpecial ? TEX_SPECIAL : 0;
+					if (!isSpecial)
+						texinfo->nFlags &= ~TEX_SPECIAL;
+					else
+						texinfo->nFlags |= TEX_SPECIAL;
 				}
 
 				if ((textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && validTexture)
@@ -11346,7 +11352,7 @@ void Gui::drawFaceEditorWidget()
 					for (size_t n = 0; n < app->pickInfo.selectedFaces.size(); n++)
 					{
 						int lmSize[2];
-						GetFaceLightmapSize(map, (int)app->pickInfo.selectedFaces[n], lmSize);
+						map->GetFaceLightmapSize((int)app->pickInfo.selectedFaces[n], lmSize);
 						if (lmSize[0] != lightmapSizes[n][0] ||
 							lmSize[1] != lightmapSizes[n][1])
 						{
@@ -12541,7 +12547,7 @@ void Gui::checkFaceErrors()
 	for (size_t i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 	{
 		int size[2];
-		GetFaceLightmapSize(map, (int)app->pickInfo.selectedFaces[i], size);
+		map->GetFaceLightmapSize((int)app->pickInfo.selectedFaces[i], size);
 		if ((size[0] > MAX_SURFACE_EXTENT) || (size[1] > MAX_SURFACE_EXTENT) || size[0] < 0 || size[1] < 0)
 		{
 			//print_log(get_localized_string(LANG_0426),size[0],size[1]);
@@ -12549,7 +12555,6 @@ void Gui::checkFaceErrors()
 			size[1] = std::min(size[1], MAX_SURFACE_EXTENT);
 			badSurfaceExtents = true;
 		}
-
 
 		if (size[0] * size[1] > MAX_LUXELS)
 		{

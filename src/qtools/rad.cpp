@@ -73,26 +73,6 @@ bool InvertMatrix(const matrix_t& m, matrix_t& m_inverse)
 	return true;
 }
 
-const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE32* const face)
-{
-	if (!face)
-	{
-		print_log(get_localized_string(LANG_0990));
-		return BSPPLANE();
-	}
-
-	if (face->nPlaneSide)
-	{
-		BSPPLANE backplane = bsp->planes[face->iPlane];
-		backplane.fDist = -backplane.fDist;
-		backplane.vNormal = backplane.vNormal.invert();
-		return backplane;
-	}
-	else
-	{
-		return bsp->planes[face->iPlane];
-	}
-}
 
 void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
 // without g_face_offset
@@ -103,7 +83,7 @@ void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
 	int i;
 
 	f = &bsp->faces[facenum];
-	const BSPPLANE fp = getPlaneFromFace(bsp, f);
+	const BSPPLANE fp = bsp->getPlaneFromFace(f);
 	ti = &bsp->texinfos[f->iTextureInfo];
 	for (i = 0; i < 3; i++)
 	{
@@ -128,10 +108,11 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 	matrix_t textoworld;
 
 	BSPFACE32* f = &bsp->faces[facenum];
-	if (bsp->texinfos[f->iTextureInfo].nFlags & TEX_SPECIAL)
+	if (f->iTextureInfo < 0 || bsp->texinfos[f->iTextureInfo].nFlags & TEX_SPECIAL)
 	{
 		return false;
 	}
+	BSPTEXTUREINFO& tex = bsp->texinfos[f->iTextureInfo];
 
 	TranslateWorldToTex(bsp, facenum, worldtotex);
 	if (!InvertMatrix(worldtotex, textoworld))
@@ -164,10 +145,13 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 		}
 	}
 
+	unsigned int tmpTextureStep = bsp->CalcFaceTextureStep(facenum);
+
+
 	for (int k = 0; k < 2; k++)
 	{
-		imins[k] = (int)floor(texmins[k] / TEXTURE_STEP + 0.5 - ON_EPSILON);
-		imaxs[k] = (int)ceil(texmaxs[k] / TEXTURE_STEP - 0.5 + ON_EPSILON);
+		imins[k] = (int)floor(texmins[k] / tmpTextureStep + 0.5 - ON_EPSILON);
+		imaxs[k] = (int)ceil(texmaxs[k] / tmpTextureStep - 0.5 + ON_EPSILON);
 	}
 
 	int w = imaxs[0] - imins[0] + 1;
@@ -194,110 +178,8 @@ float CalculatePointVecsProduct(const volatile float* point, const volatile floa
 	return (float)val;
 }
 
-void GetFaceLightmapSize(Bsp* bsp, int facenum, int size[2])
-{
-	int mins[2];
-	int maxs[2];
-
-	GetFaceExtents(bsp, facenum, mins, maxs);
-
-	size[0] = (maxs[0] - mins[0]);
-	size[1] = (maxs[1] - mins[1]);
-
-	size[0] += 1;
-	size[1] += 1;
-	//return !badSurfaceExtents;
-}
-
-int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum)
-{
-	int size[2];
-	GetFaceLightmapSize(bsp, facenum, size);
-	BSPFACE32& face = bsp->faces[facenum];
-
-	int lightmapCount = 0;
-	for (int k = 0; k < MAX_LIGHTMAPS; k++)
-	{
-		lightmapCount += face.nStyles[k] != 255;
-	}
-	return size[0] * size[1] * lightmapCount * sizeof(COLOR3);
-}
-
-int GetFaceSingleLightmapSizeBytes(Bsp* bsp, int facenum)
-{
-	int size[2];
-	GetFaceLightmapSize(bsp, facenum, size);
-	BSPFACE32& face = bsp->faces[facenum];
-	if (face.nStyles[0] == 255)
-		return 0;
-	return size[0] * size[1] * sizeof(COLOR3);
-}
 
 
-bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
-{
-	float mins[2], maxs[2], val;
-
-	bool retval = true;
-
-	mins[0] = mins[1] = 999999.0f;
-	maxs[0] = maxs[1] = -999999.0f;
-
-	BSPFACE32 & face = bsp->faces[facenum];
-
-	BSPTEXTUREINFO tex = bsp->texinfos[face.iTextureInfo];
-
-	for (int i = 0; i < face.nEdges; i++)
-	{
-		vec3 v = vec3();
-		int e = bsp->surfedges[face.iFirstEdge + i];
-		if (e >= 0)
-		{
-			v = bsp->verts[bsp->edges[e].iVertex[0]];
-		}
-		else
-		{
-			v = bsp->verts[bsp->edges[-e].iVertex[1]];
-		}
-		for (int j = 0; j < 2; j++)
-		{
-			float* axis = j == 0 ? (float*)&tex.vS : (float*)&tex.vT;
-			val = CalculatePointVecsProduct((float*)&v, axis);
-
-			if (val < mins[j])
-			{
-				mins[j] = val;
-			}
-			if (val > maxs[j])
-			{
-				maxs[j] = val;
-			}
-		}
-	}
-
-	for (int i = 0; i < 2; i++)
-	{
-		mins_out[i] = (int)floor(mins[i] / TEXTURE_STEP);
-		maxs_out[i] = (int)ceil(maxs[i] / TEXTURE_STEP);
-
-		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * TEXTURE_STEP > 4096)
-		{
-			retval = false;
-			print_log(get_localized_string(LANG_0991),facenum,(int)((maxs_out[i] - mins_out[i]) * TEXTURE_STEP));
-			mins_out[i] = 1;
-			maxs_out[i] = 1;
-		}
-
-		if (maxs_out[i] - mins_out[i] < 0)
-		{
-			retval = false;
-			print_log(PRINT_RED, "Face {} extents are bad. Map can crash.\n", facenum);
-			mins_out[i] = 1;
-			maxs_out[i] = 1;
-		}
-	}
-	return retval;
-}
 
 //
 //bool GetFaceExtentsX(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
@@ -357,24 +239,3 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 //	}
 //	return true;
 //}
-
-bool CalcFaceExtents(Bsp* bsp, lightinfo_t* l)
-{
-	int bmins[2];
-	int bmaxs[2];
-	if (!GetFaceExtents(bsp, l->surfnum, bmins, bmaxs))
-	{
-		for (int i = 0; i < 2; i++)
-		{
-			l->texmins[i] = 0;
-			l->texsize[i] = 0;
-		}
-		return false;
-	}
-	for (int i = 0; i < 2; i++)
-	{
-		l->texmins[i] = bmins[i];
-		l->texsize[i] = bmaxs[i] - bmins[i];
-	}
-	return true;
-}

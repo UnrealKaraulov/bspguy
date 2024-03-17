@@ -584,8 +584,10 @@ void BspRenderer::loadLightmaps()
 			int size[2];
 			int imins[2];
 			int imaxs[2];
-			GetFaceLightmapSize(map, i, size);
-			GetFaceExtents(map, i, imins, imaxs);
+			map->GetFaceLightmapSize(i, size);
+			map->GetFaceExtents(i, imins, imaxs);
+
+			float texture_step = map->CalcFaceTextureStep(i) * 1.0f;
 
 			LightmapInfo& info = lightmaps[i];
 			info.w = size[0];
@@ -594,8 +596,8 @@ void BspRenderer::loadLightmaps()
 			info.midTexV = (float)(size[1]) / 2.0f;
 
 			// TODO: float mins/maxs not needed?
-			info.midPolyU = (imins[0] + imaxs[0]) * 16.0f / 2.0f;
-			info.midPolyV = (imins[1] + imaxs[1]) * 16.0f / 2.0f;
+			info.midPolyU = (imins[0] + imaxs[0]) * texture_step / 2.0f;
+			info.midPolyV = (imins[1] + imaxs[1]) * texture_step / 2.0f;
 
 			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
@@ -914,11 +916,15 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		int faceIdx = model.iFirstFace + i;
 		BSPFACE32& face = map->faces[faceIdx];
 
-		if (face.nEdges <= 0)
+		if (face.nEdges <= 0 || face.iTextureInfo < 0)
 			continue;
 
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 		BSPMIPTEX* tex = NULL;
+
+
+		float texture_step = map->CalcFaceTextureStep(i) * 1.0f;
+
 
 		int texWidth, texHeight;
 		if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
@@ -1072,8 +1078,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			// lightmap texture coords
 			if (hasLighting && lmap)
 			{
-				float fLightMapU = lmap->midTexU + (fU - lmap->midPolyU) / 16.0f;
-				float fLightMapV = lmap->midTexV + (fV - lmap->midPolyV) / 16.0f;
+				float fLightMapU = lmap->midTexU + (fU - lmap->midPolyU) / texture_step;
+				float fLightMapV = lmap->midTexV + (fV - lmap->midPolyV) / texture_step;
 
 				float uu = (fLightMapU / (float)lmap->w) * lw;
 				float vv = (fLightMapV / (float)lmap->h) * lh;

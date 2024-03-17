@@ -3,6 +3,10 @@
 
 float FLT_MAX_COORD = 32767.f;
 int LIGHTMAP_ATLAS_SIZE = 512;
+
+
+int MAX_SURFACE_EXTENT = 64;
+
 unsigned int MAX_MAP_MODELS = 4096;
 unsigned int MAX_MAP_NODES = 32768;
 unsigned int MAX_MAP_CLIPNODES = 32767;
@@ -43,4 +47,6 @@ void ResetBspLimits()
 	MAX_VAL_LEN = 4096;
 
 	TEXTURE_STEP = 16;
+
+	MAX_SURFACE_EXTENT = 64;
 }

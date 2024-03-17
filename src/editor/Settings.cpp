@@ -580,6 +580,10 @@ void AppSettings::load()
 		else if (key == "MAX_MAP_MODELS")
 		{
 			MAX_MAP_MODELS = str_to_int(val);
+		}	
+		else if (key == "MAX_SURFACE_EXTENT")
+		{
+			MAX_SURFACE_EXTENT = str_to_int(val);
 		}
 		else if (key == "MAX_MAP_NODES")
 		{
@@ -905,6 +909,7 @@ void AppSettings::save(std::string path)
 
 	file << "FLT_MAX_COORD=" << FLT_MAX_COORD << std::endl;
 	file << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << std::endl;
+	file << "MAX_SURFACE_EXTENT=" << MAX_SURFACE_EXTENT << std::endl;
 	file << "MAX_MAP_NODES=" << MAX_MAP_NODES << std::endl;
 	file << "MAX_MAP_CLIPNODES=" << MAX_MAP_CLIPNODES << std::endl;
 	file << "MAX_MAP_LEAVES=" << MAX_MAP_LEAVES << std::endl;

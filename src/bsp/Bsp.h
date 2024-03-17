@@ -67,6 +67,7 @@ public:
 	int nodeCount;
 	int texinfoCount;
 	int faceCount;
+	int faceinfoCount;
 	int visDataLength;
 	int clipnodeCount;
 	int leafCount;
@@ -82,6 +83,7 @@ public:
 	BSPNODE32* nodes;
 	BSPTEXTUREINFO* texinfos;
 	BSPFACE32* faces;
+	BSPFACE_INFOEX* faceinfos;
 	unsigned char* visdata;
 	BSPCLIPNODE32* clipnodes;
 	BSPLEAF32* leaves;
@@ -366,6 +368,16 @@ public:
 	void mark_face_structures(int iFace, STRUCTUSAGE* usage);
 	void mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves);
 	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);
+
+	const BSPPLANE getPlaneFromFace(const BSPFACE32* const face);
+	void GetFaceLightmapSize(int facenum, int size[2]);
+	int GetFaceLightmapSizeBytes(int facenum);
+	int GetFaceSingleLightmapSizeBytes(int facenum);
+	bool GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
+	bool CalcFaceExtents(lightinfo_t* l);
+
+	int CalcFaceTextureStep(int facenum);
+
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves

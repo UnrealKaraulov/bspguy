@@ -132,7 +132,6 @@ Bsp::Bsp()
 	is_texture_has_pal = true;
 	target_save_texture_has_pal = true;
 
-	extralumps = NULL;
 
 	force_skip_crc = false;
 
@@ -142,6 +141,9 @@ Bsp::Bsp()
 
 	lumps = new unsigned char* [HEADER_LUMPS];
 	memset(lumps, 0, sizeof(unsigned char*) * HEADER_LUMPS);
+
+	extralumps = NULL;
+
 	bsp_header.nVersion = 30;
 }
 
@@ -1116,7 +1118,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 	// need update all lighting offsets!!!!
 	if (logged)
 	{
-		resize_all_lightmaps();
+		//resize_all_lightmaps();
 		g_progress.clear();
 		g_progress = ProgressMeter();
 	}
@@ -1223,7 +1225,7 @@ void Bsp::save_undo_lightmaps(bool logged)
 	for (int i = 0; i < faceCount; i++)
 	{
 		int size[2];
-		GetFaceLightmapSize(this, i, size);
+		GetFaceLightmapSize(i, size);
 
 		undo_lightmaps[i].layers = lightmap_count(i);
 
@@ -1273,7 +1275,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 			size[1] = undo_lightmaps[faceId].height;
 
 			int newsize[2];
-			GetFaceLightmapSize(this, faceId, newsize);
+			GetFaceLightmapSize(faceId, newsize);
 
 			int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 			int offset = face.nLightmapOffset + lightId * lightmapSz;
@@ -1768,7 +1770,7 @@ unsigned int Bsp::remove_unused_lightmaps(bool* usedFaces)
 	{
 		if (usedFaces[i] && faces[i].nLightmapOffset >= 0)
 		{
-			lightmapSizes[i] = GetFaceLightmapSizeBytes(this, i);
+			lightmapSizes[i] = GetFaceLightmapSizeBytes(i);
 			newLightDataSize += lightmapSizes[i];
 		}
 		else
@@ -3837,7 +3839,7 @@ bool Bsp::load_lumps(std::string fpath)
 		if (light_offset >= 0 && !tmp_offsets.count(light_offset))
 		{
 			tmp_offsets.insert(light_offset);
-			lightmap3_bytes += GetFaceLightmapSizeBytes(this, i);
+			lightmap3_bytes += GetFaceLightmapSizeBytes(i);
 		}
 	}
 
@@ -3845,7 +3847,7 @@ bool Bsp::load_lumps(std::string fpath)
 	int lightmap4_bytes = lightmap1_bytes * sizeof(COLOR4);
 
 	is_colored_lightmap = lightdata == NULL || abs(lightmap1_bytes - lightDataLength) > abs(lightmap3_bytes - lightDataLength);
-		
+
 	bool is_fuck_rgba_lightmap = false;
 
 	if (is_colored_lightmap && lightdata != NULL)
@@ -4337,7 +4339,7 @@ bool Bsp::validate()
 		int bmins[2];
 		int bmaxs[2];
 		if (isValid)
-			isValid = GetFaceExtents(this, i, bmins, bmaxs);
+			isValid = GetFaceExtents(i, bmins, bmaxs);
 
 		if (isValid)
 		{
@@ -4365,11 +4367,16 @@ bool Bsp::validate()
 
 		for (int n = 0; n < 3; n++)
 		{
+			bool swapped = false;
 			if (leaves[i].nMins[n] > leaves[i].nMaxs[n])
+			{
+				swapped = true;
+				isValid = false;
+			}
+			if (swapped)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, "backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
 					leaves[i].nMaxs[0], leaves[i].nMaxs[1], leaves[i].nMaxs[2]);
-				isValid = false;
 			}
 		}
 	}
@@ -6050,12 +6057,14 @@ void Bsp::create_inside_box(const vec3& min, const vec3& max, BSPMODEL* targetMo
 	{
 		BSPFACE32 face = faces[f];
 		int size[2];
-		GetFaceLightmapSize(this, f, size);
-		size[0] *= TEXTURE_STEP;
-		size[1] *= TEXTURE_STEP;
+		GetFaceLightmapSize(f, size);
+
 		if (face.iTextureInfo >= 0)
 		{
 			BSPTEXTUREINFO* texinfo = get_unique_texinfo(f);
+
+			size[0] *= TEXTURE_STEP;
+			size[1] *= TEXTURE_STEP;
 
 			if (texinfo->iMiptex >= 0)
 			{
@@ -6992,7 +7001,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 
 			// TODO: Check if face even has lighting
 			int size[2];
-			GetFaceLightmapSize(this, i, size);
+			GetFaceLightmapSize(i, size);
 
 			int lightmapCount = lightmap_count(i);
 
@@ -8733,6 +8742,10 @@ void Bsp::update_lump_pointers()
 	nodes = (BSPNODE32*)lumps[LUMP_NODES];
 	clipnodes = (BSPCLIPNODE32*)lumps[LUMP_CLIPNODES];
 	faces = (BSPFACE32*)lumps[LUMP_FACES];
+	if (is_bsp30ext && extralumps)
+		faceinfos = (BSPFACE_INFOEX*)extralumps[LUMP_FACEINFO];
+	else
+		faceinfos = NULL;
 	verts = (vec3*)lumps[LUMP_VERTICES];
 	lightdata = lumps[LUMP_LIGHTING];
 	surfedges = (int*)lumps[LUMP_SURFEDGES];
@@ -8748,6 +8761,10 @@ void Bsp::update_lump_pointers()
 	nodeCount = bsp_header.lump[LUMP_NODES].nLength / sizeof(BSPNODE32);
 	vertCount = bsp_header.lump[LUMP_VERTICES].nLength / sizeof(vec3);
 	faceCount = bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE32);
+	if (is_bsp30ext && extralumps)
+		faceinfoCount = bsp_header_ex.lump[LUMP_FACEINFO].nLength / sizeof(BSPFACE_INFOEX);
+	else
+		faceinfoCount = 0;
 	clipnodeCount = bsp_header.lump[LUMP_CLIPNODES].nLength / sizeof(BSPCLIPNODE32);
 	marksurfCount = bsp_header.lump[LUMP_MARKSURFACES].nLength / sizeof(int);
 	surfedgeCount = bsp_header.lump[LUMP_SURFEDGES].nLength / sizeof(int);
@@ -8990,7 +9007,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 					bonemap[tmpentid] = lastboneid;
 				}
 
-				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
+				BSPPLANE tmpPlane = getPlaneFromFace(&face);
 
 				for (int v = 0; v < rface->vertCount; v += 3)
 				{
@@ -9460,7 +9477,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 					fprintf(f, "v %f %f %f\n", org_pos.x * scale, org_pos.y * scale, org_pos.z * scale);
 				}
 
-				BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
+				BSPPLANE tmpPlane = getPlaneFromFace(&face);
 
 				for (int n = 0; n < rface->vertCount; n++)
 				{
@@ -9784,7 +9801,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 			std::vector<int> faceContents = getFaceContents(i);
 
-			BSPPLANE tmpPlane = getPlaneFromFace(this, &face);
+			BSPPLANE tmpPlane = getPlaneFromFace(&face);
 
 			std::vector<vec3> points = get_face_verts(i);
 			placePointsToPlane(points, tmpPlane);
@@ -10989,7 +11006,7 @@ void Bsp::ExportExtFile(const std::string& path, std::string& out_map_path)
 	for (int i = 0; i < faceCount; i++)
 	{
 		int mins[2]; int maxs[2];
-		GetFaceExtents(this, i, mins, maxs);
+		GetFaceExtents(i, mins, maxs);
 		targetFile << fmt::format("{} {} {} {}\n", mins[0], mins[1], maxs[0], maxs[1]);
 	}
 
@@ -11460,7 +11477,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 		{
 			int tmins[2];
 			int tmaxs[2];
-			if (!GetFaceExtents(this, (int)f, tmins, tmaxs))
+			if (!GetFaceExtents((int)f, tmins, tmaxs))
 			{
 				BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[f].iTextureInfo];
 				texInfo.nFlags = TEX_SPECIAL;
@@ -11821,4 +11838,179 @@ Entity* Bsp::getWorldspawnEnt()
 		return ents[entId];
 	}
 	return NULL;
+}
+
+
+
+bool Bsp::CalcFaceExtents(lightinfo_t* l)
+{
+	int bmins[2];
+	int bmaxs[2];
+	if (!GetFaceExtents(l->surfnum, bmins, bmaxs))
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			l->texmins[i] = 0;
+			l->texsize[i] = 0;
+		}
+		return false;
+	}
+	for (int i = 0; i < 2; i++)
+	{
+		l->texmins[i] = bmins[i];
+		l->texsize[i] = bmaxs[i] - bmins[i];
+	}
+	return true;
+}
+
+
+
+bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
+{
+	float mins[2], maxs[2], val;
+
+	bool retval = true;
+
+	mins[0] = mins[1] = 999999.0f;
+	maxs[0] = maxs[1] = -999999.0f;
+
+	BSPFACE32& face = faces[facenum];
+
+	BSPTEXTUREINFO tex = texinfos[face.iTextureInfo];
+
+	for (int i = 0; i < face.nEdges; i++)
+	{
+		vec3 v = vec3();
+		int e = surfedges[face.iFirstEdge + i];
+		if (e >= 0)
+		{
+			v = verts[edges[e].iVertex[0]];
+		}
+		else
+		{
+			v = verts[edges[-e].iVertex[1]];
+		}
+		for (int j = 0; j < 2; j++)
+		{
+			float* axis = j == 0 ? (float*)&tex.vS : (float*)&tex.vT;
+			val = CalculatePointVecsProduct((float*)&v, axis);
+
+			if (val < mins[j])
+			{
+				mins[j] = val;
+			}
+			if (val > maxs[j])
+			{
+				maxs[j] = val;
+			}
+		}
+	}
+
+	for (int i = 0; i < 2; i++)
+	{
+		int tmpTextureStep = CalcFaceTextureStep(facenum);
+
+		mins_out[i] = (int)floor(mins[i] / tmpTextureStep);
+		maxs_out[i] = (int)ceil(maxs[i] / tmpTextureStep);
+
+		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * tmpTextureStep > (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT))
+		{
+			retval = false;
+			print_log(get_localized_string("BAD_SURFACE_EXT"), facenum, (int)((maxs_out[i] - mins_out[i]) * tmpTextureStep), (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT));
+			mins_out[i] = 1;
+			maxs_out[i] = 1;
+		}
+
+		if (maxs_out[i] - mins_out[i] < 0)
+		{
+			retval = false;
+			print_log(PRINT_RED, "Face {} extents are bad. Map can crash.\n", facenum);
+			mins_out[i] = 1;
+			maxs_out[i] = 1;
+		}
+	}
+	return retval;
+}
+
+int Bsp::GetFaceSingleLightmapSizeBytes(int facenum)
+{
+	int size[2];
+	GetFaceLightmapSize(facenum, size);
+	BSPFACE32& face = faces[facenum];
+	if (face.nStyles[0] == 255)
+		return 0;
+	return size[0] * size[1] * sizeof(COLOR3);
+}
+
+void Bsp::GetFaceLightmapSize(int facenum, int size[2])
+{
+	int mins[2];
+	int maxs[2];
+
+	GetFaceExtents(facenum, mins, maxs);
+
+	size[0] = (maxs[0] - mins[0]);
+	size[1] = (maxs[1] - mins[1]);
+
+	size[0] += 1;
+	size[1] += 1;
+	//return !badSurfaceExtents;
+}
+
+int Bsp::GetFaceLightmapSizeBytes(int facenum)
+{
+	int size[2];
+	GetFaceLightmapSize(facenum, size);
+	BSPFACE32& face = faces[facenum];
+
+	int lightmapCount = 0;
+	for (int k = 0; k < MAX_LIGHTMAPS; k++)
+	{
+		lightmapCount += face.nStyles[k] != 255;
+	}
+	return size[0] * size[1] * lightmapCount * sizeof(COLOR3);
+}
+
+const BSPPLANE Bsp::getPlaneFromFace(const BSPFACE32* const face)
+{
+	if (!face)
+	{
+		print_log(get_localized_string(LANG_0990));
+		return BSPPLANE();
+	}
+
+	if (face->nPlaneSide)
+	{
+		BSPPLANE backplane = planes[face->iPlane];
+		backplane.fDist = -backplane.fDist;
+		backplane.vNormal = backplane.vNormal.invert();
+		return backplane;
+	}
+	else
+	{
+		return planes[face->iPlane];
+	}
+}
+
+int Bsp::CalcFaceTextureStep(int facenum)
+{
+	// next xash 
+	if (is_bsp30ext && extralumps)
+	{
+		BSPTEXTUREINFO& tex = texinfos[faces[facenum].iTextureInfo];
+
+		if (tex.nFlags & TEX_WORLD_LUXELS)
+			return 1;
+
+		if (tex.nFlags & TEX_EXTRA_LIGHTMAP)
+			return 8;
+
+		short faceInfo = (tex.nFlags >> 16) & 0xFFFF;
+		if (faceInfo >= 0 && faceInfo < faceinfoCount)
+		{
+			return faceinfos[faceInfo].texture_step;
+		}
+	}
+
+	return TEXTURE_STEP;
 }

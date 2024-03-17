@@ -43,6 +43,16 @@
 #define EXTRA_LUMPS			12	// count of the extra lumps
 #define EXTRA_LUMPS_OLD		8	// count of the extra lumps
 
+
+
+struct BSPFACE_INFOEX
+{
+	char        landname[16];    // name of decsription in mapname_land.txt
+	unsigned short    texture_step;    // default is 16, pixels\luxels ratio
+	unsigned short    max_extent;    // default is 16, subdivision step ((texture_step * max_extent) - texture_step)
+	short        groupid;        // to determine equal landscapes from various groups, -1 - no group
+};
+
 enum lump_copy_targets
 {
 	FL_ENTITIES = 1,
