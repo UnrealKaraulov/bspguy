@@ -1181,28 +1181,28 @@ void Renderer::controls()
 
 	if (canControl/* && !blockMoving*/)
 	{
-	/*	if (anyCtrlPressed && anyAltPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
-			&& pickMode != PICK_OBJECT && pickInfo.selectedFaces.size() == 1)
-		{
-			Bsp* map = SelectedMap;
-			if (map)
+		/*	if (anyCtrlPressed && anyAltPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
+				&& pickMode != PICK_OBJECT && pickInfo.selectedFaces.size() == 1)
 			{
-				blockMoving = true;
-				BSPFACE32& selface = map->faces[pickInfo.selectedFaces[0]];
-				BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
-				deselectFaces();
-				for (int i = 0; i < map->faceCount; i++)
+				Bsp* map = SelectedMap;
+				if (map)
 				{
-					BSPFACE32& face = map->faces[i];
-					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-					if (texinfo.iMiptex == seltexinfo.iMiptex)
+					blockMoving = true;
+					BSPFACE32& selface = map->faces[pickInfo.selectedFaces[0]];
+					BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
+					deselectFaces();
+					for (int i = 0; i < map->faceCount; i++)
 					{
-						map->getBspRender()->highlightFace(i, 1);
-						pickInfo.selectedFaces.push_back(i);
+						BSPFACE32& face = map->faces[i];
+						BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+						if (texinfo.iMiptex == seltexinfo.iMiptex)
+						{
+							map->getBspRender()->highlightFace(i, 1);
+							pickInfo.selectedFaces.push_back(i);
+						}
 					}
 				}
-			}
-		}*/
+			}*/
 
 		cameraOrigin += getMoveDir() * (float)(curTime - oldTime) * moveSpeed;
 
@@ -4059,18 +4059,23 @@ void Renderer::goToFace(Bsp* map, int faceIdx)
 	if (face.iFirstEdge >= 0 && face.nEdges)
 	{
 		BSPPLANE plane = map->planes[face.iPlane];
+
 		vec3 planeNormal = face.nPlaneSide ? plane.vNormal * -1 : plane.vNormal;
-		float dist = plane.fDist;
+
+		planeNormal = planeNormal.normalize();
+
 		int model = map->get_model_from_face(faceIdx);
+
+		bool flip = false;
+
 		vec3 offset = {};
 		if (model >= 0 && model < map->modelCount)
 		{
-			offset = map->models[model].vOrigin;
-
 			int ent = map->get_ent_from_model(model);
 			if (ent > 0 && ent < map->ents.size())
 			{
-				offset += map->ents[ent]->origin;
+				offset = map->ents[ent]->origin;
+				flip = true;
 			}
 		}
 
@@ -4083,16 +4088,24 @@ void Renderer::goToFace(Bsp* map, int faceIdx)
 			edgeVerts.push_back(map->verts[vertIdx]);
 		}
 
-		vec3 center_object = getCenter(edgeVerts) + offset;
-		vec3 center_camera = center_object + (planeNormal * 250.0f * (face.nPlaneSide ? -1.0f : 1.0f));
+		vec3 center_object = getCentroid(edgeVerts) + offset;
+
+		vec3 center_camera = center_object + (planeNormal * 200.0f);
 
 		goToCoords(center_camera.x, center_camera.y, center_camera.z);
 
-		vec3 direction = (center_object - center_camera).flip().normalize();
-		float pitch = asin(-direction.y) * 180.0f / HL_PI;
-		float yaw = atan2(direction.x, direction.z) * 180.0f / HL_PI;
+		vec3 direction = (center_camera - center_object).normalize();
+
+		direction = direction.flip();
+
+		float pitch = asin(direction.y) * (180.0f / HL_PI);
+		float yaw = atan2(direction.x, direction.z) * (180.0f / HL_PI);
+
+		if (flip)
+			yaw *= -1.0f;
 
 		cameraAngles = { pitch, 0.0f , yaw };
+		cameraAngles = cameraAngles.normalize_angles();
 	}
 }
 void Renderer::goToCoords(float x, float y, float z)
