@@ -165,7 +165,7 @@ int test()
 	removed.print_delete_stats(1);
 
 	BspMerger merger;
-	Bsp* result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false);
+	Bsp* result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false,false);
 	print_log("\n");
 	if (result)
 	{
@@ -237,7 +237,7 @@ int merge_maps(CommandLine& cli)
 	std::string output_name = cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile;
 
 	BspMerger merger;
-	Bsp* result = merger.merge(maps, gap, output_name, cli.hasOption("-noripent"), cli.hasOption("-noscript"));
+	Bsp* result = merger.merge(maps, gap, output_name, cli.hasOption("-noripent"), cli.hasOption("-noscript"), cli.hasOption("-nostyles"));
 
 	print_log("\n");
 	if (result->validate() && result->isValid()) result->write(output_name);

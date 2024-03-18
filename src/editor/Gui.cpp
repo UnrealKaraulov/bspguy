@@ -9003,6 +9003,7 @@ void Gui::drawMergeWindow()
 	static bool Optimize = false;
 	static bool DeleteHull2 = false;
 	static bool NoRipent = false;
+	static bool NoStyles = false;
 	static bool NoScript = true;
 
 	bool addNew = false;
@@ -9055,6 +9056,7 @@ void Gui::drawMergeWindow()
 		ImGui::Checkbox(get_localized_string(LANG_0830).c_str(), &DeleteHull2);
 		ImGui::Checkbox(get_localized_string(LANG_0831).c_str(), &NoRipent);
 		ImGui::Checkbox(get_localized_string(LANG_0832).c_str(), &NoScript);
+		ImGui::Checkbox("Skip lightstyles merging", &NoStyles);
 
 		if (ImGui::Button(get_localized_string(LANG_1122).c_str(), ImVec2(120, 0)))
 		{
@@ -9117,7 +9119,7 @@ void Gui::drawMergeWindow()
 					print_log("\n");
 				}
 				BspMerger merger;
-				Bsp* result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript);
+				Bsp* result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript, NoStyles);
 
 				print_log("\n");
 				if (result->isValid()) result->write(outPath);

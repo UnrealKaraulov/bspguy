@@ -24,7 +24,7 @@ public:
 	// merges all maps into one
 	// noripent - don't change any entity logic
 	// noscript - don't add support for the bspguy map script (worse performance + buggy, but simpler)
-	Bsp* merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript);
+	Bsp* merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomergestyles);
 
 
 	// wrapper around BSP data merging for nicer console output
@@ -89,4 +89,6 @@ public:
 	int thisMarkSurfCount = 0;
 	int thisEdgeCount = 0;
 	int thisVertCount = 0;
+
+	bool skipLightStyles = false;
 };

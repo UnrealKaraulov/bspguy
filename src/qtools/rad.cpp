@@ -177,9 +177,6 @@ float CalculatePointVecsProduct(const volatile float* point, const volatile floa
 	return (float)val;
 }
 
-
-
-
 //
 //bool GetFaceExtentsX(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 //{

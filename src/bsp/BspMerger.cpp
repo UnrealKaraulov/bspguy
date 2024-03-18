@@ -6,13 +6,124 @@
 #include "vis.h"
 
 
-Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript)
+Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomergestyles)
 {
-	if (maps.size() < 1)
+	if (maps.size() < 2)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0219));
 		return NULL;
 	}
+
+	skipLightStyles = nomergestyles;
+
+
+	if (!skipLightStyles)
+	{
+		const int start_toggle_lightstyle = 32;
+		std::set<int> usage_lightstyles;
+		std::map<unsigned char, unsigned char> remap_light_styles;
+
+		for (int i = 0; i < maps[0]->faceCount; i++)
+		{
+			for (int s = 0; s < MAX_LIGHTMAPS; s++)
+			{
+				unsigned char style = maps[0]->faces[i].nStyles[s];
+
+				if (style < 255 &&
+					style >= start_toggle_lightstyle &&
+					!usage_lightstyles.count(style))
+				{
+					usage_lightstyles.insert(style);
+				}
+			}
+
+			g_progress.tick();
+		}
+
+		for (size_t b = 1; b < maps.size(); b++)
+		{
+			Bsp* mapB = maps[b];
+
+
+			mapB->save_undo_lightmaps();
+
+			g_progress.update("Merging lightstyles", (int)(maps[0]->faceCount + maps[b]->faceCount));
+
+
+			int remapped_lightstyles = 0;
+			int remapped_lightfaces = 0;
+
+			for (int i = 0; i < mapB->faceCount; i++)
+			{
+				for (int s = 0; s < MAX_LIGHTMAPS; s++)
+				{
+					unsigned char style = mapB->faces[i].nStyles[s];
+
+					if (style < 255 &&
+						style >= start_toggle_lightstyle &&
+						usage_lightstyles.count(style))
+					{
+						if (remap_light_styles.find(style) != remap_light_styles.end())
+						{/*
+							print_log(PRINT_GREEN,"REMAP {} TO {}\n", mapB.faces[i].nStyles[s], remap_light_styles[style]);*/
+							mapB->faces[i].nStyles[s] = remap_light_styles[style];
+							remapped_lightfaces++;
+							continue;
+						}
+
+						remapped_lightstyles++;
+						unsigned char newstyle = 32;
+						for (; newstyle < 254; newstyle++)
+						{
+							if (!usage_lightstyles.count(newstyle)
+								&& remap_light_styles.find(style) == remap_light_styles.end())
+							{
+								break;
+							}
+						}
+
+						remap_light_styles[style] = newstyle;
+
+
+						//print_log(PRINT_GREEN, "REMAP2  {} TO {}\n", mapB.faces[i].nStyles[s], remap_light_styles[style]);
+						mapB->faces[i].nStyles[s] = newstyle;
+
+
+						usage_lightstyles.insert(newstyle);
+					}
+				}
+
+				g_progress.tick();
+			}
+
+			int remapped_lightents = 0;
+
+			for (size_t i = 0; i < mapB->ents.size(); i++)
+			{
+				if (mapB->ents[i]->keyvalues["classname"].find("light") != std::string::npos)
+				{
+					if (mapB->ents[i]->hasKey("style"))
+					{
+						int style = str_to_int(mapB->ents[i]->keyvalues["style"]);
+						if (style < 255 && style >= start_toggle_lightstyle && remap_light_styles.find((unsigned char)style) != remap_light_styles.end())
+						{
+							remapped_lightents++;
+							mapB->ents[i]->setOrAddKeyvalue("style", std::to_string(remap_light_styles[style]));
+						}
+					}
+				}
+			}
+
+			print_log(PRINT_BLUE, "MapA used {} light styles. MapB used {} light styles!\n", usage_lightstyles.size(), remap_light_styles.size());
+			print_log(PRINT_BLUE, "Remapped {} light styles in {} entities and {} faces!\n", remapped_lightstyles, remapped_lightents, remapped_lightfaces);
+
+			mapB->resize_all_lightmaps();
+
+			remap_light_styles.clear();
+		}
+	}
+
+
 	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap);
 
 
@@ -1064,99 +1175,6 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 
 		g_progress.tick();
 	}
-
-	
-	const int start_toggle_lightstyle = 32;
-
-	g_progress.update("Merging lightstyles", (int)(mapA.faceCount + mapB.faceCount));
-
-	mapB.save_undo_lightmaps();
-
-	std::set<int> usage_lightstyles;
-	std::map<unsigned char, unsigned char> remap_light_styles;
-
-	for (int i = 0; i < mapA.faceCount; i++)
-	{
-		for (int s = 0; s < MAX_LIGHTMAPS; s++)
-		{
-			unsigned char style = mapA.faces[i].nStyles[s];
-
-			if (style < 255 &&
-				style >= start_toggle_lightstyle &&
-				!usage_lightstyles.count(style))
-			{
-				usage_lightstyles.insert(style);
-			}
-		}
-
-		g_progress.tick();
-	}
-
-	int remapped_lightstyles = 0;
-	int remapped_lightfaces = 0;
-
-	for (int i = 0; i < mapB.faceCount; i++)
-	{
-		for (int s = 0; s < MAX_LIGHTMAPS; s++)
-		{
-			unsigned char style = mapB.faces[i].nStyles[s];
-
-			if (style < 255 &&
-				style >= start_toggle_lightstyle &&
-				usage_lightstyles.count(style))
-			{
-				if (remap_light_styles.find(style) != remap_light_styles.end())
-				{/*
-					print_log(PRINT_GREEN,"REMAP {} TO {}\n", mapB.faces[i].nStyles[s], remap_light_styles[style]);*/
-					mapB.faces[i].nStyles[s] = remap_light_styles[style];
-					remapped_lightfaces++;
-					continue;
-				}
-
-				remapped_lightstyles++;
-				unsigned char newstyle = 32;
-				for (; newstyle < 254; newstyle++)
-				{
-					if (!usage_lightstyles.count(newstyle)
-						&& remap_light_styles.find(style) == remap_light_styles.end())
-					{
-						break;
-					}
-				}
-
-				remap_light_styles[style] = newstyle;
-
-
-				//print_log(PRINT_GREEN, "REMAP2  {} TO {}\n", mapB.faces[i].nStyles[s], remap_light_styles[style]);
-				mapB.faces[i].nStyles[s] = newstyle;
-			}
-		}
-
-		g_progress.tick();
-	}
-
-	int remapped_lightents = 0;
-
-	for (size_t i = 0; i < mapB.ents.size(); i++)
-	{
-		if (mapB.ents[i]->keyvalues["classname"].find("light") != std::string::npos)
-		{
-			if (mapB.ents[i]->hasKey("style"))
-			{
-				int style = str_to_int(mapB.ents[i]->keyvalues["style"]);
-				if (style < 255 && style >= start_toggle_lightstyle && remap_light_styles.find((unsigned char)style) != remap_light_styles.end())
-				{
-					remapped_lightents++;
-					mapB.ents[i]->setOrAddKeyvalue("style", std::to_string(remap_light_styles[style]));
-				}
-			}
-		}
-	}
-
-	print_log(PRINT_BLUE, "MapA used {} light styles. MapB used {} light styles!\n", usage_lightstyles.size(), remap_light_styles.size());
-	print_log(PRINT_BLUE, "Remapped {} light styles in {} entities and {} faces!\n", remapped_lightstyles, remapped_lightents, remapped_lightfaces);
-
-	mapB.resize_all_lightmaps();
 
 	for (size_t i = 0; i < mapB.ents.size(); i++)
 	{
