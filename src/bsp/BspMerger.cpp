@@ -44,7 +44,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 		{
 			Bsp* mapB = maps[b];
 
-
+			mapB->load_ents();
 			mapB->save_undo_lightmaps();
 
 			g_progress.update("Merging lightstyles", (int)(maps[0]->faceCount + maps[b]->faceCount));
