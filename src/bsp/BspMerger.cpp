@@ -2017,9 +2017,6 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 
 void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane)
 {
-	if (separationPlane.nType == -1)
-		return;
-
 	BSPMODEL& thisWorld = mapA.models[0];
 	BSPMODEL& otherWorld = mapB.models[0];
 
@@ -2050,8 +2047,8 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 		BSPNODE32 headNode = {
 			separationPlaneIdx,			// plane idx
 			{mapA.nodeCount + 1, 1},		// child nodes
-			{ bmin.x,bmin.y,bmin.z },	// mins
-			{ bmax.x, bmax.y,bmax.z },	// maxs
+			{ std::min(amin.x, bmin.x), std::min(amin.y, bmin.y), std::min(amin.z, bmin.z) },	// mins
+			{ std::max(amax.x, bmax.x), std::max(amax.y, bmax.y), std::max(amax.z, bmax.z) },	// maxs
 			0, // first face
 			0  // n faces (none since this plane is in the void)
 		};

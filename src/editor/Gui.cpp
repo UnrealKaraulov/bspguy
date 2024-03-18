@@ -9004,7 +9004,7 @@ void Gui::drawMergeWindow()
 	static bool DeleteHull2 = false;
 	static bool NoRipent = false;
 	static bool NoStyles = false;
-	static bool NoScript = true;
+	static bool NoScript = false;
 
 	bool addNew = false;
 
