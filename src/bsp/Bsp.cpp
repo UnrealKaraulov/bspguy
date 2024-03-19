@@ -9446,10 +9446,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	{
 		fprintf(f, "# Exported using bspguy!\n");
 
-		fprintf(f, "%s", "s 1\n");
 		fprintf(f, "mtllib %s.mtl\n", bsp_name.c_str());
-
-		//fprintf(f, "s off\n");
 
 		std::string groupname = std::string();
 
@@ -9743,7 +9740,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 					fprintf(f, "vn %f %f %f\n", org_norm.x, org_norm.z, -org_norm.y);
 				}
-
 				for (int n = 0; n < rface->vertCount; n++)
 				{
 					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
@@ -9764,6 +9760,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 					fprintf(f, "vt %f %f\n", fU, fV);
 				}
 
+				fprintf(f, "%s", "s off\n");
 				if (lastmaterialid != materialid)
 				{
 					fprintf(f, "usemtl %s\n", materialid.c_str());
