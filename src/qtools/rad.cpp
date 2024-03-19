@@ -101,14 +101,19 @@ void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
 
 bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 {
-	float texmins[2]{}, texmaxs[2]{};
+	float texmins[2] = { 0.0f,0.0f };
+	
+	float texmaxs[2] = { 0.0f,0.0f };
 
 	matrix_t worldtotex;
+	memset(worldtotex.v, 0, sizeof(worldtotex.v));
 	matrix_t textoworld;
+	memset(worldtotex.v, 0, sizeof(worldtotex.v));
 
 	BSPFACE32* f = &bsp->faces[facenum];
 	if (f->iTextureInfo < 0 || bsp->texinfos[f->iTextureInfo].nFlags & TEX_SPECIAL)
 	{
+		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}
 
@@ -117,20 +122,26 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 	TranslateWorldToTex(bsp, facenum, worldtotex);
 	if (!InvertMatrix(worldtotex, textoworld))
 	{
+		print_log(PRINT_RED, "CanFindFacePosition error InvertMatrix!\n");
+		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}
 
 	Winding facewinding(bsp, *f);
 	Winding texwinding(facewinding.m_Points.size());
+
 	for (int x = 0; x < facewinding.m_Points.size(); x++)
 	{
 		ApplyMatrix(worldtotex, facewinding.m_Points[x], texwinding.m_Points[x]);
 		texwinding.m_Points[x][2] = 0.0;
 	}
+
 	texwinding.RemoveColinearPoints();
 
 	if (texwinding.m_Points.size() == 0)
 	{
+		print_log(PRINT_RED, "CanFindFacePosition error texwinding!\n");
+		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}
 
@@ -155,8 +166,10 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 
 	int w = imaxs[0] - imins[0] + 1;
 	int h = imaxs[1] - imins[1] + 1;
-	if (w <= 0 || h <= 0 || (double)w * (double)h > 99999999)
+	if (w <= 0 || h <= 0 || w * h > 99999999)
 	{
+		print_log(PRINT_RED, "CanFindFacePosition invalid size!\n");
+		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}
 	return true;

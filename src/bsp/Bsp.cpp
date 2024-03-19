@@ -119,6 +119,7 @@ Bsp::Bsp()
 	undo_lightmaps.clear();
 
 	is_bsp30ext = false;
+	is_bsp31 = false;
 	is_bsp2 = false;
 	is_bsp_pathos = false;
 	is_bsp2_old = false;
@@ -156,6 +157,7 @@ Bsp::Bsp(std::string fpath)
 	undo_lightmaps.clear();
 
 	is_bsp30ext = false;
+	is_bsp31 = false;
 	is_bsp2 = false;
 	is_bsp_pathos = false;
 	is_bsp2_old = false;
@@ -185,7 +187,7 @@ Bsp::Bsp(std::string fpath)
 	else
 	{
 		std::string lowerpath = toLowerCase(fpath);
-		if (lowerpath.ends_with(".mdl"))
+		if (lowerpath.ends_with(".mdl_input"))
 		{
 			is_mdl_model = true;
 			if (fileExists(fpath))
@@ -2863,6 +2865,7 @@ void Bsp::write(const std::string& path)
 	{
 		is_bsp_pathos = false;
 	}
+
 	//if (is_bsp2_old)
 	//{
 	//	is_bsp2_old = false;
@@ -3402,6 +3405,55 @@ bool Bsp::load_lumps(std::string fpath)
 			print_log(get_localized_string(LANG_0086), i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
 	}
 
+	BSPLUMP extra_clipnodes_lumps[2];
+	BSPCLIPNODE16* extra_clipnodes_data[2] = { NULL,NULL };
+	int extra_clipnodes_count[2] = { 0, 0 };
+
+	if (bsp_header.nVersion == 31)
+	{
+		print_log("Detected BSP v31 [UNSUPPORTED]. Need convert to 32 bit clipnodes...\n");
+		is_bsp31 = true;
+
+		for (int i = HEADER_LUMPS; i <= HEADER_LUMPS + 1; i++)
+		{
+			fin.read((char*)&extra_clipnodes_lumps[i - HEADER_LUMPS], sizeof(BSPLUMP));
+
+			if (g_settings.verboseLogs)
+				print_log("[BAD v31 BSP] " + get_localized_string(LANG_0086), i, extra_clipnodes_lumps[i - HEADER_LUMPS].nLength, extra_clipnodes_lumps[i - HEADER_LUMPS].nOffset);
+		}
+
+		for (int i = 0; i < 2; i++)
+		{
+			if (extra_clipnodes_lumps[i].nLength == 0)
+			{
+				extralumps[i] = NULL;
+				continue;
+			}
+
+			if (extra_clipnodes_lumps[i].nOffset >= size || extra_clipnodes_lumps[i].nOffset < 0 || extra_clipnodes_lumps[i].nLength < 0)
+			{
+				print_log(get_localized_string(LANG_0090), i);
+				break;
+			}
+
+			fin.seekg(extra_clipnodes_lumps[i].nOffset);
+			if (fin.eof() || extra_clipnodes_lumps[i].nOffset + extra_clipnodes_lumps[i].nLength > size)
+			{
+				print_log(get_localized_string(LANG_1020), i);
+				break;
+			}
+			else
+			{
+				extra_clipnodes_count[i] = extra_clipnodes_lumps[i].nLength / sizeof(BSPCLIPNODE16);
+				if (extra_clipnodes_count[i] > 0)
+				{
+					extra_clipnodes_data[i] = new BSPCLIPNODE16[extra_clipnodes_count[i]];
+					fin.read((char*)extra_clipnodes_data[i], extra_clipnodes_count[i] * sizeof(BSPCLIPNODE16));
+				}
+			}
+		}
+	}
+
 	fin.read((char*)&bsp_header_ex.id, sizeof(int));
 
 	if (bsp_header_ex.id == 'HSAX' /* XASH */)
@@ -3666,14 +3718,6 @@ bool Bsp::load_lumps(std::string fpath)
 				if (is_broken_clipnodes)
 				{
 					print_log(get_localized_string(LANG_0096));
-				}
-				else
-				{
-					print_log(get_localized_string(LANG_0097));
-				}
-
-				if (is_broken_clipnodes)
-				{
 					for (int n = 0; n < clipnodeCount; n++)
 					{
 						tmpclipnodes[n].iChildren[0] = (unsigned short)clipnodes16[n].iChildren[0];
@@ -3692,6 +3736,13 @@ bool Bsp::load_lumps(std::string fpath)
 						}
 
 						tmpclipnodes[n].iPlane = clipnodes16[n].iPlane;
+					}
+				}
+				else
+				{
+					if (!is_bsp31)
+					{
+						print_log(get_localized_string(LANG_0097));
 					}
 				}
 
@@ -3981,6 +4032,87 @@ bool Bsp::load_lumps(std::string fpath)
 	originCrc32 = crc32;
 
 	fin.close();
+
+
+	update_lump_pointers();
+
+	if (is_bsp31)
+	{
+		is_32bit_clipnodes = true;
+		if (extra_clipnodes_count[0] || extra_clipnodes_count[1])
+		{
+			print_log("Convert clipnodes from 31 BSP version to BSP30ex\n");
+			int newCount = clipnodeCount + extra_clipnodes_count[0] + extra_clipnodes_count[1];
+
+			print_log("Old clipnode count {} new clipnode count {}\n", clipnodeCount, newCount);
+
+			BSPCLIPNODE32* newClipnodes = new BSPCLIPNODE32[newCount];
+			memcpy(newClipnodes, clipnodes, clipnodeCount * sizeof(BSPCLIPNODE32));
+
+			print_log("First clipnode of hull 2 : {}\n", clipnodeCount);
+
+			int offset = clipnodeCount;
+
+			for (int i = 0; i < extra_clipnodes_count[0]; i++)
+			{
+				newClipnodes[i + offset].iChildren[0] = extra_clipnodes_data[0][i].iChildren[0];
+
+				if (newClipnodes[i + offset].iChildren[0] >= 0)
+					newClipnodes[i + offset].iChildren[0] += offset;
+
+				newClipnodes[i + offset].iChildren[1] = extra_clipnodes_data[0][i].iChildren[1];
+
+				if (newClipnodes[i + offset].iChildren[1] >= 0)
+					newClipnodes[i + offset].iChildren[1] += offset;
+
+				newClipnodes[i + offset].iPlane = extra_clipnodes_data[0][i].iPlane;
+			}
+
+			print_log("First clipnode of hull 2 : {}\n", offset + extra_clipnodes_count[0]);
+
+			offset += extra_clipnodes_count[0];
+
+			for (int i = 0; i < extra_clipnodes_count[1]; i++)
+			{
+				newClipnodes[i + offset].iChildren[0] = extra_clipnodes_data[1][i].iChildren[0];
+
+				if (newClipnodes[i + offset].iChildren[0] >= 0)
+					newClipnodes[i + offset].iChildren[0] += offset;
+
+				newClipnodes[i + offset].iChildren[1] = extra_clipnodes_data[1][i].iChildren[1];
+
+				if (newClipnodes[i + offset].iChildren[1] >= 0)
+					newClipnodes[i + offset].iChildren[1] += offset;
+
+				newClipnodes[i + offset].iPlane = extra_clipnodes_data[1][i].iPlane;
+			}
+
+			if (replacedLump[LUMP_CLIPNODES])
+				delete lumps[LUMP_CLIPNODES];
+
+			lumps[LUMP_CLIPNODES] = (unsigned char*)newClipnodes;
+			bsp_header.lump[LUMP_CLIPNODES].nLength = newCount * sizeof(BSPCLIPNODE32);
+
+			for (int i = 0; i < modelCount; i++)
+			{
+				offset = clipnodeCount;
+
+				if (models[i].iHeadnodes[2] >= 0)
+				{
+					models[i].iHeadnodes[2] += offset;
+				}
+
+				offset += extra_clipnodes_count[0];
+
+				if (models[i].iHeadnodes[3] >= 0)
+				{
+					models[i].iHeadnodes[3] += offset;
+				}
+			}
+
+			clipnodeCount = newCount;
+		}
+	}
 
 	update_lump_pointers();
 	return valid;
@@ -5394,7 +5526,7 @@ void Bsp::delete_model(int modelIdx)
 		int entModel = ents[i]->getBspModelIdx();
 		if (entModel == modelIdx)
 		{
-			ents[i]->setOrAddKeyvalue("model", "error.mdl");
+			ents[i]->setOrAddKeyvalue("model", "error.mdl_input");
 		}
 		else if (entModel > modelIdx)
 		{
@@ -9314,9 +9446,9 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	{
 		fprintf(f, "# Exported using bspguy!\n");
 
-		fprintf(f, "s off\n");
-
 		fprintf(f, "mtllib %s.mtl\n", bsp_name.c_str());
+
+		//fprintf(f, "s off\n");
 
 		std::string groupname = std::string();
 
@@ -9337,34 +9469,67 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 		std::set<int> refreshedModels;
 
+		ProgressMeter tmp = g_progress;
+
+
 		if (with_mdl)
 		{
+			int model_count = 0;
+			for (size_t ent = 0; ent < ents.size(); ent++)
+			{
+				if (renderer->renderEnts[ent].mdl)
+				{
+					model_count++;
+				}
+			}
+
+			tmp.update("MDL TO BSP...", model_count);
+			g_progress = tmp;
+
 			for (size_t ent = 0; ent < ents.size(); ent++)
 			{
 				if (renderer->renderEnts[ent].mdl)
 				{
 					import_mdl_to_bspmodel(ent, false);
+
+					tmp.tick();
+					g_progress = tmp;
 				}
 			}
 
+			g_progress.update("RELOADING MAP...", 9);
+			g_progress.tick();
 			remove_unused_model_structures();
-
+			g_progress.tick();
 			save_undo_lightmaps();
+			g_progress.tick();
 			resize_all_lightmaps();
-
+			g_progress.tick();
 			renderer->reuploadTextures();
+			g_progress.tick();
 			renderer->loadLightmaps();
+			g_progress.tick();
 			renderer->calcFaceMaths();
-
+			g_progress.tick();
 
 			renderer->preRenderFaces();
-			renderer->preRenderEnts();
+			g_progress.tick();
 
 			renderer->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+			g_progress.tick();
 		}
+		else
+			renderer->preRenderEnts();
+
+		tmp.update("Export to obj...", faceCount);
+		g_progress = tmp;
 
 		for (int i = 0; i < faceCount; i++)
 		{
+			tmp.tick();
+			g_progress = tmp;
+
+
 			int mdlid = get_model_from_face(i);
 			RenderFace* rface;
 			RenderGroup* rgroup;
@@ -9501,30 +9666,51 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 			for (size_t e = 0; e < entIds.size(); e++)
 			{
 				size_t tmpentid = entIds[e];
+
 				Entity* ent = ents[tmpentid];
+
+				RenderEnt* rendEnt = &renderer->renderEnts[tmpentid];
+
 				vec3 origin_offset = ent->origin.flip();
 
 				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
 				{
 					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
-					fprintf(f, "\no %s\n\n", groupname.c_str());
-					fprintf(f, "\ng %s\n\n", groupname.c_str());
+					fprintf(f, "o %s\n", groupname.c_str());
+
+					print_log(PRINT_RED, "Entity {} angles {}\n", tmpentid, rendEnt->angles.toKeyvalueString());
+					//fprintf(f, "\ng %s\n\n", groupname.c_str());
 				}
-				else
+				/*else
 				{
 					fprintf(f, "\n\n");
+				}*/
+
+				mat4x4 angle_mat;
+				angle_mat.loadIdentity();
+
+				if (rendEnt->needAngles)
+				{
+					vec3 angles = rendEnt->angles;
+
+					angles.z = -angles.x;
+					angles.x = angles.z;
+
+					renderer->setRenderAngles(ent->classname, angle_mat, angles);
 				}
-
-				if (lastmaterialid != materialid)
-					fprintf(f, "usemtl %s\n", materialid.c_str());
-
-				lastmaterialid = materialid;
 
 				for (int n = 0; n < rface->vertCount; n++)
 				{
 					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
 
-					vec3 org_pos = vert.pos + origin_offset;
+					vec3 org_pos = vert.pos;
+
+					if (rendEnt->needAngles)
+					{
+						org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
+					}
+
+					org_pos += origin_offset;
 
 					fprintf(f, "v %f %f %f\n", org_pos.x * scale, org_pos.y * scale, org_pos.z * scale);
 				}
@@ -9533,23 +9719,45 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 				for (int n = 0; n < rface->vertCount; n++)
 				{
-					fprintf(f, "vn %f %f %f\n", tmpPlane.vNormal.x, tmpPlane.vNormal.z, -tmpPlane.vNormal.y);
+					vec3 org_norm = tmpPlane.vNormal;
+
+					if (rendEnt->needAngles)
+					{
+						org_norm = (angle_mat * vec4(org_norm, 1.0)).xyz();
+					}
+
+					fprintf(f, "vn %f %f %f\n", org_norm.x, org_norm.z, -org_norm.y);
 				}
 
 				for (int n = 0; n < rface->vertCount; n++)
 				{
 					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
-					//vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y);
-					//vec3 pos = vec3(org_pos.x, -org_pos.z, -org_pos.y);
-					vec3 pos = vert.pos.flipUV();
-					float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
-					float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
+
+					vec3 org_pos = vert.pos;
+
+					if (rendEnt->needAngles)
+					{
+						org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
+					}
+
+					org_pos = org_pos.flipUV();
+
+					float fU = dotProduct(texinfo.vS, org_pos) + texinfo.shiftS;
+					float fV = dotProduct(texinfo.vT, org_pos) + texinfo.shiftT;
 					fU /= (float)tex.nWidth;
 					fV /= -(float)tex.nHeight;
 					fprintf(f, "vt %f %f\n", fU, fV);
 				}
 
-				fprintf(f, "%s", "\nf");
+				if (lastmaterialid != materialid)
+				{
+					fprintf(f, "%s", "s 0\n");
+					fprintf(f, "usemtl %s\n", materialid.c_str());
+				}
+				lastmaterialid = materialid;
+
+
+				fprintf(f, "%s", "f");
 				for (int n = rface->vertCount - 1; n >= 0; n--)
 				{
 					int id = vertoffset + n;
@@ -9577,10 +9785,12 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 		fclose(f);
 
-		for (auto m : refreshedModels)
-			bsprend->refreshModel(m, false);
 
 		renderer->undo();
+
+
+		for (auto m : refreshedModels)
+			bsprend->refreshModel(m, false);
 	}
 	else
 	{
@@ -11271,36 +11481,56 @@ bool Bsp::ImportWad(const std::string& path)
 	return true;
 }
 
-int Bsp::import_mdl_to_bspmodel(size_t ent,bool generateClipnodes)
+int Bsp::import_mdl_to_bspmodel(size_t ent, bool generateClipnodes)
 {
 	std::set<Texture*> added_textures;
 
 	if (renderer->renderEnts[ent].mdl)
 	{
-		auto mdl = renderer->renderEnts[ent].mdl;
-		if (mdl->mdl_mesh_groups.size())
+		auto mdl_input = renderer->renderEnts[ent].mdl;
+		if (mdl_input->mdl_mesh_groups.size())
 		{
 			std::vector<vec3> all_verts;
 			std::vector<StudioMesh> merged_meshes;
-			for (size_t group = 0; group < mdl->mdl_mesh_groups.size(); group++)
+			for (size_t group = 0; group < mdl_input->mdl_mesh_groups.size(); group++)
 			{
-				for (size_t meshid = 0; meshid < mdl->mdl_mesh_groups[group].size(); meshid++)
+				for (size_t meshid = 0; meshid < mdl_input->mdl_mesh_groups[group].size(); meshid++)
 				{
-					merged_meshes.push_back(mdl->mdl_mesh_groups[group][meshid]);
+					merged_meshes.push_back(mdl_input->mdl_mesh_groups[group][meshid]);
 
-					for (auto v : mdl->mdl_mesh_groups[group][meshid].verts)
+					for (auto v : mdl_input->mdl_mesh_groups[group][meshid].verts)
 						all_verts.push_back(v.pos.flipUV());
 				}
 			}
 			bool is_valid_nodes = false;
-			int newModelIdx = import_mdl_to_bspmodel(merged_meshes, is_valid_nodes);
+
+			mat4x4 angle_mat;
+			angle_mat.loadIdentity();
+
+			if (renderer->renderEnts[ent].needAngles)
+			{
+				vec3 angles = -renderer->renderEnts[ent].angles;
+
+
+				angle_mat.rotateX((angles.z * (HL_PI / 180.0f)));
+				angle_mat.rotateY((angles.x * (HL_PI / 180.0f)));
+				angle_mat.rotateZ((angles.y * (HL_PI / 180.0f)));
+
+				//print_log(PRINT_RED, "CONVERT ANGLES : {} for {} ent\n", angles.toKeyvalueString(), ents[ent]->classname);
+			}
+
+			int newModelIdx = import_mdl_to_bspmodel(merged_meshes, angle_mat, is_valid_nodes);
+
+			if (ents[ent]->hasKey("angles"))
+				ents[ent]->removeKeyvalue("angles");
+			if (ents[ent]->hasKey("angle"))
+				ents[ent]->removeKeyvalue("angle");
 
 			ents[ent]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
 			ents[ent]->setOrAddKeyvalue("classname", "func_wall");
 			renderer->renderEnts[ent].mdl = NULL;
 
 			update_ent_lump();
-			remove_unused_model_structures();
 
 			if (!is_valid_nodes && generateClipnodes)
 			{
@@ -11509,7 +11739,7 @@ int Bsp::import_mdl_to_bspmodel(size_t ent,bool generateClipnodes)
 	return -1;
 }
 
-int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNodes)
+int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, bool& validNodes)
 {
 	int newModelIdx = create_model();
 
@@ -11552,7 +11782,10 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNode
 
 		for (v = (int)startVertCount; v < newVertCount; v++)
 		{
-			newverts[v] = mesh_verts[v - startVertCount].pos.flipUV();
+			newverts[v] = (angles * vec4(mesh_verts[v - startVertCount].pos.unflip(), 1.0f)).xyz();
+
+
+
 			newuv[v] = { mesh_verts[v - startVertCount].u, mesh_verts[v - startVertCount].v };
 			newVertIndexes.push_back(v);
 			expandBoundingBox(newverts[v], mins, maxs);
@@ -12098,7 +12331,7 @@ void Bsp::face_fix_duplicate_edges(int faceIdx)
 
 	for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
 	{
-		int & edgeIdx = surfedges[e];
+		int& edgeIdx = surfedges[e];
 		BSPEDGE32 edge = edges[abs(edgeIdx)];
 		int vert = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 		if (verts_usage.count(vert))
@@ -12114,7 +12347,7 @@ void Bsp::face_fix_duplicate_edges(int faceIdx)
 				edgeIdx = -newedge_id;
 			}
 
-			BSPEDGE32 & newedge = edges[newedge_id];
+			BSPEDGE32& newedge = edges[newedge_id];
 			newedge = edge;
 
 			int v1 = create_vert();
@@ -12199,8 +12432,6 @@ bool Bsp::CalcFaceExtents(lightinfo_t* l)
 	}
 	return true;
 }
-
-
 
 bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 {
@@ -12296,6 +12527,11 @@ const BSPPLANE Bsp::getPlaneFromFace(const BSPFACE32* const face)
 
 int Bsp::CalcFaceTextureStep(int facenum)
 {
+	if (is_bsp31)
+	{
+		return 8;
+	}
+
 	// next xash 
 	if (is_bsp30ext && extralumps)
 	{

@@ -196,7 +196,7 @@ public:
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
 	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
 
-	void setRenderAngles(size_t entIdx, vec3 angles);
+	bool setRenderAngles(const std::string& classname, mat4x4& outmat, vec3& outangles);
 	void refreshEnt(size_t entIdx);
 	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool noTriangulate = false);
 	bool refreshModelClipnodes(int modelIdx);

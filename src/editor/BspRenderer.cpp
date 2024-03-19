@@ -890,7 +890,7 @@ void BspRenderer::deleteFaceMaths()
 
 int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriangulate)
 {
-	if (modelIdx < 0)
+	if (modelIdx < 0 || modelIdx >= map->modelCount)
 		return 0;
 
 	while (modelIdx >= renderModels.size())
@@ -1620,44 +1620,43 @@ void BspRenderer::preRenderEnts()
 	}
 }
 
-void BspRenderer::setRenderAngles(size_t entIdx, vec3 angles)
+bool BspRenderer::setRenderAngles(const std::string & classname, mat4x4 & outmat, vec3 & outangles)
 {
-	if (!map->ents[entIdx]->hasKey("classname"))
+	if (classname.empty())
 	{
-		renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (HL_PI / 180.0f)));
-		renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
-		renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
-		renderEnts[entIdx].needAngles = false;
+		outmat.rotateY((outangles.y * (HL_PI / 180.0f)));
+		outmat.rotateZ(-(outangles.x * (HL_PI / 180.0f)));
+		outmat.rotateX((outangles.z * (HL_PI / 180.0f)));
+		return false;
 	}
 	else
 	{
-		std::string entClassName = map->ents[entIdx]->keyvalues["classname"];
 		// based at cs 1.6 gamedll
-		if (entClassName == "func_breakable")
+		if (classname == "func_breakable")
 		{
-			renderEnts[entIdx].angles.y = 0.0f;
-			renderEnts[entIdx].modelMat4x4_angles.rotateY(0.0f);
-			renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
-			renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
+			outangles.y = 0.0f;
+			outmat.rotateY(0.0f);
+			outmat.rotateZ(-(outangles.x * (HL_PI / 180.0f)));
+			outmat.rotateX((outangles.z * (HL_PI / 180.0f)));
 		}
-		else if (IsEntNotSupportAngles(entClassName))
+		else if (IsEntNotSupportAngles(classname))
 		{
-			renderEnts[entIdx].angles = vec3();
+			outangles = vec3();
 		}
-		else if (entClassName == "env_sprite")
+		else if (classname == "env_sprite")
 		{
-			if (std::abs(angles.y) >= EPSILON && std::abs(angles.z) < EPSILON)
+			if (std::abs(outangles.y) >= EPSILON && std::abs(outangles.z) < EPSILON)
 			{
-				renderEnts[entIdx].angles.z = 0.0f;
-				renderEnts[entIdx].modelMat4x4_angles.rotateY(0.0);
-				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.y * (HL_PI / 180.0f)));
+				outangles.z = 0.0f;
+				outmat.rotateY(0.0);
+				outmat.rotateZ(-(outangles.x * (HL_PI / 180.0f)));
+				outmat.rotateX((outangles.y * (HL_PI / 180.0f)));
 			}
 			else
 			{
-				renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (HL_PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
+				outmat.rotateY((outangles.y * (HL_PI / 180.0f)));
+				outmat.rotateZ(-(outangles.x * (HL_PI / 180.0f)));
+				outmat.rotateX((outangles.z * (HL_PI / 180.0f)));
 			}
 		}
 		else
@@ -1665,28 +1664,25 @@ void BspRenderer::setRenderAngles(size_t entIdx, vec3 angles)
 			bool foundAngles = false;
 			for (const auto& prefix : g_settings.entsNegativePitchPrefix)
 			{
-				if (entClassName.starts_with(prefix))
+				if (classname.starts_with(prefix))
 				{
-					renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (HL_PI / 180.0f)));
-					renderEnts[entIdx].modelMat4x4_angles.rotateZ((angles.x * (HL_PI / 180.0f)));
-					renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
+					outmat.rotateY((outangles.y * (HL_PI / 180.0f)));
+					outmat.rotateZ((outangles.x * (HL_PI / 180.0f)));
+					outmat.rotateX((outangles.z * (HL_PI / 180.0f)));
 					foundAngles = true;
 					break;
 				}
 			}
 			if (!foundAngles)
 			{
-				renderEnts[entIdx].modelMat4x4_angles.rotateY((angles.y * (HL_PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateZ(-(angles.x * (HL_PI / 180.0f)));
-				renderEnts[entIdx].modelMat4x4_angles.rotateX((angles.z * (HL_PI / 180.0f)));
+				outmat.rotateY((outangles.y * (HL_PI / 180.0f)));
+				outmat.rotateZ(-(outangles.x * (HL_PI / 180.0f)));
+				outmat.rotateX((outangles.z * (HL_PI / 180.0f)));
 			}
 		}
 	}
 
-	if (renderEnts[entIdx].angles != vec3())
-	{
-		renderEnts[entIdx].needAngles = true;
-	}
+	return !outangles.IsZero();
 }
 
 void BspRenderer::refreshEnt(size_t entIdx)
@@ -1778,7 +1774,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 		}
 		if (sequence <= 0 && g_app->fgd)
 		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
 			if (fgdClass)
 			{
 				sequence = fgdClass->modelSequence;
@@ -1794,7 +1790,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 		}
 		if (skin <= 0 && g_app->fgd)
 		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
 			if (fgdClass)
 			{
 				skin = fgdClass->modelSkin;
@@ -1810,7 +1806,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 		}
 		if (body == 0 && g_app->fgd)
 		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
 			if (fgdClass)
 			{
 				body = fgdClass->modelBody;
@@ -1833,7 +1829,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 
 			if (g_app->fgd && modelpath.empty())
 			{
-				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
 				if (fgdClass && !fgdClass->model.empty())
 				{
 					modelpath = fgdClass->model;
@@ -1882,7 +1878,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 		}
 		else if (g_app->fgd)
 		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
 			if (fgdClass && fgdClass->isSprite && fgdClass->sprite.size())
 			{
 				renderEnts[entIdx].spr = NULL;
@@ -1925,7 +1921,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 			}
 			else
 			{
-				fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+				fgdClass = g_app->fgd->getFgdClass(ent->classname);
 				if (fgdClass && !fgdClass->model.empty())
 				{
 					std::string lowerpath = toLowerCase(fgdClass->model);
@@ -1998,7 +1994,7 @@ void BspRenderer::refreshEnt(size_t entIdx)
 	}
 	if (setAngles)
 	{
-		setRenderAngles(entIdx, renderEnts[entIdx].angles);
+		renderEnts[entIdx].needAngles = setRenderAngles(ent->classname, renderEnts[entIdx].modelMat4x4_angles, renderEnts[entIdx].angles);
 	}
 }
 

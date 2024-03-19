@@ -177,7 +177,7 @@ int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette = false);
 
 vec3 parseVector(const std::string& s);
 
-bool IsEntNotSupportAngles(std::string& entname);
+bool IsEntNotSupportAngles(const std::string& entname);
 
 bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist);
 

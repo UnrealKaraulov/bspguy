@@ -47,6 +47,8 @@ public:
 
 	bool is_bsp30ext;
 
+	bool is_bsp31;
+
 	bool is_bsp_pathos;
 	bool is_bsp2;
 	bool is_bsp2_old;
@@ -332,7 +334,7 @@ public:
 	void ExportToMapWIP(const std::string& path, bool selected, bool merge_faces, bool use_one_back_vert);
 
 	int import_mdl_to_bspmodel(size_t ent, bool generateClipnodes);
-	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool & valid_nodes);
+	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes,mat4x4 angles, bool & valid_nodes);
 
 	int merge_all_planes();
 
