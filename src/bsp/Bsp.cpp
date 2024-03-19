@@ -9446,6 +9446,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	{
 		fprintf(f, "# Exported using bspguy!\n");
 
+		fprintf(f, "%s", "s 1\n");
 		fprintf(f, "mtllib %s.mtl\n", bsp_name.c_str());
 
 		//fprintf(f, "s off\n");
@@ -9497,26 +9498,40 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 				}
 			}
 
-			g_progress.update("RELOADING MAP...", 9);
-			g_progress.tick();
+			tmp.update("RELOADING MAP...", 8);
+			g_progress = tmp;
+
+			tmp.tick();
+			g_progress = tmp;
 			remove_unused_model_structures();
-			g_progress.tick();
+
+			tmp.tick();
+			g_progress = tmp;
 			save_undo_lightmaps();
-			g_progress.tick();
+
+			tmp.tick();
+			g_progress = tmp;
 			resize_all_lightmaps();
-			g_progress.tick();
+
+			tmp.tick();
+			g_progress = tmp;
 			renderer->reuploadTextures();
-			g_progress.tick();
+
+			tmp.tick();
+			g_progress = tmp;
 			renderer->loadLightmaps();
-			g_progress.tick();
+
+			tmp.tick();
+			g_progress = tmp;
 			renderer->calcFaceMaths();
-			g_progress.tick();
 
+			tmp.tick();
+			g_progress = tmp;
 			renderer->preRenderFaces();
-			g_progress.tick();
 
+			tmp.tick();
+			g_progress = tmp;
 			renderer->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
-			g_progress.tick();
 		}
 		else
 			renderer->preRenderEnts();
@@ -9751,7 +9766,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 				if (lastmaterialid != materialid)
 				{
-					fprintf(f, "%s", "s 0\n");
 					fprintf(f, "usemtl %s\n", materialid.c_str());
 				}
 				lastmaterialid = materialid;
