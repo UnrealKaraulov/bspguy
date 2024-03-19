@@ -9291,7 +9291,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	renderer->pushModelUndoState("EXPORT .SMD EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 }
 
-void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
+void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode, bool with_mdl)
 {
 	if (!createDir(path))
 	{
@@ -9336,6 +9336,32 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 		std::string lastmaterialid = std::string();
 
 		std::set<int> refreshedModels;
+
+		if (with_mdl)
+		{
+			for (size_t ent = 0; ent < ents.size(); ent++)
+			{
+				if (renderer->renderEnts[ent].mdl)
+				{
+					import_mdl_to_bspmodel(ent, false);
+				}
+			}
+
+			remove_unused_model_structures();
+
+			save_undo_lightmaps();
+			resize_all_lightmaps();
+
+			renderer->reuploadTextures();
+			renderer->loadLightmaps();
+			renderer->calcFaceMaths();
+
+
+			renderer->preRenderFaces();
+			renderer->preRenderEnts();
+
+			renderer->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+		}
 
 		for (int i = 0; i < faceCount; i++)
 		{
@@ -9553,6 +9579,8 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode)
 
 		for (auto m : refreshedModels)
 			bsprend->refreshModel(m, false);
+
+		renderer->undo();
 	}
 	else
 	{
@@ -11241,6 +11269,244 @@ bool Bsp::ImportWad(const std::string& path)
 
 	delete tmpWad;
 	return true;
+}
+
+int Bsp::import_mdl_to_bspmodel(size_t ent,bool generateClipnodes)
+{
+	std::set<Texture*> added_textures;
+
+	if (renderer->renderEnts[ent].mdl)
+	{
+		auto mdl = renderer->renderEnts[ent].mdl;
+		if (mdl->mdl_mesh_groups.size())
+		{
+			std::vector<vec3> all_verts;
+			std::vector<StudioMesh> merged_meshes;
+			for (size_t group = 0; group < mdl->mdl_mesh_groups.size(); group++)
+			{
+				for (size_t meshid = 0; meshid < mdl->mdl_mesh_groups[group].size(); meshid++)
+				{
+					merged_meshes.push_back(mdl->mdl_mesh_groups[group][meshid]);
+
+					for (auto v : mdl->mdl_mesh_groups[group][meshid].verts)
+						all_verts.push_back(v.pos.flipUV());
+				}
+			}
+			bool is_valid_nodes = false;
+			int newModelIdx = import_mdl_to_bspmodel(merged_meshes, is_valid_nodes);
+
+			ents[ent]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
+			ents[ent]->setOrAddKeyvalue("classname", "func_wall");
+			renderer->renderEnts[ent].mdl = NULL;
+
+			update_ent_lump();
+			remove_unused_model_structures();
+
+			if (!is_valid_nodes && generateClipnodes)
+			{
+				int max_rows;
+				auto collision_list = make_collision_from_triangles(all_verts, max_rows);
+				std::reverse(collision_list.begin(), collision_list.end());
+
+				std::vector<int> merged_models;
+				std::vector<BBOX> merged_cubes;
+				int errors = 0;
+
+				// PASS #1 [MERGE X]
+				for (auto& cube_list : collision_list)
+				{
+					for (int z = max_rows; z >= 0; z--)
+					{
+						std::vector<int> models_to_merge;
+						std::vector<BBOX> cubes_to_merge;
+						for (auto& cube : cube_list)
+						{
+							if (cube.row == z)
+							{
+								int tmpModelIdx = create_solid(cube.mins, cube.maxs, 0, false);
+								BSPMODEL& model = models[tmpModelIdx];
+								model.iFirstFace = 0;
+								model.nFaces = 0;
+								models_to_merge.push_back(tmpModelIdx);
+								cubes_to_merge.push_back(cube);
+							}
+						}
+						if (models_to_merge.size() == 1)
+						{
+							merged_models.push_back(models_to_merge[0]);
+							merged_cubes.push_back(cubes_to_merge[0]);
+						}
+						else if (models_to_merge.size() > 1)
+						{
+							while (models_to_merge.size() > 1)
+							{
+								int tries = 0;
+
+								int idx1 = models_to_merge[0];
+								int idx2 = models_to_merge[1];
+
+								int merged_index = merge_two_models_idx(idx1, idx2, tries);
+								models_to_merge.erase(models_to_merge.begin());
+
+								if (merged_index >= 0)
+								{
+									models_to_merge[0] = merged_index;
+									if (idx2 == merged_index)
+									{
+										cubes_to_merge.erase(cubes_to_merge.begin());
+									}
+									else
+									{
+										std::swap(cubes_to_merge[1], cubes_to_merge[0]);
+										cubes_to_merge.erase(cubes_to_merge.begin());
+									}
+								}
+								else
+								{
+									cubes_to_merge.erase(cubes_to_merge.begin());
+									errors++;
+								}
+							}
+
+							merged_models.push_back(models_to_merge[0]);
+							merged_cubes.push_back(cubes_to_merge[0]);
+						}
+					}
+				}
+
+				print_log(PRINT_BLUE, "Merged_cubes after first PASS {} !\n", merged_cubes.size() + errors);
+
+				// PASS #2 [MERGE Y]
+				std::vector<int> merged_models_pass2;
+				std::vector<BBOX> merged_cubes_pass2;
+
+				for (int z = max_rows; z >= 0; z--)
+				{
+					std::vector<int> models_to_merge;
+					std::vector<BBOX> cubes_to_merge;
+
+					for (int cube = 0; cube < merged_cubes.size(); cube++)
+					{
+						if (merged_cubes[cube].row == z)
+						{
+							int tmpModelIdx = merged_models[cube];
+							models_to_merge.push_back(tmpModelIdx);
+							cubes_to_merge.push_back(merged_cubes[cube]);
+						}
+					}
+					if (models_to_merge.size() == 1)
+					{
+						merged_models_pass2.push_back(models_to_merge[0]);
+						merged_cubes_pass2.push_back(cubes_to_merge[0]);
+					}
+					else if (models_to_merge.size() > 1)
+					{
+						while (models_to_merge.size() > 1)
+						{
+							int tries = 0;
+
+							int idx1 = models_to_merge[0];
+							int idx2 = models_to_merge[1];
+
+							int merged_index = merge_two_models_idx(idx1, idx2, tries);
+							models_to_merge.erase(models_to_merge.begin());
+
+							if (merged_index >= 0)
+							{
+								models_to_merge[0] = merged_index;
+								if (idx2 == merged_index)
+								{
+									cubes_to_merge.erase(cubes_to_merge.begin());
+								}
+								else
+								{
+									std::swap(cubes_to_merge[1], cubes_to_merge[0]);
+									cubes_to_merge.erase(cubes_to_merge.begin());
+								}
+							}
+							else
+							{
+								cubes_to_merge.erase(cubes_to_merge.begin());
+								errors++;
+							}
+						}
+
+						merged_models_pass2.push_back(models_to_merge[0]);
+						merged_cubes_pass2.push_back(cubes_to_merge[0]);
+					}
+				}
+
+				// PASS #3 [MERGE Z]
+				std::vector<int> models_to_merge_pass3;
+
+				for (int z = max_rows; z >= 0; z--)
+				{
+					for (int cube = 0; cube < merged_cubes_pass2.size(); cube++)
+					{
+						if (merged_cubes_pass2[cube].row == z)
+						{
+							models_to_merge_pass3.push_back(merged_models_pass2[cube]);
+						}
+					}
+				}
+
+				print_log(PRINT_BLUE, "Merged_cubes after second PASS {} !\n", merged_cubes_pass2.size() + errors);
+				while (models_to_merge_pass3.size() > 1)
+				{
+					int tries = 0;
+
+					int idx1 = models_to_merge_pass3[0];
+					int idx2 = models_to_merge_pass3[1];
+
+					int merged_index = merge_two_models_idx(idx1, idx2, tries);
+					models_to_merge_pass3.erase(models_to_merge_pass3.begin());
+
+					if (merged_index >= 0)
+					{
+						models_to_merge_pass3[0] = merged_index;
+					}
+					else
+					{
+						errors++;
+					}
+				}
+
+				print_log(PRINT_BLUE, "Merged_cubes after finall PASS {} !\n", models_to_merge_pass3.size() + errors);
+
+				/*STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
+				mark_model_structures(models_to_merge_pass3[0], &modelUsage, true);
+
+				for (int i = 0; i < planeCount; i++)
+				{
+					if (modelUsage.planes[i])
+					{
+						planes[i].fDist = std::signbit(planes[i].fDist) ? planes[i].fDist - 1.f : planes[i].fDist + 1.f;
+					}
+				}*/
+
+
+				models[newModelIdx].iHeadnodes[0] = models[models_to_merge_pass3[0]].iHeadnodes[0];
+				models[newModelIdx].iHeadnodes[1] = models[models_to_merge_pass3[0]].iHeadnodes[1];
+				models[newModelIdx].iHeadnodes[2] = models[models_to_merge_pass3[0]].iHeadnodes[2];
+				models[newModelIdx].iHeadnodes[3] = models[models_to_merge_pass3[0]].iHeadnodes[3];
+				models[newModelIdx].nVisLeafs = models[models_to_merge_pass3[0]].nVisLeafs;
+
+
+				models[models_to_merge_pass3[0]].iHeadnodes[0] =
+					models[models_to_merge_pass3[0]].iHeadnodes[1] =
+					models[models_to_merge_pass3[0]].iHeadnodes[2] =
+					models[models_to_merge_pass3[0]].iHeadnodes[3] = 0;
+				models[models_to_merge_pass3[0]].iFirstFace = 0;
+				models[models_to_merge_pass3[0]].nFaces = 0;
+				models[models_to_merge_pass3[0]].nVisLeafs = 0;
+
+				print_log(PRINT_BLUE, "Very bad clipnodes regenerated with {} errors!\n", errors);
+			}
+			return newModelIdx;
+		}
+	}
+
+	return -1;
 }
 
 int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, bool& validNodes)

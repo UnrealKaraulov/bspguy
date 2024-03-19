@@ -2807,30 +2807,50 @@ void Gui::drawMenuBar()
 					}
 					ImGui::EndMenu();
 				}
+
+				static int g_scale = 1;
+
 				if (ImGui::BeginMenu("Wavefront (.obj) [WIP]", map && !map->is_mdl_model))
 				{
-					if (ImGui::MenuItem(get_localized_string(LANG_0535).c_str(), NULL))
+
+					if (ImGui::BeginMenu("Select scale"))
 					{
-						map->ExportToObjWIP(g_working_dir, 1);
+						if (ImGui::MenuItem(get_localized_string(LANG_0535).c_str(), NULL, g_scale == 1))
+						{
+							g_scale = 1;
+						}
+
+						for (int scale = 2; scale < 10; scale += 2)
+						{
+							std::string scaleitem = "UpScale x" + std::to_string(scale);
+							if (ImGui::MenuItem(scaleitem.c_str(), NULL, g_scale == scale))
+							{
+								g_scale = scale;
+							}
+						}
+
+						for (int scale = 16; scale > 0; scale -= 2)
+						{
+							std::string scaleitem = "DownScale x" + std::to_string(scale);
+							if (ImGui::MenuItem(scaleitem.c_str(), NULL, g_scale == -scale))
+							{
+								g_scale = -scale;
+							}
+						}
+
+						ImGui::EndMenu();
 					}
 
-					for (int scale = 2; scale < 10; scale++, scale++)
+					if (ImGui::MenuItem("Export only bsp"))
 					{
-						std::string scaleitem = "UpScale x" + std::to_string(scale);
-						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
-						{
-							map->ExportToObjWIP(g_working_dir, scale);
-						}
+						map->ExportToObjWIP(g_working_dir, g_scale);
 					}
 
-					for (int scale = 16; scale > 0; scale--, scale--)
+					if (ImGui::MenuItem("Export with models"))
 					{
-						std::string scaleitem = "DownScale x" + std::to_string(scale);
-						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
-						{
-							map->ExportToObjWIP(g_working_dir, -scale);
-						}
+						map->ExportToObjWIP(g_working_dir, g_scale, false, true);
 					}
+
 					ImGui::EndMenu();
 				}
 
@@ -3233,7 +3253,7 @@ void Gui::drawMenuBar()
 					std::quick_exit(0);
 #endif
 				}
-			}
+				}
 			ImGui::EndMenu();
 		}
 
@@ -3462,252 +3482,23 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem("Convert selected to BSP"))
 				{
 					size_t ent = app->pickInfo.selectedEnts[0];
-					std::set<Texture*> added_textures;
 
-					if (rend->renderEnts[ent].mdl)
-					{
-						auto mdl = rend->renderEnts[ent].mdl;
-						if (mdl->mdl_mesh_groups.size())
-						{
-							std::vector<vec3> all_verts;
-							std::vector<StudioMesh> merged_meshes;
-							for (size_t group = 0; group < mdl->mdl_mesh_groups.size(); group++)
-							{
-								for (size_t meshid = 0; meshid < mdl->mdl_mesh_groups[group].size(); meshid++)
-								{
-									merged_meshes.push_back(mdl->mdl_mesh_groups[group][meshid]);
+					map->import_mdl_to_bspmodel(ent, generateClipnodes);
 
-									for (auto v : mdl->mdl_mesh_groups[group][meshid].verts)
-										all_verts.push_back(v.pos.flipUV());
-								}
-							}
-							bool is_valid_nodes = false;
-							int newModelIdx = map->import_mdl_to_bspmodel(merged_meshes, is_valid_nodes);
+					map->remove_unused_model_structures();
 
-							map->ents[ent]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
-							map->ents[ent]->setOrAddKeyvalue("classname", "func_wall");
-							rend->renderEnts[ent].mdl = NULL;
+					map->save_undo_lightmaps();
+					map->resize_all_lightmaps();
 
-							map->update_ent_lump();
-							map->remove_unused_model_structures();
-
-							if (!is_valid_nodes && generateClipnodes)
-							{
-								int max_rows;
-								auto collision_list = make_collision_from_triangles(all_verts, max_rows);
-								std::reverse(collision_list.begin(), collision_list.end());
-
-								std::vector<int> merged_models;
-								std::vector<BBOX> merged_cubes;
-								int errors = 0;
-
-								// PASS #1 [MERGE X]
-								for (auto& cube_list : collision_list)
-								{
-									for (int z = max_rows; z >= 0; z--)
-									{
-										std::vector<int> models_to_merge;
-										std::vector<BBOX> cubes_to_merge;
-										for (auto& cube : cube_list)
-										{
-											if (cube.row == z)
-											{
-												int tmpModelIdx = map->create_solid(cube.mins, cube.maxs, 0, false);
-												BSPMODEL& model = map->models[tmpModelIdx];
-												model.iFirstFace = 0;
-												model.nFaces = 0;
-												models_to_merge.push_back(tmpModelIdx);
-												cubes_to_merge.push_back(cube);
-											}
-										}
-										if (models_to_merge.size() == 1)
-										{
-											merged_models.push_back(models_to_merge[0]);
-											merged_cubes.push_back(cubes_to_merge[0]);
-										}
-										else if (models_to_merge.size() > 1)
-										{
-											while (models_to_merge.size() > 1)
-											{
-												int tries = 0;
-
-												int idx1 = models_to_merge[0];
-												int idx2 = models_to_merge[1];
-
-												int merged_index = map->merge_two_models_idx(idx1, idx2, tries);
-												models_to_merge.erase(models_to_merge.begin());
-
-												if (merged_index >= 0)
-												{
-													models_to_merge[0] = merged_index;
-													if (idx2 == merged_index)
-													{
-														cubes_to_merge.erase(cubes_to_merge.begin());
-													}
-													else
-													{
-														std::swap(cubes_to_merge[1], cubes_to_merge[0]);
-														cubes_to_merge.erase(cubes_to_merge.begin());
-													}
-												}
-												else
-												{
-													cubes_to_merge.erase(cubes_to_merge.begin());
-													errors++;
-												}
-											}
-
-											merged_models.push_back(models_to_merge[0]);
-											merged_cubes.push_back(cubes_to_merge[0]);
-										}
-									}
-								}
-
-								print_log(PRINT_BLUE, "Merged_cubes after first PASS {} !\n", merged_cubes.size() + errors);
-
-								// PASS #2 [MERGE Y]
-								std::vector<int> merged_models_pass2;
-								std::vector<BBOX> merged_cubes_pass2;
-
-								for (int z = max_rows; z >= 0; z--)
-								{
-									std::vector<int> models_to_merge;
-									std::vector<BBOX> cubes_to_merge;
-
-									for (int cube = 0; cube < merged_cubes.size(); cube++)
-									{
-										if (merged_cubes[cube].row == z)
-										{
-											int tmpModelIdx = merged_models[cube];
-											models_to_merge.push_back(tmpModelIdx);
-											cubes_to_merge.push_back(merged_cubes[cube]);
-										}
-									}
-									if (models_to_merge.size() == 1)
-									{
-										merged_models_pass2.push_back(models_to_merge[0]);
-										merged_cubes_pass2.push_back(cubes_to_merge[0]);
-									}
-									else if (models_to_merge.size() > 1)
-									{
-										while (models_to_merge.size() > 1)
-										{
-											int tries = 0;
-
-											int idx1 = models_to_merge[0];
-											int idx2 = models_to_merge[1];
-
-											int merged_index = map->merge_two_models_idx(idx1, idx2, tries);
-											models_to_merge.erase(models_to_merge.begin());
-
-											if (merged_index >= 0)
-											{
-												models_to_merge[0] = merged_index;
-												if (idx2 == merged_index)
-												{
-													cubes_to_merge.erase(cubes_to_merge.begin());
-												}
-												else
-												{
-													std::swap(cubes_to_merge[1], cubes_to_merge[0]);
-													cubes_to_merge.erase(cubes_to_merge.begin());
-												}
-											}
-											else
-											{
-												cubes_to_merge.erase(cubes_to_merge.begin());
-												errors++;
-											}
-										}
-
-										merged_models_pass2.push_back(models_to_merge[0]);
-										merged_cubes_pass2.push_back(cubes_to_merge[0]);
-									}
-								}
-
-								// PASS #3 [MERGE Z]
-								std::vector<int> models_to_merge_pass3;
-
-								for (int z = max_rows; z >= 0; z--)
-								{
-									for (int cube = 0; cube < merged_cubes_pass2.size(); cube++)
-									{
-										if (merged_cubes_pass2[cube].row == z)
-										{
-											models_to_merge_pass3.push_back(merged_models_pass2[cube]);
-										}
-									}
-								}
-
-								print_log(PRINT_BLUE, "Merged_cubes after second PASS {} !\n", merged_cubes_pass2.size() + errors);
-								while (models_to_merge_pass3.size() > 1)
-								{
-									int tries = 0;
-
-									int idx1 = models_to_merge_pass3[0];
-									int idx2 = models_to_merge_pass3[1];
-
-									int merged_index = map->merge_two_models_idx(idx1, idx2, tries);
-									models_to_merge_pass3.erase(models_to_merge_pass3.begin());
-
-									if (merged_index >= 0)
-									{
-										models_to_merge_pass3[0] = merged_index;
-									}
-									else
-									{
-										errors++;
-									}
-								}
-
-								print_log(PRINT_BLUE, "Merged_cubes after finall PASS {} !\n", models_to_merge_pass3.size() + errors);
-
-								/*STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
-								map->mark_model_structures(models_to_merge_pass3[0], &modelUsage, true);
-
-								for (int i = 0; i < map->planeCount; i++)
-								{
-									if (modelUsage.planes[i])
-									{
-										map->planes[i].fDist = std::signbit(map->planes[i].fDist) ? map->planes[i].fDist - 1.f : map->planes[i].fDist + 1.f;
-									}
-								}*/
+					rend->reuploadTextures();
+					rend->loadLightmaps();
+					rend->calcFaceMaths();
 
 
-								map->models[newModelIdx].iHeadnodes[0] = map->models[models_to_merge_pass3[0]].iHeadnodes[0];
-								map->models[newModelIdx].iHeadnodes[1] = map->models[models_to_merge_pass3[0]].iHeadnodes[1];
-								map->models[newModelIdx].iHeadnodes[2] = map->models[models_to_merge_pass3[0]].iHeadnodes[2];
-								map->models[newModelIdx].iHeadnodes[3] = map->models[models_to_merge_pass3[0]].iHeadnodes[3];
-								map->models[newModelIdx].nVisLeafs = map->models[models_to_merge_pass3[0]].nVisLeafs;
+					rend->preRenderFaces();
+					rend->preRenderEnts();
 
-
-								map->models[models_to_merge_pass3[0]].iHeadnodes[0] =
-									map->models[models_to_merge_pass3[0]].iHeadnodes[1] =
-									map->models[models_to_merge_pass3[0]].iHeadnodes[2] =
-									map->models[models_to_merge_pass3[0]].iHeadnodes[3] = 0;
-								map->models[models_to_merge_pass3[0]].iFirstFace = 0;
-								map->models[models_to_merge_pass3[0]].nFaces = 0;
-								map->models[models_to_merge_pass3[0]].nVisLeafs = 0;
-
-								print_log(PRINT_BLUE, "Very bad clipnodes regenerated with {} errors!\n", errors);
-							}
-
-							map->remove_unused_model_structures();
-
-							map->save_undo_lightmaps();
-							map->resize_all_lightmaps();
-
-							rend->reuploadTextures();
-							rend->loadLightmaps();
-							rend->calcFaceMaths();
-
-
-							rend->preRenderFaces();
-							rend->preRenderEnts();
-
-							rend->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
-						}
-					}
+					rend->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 				}
 				ImGui::EndMenu();
 			}
@@ -10906,6 +10697,7 @@ void Gui::drawFaceEditorWidget()
 						if (shiftY != texinfo2.shiftT) shiftY = 0;
 
 						if (isSpecial != (texinfo2.nFlags & TEX_SPECIAL)) isSpecial = false;
+
 						if (texinfo2.iMiptex != miptex)
 						{
 							validTexture = false;
@@ -12553,7 +12345,7 @@ void Gui::checkFaceErrors()
 		map->GetFaceLightmapSize((int)app->pickInfo.selectedFaces[i], size);
 		if ((size[0] > MAX_SURFACE_EXTENT) || (size[1] > MAX_SURFACE_EXTENT) || size[0] < 0 || size[1] < 0)
 		{
-			print_log(get_localized_string(LANG_0426),size[0],size[1]);
+			print_log(get_localized_string(LANG_0426), size[0], size[1]);
 			size[0] = std::min(size[0], MAX_SURFACE_EXTENT);
 			size[1] = std::min(size[1], MAX_SURFACE_EXTENT);
 			badSurfaceExtents = true;
