@@ -9442,395 +9442,426 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	print_log(get_localized_string(LANG_0195), iscale == 1 ? "scale" : iscale < 0 ? "downscale" : "upscale", abs(iscale));
 
 
+
+	std::string groupname = std::string();
+
+	BspRenderer* bsprend = renderer;
+
+	remove_faces_by_content(CONTENTS_SKY);
+	remove_faces_by_content(CONTENTS_SOLID);
+
+	remove_unused_model_structures();
+
+	int merged = merge_all_verts(0.1f);
+	print_log(PRINT_RED, " Merged {} verts \n", merged);
+	remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
+
+	save_undo_lightmaps();
+	resize_all_lightmaps();
+	bsprend->reuploadTextures();
+	bsprend->loadLightmaps();
+	bsprend->calcFaceMaths();
+
+
+	//g_app->reloading = true;
+	//bsprend->reload();
+	//g_app->reloading = false;
+
+	createDir(path + "textures");
+	std::vector<std::string> materials;
+	std::vector<std::string> matnames;
+
+	int vertoffset = 1;
+	int normoffset = 0;
+
+	std::string materialid = std::string();
+	std::string lastmaterialid = std::string();
+
+	std::set<int> refreshedModels;
+
+	ProgressMeter tmp = g_progress;
+
+
+	if (with_mdl)
+	{
+		int model_count = 0;
+		for (size_t ent = 0; ent < ents.size(); ent++)
+		{
+			if (renderer->renderEnts[ent].mdl)
+			{
+				model_count++;
+			}
+		}
+
+		tmp.update("MDL TO BSP...", model_count);
+		g_progress = tmp;
+
+		for (size_t ent = 0; ent < ents.size(); ent++)
+		{
+			if (renderer->renderEnts[ent].mdl)
+			{
+				import_mdl_to_bspmodel(ent, false);
+
+				tmp.tick();
+				g_progress = tmp;
+			}
+		}
+
+		tmp.update("RELOADING MAP...", 8);
+		g_progress = tmp;
+
+		tmp.tick();
+		g_progress = tmp;
+		remove_unused_model_structures();
+
+		tmp.tick();
+		g_progress = tmp;
+		save_undo_lightmaps();
+
+		tmp.tick();
+		g_progress = tmp;
+		resize_all_lightmaps();
+
+		tmp.tick();
+		g_progress = tmp;
+		renderer->reuploadTextures();
+
+		tmp.tick();
+		g_progress = tmp;
+		renderer->loadLightmaps();
+
+		tmp.tick();
+		g_progress = tmp;
+		renderer->calcFaceMaths();
+
+		tmp.tick();
+		g_progress = tmp;
+		renderer->preRenderFaces();
+
+		tmp.tick();
+		g_progress = tmp;
+		renderer->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+	}
+	else
+		renderer->preRenderEnts();
+
+	tmp.update("Export to obj...", faceCount);
+	g_progress = tmp;
+
+	std::map<std::string, std::stringstream> group_verts;
+	std::map<std::string, std::stringstream> group_normals;
+	std::map<std::string, std::stringstream> group_textures;
+	std::map<std::string, std::stringstream> group_objects;
+
+	std::vector<std::string> group_list;
+
+	for (int i = 0; i < faceCount; i++)
+	{
+		tmp.tick();
+		g_progress = tmp;
+
+
+		int mdlid = get_model_from_face(i);
+		RenderFace* rface;
+		RenderGroup* rgroup;
+
+		if (refreshedModels.find(mdlid) == refreshedModels.end())
+		{
+			bsprend->refreshModel(mdlid, false, true);
+			refreshedModels.insert(mdlid);
+		}
+
+		if (!bsprend->getRenderPointers(i, &rface, &rgroup))
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196));
+			continue;
+		}
+
+		BSPFACE32& face = faces[i];
+		BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
+		int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
+		BSPMIPTEX tex = BSPMIPTEX();
+
+		if (texOffset >= 0)
+			tex = *((BSPMIPTEX*)(textures + texOffset));
+
+		std::vector<size_t> entIds = get_model_ents_ids(mdlid);
+
+		if (entIds.empty())
+		{
+			entIds.push_back(0);
+		}
+
+		materialid.clear();
+		for (size_t m = 0; m < matnames.size(); m++)
+		{
+			if (matnames[m] == tex.szName)
+				materialid = tex.szName;
+		}
+		if (materialid.empty())
+		{
+			materialid = tex.szName;
+			materials.emplace_back("");
+			materials.emplace_back("newmtl " + materialid);
+
+			materials.emplace_back("Ns 0");
+			materials.emplace_back("Ka 1 1 1");
+			materials.emplace_back("Ks 0 0 0");
+			materials.emplace_back("Ke 0 0 0");
+			materials.emplace_back("Ni 1");
+
+			if (toLowerCase(tex.szName) == "aaatrigger" ||
+				toLowerCase(tex.szName) == "null" ||
+				toLowerCase(tex.szName).starts_with("sky") ||
+				toLowerCase(tex.szName) == "noclip" ||
+				toLowerCase(tex.szName) == "clip" ||
+				toLowerCase(tex.szName) == "origin" ||
+				toLowerCase(tex.szName) == "bevel" ||
+				toLowerCase(tex.szName) == "hint" ||
+				toLowerCase(tex.szName) == "skip"
+				)
+			{
+				materials.emplace_back("d 0.25");
+				materials.emplace_back("illum 1");
+			}
+			else
+			{
+				materials.emplace_back("d 1");
+				materials.emplace_back("illum 2");
+			}
+
+			materials.emplace_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
+
+			matnames.emplace_back(tex.szName);
+		}
+
+		if (!fileExists(path + std::string("textures/") + tex.szName + std::string(".bmp")))
+		{
+			if (tex.nOffsets[0] > 0)
+			{
+				if (texOffset >= 0)
+				{
+					int colorCount = 256;
+					COLOR3 palette[256];
+					if (g_settings.pal_id >= 0)
+					{
+						colorCount = g_settings.palettes[g_settings.pal_id].colors;
+						memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+					}
+					else
+					{
+						colorCount = 256;
+						memcpy(palette, g_settings.palette_default,
+							256 * sizeof(COLOR3));
+					}
+
+					COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)), is_texture_with_pal(texinfo.iMiptex) ? NULL : palette);
+
+					for (int k = 0; k < tex.nHeight * tex.nWidth; k++)
+					{
+						std::swap(imageData[k].b, imageData[k].r);
+					}
+
+					WriteBMP_RGB(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)imageData, tex.nWidth, tex.nHeight);
+
+					delete imageData;
+				}
+			}
+			else
+			{
+				bool foundInWad = false;
+				for (size_t r = 0; r < mapRenderers.size() && !foundInWad; r++)
+				{
+					for (size_t k = 0; k < mapRenderers[r]->wads.size(); k++)
+					{
+						if (mapRenderers[r]->wads[k]->hasTexture(tex.szName))
+						{
+							foundInWad = true;
+
+							WADTEX* wadTex = mapRenderers[r]->wads[k]->readTexture(tex.szName);
+							int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
+							COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
+							unsigned char* src = wadTex->data;
+							COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
+
+							int sz = wadTex->nWidth * wadTex->nHeight;
+
+							for (int m = 0; m < sz; m++)
+							{
+								imageData[m] = palette[src[m]];
+								std::swap(imageData[m].b, imageData[m].r);
+							}
+
+							WriteBMP_RGB(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+
+							delete[] imageData;
+							delete wadTex;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+
+		for (size_t e = 0; e < entIds.size(); e++)
+		{
+			size_t tmpentid = entIds[e];
+
+			Entity* ent = ents[tmpentid];
+
+			RenderEnt* rendEnt = &renderer->renderEnts[tmpentid];
+
+			vec3 origin_offset = ent->origin.flip();
+
+			if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
+			{
+				groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
+
+				if (std::find(group_list.begin(), group_list.end(), groupname) == group_list.end())
+					group_list.push_back(groupname);
+
+				//print_log(PRINT_RED, "Entity {} angles {}\n", tmpentid, rendEnt->angles.toKeyvalueString());
+			}
+
+
+
+			mat4x4 angle_mat;
+			angle_mat.loadIdentity();
+
+			if (rendEnt->needAngles)
+			{
+				vec3 angles = rendEnt->angles;
+
+				angles.z = -angles.x;
+				angles.x = angles.z;
+
+				renderer->setRenderAngles(ent->classname, angle_mat, angles);
+			}
+
+			for (int n = rface->vertCount - 1; n >= 0; n--)
+			{
+				lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
+
+				vec3 org_pos = vert.pos;
+
+				if (rendEnt->needAngles)
+				{
+					org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
+				}
+
+				org_pos += origin_offset;
+
+				org_pos *= scale;
+
+				group_verts[groupname] << "v " << org_pos.toKeyvalueString() << "\n";
+			}
+
+			BSPPLANE tmpPlane = getPlaneFromFace(&face);
+			vec3 org_norm = tmpPlane.vNormal;
+
+			if (rendEnt->needAngles)
+			{
+				org_norm = (angle_mat * vec4(org_norm, 1.0)).xyz();
+			}
+
+			org_norm = org_norm.flip();
+
+			group_normals[groupname] << "vn " << org_norm.toKeyvalueString() << "\n";
+
+			normoffset++;
+
+
+			for (int n = rface->vertCount - 1; n >= 0; n--)
+			{
+				lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
+
+				vec3 org_pos = vert.pos;
+
+				if (rendEnt->needAngles)
+				{
+					org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
+				}
+
+				org_pos = org_pos.flipUV();
+
+				float fU = dotProduct(texinfo.vS, org_pos) + texinfo.shiftS;
+				float fV = dotProduct(texinfo.vT, org_pos) + texinfo.shiftT;
+
+				fU /= (float)tex.nWidth;
+				fV /= -(float)tex.nHeight;
+
+				group_textures[groupname] << "vt " << flt_to_str(fU) << " " << flt_to_str(fV) << "\n";
+			}
+
+			if (lastmaterialid != materialid)
+			{
+				group_objects[groupname] << "usemtl " << materialid << "\n";
+			}
+			lastmaterialid = materialid;
+
+
+			group_objects[groupname] << "f";
+
+			for (int n = 0; n < rface->vertCount; n++)
+			{
+				int id = vertoffset + n;
+
+				group_objects[groupname] << " " << id << "/" << id << "/" << normoffset;
+			}
+
+			group_objects[groupname] << "\n";
+			vertoffset += rface->vertCount;
+		}
+	}
+
 	std::ofstream obj_file(path + bsp_name + ".obj", std::ios::binary);
 	if (obj_file)
 	{
 		obj_file << "# Exported using bspguy!\n";
-
 		obj_file << "mtllib " << bsp_name << ".mtl\n";
 
-		std::string groupname = std::string();
+		for (auto& group : group_list)
+		{	
+			obj_file << "o " << groupname << "\n";
 
-		BspRenderer* bsprend = renderer;
+			obj_file << group_verts[group].str();
 
-		remove_faces_by_content(CONTENTS_SKY);
-		remove_faces_by_content(CONTENTS_SOLID);
+			obj_file << group_normals[group].str();
 
-		remove_unused_model_structures();
+			obj_file << group_textures[group].str();
+			
 
-		int merged = merge_all_verts(0.1f);
-		print_log(PRINT_RED, " Merged {} verts \n", merged);
-		remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
-
-		save_undo_lightmaps();
-		resize_all_lightmaps();
-		bsprend->reuploadTextures();
-		bsprend->loadLightmaps();
-		bsprend->calcFaceMaths();
-
-
-		//g_app->reloading = true;
-		//bsprend->reload();
-		//g_app->reloading = false;
-
-		createDir(path + "textures");
-		std::vector<std::string> materials;
-		std::vector<std::string> matnames;
-
-		int vertoffset = 1;
-		int normoffset = 0;
-
-		std::string materialid = std::string();
-		std::string lastmaterialid = std::string();
-
-		std::set<int> refreshedModels;
-
-		ProgressMeter tmp = g_progress;
-
-
-		if (with_mdl)
-		{
-			int model_count = 0;
-			for (size_t ent = 0; ent < ents.size(); ent++)
-			{
-				if (renderer->renderEnts[ent].mdl)
-				{
-					model_count++;
-				}
-			}
-
-			tmp.update("MDL TO BSP...", model_count);
-			g_progress = tmp;
-
-			for (size_t ent = 0; ent < ents.size(); ent++)
-			{
-				if (renderer->renderEnts[ent].mdl)
-				{
-					import_mdl_to_bspmodel(ent, false);
-
-					tmp.tick();
-					g_progress = tmp;
-				}
-			}
-
-			tmp.update("RELOADING MAP...", 8);
-			g_progress = tmp;
-
-			tmp.tick();
-			g_progress = tmp;
-			remove_unused_model_structures();
-
-			tmp.tick();
-			g_progress = tmp;
-			save_undo_lightmaps();
-
-			tmp.tick();
-			g_progress = tmp;
-			resize_all_lightmaps();
-
-			tmp.tick();
-			g_progress = tmp;
-			renderer->reuploadTextures();
-
-			tmp.tick();
-			g_progress = tmp;
-			renderer->loadLightmaps();
-
-			tmp.tick();
-			g_progress = tmp;
-			renderer->calcFaceMaths();
-
-			tmp.tick();
-			g_progress = tmp;
-			renderer->preRenderFaces();
-
-			tmp.tick();
-			g_progress = tmp;
-			renderer->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
-		}
-		else
-			renderer->preRenderEnts();
-
-		tmp.update("Export to obj...", faceCount);
-		g_progress = tmp;
-
-		for (int i = 0; i < faceCount; i++)
-		{
-			tmp.tick();
-			g_progress = tmp;
-
-
-			int mdlid = get_model_from_face(i);
-			RenderFace* rface;
-			RenderGroup* rgroup;
-
-			if (refreshedModels.find(mdlid) == refreshedModels.end())
-			{
-				bsprend->refreshModel(mdlid, false, true);
-				refreshedModels.insert(mdlid);
-			}
-
-			if (!bsprend->getRenderPointers(i, &rface, &rgroup))
-			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0196));
-				continue;
-			}
-
-			BSPFACE32& face = faces[i];
-			BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
-			int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
-			BSPMIPTEX tex = BSPMIPTEX();
-
-			if (texOffset >= 0)
-				tex = *((BSPMIPTEX*)(textures + texOffset));
-
-			std::vector<size_t> entIds = get_model_ents_ids(mdlid);
-
-			if (entIds.empty())
-			{
-				entIds.push_back(0);
-			}
-
-			materialid.clear();
-			for (size_t m = 0; m < matnames.size(); m++)
-			{
-				if (matnames[m] == tex.szName)
-					materialid = tex.szName;
-			}
-			if (materialid.empty())
-			{
-				materialid = tex.szName;
-				materials.emplace_back("newmtl " + materialid);
-				if (toLowerCase(tex.szName) == "aaatrigger" ||
-					toLowerCase(tex.szName) == "null" ||
-					toLowerCase(tex.szName) == "sky" ||
-					toLowerCase(tex.szName) == "noclip" ||
-					toLowerCase(tex.szName) == "clip" ||
-					toLowerCase(tex.szName) == "origin" ||
-					toLowerCase(tex.szName) == "bevel" ||
-					toLowerCase(tex.szName) == "hint" ||
-					toLowerCase(tex.szName) == "skip"
-					)
-				{
-					materials.push_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
-					materials.push_back("map_d " + std::string("textures/") + tex.szName + std::string(".bmp"));
-					materials.push_back("Ni 1.000");
-					materials.push_back("d 1.000");
-					materials.push_back("illum 4");
-				}
-				else
-				{
-					materials.push_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
-					materials.push_back("Ni 1.000");
-					materials.push_back("d 1.000");
-					materials.push_back("illum 0");
-				}
-				matnames.push_back(tex.szName);
-			}
-
-			if (!fileExists(path + std::string("textures/") + tex.szName + std::string(".bmp")))
-			{
-				if (tex.nOffsets[0] > 0)
-				{
-					if (texOffset >= 0)
-					{
-						int colorCount = 256;
-						COLOR3 palette[256];
-						if (g_settings.pal_id >= 0)
-						{
-							colorCount = g_settings.palettes[g_settings.pal_id].colors;
-							memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
-						}
-						else
-						{
-							colorCount = 256;
-							memcpy(palette, g_settings.palette_default,
-								256 * sizeof(COLOR3));
-						}
-
-						COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)), is_texture_with_pal(texinfo.iMiptex) ? NULL : palette);
-
-						for (int k = 0; k < tex.nHeight * tex.nWidth; k++)
-						{
-							std::swap(imageData[k].b, imageData[k].r);
-						}
-
-						WriteBMP_RGB(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)imageData, tex.nWidth, tex.nHeight);
-
-						delete imageData;
-					}
-				}
-				else
-				{
-					bool foundInWad = false;
-					for (size_t r = 0; r < mapRenderers.size() && !foundInWad; r++)
-					{
-						for (size_t k = 0; k < mapRenderers[r]->wads.size(); k++)
-						{
-							if (mapRenderers[r]->wads[k]->hasTexture(tex.szName))
-							{
-								foundInWad = true;
-
-								WADTEX* wadTex = mapRenderers[r]->wads[k]->readTexture(tex.szName);
-								int lastMipSize = (wadTex->nWidth >> 3) * (wadTex->nHeight >> 3);
-								COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - sizeof(BSPMIPTEX));
-								unsigned char* src = wadTex->data;
-								COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
-
-								int sz = wadTex->nWidth * wadTex->nHeight;
-
-								for (int m = 0; m < sz; m++)
-								{
-									imageData[m] = palette[src[m]];
-									std::swap(imageData[m].b, imageData[m].r);
-								}
-
-								WriteBMP_RGB(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
-
-								delete[] imageData;
-								delete wadTex;
-								break;
-							}
-						}
-					}
-				}
-			}
-
-
-			for (size_t e = 0; e < entIds.size(); e++)
-			{
-				size_t tmpentid = entIds[e];
-
-				Entity* ent = ents[tmpentid];
-
-				RenderEnt* rendEnt = &renderer->renderEnts[tmpentid];
-
-				vec3 origin_offset = ent->origin.flip();
-
-				/*else
-				{
-					fprintf(f, "\n\n");
-				}*/
-
-				mat4x4 angle_mat;
-				angle_mat.loadIdentity();
-
-				if (rendEnt->needAngles)
-				{
-					vec3 angles = rendEnt->angles;
-
-					angles.z = -angles.x;
-					angles.x = angles.z;
-
-					renderer->setRenderAngles(ent->classname, angle_mat, angles);
-				}
-
-				for (int n = rface->vertCount - 1; n >= 0; n--)
-				{
-					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
-
-					vec3 org_pos = vert.pos;
-
-					if (rendEnt->needAngles)
-					{
-						org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
-					}
-
-					org_pos += origin_offset;
-
-					org_pos *= scale;
-
-					obj_file << "v " << org_pos.toKeyvalueString() << "\n";
-				}
-
-				BSPPLANE tmpPlane = getPlaneFromFace(&face);
-				vec3 org_norm = tmpPlane.vNormal;
-
-				if (rendEnt->needAngles)
-				{
-					org_norm = (angle_mat * vec4(org_norm, 1.0)).xyz();
-				}
-
-				org_norm = org_norm.flip();
-
-				obj_file << "vn " << org_norm.toKeyvalueString() << "\n";
-
-				normoffset++;
-
-
-				for (int n = rface->vertCount - 1; n >= 0; n--)
-				{
-					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
-
-					vec3 org_pos = vert.pos;
-
-					if (rendEnt->needAngles)
-					{
-						org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
-					}
-
-					org_pos = org_pos.flipUV();
-
-					float fU = dotProduct(texinfo.vS, org_pos) + texinfo.shiftS;
-					float fV = dotProduct(texinfo.vT, org_pos) + texinfo.shiftT;
-
-					fU /= (float)tex.nWidth;
-					fV /= -(float)tex.nHeight;
-
-					obj_file << "vt " << flt_to_str(fU) << " " << flt_to_str(fV) << "\n";
-				}
-
-				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
-				{
-					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
-					obj_file << "o " << groupname << "\n";
-
-					print_log(PRINT_RED, "Entity {} angles {}\n", tmpentid, rendEnt->angles.toKeyvalueString());
-					//fprintf(f, "\ng %s\n\n", groupname.c_str());
-				}
-				if (lastmaterialid != materialid)
-				{
-					obj_file << "usemtl " << materialid << "\n";
-				}
-				lastmaterialid = materialid;
-
-
-				obj_file << "f";
-
-				for (int n = 0; n < rface->vertCount; n++)
-				{
-					int id = vertoffset + n;
-
-					obj_file << " " << id << "/" << id << "/" << normoffset;
-				}
-
-				obj_file << "\n";
-				vertoffset += rface->vertCount;
-			}
+			obj_file << "g " << groupname << "\n";
+			obj_file << group_objects[group].str();
 		}
 
-
-		std::ofstream fmat(path + bsp_name + ".mtl", std::ios::binary);
-
-		if (fmat)
-		{
-			for (auto const& s : materials)
-			{
-				fmat << s << '\n';
-			}
-		}
-
-
-		renderer->undo();
-
-
-		for (auto m : refreshedModels)
-			bsprend->refreshModel(m, false);
+		obj_file.flush();
+		obj_file.close();
 	}
-	else
+
+
+	std::ofstream mat_file(path + bsp_name + ".mtl", std::ios::binary);
+
+	if (mat_file)
 	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0197));
+		mat_file << "# Exported using bspguy!\n";
+
+		for (auto const& s : materials)
+		{
+			mat_file << s << '\n';
+		}
+
+		mat_file.flush();
+		mat_file.close();
 	}
+
+
+	renderer->undo();
+
+
+	for (auto m : refreshedModels)
+		bsprend->refreshModel(m, false);
 }
 
 void placePointsToPlane(std::vector<vec3>& points, const BSPPLANE& plane)
