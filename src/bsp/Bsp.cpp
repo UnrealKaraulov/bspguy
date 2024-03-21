@@ -9553,6 +9553,8 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	std::map<std::string, std::stringstream> group_textures;
 	std::map<std::string, std::stringstream> group_objects;
 
+	std::map<std::string, int> group_vert_groups;
+
 	std::vector<std::string> group_list;
 
 	for (int i = 0; i < faceCount; i++)
@@ -9724,8 +9726,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 				//print_log(PRINT_RED, "Entity {} angles {}\n", tmpentid, rendEnt->angles.toKeyvalueString());
 			}
 
-
-
 			mat4x4 angle_mat;
 			angle_mat.loadIdentity();
 
@@ -9796,6 +9796,10 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 			if (lastmaterialid != materialid)
 			{
+				group_vert_groups[groupname]++;
+
+				group_objects[groupname] << "g " << groupname << "_face" << group_vert_groups[groupname] << "\n";
+
 				group_objects[groupname] << "usemtl " << materialid << "\n";
 			}
 			lastmaterialid = materialid;
@@ -9823,7 +9827,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 		for (auto& group : group_list)
 		{	
-			obj_file << "o " << groupname << "\n";
+			obj_file << "o " << group << "\n";
 
 			obj_file << group_verts[group].str();
 
@@ -9831,8 +9835,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 			obj_file << group_textures[group].str();
 			
-
-			obj_file << "g " << groupname << "\n";
 			obj_file << group_objects[group].str();
 		}
 
