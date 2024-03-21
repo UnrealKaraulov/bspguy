@@ -9798,7 +9798,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 			{
 				group_vert_groups[groupname]++;
 
-				group_objects[groupname] << "g " << groupname << "_face" << group_vert_groups[groupname] << "\n";
+				//group_objects[groupname] << "g " << groupname << "_face" << group_vert_groups[groupname] << "\n";
 
 				group_objects[groupname] << "usemtl " << materialid << "\n";
 			}
