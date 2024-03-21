@@ -5602,7 +5602,7 @@ BSPMIPTEX* Bsp::find_embedded_texture(const char* name, int& texid)
 		if (oldOffset >= 0)
 		{
 			BSPMIPTEX* oldTex = (BSPMIPTEX*)(textures + oldOffset);
-			if (oldTex->szName[0] != '\0' && strcasecmp(name, oldTex->szName) == 0 && oldTex->nOffsets[0] > 0)
+			if (oldTex->szName[0] != '\0' && oldTex->nOffsets[0] > 0 && strcasecmp(name, oldTex->szName) == 0)
 			{
 				texid = i;
 				return oldTex;
@@ -9438,19 +9438,36 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 	scale = std::abs(scale);
 
-	FILE* f = NULL;
 	print_log(get_localized_string(LANG_0194), bsp_name + ".obj", path);
 	print_log(get_localized_string(LANG_0195), iscale == 1 ? "scale" : iscale < 0 ? "downscale" : "upscale", abs(iscale));
-	fopen_s(&f, (path + bsp_name + ".obj").c_str(), "wb");
-	if (f)
-	{
-		fprintf(f, "# Exported using bspguy!\n");
 
-		fprintf(f, "mtllib %s.mtl\n", bsp_name.c_str());
+
+	std::ofstream obj_file(path + bsp_name + ".obj", std::ios::binary);
+	if (obj_file)
+	{
+		obj_file << "# Exported using bspguy!\n";
+
+		obj_file << "mtllib " << bsp_name << ".mtl\n";
 
 		std::string groupname = std::string();
 
 		BspRenderer* bsprend = renderer;
+
+		remove_faces_by_content(CONTENTS_SKY);
+		remove_faces_by_content(CONTENTS_SOLID);
+
+		remove_unused_model_structures();
+
+		int merged = merge_all_verts(0.1f);
+		print_log(PRINT_RED, " Merged {} verts \n", merged);
+		remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
+
+		save_undo_lightmaps();
+		resize_all_lightmaps();
+		bsprend->reuploadTextures();
+		bsprend->loadLightmaps();
+		bsprend->calcFaceMaths();
+
 
 		//g_app->reloading = true;
 		//bsprend->reload();
@@ -9461,6 +9478,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 		std::vector<std::string> matnames;
 
 		int vertoffset = 1;
+		int normoffset = 0;
 
 		std::string materialid = std::string();
 		std::string lastmaterialid = std::string();
@@ -9594,15 +9612,19 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 					toLowerCase(tex.szName) == "skip"
 					)
 				{
-					materials.push_back("illum 4");
 					materials.push_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
 					materials.push_back("map_d " + std::string("textures/") + tex.szName + std::string(".bmp"));
+					materials.push_back("Ni 1.000");
+					materials.push_back("d 1.000");
+					materials.push_back("illum 4");
 				}
 				else
 				{
 					materials.push_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
+					materials.push_back("Ni 1.000");
+					materials.push_back("d 1.000");
+					materials.push_back("illum 0");
 				}
-				materials.push_back("");
 				matnames.push_back(tex.szName);
 			}
 
@@ -9685,14 +9707,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 				vec3 origin_offset = ent->origin.flip();
 
-				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
-				{
-					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
-					fprintf(f, "o %s\n", groupname.c_str());
-
-					print_log(PRINT_RED, "Entity {} angles {}\n", tmpentid, rendEnt->angles.toKeyvalueString());
-					//fprintf(f, "\ng %s\n\n", groupname.c_str());
-				}
 				/*else
 				{
 					fprintf(f, "\n\n");
@@ -9711,7 +9725,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 					renderer->setRenderAngles(ent->classname, angle_mat, angles);
 				}
 
-				for (int n = 0; n < rface->vertCount; n++)
+				for (int n = rface->vertCount - 1; n >= 0; n--)
 				{
 					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
 
@@ -9724,23 +9738,27 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 					org_pos += origin_offset;
 
-					fprintf(f, "v %f %f %f\n", org_pos.x * scale, org_pos.y * scale, org_pos.z * scale);
+					org_pos *= scale;
+
+					obj_file << "v " << org_pos.toKeyvalueString() << "\n";
 				}
 
 				BSPPLANE tmpPlane = getPlaneFromFace(&face);
+				vec3 org_norm = tmpPlane.vNormal;
 
-				for (int n = 0; n < rface->vertCount; n++)
+				if (rendEnt->needAngles)
 				{
-					vec3 org_norm = tmpPlane.vNormal;
-
-					if (rendEnt->needAngles)
-					{
-						org_norm = (angle_mat * vec4(org_norm, 1.0)).xyz();
-					}
-
-					fprintf(f, "vn %f %f %f\n", org_norm.x, org_norm.z, -org_norm.y);
+					org_norm = (angle_mat * vec4(org_norm, 1.0)).xyz();
 				}
-				for (int n = 0; n < rface->vertCount; n++)
+
+				org_norm = org_norm.flip();
+
+				obj_file << "vn " << org_norm.toKeyvalueString() << "\n";
+
+				normoffset++;
+
+
+				for (int n = rface->vertCount - 1; n >= 0; n--)
 				{
 					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
 
@@ -9755,46 +9773,52 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 					float fU = dotProduct(texinfo.vS, org_pos) + texinfo.shiftS;
 					float fV = dotProduct(texinfo.vT, org_pos) + texinfo.shiftT;
+
 					fU /= (float)tex.nWidth;
 					fV /= -(float)tex.nHeight;
-					fprintf(f, "vt %f %f\n", fU, fV);
+
+					obj_file << "vt " << flt_to_str(fU) << " " << flt_to_str(fV) << "\n";
 				}
 
-				fprintf(f, "%s", "s off\n");
+				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
+				{
+					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
+					obj_file << "o " << groupname << "\n";
+
+					print_log(PRINT_RED, "Entity {} angles {}\n", tmpentid, rendEnt->angles.toKeyvalueString());
+					//fprintf(f, "\ng %s\n\n", groupname.c_str());
+				}
 				if (lastmaterialid != materialid)
 				{
-					fprintf(f, "usemtl %s\n", materialid.c_str());
+					obj_file << "usemtl " << materialid << "\n";
 				}
 				lastmaterialid = materialid;
 
 
-				fprintf(f, "%s", "f");
-				for (int n = rface->vertCount - 1; n >= 0; n--)
+				obj_file << "f";
+
+				for (int n = 0; n < rface->vertCount; n++)
 				{
 					int id = vertoffset + n;
 
-					fprintf(f, " %i/%i/%i", id, id, id);
+					obj_file << " " << id << "/" << id << "/" << normoffset;
 				}
 
+				obj_file << "\n";
 				vertoffset += rface->vertCount;
-				fprintf(f, "%s", "\n");
-
 			}
 		}
 
-		FILE* fmat = NULL;
-		fopen_s(&fmat, (path + bsp_name + ".mtl").c_str(), "wt");
+
+		std::ofstream fmat(path + bsp_name + ".mtl", std::ios::binary);
 
 		if (fmat)
 		{
 			for (auto const& s : materials)
 			{
-				fprintf(fmat, "%s\n", s.c_str());
+				fmat << s << '\n';
 			}
-			fclose(fmat);
 		}
-
-		fclose(f);
 
 
 		renderer->undo();
@@ -11501,18 +11525,6 @@ int Bsp::import_mdl_to_bspmodel(size_t ent, bool generateClipnodes)
 		auto mdl_input = renderer->renderEnts[ent].mdl;
 		if (mdl_input->mdl_mesh_groups.size())
 		{
-			std::vector<vec3> all_verts;
-			std::vector<StudioMesh> merged_meshes;
-			for (size_t group = 0; group < mdl_input->mdl_mesh_groups.size(); group++)
-			{
-				for (size_t meshid = 0; meshid < mdl_input->mdl_mesh_groups[group].size(); meshid++)
-				{
-					merged_meshes.push_back(mdl_input->mdl_mesh_groups[group][meshid]);
-
-					for (auto v : mdl_input->mdl_mesh_groups[group][meshid].verts)
-						all_verts.push_back(v.pos.flipUV());
-				}
-			}
 			bool is_valid_nodes = false;
 
 			mat4x4 angle_mat;
@@ -11528,6 +11540,21 @@ int Bsp::import_mdl_to_bspmodel(size_t ent, bool generateClipnodes)
 				angle_mat.rotateZ((angles.y * (HL_PI / 180.0f)));
 
 				//print_log(PRINT_RED, "CONVERT ANGLES : {} for {} ent\n", angles.toKeyvalueString(), ents[ent]->classname);
+			}
+
+			std::vector<vec3> all_verts;
+			std::vector<StudioMesh> merged_meshes;
+			for (size_t group = 0; group < mdl_input->mdl_mesh_groups.size(); group++)
+			{
+				for (size_t meshid = 0; meshid < mdl_input->mdl_mesh_groups[group].size(); meshid++)
+				{
+					merged_meshes.push_back(mdl_input->mdl_mesh_groups[group][meshid]);
+					if (generateClipnodes)
+					{
+						for (auto v : mdl_input->mdl_mesh_groups[group][meshid].verts)
+							all_verts.push_back((angle_mat * vec4(v.pos.flipUV(), 1.0f)).xyz());
+					}
+				}
 			}
 
 			int newModelIdx = import_mdl_to_bspmodel(merged_meshes, angle_mat, is_valid_nodes);
@@ -11726,7 +11753,7 @@ int Bsp::import_mdl_to_bspmodel(size_t ent, bool generateClipnodes)
 				}*/
 
 
-				models[newModelIdx].iHeadnodes[0] = models[models_to_merge_pass3[0]].iHeadnodes[0];
+				//models[newModelIdx].iHeadnodes[0] = models[models_to_merge_pass3[0]].iHeadnodes[0];
 				models[newModelIdx].iHeadnodes[1] = models[models_to_merge_pass3[0]].iHeadnodes[1];
 				models[newModelIdx].iHeadnodes[2] = models[models_to_merge_pass3[0]].iHeadnodes[2];
 				models[newModelIdx].iHeadnodes[3] = models[models_to_merge_pass3[0]].iHeadnodes[3];
@@ -11794,9 +11821,6 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 		for (v = (int)startVertCount; v < newVertCount; v++)
 		{
 			newverts[v] = (angles * vec4(mesh_verts[v - startVertCount].pos.unflip(), 1.0f)).xyz();
-
-
-
 			newuv[v] = { mesh_verts[v - startVertCount].u, mesh_verts[v - startVertCount].v };
 			newVertIndexes.push_back(v);
 			expandBoundingBox(newverts[v], mins, maxs);
@@ -11938,8 +11962,13 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 					trueTexName.erase(trueTexName.begin());
 				}
 
-				miptex = add_texture(trueTexName.c_str(), (unsigned char*)tmpData, newWidth,
-					newHeight);
+				auto tmpTex = find_embedded_texture(trueTexName.c_str(), miptex);
+
+				if (miptex < 0 || !tmpTex || tmpTex->nWidth != newWidth || tmpTex->nHeight != newHeight)
+				{
+					miptex = add_texture(trueTexName.c_str(), (unsigned char*)tmpData, newWidth,
+						newHeight);
+				}
 
 				delete[] tmpData;
 			}
@@ -12017,6 +12046,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 			{
 				BSPTEXTUREINFO& texInfo = newtexinfos[newfaces[f].iTextureInfo];
 				texInfo.nFlags = TEX_SPECIAL;
+				print_log(PRINT_BLUE, "Found bad face {} extents, set to SPECIAL\n", f);
 			}
 		}
 	}
@@ -12031,14 +12061,17 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 	models[newModelIdx].nVisLeafs = 1;
 
 	int empty_leaf = create_leaf(CONTENTS_EMPTY);
-	leaves[leafCount - 1].nMins = mins + 1.0f;
-	leaves[leafCount - 1].nMaxs = maxs - 1.0f;
-	leaves[leafCount - 1].nVisOffset = -1;
+	leaves[empty_leaf].nMins = mins + 1.0f;
+	leaves[empty_leaf].nMaxs = maxs - 1.0f;
+	leaves[empty_leaf].nVisOffset = -1;
+
+	update_lump_pointers();
 
 	for (int i = modelFirstFace; i < modelFirstFace + modelFaces; i++)
 	{
-		leaf_add_face(i, leafCount - 1);
+		leaf_add_face(i, empty_leaf);
 	}
+
 
 	/*unsigned int startNode = nodeCount;
 	{
@@ -12446,11 +12479,15 @@ bool Bsp::CalcFaceExtents(lightinfo_t* l)
 
 bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 {
-	bool findpos = CanFindFacePosition(this, facenum, mins_out, maxs_out);
-	bool retval = true;
+	bool retval = CanFindFacePosition(this, facenum, mins_out, maxs_out);
 
 	BSPFACE32& face = faces[facenum];
 	BSPTEXTUREINFO tex = texinfos[face.iTextureInfo];
+
+	if (tex.nFlags & TEX_SPECIAL)
+	{
+		retval = true;
+	}
 
 	for (int i = 0; i < 2; i++)
 	{
@@ -12458,17 +12495,24 @@ bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 
 		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * tmpTextureStep > (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT))
 		{
+			if (retval)
+			{
+				print_log(get_localized_string("BAD_SURFACE_EXT"), facenum, (int)((maxs_out[i] - mins_out[i]) * tmpTextureStep), (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT));
+				print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
+			}
 			retval = false;
-			print_log(get_localized_string("BAD_SURFACE_EXT"), facenum, (int)((maxs_out[i] - mins_out[i]) * tmpTextureStep), (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT));
-			print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
 			mins_out[i] = 1;
 			maxs_out[i] = 1;
 		}
 
 		if (maxs_out[i] - mins_out[i] < 0)
 		{
+			if (retval)
+			{
+				print_log(PRINT_RED, "Face {} extents are bad. Map can crash.\n", facenum);
+				print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
+			}
 			retval = false;
-			print_log(PRINT_RED, "Face {} extents are bad. Map can crash.\n", facenum);
 			mins_out[i] = 1;
 			maxs_out[i] = 1;
 		}
@@ -12486,19 +12530,19 @@ int Bsp::GetFaceSingleLightmapSizeBytes(int facenum)
 	return size[0] * size[1] * sizeof(COLOR3);
 }
 
-void Bsp::GetFaceLightmapSize(int facenum, int size[2])
+bool Bsp::GetFaceLightmapSize(int facenum, int size[2])
 {
 	int mins[2];
 	int maxs[2];
 
-	GetFaceExtents(facenum, mins, maxs);
+	bool foundExtents = GetFaceExtents(facenum, mins, maxs);
 
 	size[0] = (maxs[0] - mins[0]);
 	size[1] = (maxs[1] - mins[1]);
 
 	size[0] += 1;
 	size[1] += 1;
-	//return !badSurfaceExtents;
+	return foundExtents;
 }
 
 int Bsp::GetFaceLightmapSizeBytes(int facenum)

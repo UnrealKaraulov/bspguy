@@ -430,3 +430,5 @@ private:
 
 int str_to_int(const std::string& s);
 float str_to_float(const std::string& s);
+
+std::string flt_to_str(float f);

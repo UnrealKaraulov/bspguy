@@ -29,7 +29,7 @@ struct mat4x4
 	// converts row-major matrix to column-major (for OpenGL)
 	mat4x4 transpose();
 
-	mat4x4 invert();
+	mat4x4 invert(bool * result = NULL);
 
 	float& operator ()(size_t idx)
 	{

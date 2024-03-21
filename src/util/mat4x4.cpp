@@ -17,13 +17,13 @@ void mat4x4::loadIdentity()
 	memcpy(m, m_identity, sizeof(m_identity));
 }
 
-void loadEmptyMat4x4(float * m)
+void loadEmptyMat4x4(float* m)
 {
 	memcpy(m, m_zero, sizeof(m_zero));
 }
 
 void glhFrustumf2(float* matrix, float left, float right, float bottom, float top,
-				  float znear, float zfar)
+	float znear, float zfar)
 {
 	float temp, temp2, temp3, temp4;
 	temp = 2.0f * znear;
@@ -150,16 +150,16 @@ void mat4x4::rotate(float pitch, float yaw, float roll)
 	sr = sin(angle);
 	cr = cos(angle);
 
-	float mat[16] = {0.0f};
-	mat[0* 4 + 0] = cp * cy;
-	mat[1* 4 + 0] = cp * sy;
-	mat[2* 4 + 0] = -sp;
-	mat[0* 4 + 1] = sr * sp * cy + cr * -sy;
-	mat[1* 4 + 1] = sr * sp * sy + cr * cy;
-	mat[2* 4 + 1] = sr * cp;
-	mat[0* 4 + 2] = (cr * sp * cy + -sr * -sy);
-	mat[1* 4 + 2] = (cr * sp * sy + -sr * cy);
-	mat[2* 4 + 2] = cr * cp;
+	float mat[16] = { 0.0f };
+	mat[0 * 4 + 0] = cp * cy;
+	mat[1 * 4 + 0] = cp * sy;
+	mat[2 * 4 + 0] = -sp;
+	mat[0 * 4 + 1] = sr * sp * cy + cr * -sy;
+	mat[1 * 4 + 1] = sr * sp * sy + cr * cy;
+	mat[2 * 4 + 1] = sr * cp;
+	mat[0 * 4 + 2] = (cr * sp * cy + -sr * -sy);
+	mat[1 * 4 + 2] = (cr * sp * sy + -sr * cy);
+	mat[2 * 4 + 2] = cr * cp;
 
 	mat[0 * 4 + 3] = 0.0f;
 	mat[1 * 4 + 3] = 0.0f;
@@ -279,7 +279,7 @@ mat4x4 mat4x4::transpose()
 }
 
 // http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
-mat4x4 mat4x4::invert()
+mat4x4 mat4x4::invert(bool* result)
 {
 	mat4x4 out;
 	loadEmptyMat4x4(out.m);
@@ -402,6 +402,8 @@ mat4x4 mat4x4::invert()
 
 	if (std::abs(det) < EPSILON)
 	{
+		if (result)
+			*result = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1010));
 		return out;
 	}
@@ -431,7 +433,7 @@ mat4x4 mat4x4::invert()
 
 void mat4x4::mult(float mat[16])
 {
-	mat4x4 & _other = *((mat4x4*)mat);
+	mat4x4& _other = *((mat4x4*)mat);
 	*this = *this * _other;
 }
 

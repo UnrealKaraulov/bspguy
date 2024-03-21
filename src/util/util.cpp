@@ -2831,3 +2831,18 @@ int str_to_int(const std::string& s)
 	}
 	return 0;
 }
+
+std::string flt_to_str(float f)
+{
+	std::string retstr = std::to_string(f);
+	auto it = retstr.find('.');
+	if (it != std::string::npos)
+	{
+		retstr.erase(retstr.find_last_not_of('0') + 1, std::string::npos);
+		if (retstr[retstr.size() - 1] == '.')
+		{
+			retstr = retstr.substr(0, retstr.size() - 1);
+		}
+	}
+	return retstr;
+}

@@ -10,105 +10,43 @@
 
 
 // ApplyMatrix: (x y z 1)T -> matrix * (x y z 1)T
-void ApplyMatrix(const matrix_t& m, const vec3 in, vec3& out)
+void ApplyMatrix(const mat4x4& m, const vec3 in, vec3& out)
 {
-	int i;
-
-	VectorCopy(m.v[3], out);
-	for (i = 0; i < 3; i++)
-	{
-		VectorMA(out, in[i], m.v[i], out);
-	}
+	out = (m * vec4(in, 1.0f)).xyz();
 }
 
-bool InvertMatrix(const matrix_t& m, matrix_t& m_inverse)
+bool InvertMatrix(mat4x4 m, mat4x4& m_inverse)
 {
-	float texplanes[2][4]{};
-	float faceplane[4]{};
-	int i;
-	float texaxis[2][3]{};
-	float normalaxis[3]{};
-	float det, sqrlen1, sqrlen2, sqrlen3;
-	float texorg[3]{};
-
-	for (i = 0; i < 4; i++)
-	{
-		texplanes[0][i] = m.v[i][0];
-		texplanes[1][i] = m.v[i][1];
-		faceplane[i] = m.v[i][2];
-	}
-
-	sqrlen1 = DotProduct(texplanes[0], texplanes[0]);
-	sqrlen2 = DotProduct(texplanes[1], texplanes[1]);
-	sqrlen3 = DotProduct(faceplane, faceplane);
-	if (sqrlen1 <= EPSILON * EPSILON || sqrlen2 <= EPSILON * EPSILON || sqrlen3 <= EPSILON * EPSILON)
-		// s gradient, t gradient or face normal is too close to 0
-	{
-		return false;
-	}
-
-	CrossProduct(texplanes[0], texplanes[1], normalaxis);
-	det = DotProduct(normalaxis, faceplane);
-	if (det * det <= sqrlen1 * sqrlen2 * sqrlen3 * EPSILON * EPSILON)
-		// s gradient, t gradient and face normal are coplanar
-	{
-		return false;
-	}
-	VectorScale(normalaxis, 1 / det, normalaxis);
-
-	CrossProduct(texplanes[1], faceplane, texaxis[0]);
-	VectorScale(texaxis[0], 1 / det, texaxis[0]);
-
-	CrossProduct(faceplane, texplanes[0], texaxis[1]);
-	VectorScale(texaxis[1], 1 / det, texaxis[1]);
-
-	VectorScale(normalaxis, -faceplane[3], texorg);
-	VectorMA(texorg, -texplanes[0][3], texaxis[0], texorg);
-	VectorMA(texorg, -texplanes[1][3], texaxis[1], texorg);
-
-	VectorCopy(texaxis[0], m_inverse.v[0]);
-	VectorCopy(texaxis[1], m_inverse.v[1]);
-	VectorCopy(normalaxis, m_inverse.v[2]);
-	VectorCopy(texorg, m_inverse.v[3]);
+	m_inverse = m.invert();
 	return true;
 }
 
 
-void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
-// without g_face_offset
+void TranslateWorldToTex(Bsp* bsp, int facenum, mat4x4& m)
 {
-	BSPFACE32* f;
-	BSPTEXTUREINFO* ti;
-
-	int i;
-
-	f = &bsp->faces[facenum];
+	BSPFACE32* f = &bsp->faces[facenum];
 	const BSPPLANE fp = bsp->getPlaneFromFace(f);
-	ti = &bsp->texinfos[f->iTextureInfo];
-	for (i = 0; i < 3; i++)
-	{
-		m.v[i][0] = ((float*)&ti->vS)[i];
-		m.v[i][1] = ((float*)&ti->vT)[i];
-	}
-	m.v[0][2] = fp.vNormal.x;
-	m.v[1][2] = fp.vNormal.y;
-	m.v[2][2] = fp.vNormal.z;
+	BSPTEXTUREINFO* ti = &bsp->texinfos[f->iTextureInfo];
 
-	m.v[3][0] = ti->shiftS;
-	m.v[3][1] = ti->shiftT;
-	m.v[3][2] = -fp.fDist;
+	for (int i = 0; i < 3; i++)
+	{
+		m.m[i * 4 + 0] = ((float*)&ti->vS)[i];
+		m.m[i * 4 + 1] = ((float*)&ti->vT)[i]; 
+		m.m[i * 4 + 2] = ((float*)&fp.vNormal)[i]; 
+	}
+
+	m.m[3 * 4 + 0] = ti->shiftS;
+	m.m[3 * 4 + 1] = ti->shiftT;
+	m.m[3 * 4 + 2] = -fp.fDist; 
 }
 
 bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 {
 	float texmins[2] = { 0.0f,0.0f };
-	
 	float texmaxs[2] = { 0.0f,0.0f };
 
-	matrix_t worldtotex;
-	memset(worldtotex.v, 0, sizeof(worldtotex.v));
-	matrix_t textoworld;
-	memset(worldtotex.v, 0, sizeof(worldtotex.v));
+	mat4x4 worldtotex;
+	worldtotex.loadIdentity();
 
 	BSPFACE32* f = &bsp->faces[facenum];
 	if (f->iTextureInfo < 0 || bsp->texinfos[f->iTextureInfo].nFlags & TEX_SPECIAL)
@@ -120,9 +58,13 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 	BSPTEXTUREINFO& tex = bsp->texinfos[f->iTextureInfo];
 
 	TranslateWorldToTex(bsp, facenum, worldtotex);
-	if (!InvertMatrix(worldtotex, textoworld))
+
+	bool canInvert = true;
+	worldtotex.invert(&canInvert);
+
+	if (!canInvert)
 	{
-		print_log(PRINT_RED, "CanFindFacePosition error InvertMatrix!\n");
+		print_log(PRINT_RED, "CanFindFacePosition error InvertMatrix face {}!\n", facenum);
 		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}

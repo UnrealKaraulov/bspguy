@@ -46,12 +46,6 @@
 #define VectorCopy(a,b) { (b)[0]=(a)[0]; (b)[1]=(a)[1]; (b)[2]=(a)[2]; }
 #define VectorMA(a, scale, b, dest) { (dest)[0] = (a)[0] + (scale) * (b)[0]; (dest)[1] = (a)[1] + (scale) * (b)[1];  (dest)[2] = (a)[2] + (scale) * (b)[2]; }
 
-typedef struct
-{
-	float v[4][3];
-}
-matrix_t;
-
 struct BSPEDGE32;
 struct BSPTEXTUREINFO;
 struct BSPPLANE;

@@ -375,7 +375,7 @@ public:
 	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);
 
 	const BSPPLANE getPlaneFromFace(const BSPFACE32* const face);
-	void GetFaceLightmapSize(int facenum, int size[2]);
+	bool GetFaceLightmapSize(int facenum, int size[2]);
 	int GetFaceLightmapSizeBytes(int facenum);
 	int GetFaceSingleLightmapSizeBytes(int facenum);
 	bool GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2]);
