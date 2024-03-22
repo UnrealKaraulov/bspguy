@@ -9834,9 +9834,9 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 						tmpFace.edgeFlags = 0;
 						tmpFace.lmGroup = csm_groups;
 						tmpFace.matIdx = (unsigned short)(materialid);
-						tmpFace.vertIdx[0] = startvert;
+						tmpFace.vertIdx[2] = startvert;
 						tmpFace.vertIdx[1] = startvert + 1;
-						tmpFace.vertIdx[2] = startvert + 2;
+						tmpFace.vertIdx[0] = startvert + 2;
 
 						csm_export->faces.push_back(tmpFace);
 
