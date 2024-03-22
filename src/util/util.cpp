@@ -527,7 +527,7 @@ vec3 findBestBrushCenter(std::vector<vec3>& points)
 		for (const auto& point : points) {
 			center += point;
 		}
-		center /= points.size();
+		center /= points.size() * 1.0f;
 
 		if (points.size() > 2)
 		{

@@ -1284,7 +1284,7 @@ void Gui::drawBspContexMenu()
 							{
 								BSPFACE32 face = map->faces[f];
 
-								if (std::find(app->pickInfo.selectedFaces.begin(), app->pickInfo.selectedFaces.end(), f) != app->pickInfo.selectedFaces.end())
+								if (std::find(app->pickInfo.selectedFaces.begin(), app->pickInfo.selectedFaces.end(), (size_t)f) != app->pickInfo.selectedFaces.end())
 								{
 									continue;
 								}
@@ -2810,7 +2810,7 @@ void Gui::drawMenuBar()
 
 				static int g_scale = 1;
 
-				if (ImGui::BeginMenu("Wavefront (.obj) [WIP]", map && !map->is_mdl_model))
+				if (ImGui::BeginMenu("Wavefront(.obj)/XashNT(.csm) [WIP]", map && !map->is_mdl_model))
 				{
 
 					if (ImGui::BeginMenu("Select scale"))
@@ -2841,14 +2841,30 @@ void Gui::drawMenuBar()
 						ImGui::EndMenu();
 					}
 
-					if (ImGui::MenuItem("Export only bsp"))
+					if (ImGui::BeginMenu("Export only bsp"))
 					{
-						map->ExportToObjWIP(g_working_dir, g_scale);
+						if (ImGui::MenuItem("Export .obj"))
+						{
+							map->ExportToObjWIP(g_working_dir, g_scale);
+						}
+						if (ImGui::MenuItem("Export .csm"))
+						{
+							map->ExportToObjWIP(g_working_dir, g_scale, false, false, true);
+						}
+						ImGui::EndMenu();
 					}
 
-					if (ImGui::MenuItem("Export with models"))
+					if (ImGui::BeginMenu("Export with models"))
 					{
-						map->ExportToObjWIP(g_working_dir, g_scale, false, true);
+						if (ImGui::MenuItem("Export .obj"))
+						{
+							map->ExportToObjWIP(g_working_dir, g_scale, false, true);
+						}
+						if (ImGui::MenuItem("Export .csm"))
+						{
+							map->ExportToObjWIP(g_working_dir, g_scale, false, true, true);
+						}
+						ImGui::EndMenu();
 					}
 
 					ImGui::EndMenu();
@@ -3242,7 +3258,7 @@ void Gui::drawMenuBar()
 				if (fileSize(g_settings_path) == 0)
 				{
 					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0359));
-				}
+		}
 				else
 				{
 					glfwTerminate();
@@ -3253,9 +3269,9 @@ void Gui::drawMenuBar()
 					std::quick_exit(0);
 #endif
 				}
-				}
+	}
 			ImGui::EndMenu();
-		}
+}
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
 		{
@@ -8111,7 +8127,7 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted(get_localized_string(LANG_0740).c_str());
 				ImGui::EndTooltip();
 			}
-		}
+			}
 		else if (settingsTab == 1)
 		{
 			for (size_t i = 0; i < g_settings.fgdPaths.size(); i++)
@@ -8639,7 +8655,7 @@ void Gui::drawSettings()
 		ImGui::EndChild();
 
 		ImGui::EndGroup();
-	}
+			}
 	ImGui::End();
 
 
@@ -8663,7 +8679,7 @@ void Gui::drawSettings()
 		}
 		oldShowSettings = showSettingsWidget = apply_settings_pressed;
 	}
-}
+		}
 
 void Gui::drawHelp()
 {

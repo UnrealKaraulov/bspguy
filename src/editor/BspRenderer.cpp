@@ -888,7 +888,7 @@ void BspRenderer::deleteFaceMaths()
 	faceMaths = NULL;
 }
 
-int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriangulate)
+int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangulate)
 {
 	if (modelIdx < 0 || modelIdx >= map->modelCount)
 		return 0;
@@ -1127,7 +1127,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			}
 		}
 
-		if (!noTriangulate)
+		if (triangulate)
 		{
 			idx = 0;
 			// convert TRIANGLE_FAN verts to TRIANGLES so multiple faces can be drawn in a single draw call

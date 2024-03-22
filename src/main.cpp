@@ -1051,12 +1051,15 @@ int main(int argc, char* argv[])
 
 		fs::current_path(bspguy_dir);
 
-
-		std::vector<UVVERT> vertices;
+		/*CSMFile tmpFile;
+		tmpFile.read("d:/SteamLibrary/steamapps/common/Half-Life/bspguy_work/de_dust2.smd/de_dust2_1.csm");
+		tmpFile.validate();
+		tmpFile.write("d:/SteamLibrary/steamapps/common/Half-Life/bspguy_work/de_dust2.smd/de_dust2_1_new.csm");*/
+		/*std::vector<UVVERT> vertices;
 		vec3 mins(-64.0f, -64.0f, -64.0f);
 		vec3 maxs(64.0f, 64.0f, 64.0f);
 
-		CreateSkybox(vertices, mins, maxs);
+		CreateSkybox(vertices, mins, maxs);*/
 
 		if (fileExists("./log.txt"))
 		{

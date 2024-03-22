@@ -9069,7 +9069,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 
 		if (refreshedModels.find(mdlid) == refreshedModels.end())
 		{
-			bsprend->refreshModel(mdlid, false, /* do triangulate */ false);
+			bsprend->refreshModel(mdlid, false, /* do triangulate */ true);
 			refreshedModels.insert(mdlid);
 		}
 
@@ -9423,7 +9423,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	renderer->pushModelUndoState("EXPORT .SMD EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 }
 
-void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode, bool with_mdl)
+void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode, bool with_mdl, bool export_csm)
 {
 	if (!createDir(path))
 	{
@@ -9474,8 +9474,8 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	int vertoffset = 1;
 	int normoffset = 0;
 
-	std::string materialid = std::string();
-	std::string lastmaterialid = std::string();
+	int materialid = -1;
+	int lastmaterialid = 0;
 
 	std::set<int> refreshedModels;
 
@@ -9545,7 +9545,11 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	else
 		renderer->preRenderEnts();
 
-	tmp.update("Export to obj...", faceCount);
+	if (export_csm)
+		tmp.update("Export to csm...", faceCount);
+	else
+		tmp.update("Export to obj...", faceCount);
+
 	g_progress = tmp;
 
 	std::map<std::string, std::stringstream> group_verts;
@@ -9556,6 +9560,13 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	std::map<std::string, int> group_vert_groups;
 
 	std::vector<std::string> group_list;
+
+	CSMFile* csm_export = new CSMFile();
+
+	csm_face tmpFace;
+
+	int csm_groups = 0;
+
 
 	for (int i = 0; i < faceCount; i++)
 	{
@@ -9569,7 +9580,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 		if (refreshedModels.find(mdlid) == refreshedModels.end())
 		{
-			bsprend->refreshModel(mdlid, false, true);
+			bsprend->refreshModel(mdlid, false, export_csm ? true : false);
 			refreshedModels.insert(mdlid);
 		}
 
@@ -9594,47 +9605,56 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 			entIds.push_back(0);
 		}
 
-		materialid.clear();
+		materialid = -1;
 		for (size_t m = 0; m < matnames.size(); m++)
 		{
 			if (matnames[m] == tex.szName)
-				materialid = tex.szName;
+				materialid = m;
 		}
-		if (materialid.empty())
+
+		if (materialid == -1)
 		{
-			materialid = tex.szName;
-			materials.emplace_back("");
-			materials.emplace_back("newmtl " + materialid);
-
-			materials.emplace_back("Ns 0");
-			materials.emplace_back("Ka 1 1 1");
-			materials.emplace_back("Ks 0 0 0");
-			materials.emplace_back("Ke 0 0 0");
-			materials.emplace_back("Ni 1");
-
-			if (toLowerCase(tex.szName) == "aaatrigger" ||
-				toLowerCase(tex.szName) == "null" ||
-				toLowerCase(tex.szName).starts_with("sky") ||
-				toLowerCase(tex.szName) == "noclip" ||
-				toLowerCase(tex.szName) == "clip" ||
-				toLowerCase(tex.szName) == "origin" ||
-				toLowerCase(tex.szName) == "bevel" ||
-				toLowerCase(tex.szName) == "hint" ||
-				toLowerCase(tex.szName) == "skip"
-				)
+			materialid = (int)matnames.size();
+			if (!export_csm)
 			{
-				materials.emplace_back("d 0.25");
-				materials.emplace_back("illum 1");
-			}
-			else
-			{
-				materials.emplace_back("d 1");
-				materials.emplace_back("illum 2");
-			}
+				materials.emplace_back("");
+				materials.emplace_back("newmtl " + materialid);
 
-			materials.emplace_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
+				materials.emplace_back("Ns 0");
+				materials.emplace_back("Ka 1 1 1");
+				materials.emplace_back("Ks 0 0 0");
+				materials.emplace_back("Ke 0 0 0");
+				materials.emplace_back("Ni 1");
+
+				if (toLowerCase(tex.szName) == "aaatrigger" ||
+					toLowerCase(tex.szName) == "null" ||
+					toLowerCase(tex.szName).starts_with("sky") ||
+					toLowerCase(tex.szName) == "noclip" ||
+					toLowerCase(tex.szName) == "clip" ||
+					toLowerCase(tex.szName) == "origin" ||
+					toLowerCase(tex.szName) == "bevel" ||
+					toLowerCase(tex.szName) == "hint" ||
+					toLowerCase(tex.szName) == "skip"
+					)
+				{
+					materials.emplace_back("d 0.25");
+					materials.emplace_back("illum 1");
+				}
+				else
+				{
+					materials.emplace_back("d 1");
+					materials.emplace_back("illum 2");
+				}
+
+				materials.emplace_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
+			}
 
 			matnames.emplace_back(tex.szName);
+
+			if (export_csm)
+			{
+				csm_export->materials.push_back(std::string("textures/") + tex.szName + std::string(".bmp"));
+			}
 		}
 
 		if (!fileExists(path + std::string("textures/") + tex.szName + std::string(".bmp")))
@@ -9723,6 +9743,8 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 				if (std::find(group_list.begin(), group_list.end(), groupname) == group_list.end())
 					group_list.push_back(groupname);
 
+				csm_groups++;
+
 				//print_log(PRINT_RED, "Entity {} angles {}\n", tmpentid, rendEnt->angles.toKeyvalueString());
 			}
 
@@ -9739,23 +9761,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 				renderer->setRenderAngles(ent->classname, angle_mat, angles);
 			}
 
-			for (int n = rface->vertCount - 1; n >= 0; n--)
-			{
-				lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
-
-				vec3 org_pos = vert.pos;
-
-				if (rendEnt->needAngles)
-				{
-					org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
-				}
-
-				org_pos += origin_offset;
-
-				org_pos *= scale;
-
-				group_verts[groupname] << "v " << org_pos.toKeyvalueString() << "\n";
-			}
 
 			BSPPLANE tmpPlane = getPlaneFromFace(&face);
 			vec3 org_norm = tmpPlane.vNormal;
@@ -9767,10 +9772,34 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 			org_norm = org_norm.flip();
 
-			group_normals[groupname] << "vn " << org_norm.toKeyvalueString() << "\n";
+			if (!export_csm)
+			{
+				for (int n = rface->vertCount - 1; n >= 0; n--)
+				{
+					lightmapVert& vert = ((lightmapVert*)rgroup->buffer->get_data())[rface->vertOffset + n];
 
-			normoffset++;
+					vec3 org_pos = vert.pos;
 
+					if (rendEnt->needAngles)
+					{
+						org_pos = (angle_mat * vec4(org_pos, 1.0)).xyz();
+					}
+
+					org_pos += origin_offset;
+
+					org_pos *= scale;
+
+					group_verts[groupname] << "v " << org_pos.toKeyvalueString() << "\n";
+
+
+				}
+
+				group_normals[groupname] << "vn " << org_norm.toKeyvalueString() << "\n";
+
+				normoffset++;
+			}
+
+			int uv_idx = 0;
 
 			for (int n = rface->vertCount - 1; n >= 0; n--)
 			{
@@ -9791,7 +9820,57 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 				fU /= (float)tex.nWidth;
 				fV /= -(float)tex.nHeight;
 
-				group_textures[groupname] << "vt " << flt_to_str(fU) << " " << flt_to_str(fV) << "\n";
+				if (!export_csm)
+				{
+					group_textures[groupname] << "vt " << flt_to_str(fU) << " " << flt_to_str(fV) << "\n";
+				}
+
+				if (export_csm)
+				{
+					if (uv_idx == 0)
+					{
+						unsigned int startvert = (unsigned int)csm_export->vertices.size();
+
+						tmpFace.edgeFlags = 0;
+						tmpFace.lmGroup = csm_groups;
+						tmpFace.matIdx = (unsigned short)(materialid);
+						tmpFace.vertIdx[0] = startvert;
+						tmpFace.vertIdx[1] = startvert + 1;
+						tmpFace.vertIdx[2] = startvert + 2;
+
+						csm_export->faces.push_back(tmpFace);
+
+						csm_export->header.lmGroups = csm_groups;
+					}
+
+
+					org_pos.unflipUV();
+
+					org_pos += origin_offset;
+					org_pos *= scale;
+
+					COLOR4 rndColor;
+					srand(csm_groups);
+					rndColor.r = 50 + rand() % 206;
+					rndColor.g = 50 + rand() % 206;
+					rndColor.b = 50 + rand() % 206;
+					rndColor.a = 255;
+
+					csm_export->vertices.push_back({ org_pos,org_norm,rndColor });
+
+					size_t cur_faceIdx = csm_export->faces.size() - 1;
+
+					csm_export->faces[cur_faceIdx].uvs[0].uv[uv_idx].x = fU;
+					csm_export->faces[cur_faceIdx].uvs[0].uv[uv_idx].y = fU;
+
+					csm_export->faces[cur_faceIdx].uvs[1].uv[uv_idx].x = fU;
+					csm_export->faces[cur_faceIdx].uvs[1].uv[uv_idx].y = fU;
+
+					uv_idx++;
+
+					if (uv_idx == 3)
+						uv_idx = 0;
+				}
 			}
 
 			if (lastmaterialid != materialid)
@@ -9799,65 +9878,85 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 				group_vert_groups[groupname]++;
 
 				//group_objects[groupname] << "g " << groupname << "_face" << group_vert_groups[groupname] << "\n";
-
-				group_objects[groupname] << "usemtl " << materialid << "\n";
+				if (!export_csm)
+				{
+					if (materialid >= 0)
+					{
+						group_objects[groupname] << "usemtl " << matnames[materialid] << "\n";
+					}
+				}
 			}
 			lastmaterialid = materialid;
 
-
-			group_objects[groupname] << "f";
-
-			for (int n = 0; n < rface->vertCount; n++)
+			if (!export_csm)
 			{
-				int id = vertoffset + n;
+				group_objects[groupname] << "f";
 
-				group_objects[groupname] << " " << id << "/" << id << "/" << normoffset;
+				for (int n = 0; n < rface->vertCount; n++)
+				{
+					int id = vertoffset + n;
+
+					group_objects[groupname] << " " << id << "/" << id << "/" << normoffset;
+				}
+
+				group_objects[groupname] << "\n";
 			}
 
-			group_objects[groupname] << "\n";
 			vertoffset += rface->vertCount;
 		}
 	}
 
-	std::ofstream obj_file(path + bsp_name + ".obj", std::ios::binary);
-	if (obj_file)
+	if (!export_csm)
 	{
-		obj_file << "# Exported using bspguy!\n";
-		obj_file << "mtllib " << bsp_name << ".mtl\n";
-
-		for (auto& group : group_list)
-		{	
-			obj_file << "o " << group << "\n";
-
-			obj_file << group_verts[group].str();
-
-			obj_file << group_normals[group].str();
-
-			obj_file << group_textures[group].str();
-			
-			obj_file << group_objects[group].str();
-		}
-
-		obj_file.flush();
-		obj_file.close();
-	}
-
-
-	std::ofstream mat_file(path + bsp_name + ".mtl", std::ios::binary);
-
-	if (mat_file)
-	{
-		mat_file << "# Exported using bspguy!\n";
-
-		for (auto const& s : materials)
+		std::ofstream obj_file(path + bsp_name + ".obj", std::ios::binary);
+		if (obj_file)
 		{
-			mat_file << s << '\n';
+			obj_file << "# Exported using bspguy!\n";
+			obj_file << "mtllib " << bsp_name << ".mtl\n";
+
+			for (auto& group : group_list)
+			{
+				obj_file << "o " << group << "\n";
+
+				obj_file << group_verts[group].str();
+
+				obj_file << group_normals[group].str();
+
+				obj_file << group_textures[group].str();
+
+				obj_file << group_objects[group].str();
+			}
+
+			obj_file.flush();
+			obj_file.close();
 		}
 
-		mat_file.flush();
-		mat_file.close();
-	}
 
+		std::ofstream mat_file(path + bsp_name + ".mtl", std::ios::binary);
+
+		if (mat_file)
+		{
+			mat_file << "# Exported using bspguy!\n";
+
+			for (auto const& s : materials)
+			{
+				mat_file << s << '\n';
+			}
+
+			mat_file.flush();
+			mat_file.close();
+		}
+	}
+	else
+	{
+		print_log(PRINT_GREEN, "VALIDATE START\n");
+		csm_export->validate();
+		print_log(PRINT_GREEN, "VALIDATE END\n");
+		csm_export->write(path + bsp_name + ".csm");/*
+		csm_export->read(path + bsp_name + ".csm");
+		csm_export->validate();*/
+	}
+	delete csm_export;
 
 	renderer->undo();
 

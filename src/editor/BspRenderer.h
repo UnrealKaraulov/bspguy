@@ -198,7 +198,7 @@ public:
 
 	bool setRenderAngles(const std::string& classname, mat4x4& outmat, vec3& outangles);
 	void refreshEnt(size_t entIdx);
-	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool noTriangulate = false);
+	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool triangulate = true);
 	bool refreshModelClipnodes(int modelIdx);
 	void refreshFace(int faceIdx);
 	void updateClipnodeOpacity(unsigned char newValue);
