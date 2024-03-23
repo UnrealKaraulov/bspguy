@@ -508,6 +508,7 @@ struct csm_face
 #define IDCSM_VERSION		2
 
 
+
 class CSMFile {
 private:
 	bool readed;
@@ -516,11 +517,9 @@ private:
 	{
 		std::istringstream ss(materialsStr);
 		std::string material;
-
 		while (ss.str().find('"', (size_t)ss.tellg()) != std::string::npos && ss >> std::quoted(material))
 		{
 			materials.push_back(material);
-			material.clear();
 		}
 	}
 
@@ -535,15 +534,10 @@ private:
 			ret.pop_back();
 		return ret;
 	}
-
+	
 public:
-
 	CSMFile()
 	{
-		header = {};
-		materials = {};
-		vertices = {};
-		faces = {};
 		readed = false;
 	}
 
@@ -563,24 +557,24 @@ public:
 		if (header.face_size != sizeof(csm_face))
 		{
 			print_log(PRINT_RED, "Error: Invalid CSM header face size {}!\n", header.face_size);
-			//return false;
+			return false;
 		}
 		if (header.vertex_size != sizeof(csm_vertex))
 		{
 			print_log(PRINT_RED, "Error: Invalid CSM header vertex size {}!\n", header.vertex_size);
-			//return false;
+			return false;
 		}
 		if (!faces.size() || !vertices.size())
 		{
 			print_log(PRINT_RED, "Error: Empty CSM structure!\n");
-			//return false;
+			return false;
 		}
 		for (auto& f : faces)
 		{
 			if (f.matIdx >= materials.size())
 			{
 				print_log(PRINT_RED, "Error: Invalid matIdx in face!\n");
-			//	return false;
+				return false;
 			}
 
 			for (int i = 0; i < 3; i++)
@@ -588,7 +582,7 @@ public:
 				if (f.vertIdx[i] >= vertices.size())
 				{
 					print_log(PRINT_RED, "Error: Invalid vertIdx[{}] in face = {}! Vertices: {}\n", i, f.vertIdx[i], vertices.size());
-			//		return false;
+					return false;
 				}
 			}
 		}
@@ -678,7 +672,7 @@ public:
 	bool write(const std::string& filePath) {
 		std::ofstream file(filePath, std::ios::binary);
 		if (!file) {
-			std::cerr << "Failed to open file for writing: " << filePath << std::endl;
+			print_log(PRINT_RED, "Error: Failed to open file for writing: {}\n", filePath);
 			return false;
 		}
 

@@ -9423,7 +9423,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	renderer->pushModelUndoState("EXPORT .SMD EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 }
 
-void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode, bool with_mdl, bool export_csm)
+void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode, bool with_mdl, bool export_csm, int grouping)
 {
 	if (!createDir(path))
 	{
@@ -9475,7 +9475,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	int normoffset = 0;
 
 	int materialid = -1;
-	int lastmaterialid = 0;
+	int lastmaterialid = -2;
 
 	std::set<int> refreshedModels;
 
@@ -9615,10 +9615,12 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 		if (materialid == -1)
 		{
 			materialid = (int)matnames.size();
+			matnames.emplace_back(tex.szName);
+
 			if (!export_csm)
 			{
 				materials.emplace_back("");
-				materials.emplace_back("newmtl " + materialid);
+				materials.emplace_back("newmtl " + matnames[materialid]);
 
 				materials.emplace_back("Ns 0");
 				materials.emplace_back("Ka 1 1 1");
@@ -9648,8 +9650,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 				materials.emplace_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
 			}
-
-			matnames.emplace_back(tex.szName);
 
 			if (export_csm)
 			{
@@ -9736,16 +9736,16 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 			vec3 origin_offset = ent->origin.flip();
 
-			if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
+			std::string next_group_name = "M_" + std::to_string(mdlid) + "_ENT_" + std::to_string(tmpentid);
+
+			if (next_group_name != groupname)
 			{
-				groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
+				groupname = next_group_name;
 
 				if (std::find(group_list.begin(), group_list.end(), groupname) == group_list.end())
 					group_list.push_back(groupname);
 
 				csm_groups++;
-
-				//print_log(PRINT_RED, "Entity {} angles {}\n", tmpentid, rendEnt->angles.toKeyvalueString());
 			}
 
 			mat4x4 angle_mat;
@@ -9790,8 +9790,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 					org_pos *= scale;
 
 					group_verts[groupname] << "v " << org_pos.toKeyvalueString() << "\n";
-
-
 				}
 
 				group_normals[groupname] << "vn " << org_norm.toKeyvalueString() << "\n";
@@ -9876,8 +9874,14 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 			if (lastmaterialid != materialid)
 			{
 				group_vert_groups[groupname]++;
-
-				//group_objects[groupname] << "g " << groupname << "_face" << group_vert_groups[groupname] << "\n";
+				if (grouping == 1)
+				{
+					group_objects[groupname] << "g " << groupname << "_f" << group_vert_groups[groupname] << "\n";
+				}
+				else if (grouping == 2)
+				{
+					group_objects[groupname] << "o " << groupname << "_f" << group_vert_groups[groupname] << "\n";
+				}
 				if (!export_csm)
 				{
 					if (materialid >= 0)
@@ -9886,6 +9890,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 					}
 				}
 			}
+
 			lastmaterialid = materialid;
 
 			if (!export_csm)
@@ -9916,7 +9921,10 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 			for (auto& group : group_list)
 			{
-				obj_file << "o " << group << "\n";
+				if (grouping == 0 || grouping == 1)
+					obj_file << "o " << group << "\n";
+				else if (grouping == 2)
+					obj_file << "g " << group << "\n";
 
 				obj_file << group_verts[group].str();
 
