@@ -1,4 +1,5 @@
 #include "bsptypes.h"
+#include <cstring>
 
 BSPEDGE16::BSPEDGE16()
 {
