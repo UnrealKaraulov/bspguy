@@ -28,9 +28,6 @@
     <ClCompile Include=".\..\src\bsp\Keyvalue.cpp">
       <Filter>Source Files\bsp</Filter>
     </ClCompile>
-    <ClCompile Include=".\..\src\bsp\Wad.cpp">
-      <Filter>Source Files\bsp</Filter>
-    </ClCompile>
     <ClCompile Include=".\..\src\bsp\remap.cpp">
       <Filter>Source Files\bsp</Filter>
     </ClCompile>
@@ -136,8 +133,17 @@
     <ClCompile Include=".\..\src\util\lang.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bsp\Sprite.cpp">
-      <Filter>Source Files\bsp</Filter>
+    <ClCompile Include=".\..\src\res\Sprite.cpp">
+      <Filter>Source Files\res</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\res\Wad.cpp">
+      <Filter>Source Files\res</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\res\XASH_csm.cpp">
+      <Filter>Source Files\res</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\util\log.cpp">
+      <Filter>Source Files\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -163,9 +169,6 @@
       <Filter>Header Files\bsp</Filter>
     </ClInclude>
     <ClInclude Include=".\..\src\bsp\Keyvalue.h">
-      <Filter>Header Files\bsp</Filter>
-    </ClInclude>
-    <ClInclude Include=".\..\src\bsp\Wad.h">
       <Filter>Header Files\bsp</Filter>
     </ClInclude>
     <ClInclude Include=".\..\src\bsp\remap.h">
@@ -261,8 +264,20 @@
     <ClInclude Include=".\..\src\util\lang.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\bsp\Sprite.h">
-      <Filter>Header Files\bsp</Filter>
+    <ClInclude Include=".\..\src\res\JACK_jmf.h">
+      <Filter>Header Files\res</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\res\Sprite.h">
+      <Filter>Header Files\res</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\res\Wad.h">
+      <Filter>Header Files\res</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\res\XASH_csm.h">
+      <Filter>Header Files\res</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\util\log.h">
+      <Filter>Header Files\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -328,6 +343,12 @@
     </Filter>
     <Filter Include="Langs">
       <UniqueIdentifier>{a14cf2b6-d07f-4c0a-9f11-120d543080b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\res">
+      <UniqueIdentifier>{bcbe63b9-ced1-496d-93e2-f873a54b3e66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\res">
+      <UniqueIdentifier>{523fefee-7d40-4552-ae1a-f27341a6fd76}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

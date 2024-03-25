@@ -233,17 +233,15 @@ public:
 	std::vector<RenderEnt> renderEnts;
 	std::vector<RenderModel> renderModels;
 	std::vector<RenderClipnodes> renderClipnodes;
-	FaceMath* faceMaths;
+	std::vector<FaceMath> faceMaths;
+
 	EntCube* leafCube;
 	EntCube* nodeCube;/*
 	EntCube* nodePlaneCube;*/
 
 	size_t numLightmapAtlases;
 
-	int numRenderModels;
-	int numRenderClipnodes;
 	int numRenderLightmapInfos;
-	int numFaceMaths;
 	int numLoadedTextures;
 
 
@@ -262,7 +260,7 @@ public:
 	std::future<void> clipnodesFuture;
 
 	void loadLightmaps();
-	void genRenderFaces(int& renderModelCount);
+	void genRenderFaces();
 	void addNewRenderFace();
 	void loadClipnodes();
 	void generateClipnodeBufferForHull(int modelIdx, int hullId);

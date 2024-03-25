@@ -1,66 +1,14 @@
 #include "lang.h"
-/***
-*
-*	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*
-*	This product contains software technology licensed from Id
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
-*	All Rights Reserved.
-*
-****/
-// studio_render.cpp: routines for drawing Half-Life 3DStudio models
-// updates:
-// 1-4-99		fixed AdvanceFrame wraping bug
-// 23-11-2018	moved from GLUT to GLFW
-
-// External Libraries
-#include <stdint.h>
-#include <stdio.h>
-#include <cstdlib>
-#include <string.h>
-#pragma warning( disable : 4244 ) // double to float
-
 #include "util.h"
+#include "log.h"
 #include "mdl_studio.h"
 #include "Settings.h"
 #include "Renderer.h"
-
 #include "forcecrc32.h"
-////////////////////////////////////////////////////////////////////////
-
-float HalfToFloat(unsigned short h)
-{
-	unsigned int	f = (h << 16) & 0x80000000;
-	unsigned int	em = h & 0x7fff;
-
-	if (em > 0x03ff)
-	{
-		f |= (em << 13) + ((127 - 15) << 23);
-	}
-	else
-	{
-		unsigned int m = em & 0x03ff;
-
-		if (m != 0)
-		{
-			unsigned int e = (em >> 10) & 0x1f;
-
-			while ((m & 0x0400) == 0)
-			{
-				m <<= 1;
-				e--;
-			}
-
-			m &= 0x3ff;
-			f |= ((e + (127 - 14)) << 23) | (m << 13);
-		}
-	}
-
-	return *((float*)&f);
-}
 
 void StudioModel::CalcBoneAdj()
 {
+	// Valve
 	int					i, j;
 	float				value;
 	mstudiobonecontroller_t* pbonecontroller;
@@ -111,6 +59,7 @@ void StudioModel::CalcBoneAdj()
 
 void StudioModel::CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec4& q)
 {
+	// Valve
 	int					j, k;
 	vec4				q1, q2;
 	vec3				angle1, angle2;
@@ -186,6 +135,7 @@ void StudioModel::CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, m
 
 void StudioModel::CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec3& pos)
 {
+	// Valve
 	int					j, k;
 	mstudioanimvalue_t* panimvalue;
 
@@ -239,6 +189,7 @@ void StudioModel::CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mst
 
 void StudioModel::CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, mstudioanim_t* panim, float f)
 {
+	// Valve
 	int		i, frame;
 	float		s;
 	mstudiobone_t* pbone;
@@ -277,6 +228,7 @@ void StudioModel::CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, 
 
 mstudioanim_t* StudioModel::GetAnim(mstudioseqdesc_t* pseqdesc)
 {
+	// Valve
 	mstudioseqgroup_t* pseqgroup;
 	pseqgroup = (mstudioseqgroup_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqgroupindex) + pseqdesc->seqgroup;
 
@@ -291,6 +243,7 @@ mstudioanim_t* StudioModel::GetAnim(mstudioseqdesc_t* pseqdesc)
 
 void StudioModel::SlerpBones(vec4 q1[], vec3 pos1[], vec4 q2[], vec3 pos2[], float s)
 {
+	// Valve
 	int			i;
 	vec4		q3;
 	float		s1;
@@ -329,7 +282,6 @@ void StudioModel::AdvanceFrame(float dt)
 	}
 	else
 	{
-		// wrap
 		m_frame += (int)(m_frame / (pseqdesc->numframes - 1)) * (pseqdesc->numframes - 1);
 	}
 
@@ -339,6 +291,7 @@ void StudioModel::AdvanceFrame(float dt)
 
 void StudioModel::SetUpBones(void)
 {
+	// valve
 	int					i;
 
 	mstudiobone_t* pbones;
@@ -402,9 +355,7 @@ void StudioModel::SetUpBones(void)
 
 
 /*
-================
-StudioModel::TransformFinalVert
-================
+Not used
 */
 void StudioModel::Lighting(float* lv, int bone, int flags, const vec3& normal)
 {
@@ -420,7 +371,7 @@ void StudioModel::Lighting(float* lv, int bone, int flags, const vec3& normal)
 	else
 	{
 		float r;
-		lightcos = mDotProduct(normal, g_blightvec[bone]); // -1 colinear, 1 opposite
+		lightcos = dotProduct(normal, g_blightvec[bone]); // -1 colinear, 1 opposite
 
 		if (lightcos > 1.0f)
 			lightcos = 1.0f;
@@ -445,7 +396,9 @@ void StudioModel::Lighting(float* lv, int bone, int flags, const vec3& normal)
 	*lv = illum / 255.0f;	// Light from 0 to 1.0
 }
 
-
+/*
+Not used
+*/
 void StudioModel::Chrome(int* pchrome, int bone, const vec3& normal)
 {
 	float n;
@@ -472,24 +425,17 @@ void StudioModel::Chrome(int* pchrome, int bone, const vec3& normal)
 	}
 
 	// calc s coord
-	n = mDotProduct(normal, g_chromeright[bone]);
+	n = dotProduct(normal, g_chromeright[bone]);
 	pchrome[0] = (n + 1.0) * 32; // FIX: make this a float
 
 	// calc t coord
-	n = mDotProduct(normal, g_chromeup[bone]);
+	n = dotProduct(normal, g_chromeup[bone]);
 	pchrome[1] = (n + 1.0) * 32; // FIX: make this a float
 }
 
 
 /*
-================
-StudioModel::SetupLighting
-	set some global variables based on entity position
-inputs:
-outputs:
-	g_ambientlight
-	g_shadelight
-================
+ not used
 */
 void StudioModel::SetupLighting()
 {
@@ -500,19 +446,6 @@ void StudioModel::SetupLighting()
 		VectorIRotate(g_lightvec, g_bonetransform[i], g_blightvec[i]);
 	}
 }
-
-
-/*
-=================
-StudioModel::SetupModel
-	based on the body part, figure out which mesh it should be using.
-inputs:
-	currententity
-outputs:
-	pstudiomesh
-	pmdl
-=================
-*/
 
 void StudioModel::SetupModel(int bodypart)
 {
@@ -792,8 +725,8 @@ void StudioModel::RefreshMeshList(int body)
 				}
 				else if (ptexture && pskinref && ptexture[pskinref[pmesh->skinref]].flags & STUDIO_NF_UV_COORDS)
 				{
-					texCoordData[texCoordIdx++] = HalfToFloat(*(unsigned short*)&ptricmds[2]);
-					texCoordData[texCoordIdx++] = HalfToFloat(*(unsigned short*)&ptricmds[3]);
+					texCoordData[texCoordIdx++] = half_prefloat(*(unsigned short*)&ptricmds[2]);
+					texCoordData[texCoordIdx++] = half_prefloat(*(unsigned short*)&ptricmds[3]);
 				}
 				else
 				{

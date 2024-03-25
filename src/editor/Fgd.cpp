@@ -1,6 +1,7 @@
 #include "lang.h"
 #include "Fgd.h"
-#include <set>
+#include "log.h"
+
 #include <regex>
 
 std::map<std::string, int> fgdKeyTypes{

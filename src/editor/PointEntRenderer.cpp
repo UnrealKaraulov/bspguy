@@ -1,9 +1,9 @@
 #include "lang.h"
 #include "PointEntRenderer.h"
 #include "primitives.h"
-#include <string.h>
 #include "Renderer.h"
 #include "Settings.h"
+#include "log.h"
 
 PointEntRenderer::PointEntRenderer(Fgd* fgd)
 {

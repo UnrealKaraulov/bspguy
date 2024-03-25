@@ -1,7 +1,8 @@
 #pragma once
 #include "lang.h"
 #include "Settings.h"
-#include "util.h"
+#include "log.h"
+
 #include <fmt/format.h>
 
 /*

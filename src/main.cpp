@@ -1,8 +1,5 @@
 #include "lang.h"
 #include "BspMerger.h"
-#include <string>
-#include <algorithm>
-#include <iostream>
 #include "CommandLine.h"
 #include "remap.h"
 #include "Renderer.h"
@@ -10,7 +7,7 @@
 #include "winding.h"
 #include "fmt/format.h"
 #include "Sprite.h"
-#include "util.h"
+#include "log.h"
 
 // super todo:
 // gui scale not accurate and mostly broken
@@ -92,7 +89,7 @@
 // Solve: 
 // Create empty hull 0 box ?
 
-std::string g_version_string = "NewBSPGuy v4.23";
+std::string g_version_string = "NewBSPGuy v4.24";
 
 bool g_verbose = false;
 
@@ -1016,6 +1013,11 @@ int main(int argc, char* argv[])
 	set_console_colors(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY);
 	std::cout << "BSPGUY:" << g_version_string << std::endl;
 	set_console_colors();
+
+	// console ouput speed up? //fixme
+	std::cout.sync_with_stdio(false);
+	std::cout.tie(NULL);
+	std::cin.tie(NULL);
 
 	try
 	{

@@ -1,10 +1,9 @@
 #include "lang.h"
-#pragma warning(disable: 4018) //amckern - 64bit - '<' Singed/Unsigned Mismatch
-
 #include "winding.h"
 #include "rad.h"
 #include "bsptypes.h"
 #include "Bsp.h"
+#include "log.h"
 
 
 Winding& Winding::operator=(const Winding& other)

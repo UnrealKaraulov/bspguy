@@ -8,7 +8,7 @@
 
 #define EPSILON2 0.00001f // EPSILON from rad.h / 100
 
-#define ON_EPSILON 0.03125f
+#define ON_EPSILON 0.01f // changed for test default is 0.03125f
 
 
 float clamp(float val, float min, float max);
@@ -347,19 +347,9 @@ bool operator!=(const vec4& v1, const vec4& v2);
 
 #define	Q_PI	(float)(3.14159265358979323846)
 
-#define mDotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
-
 // Use this definition globally
 #define	mON_EPSILON		0.01
 #define	mEQUAL_EPSILON	0.001
-
-#define mDotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
-#define mVectorFill(a,b) { (a)[0]=(b); (a)[1]=(b); (a)[2]=(b);}
-#define mVectorAvg(a) ( ( (a)[0] + (a)[1] + (a)[2] ) / 3 )
-#define mVectorSubtract(a,b,c) {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];}
-#define mVectorAdd(a,b,c) {(c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];(c)[2]=(a)[2]+(b)[2];}
-#define mVectorCopy(a,b) {(b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2];}
-#define mVectorScale(a,b,c) {(c)[0]=(b)*(a)[0];(c)[1]=(b)*(a)[1];(c)[2]=(b)*(a)[2];}
 
 float Q_rint(float in);
 float _DotProduct(const vec3& v1, const vec3& v2);

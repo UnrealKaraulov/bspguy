@@ -21,8 +21,6 @@ set(SOURCE_FILES
 	src/bsp/bsptypes.h				src/bsp/bsptypes.cpp
 	src/bsp/Entity.h				src/bsp/Entity.cpp
 	src/bsp/Keyvalue.h				src/bsp/Keyvalue.cpp
-	src/bsp/Wad.h					src/bsp/Wad.cpp
-	src/bsp/Sprite.h				src/bsp/Sprite.cpp
 	src/bsp/remap.h					src/bsp/remap.cpp
 
 	# Math and stuff
@@ -70,6 +68,7 @@ set(SOURCE_FILES
 	src/util/lang_defs.h
 	src/util/lang.h					src/util/lang.cpp
 	src/util/quantizer.h			src/util/quantizer.cpp
+	src/util/log.h					src/util/log.cpp
 	
 	# 3D model viewer
 	src/mdl/mdl_studio.h			src/mdl/mdl_studio.cpp
@@ -77,10 +76,16 @@ set(SOURCE_FILES
 	# OPENFILEDIALOG
 	src/filedialog/stb_image.h
 	src/filedialog/ImFileDialog.h	src/filedialog/ImFileDialog.cpp
+	
+	src/res/Wad.h					src/res/Wad.cpp
+	src/res/Sprite.h				src/res/Sprite.cpp
+	src/res/XASH_csm.h				src/res/XASH_csm.cpp
+	src/res/JACK_jmf.h
 )
 
 include_directories(src)
 include_directories(src/bsp)
+include_directories(src/res)
 include_directories(src/cli)
 include_directories(src/data)
 include_directories(src/editor)
@@ -102,132 +107,7 @@ add_subdirectory(glfw)
 
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-if(MSVC)
-	# compile using the static runtime
-	
-	add_definitions(-DGLEW_STATIC)
-	add_definitions(-DNDEBUG)
-	
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /wd4244 /wd4018")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /wd4244 /wd4018 /W0")
-
-	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT bspguy)
-
-	target_link_libraries(${PROJECT_NAME} fmt::fmt glfw)
-
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-		target_link_libraries(${PROJECT_NAME} opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/x64/glew32s.lib)
-	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-		target_link_libraries(${PROJECT_NAME} opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/Win32/glew32s.lib)
-	endif()
-
-	source_group("Header Files\\bsp" FILES	src/bsp/forcecrc32.h
-											src/bsp/BspMerger.h
-											src/bsp/Bsp.h
-											src/bsp/bsplimits.h
-											src/bsp/bsptypes.h
-											src/bsp/Entity.h
-											src/bsp/Keyvalue.h
-											src/bsp/Wad.h
-											src/bsp/remap.h)
-
-	source_group("Source Files\\bsp" FILES	src/bsp/forcecrc32.cpp
-											src/bsp/BspMerger.cpp
-											src/bsp/Bsp.cpp
-											src/bsp/bsplimits.cpp
-											src/bsp/bsptypes.cpp
-											src/bsp/Entity.cpp
-											src/bsp/Keyvalue.cpp
-											src/bsp/Wad.cpp
-											src/bsp/remap.cpp)
-
-	source_group("Header Files\\cli" FILES	src/cli/CommandLine.h
-											src/cli/ProgressMeter.h)
-
-	source_group("Source Files\\cli" FILES	src/cli/CommandLine.cpp
-											src/cli/ProgressMeter.cpp)
-
-	source_group("Header Files\\gl" FILES	src/gl/Shader.h
-											src/gl/ShaderProgram.h
-											src/gl/VertexBuffer.h
-											src/gl/Texture.h
-											src/gl/primitives.h
-											src/gl/shaders.h)
-
-	source_group("Source Files\\gl" FILES	src/gl/Shader.cpp
-											src/gl/ShaderProgram.cpp
-											src/gl/VertexBuffer.cpp
-											src/gl/Texture.cpp
-											src/gl/primitives.cpp
-											src/gl/shaders.cpp)
-
-	source_group("Header Files\\editor" FILES	src/editor/Settings.h
-												src/editor/BspRenderer.h
-												src/editor/LightmapNode.h
-												src/editor/Renderer.h
-												src/editor/Fgd.h
-												src/editor/Gui.h
-												src/editor/PointEntRenderer.h
-												src/editor/Command.h
-												src/editor/Clipper.h)
-
-	source_group("Source Files\\editor" FILES	src/editor/Settings.cpp
-												src/editor/BspRenderer.cpp
-												src/editor/LightmapNode.cpp
-												src/editor/Renderer.cpp
-												src/editor/Fgd.cpp
-												src/editor/Gui.cpp
-												src/editor/PointEntRenderer.cpp
-												src/editor/Command.cpp
-												src/editor/Clipper.cpp)
-
-	source_group("Header Files\\qtools" FILES	src/qtools/rad.h
-												src/qtools/vis.h
-												src/qtools/winding.h)
-
-	source_group("Source Files\\qtools" FILES	src/qtools/rad.cpp
-												src/qtools/vis.cpp
-												src/qtools/winding.cpp)
-
-	source_group("Header Files\\util" FILES		src/util/util.h
-												src/util/vectors.h
-												src/util/mat4x4.h)
-
-	source_group("Source Files\\util" FILES		src/util/util.cpp
-												src/util/vectors.cpp
-												src/util/mat4x4.cpp)
-
-	source_group("Header Files\\util\\lib" FILES	src/util/quantizer.h
-													src/util/ini.h
-													src/util/INIReader.h
-													src/util/lodepng.h)
-
-	source_group("Source Files\\util\\lib" FILES	imgui/imgui.cpp
-													imgui/imgui_tables.cpp
-													imgui/imgui_widgets.cpp
-													imgui/imgui_draw.cpp
-													imgui/backends/imgui_impl_glfw.cpp
-													imgui/backends/imgui_impl_opengl3.cpp
-													imgui/misc/cpp/imgui_stdlib.cpp
-													src/util/lodepng.cpp
-													src/util/quantizer.cpp
-													src/util/ini.c
-													src/util/INIReader.cpp)
-													
-	source_group("Header Files\\mdl" FILES	
-													src/mdl/mdl_studio.h)
-
-	source_group("Source Files\\mdl" FILES	
-													src/mdl/mdl_studio.cpp)
-
-	source_group("Header Files\\filedialog" FILES
-													src/filedialog/stb_image.h
-													src/filedialog/ImFileDialog.h)
-
-	source_group("Source Files\\filedialog" FILES	src/filedialog/ImFileDialog.c)
-	add_definitions(-DNOMINMAX)
-else()
+if(NOT MSVC)
 	add_definitions(-DNDEBUG)
 	if(WIN32)
 		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -254,4 +134,6 @@ else()
 	-Wno-unused-result -Wno-unused-function -Wno-write-strings -Wno-switch -Wno-enum-compare -Wno-sign-compare\
 	-Wno-format -Wno-ignored-attributes -Wno-strict-aliasing -fno-plt -fno-devirtualize -Wno-unused-local-typedefs\
 	-Wno-unused-but-set-variable -Wno-stringop-truncation -Wno-format-truncation -Wno-class-memaccess")
+else()
+	message(FATAL_ERROR "Use vs-project/bspguy.sln for Visual Studio")
 endif()

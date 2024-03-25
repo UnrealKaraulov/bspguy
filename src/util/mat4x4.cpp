@@ -1,7 +1,7 @@
 #include "lang.h"
 #include "mat4x4.h"
 #include "util.h"
-#include <string.h>
+#include "log.h"
 
 float m_identity[16] = {
 	1.0f, 0.0f, 0.0f, 0.0f,

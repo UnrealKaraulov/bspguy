@@ -2,6 +2,8 @@
 #include "rad.h"
 #include "winding.h"
 #include "Bsp.h"
+#include "log.h"
+
 #include <algorithm>
 
 //
@@ -55,6 +57,13 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 		return false;
 	}
 
+	if (f->nEdges <= 1)
+	{
+		print_log(PRINT_RED, "CanFindFacePosition error empty face {}!\n", facenum);
+		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
+		return false;
+	}
+
 	BSPTEXTUREINFO& tex = bsp->texinfos[f->iTextureInfo];
 
 	TranslateWorldToTex(bsp, facenum, worldtotex);
@@ -78,11 +87,11 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 		texwinding.m_Points[x][2] = 0.0;
 	}
 
-	texwinding.RemoveColinearPoints();
+	/* texwinding.RemoveColinearPoints(); this is critical error because already removed ? */
 
 	if (texwinding.m_Points.size() == 0)
 	{
-		print_log(PRINT_RED, "CanFindFacePosition error texwinding!\n");
+		print_log(PRINT_RED, "CanFindFacePosition error texwinding face {} [facewind size {}]!\n", facenum, facewinding.m_Points.size());
 		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}
@@ -110,7 +119,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 	int h = imaxs[1] - imins[1] + 1;
 	if (w <= 0 || h <= 0 || w * h > 99999999)
 	{
-		print_log(PRINT_RED, "CanFindFacePosition invalid size!\n");
+		print_log(PRINT_RED, "CanFindFacePosition invalid size! face {}!\n", facenum);
 		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}

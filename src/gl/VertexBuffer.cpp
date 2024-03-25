@@ -1,7 +1,6 @@
 #include "lang.h"
 #include "VertexBuffer.h"
-#include "util.h"
-#include <string.h>
+#include "log.h"
 #include "Renderer.h"
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, size_t _numVerts, int primitive)

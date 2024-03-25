@@ -1,11 +1,10 @@
 #include "Clipper.h"
-#include <set>
-
 
 Clipper::Clipper()
 {
 
 }
+
 CMesh Clipper::clip(std::vector<BSPPLANE>& clips)
 {
 	CMesh mesh = createMaxSizeVolume();

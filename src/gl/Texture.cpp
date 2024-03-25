@@ -3,7 +3,7 @@
 #include "Wad.h"
 #include "Texture.h"
 #include "lodepng.h"
-#include "util.h"
+#include "log.h"
 #include "Settings.h"
 #include "Renderer.h"
 

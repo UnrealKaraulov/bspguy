@@ -1,7 +1,4 @@
 #include "lang.h"
-#include <string.h>
-#include <algorithm>
-#include <execution>
 #include "BspRenderer.h"
 #include "VertexBuffer.h"
 #include "primitives.h"
@@ -15,14 +12,20 @@
 #include "Sprite.h"
 #include "Gui.h"
 
+#include "util.h"
+#include "log.h"
+
+#include <execution>
+
 BspRenderer::BspRenderer(Bsp* _map)
 {
 	map = _map;
 	map->setBspRender(this);
+
 	lightmaps = NULL;
 	glTexturesSwap = NULL;
 	glTextures = NULL;
-	faceMaths = NULL;
+
 	leafCube = new EntCube();
 	nodeCube = new EntCube();/*
 	nodePlaneCube = new EntCube();*/
@@ -225,10 +228,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	renderModels.clear();
 	renderClipnodes.clear();
 
-	numFaceMaths = 0;
-	numRenderModels = 0;
-	faceMaths = NULL;
-
+	faceMaths.clear();
 	nodesBufferCache.clear();
 	clipnodesBufferCache.clear();
 	clearDrawCache();
@@ -237,7 +237,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	preRenderFaces();
 	calcFaceMaths();
 	preRenderEnts();
-	//numRenderClipnodes = map->modelCount;
+
 	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
 	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
 	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
@@ -518,18 +518,16 @@ RenderClipnodes* BspRenderer::addClipnodeModel(int modelIdx)
 		return NULL;
 	}
 
-	if (numRenderClipnodes <= 0)
+
+	if (renderClipnodes.empty())
 	{
 		reloadClipnodes();
 		return NULL;
 	}
 
-	if (renderClipnodes.size() < std::max(modelIdx, numRenderClipnodes) + 1)
-		renderClipnodes.resize(std::max(modelIdx, numRenderClipnodes) + 1);
+	renderClipnodes.resize(std::max((size_t)modelIdx, renderClipnodes.size()) + 1);
 
 	renderClipnodes[modelIdx] = RenderClipnodes();
-
-	numRenderClipnodes = std::max(modelIdx, numRenderClipnodes) + 1;
 
 	generateClipnodeBuffer(modelIdx);
 
@@ -711,11 +709,10 @@ void BspRenderer::updateLightmapInfos()
 
 void BspRenderer::preRenderFaces()
 {
-	genRenderFaces(numRenderModels);
+	genRenderFaces();
 
-	for (int i = 0; i < numRenderModels; i++)
+	for (auto & model : renderModels)
 	{
-		RenderModel& model = renderModels[i];
 		for (int k = 0; k < model.groupCount; k++)
 		{
 			if (model.renderGroups && model.renderGroups[k].buffer)
@@ -728,7 +725,7 @@ void BspRenderer::preRenderFaces()
 	}
 }
 
-void BspRenderer::genRenderFaces(int& renderModelCount)
+void BspRenderer::genRenderFaces()
 {
 	deleteRenderFaces();
 
@@ -736,8 +733,6 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 	{
 		renderModels.resize(map->modelCount);
 	}
-
-	renderModelCount = map->modelCount;
 
 	int worldRenderGroups = 0;
 	int modelRenderGroups = 0;
@@ -762,7 +757,6 @@ void BspRenderer::addNewRenderFace()
 	if (renderModels.size() != map->modelCount + 1)
 		renderModels.resize(map->modelCount + 1);
 	renderModels[map->modelCount] = RenderModel();
-	numRenderModels = map->modelCount + 1;
 	print_log(get_localized_string(LANG_0279));
 }
 
@@ -802,9 +796,9 @@ void BspRenderer::deleteRenderClipnodes()
 {
 	if (renderClipnodes.size())
 	{
-		for (int i = 0; i < numRenderClipnodes; i++)
+		for (auto & clip : renderClipnodes)
 		{
-			deleteRenderModelClipnodes(&renderClipnodes[i]);
+			deleteRenderModelClipnodes(&clip);
 		}
 		renderClipnodes.clear();
 	}
@@ -832,9 +826,9 @@ void BspRenderer::deleteRenderFaces()
 {
 	if (renderModels.size())
 	{
-		for (int i = 0; i < numRenderModels; i++)
+		for (auto & model : renderModels)
 		{
-			deleteRenderModel(&renderModels[i]);
+			deleteRenderModel(&model);
 		}
 		renderModels.clear();
 	}
@@ -880,12 +874,7 @@ void BspRenderer::deleteLightmapTextures()
 
 void BspRenderer::deleteFaceMaths()
 {
-	if (faceMaths)
-	{
-		delete[] faceMaths;
-	}
-
-	faceMaths = NULL;
+	faceMaths.clear();
 }
 
 int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangulate)
@@ -1249,7 +1238,7 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 	{
 		return false;
 	}
-	if (modelIdx < 0 || modelIdx >= numRenderClipnodes)
+	if (modelIdx < 0 || modelIdx >= renderClipnodes.size())
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0280));
 		return false;
@@ -1279,9 +1268,7 @@ void BspRenderer::loadClipnodes()
 
 	clipnodesBufferCache.clear();
 	nodesBufferCache.clear();
-
-	numRenderClipnodes = map->modelCount;
-	renderClipnodes.resize(numRenderClipnodes);
+	renderClipnodes.resize(map->modelCount);
 
 	std::vector<int> tmpRenderHulls(MAX_MAP_HULLS);
 	std::iota(tmpRenderHulls.begin(), tmpRenderHulls.end(), 0);
@@ -1290,7 +1277,7 @@ void BspRenderer::loadClipnodes()
 	std::for_each(std::execution::par_unseq, tmpRenderHulls.begin(), tmpRenderHulls.end(),
 		[&](int hull)
 		{
-			for (int i = 0; i < numRenderClipnodes; i++)
+			for (int i = 0; i < renderClipnodes.size(); i++)
 			{
 				generateClipnodeBufferForHull(i, hull);
 			}
@@ -1309,7 +1296,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	vec3 min = vec3(model.nMins.x, model.nMins.y, model.nMins.z);
 	vec3 max = vec3(model.nMaxs.x, model.nMaxs.y, model.nMaxs.z);
 
-	if (modelIdx >= numRenderClipnodes)
+	if (modelIdx >= renderClipnodes.size())
 	{
 		addClipnodeModel(modelIdx);
 	}
@@ -1457,7 +1444,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			// calculations for face picking
 			FaceMath faceMath;
 			faceMath.normal = mesh.faces[n].normal;
-			faceMath.fdist = getDistAlongAxis(mesh.faces[n].normal, faceVerts[0]);
+			faceMath.fdist = getDistAlongAxis(faceMath.normal, faceVerts[0]);
 
 			vec3 v0 = faceVerts[0];
 			vec3 v1;
@@ -1591,11 +1578,11 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 {
 	if (!renderClipnodes.size())
 		return;
-	for (int i = 0; i < numRenderClipnodes; i++)
+	for (auto & clip : renderClipnodes)
 	{
 		for (int k = 0; k < MAX_MAP_HULLS; k++)
 		{
-			VertexBuffer* clipBuf = renderClipnodes[i].clipnodeBuffer[k];
+			VertexBuffer* clipBuf = clip.clipnodeBuffer[k];
 			if (clipBuf && clipBuf->get_data() && clipBuf->numVerts > 0)
 			{
 				cVert* vertData = (cVert*)clipBuf->get_data();
@@ -1603,7 +1590,7 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 				{
 					vertData[v].c.a = newValue;
 				}
-				renderClipnodes[i].clipnodeBuffer[k]->uploaded = false;
+				clip.clipnodeBuffer[k]->uploaded = false;
 			}
 		}
 	}
@@ -2002,8 +1989,7 @@ void BspRenderer::calcFaceMaths()
 {
 	deleteFaceMaths();
 
-	numFaceMaths = map->faceCount;
-	faceMaths = new FaceMath[map->faceCount];
+	faceMaths.resize(map->faceCount);
 
 	//vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
 	//vec3 world_y = vec3(0.0f, 1.0f, 0.0f);
@@ -2017,14 +2003,9 @@ void BspRenderer::calcFaceMaths()
 
 void BspRenderer::refreshFace(int faceIdx)
 {
-	if (faceIdx < 0 || faceIdx >= numFaceMaths)
+	if (faceIdx < 0 || faceIdx >= faceMaths.size())
 	{
 		return;
-		/*FaceMath* tmpfaceMaths = new FaceMath[faceIdx + 1]{};
-		memcpy(tmpfaceMaths, faceMaths, faceIdx * sizeof(FaceMath));
-		delete[] faceMaths;
-		faceMaths = tmpfaceMaths;
-		numFaceMaths = faceIdx;*/
 	}
 
 	const vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
@@ -2041,7 +2022,8 @@ void BspRenderer::refreshFace(int faceIdx)
 	faceMath.fdist = fDist;
 
 	std::vector<vec3> allVerts(face.nEdges);
-	vec3 v1;
+
+	vec3 v1 = vec3();
 	for (int e = 0; e < face.nEdges; e++)
 	{
 		int edgeIdx = map->surfedges[face.iFirstEdge + e];
@@ -2057,6 +2039,7 @@ void BspRenderer::refreshFace(int faceIdx)
 	}
 	if (allVerts.size() == 0)
 	{
+		// error ?
 		allVerts.emplace_back(vec3());
 	}
 	vec3 plane_x = (v1 - allVerts[0]).normalize(1.0f);
@@ -2064,8 +2047,8 @@ void BspRenderer::refreshFace(int faceIdx)
 	vec3 plane_z = planeNormal;
 
 	faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
-
 	faceMath.localVerts = std::vector<vec2>(allVerts.size());
+
 	for (size_t i = 0; i < allVerts.size(); i++)
 	{
 		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xy();
@@ -2133,6 +2116,7 @@ void BspRenderer::reuploadTextures()
 
 	if (!glTexturesSwap)
 		return;
+
 	deleteTextures();
 
 	//loadTextures();
@@ -2176,9 +2160,8 @@ void BspRenderer::delayLoadData()
 	{
 		if (renderClipnodes.size())
 		{
-			for (int i = 0; i < numRenderClipnodes; i++)
+			for (auto & clip : renderClipnodes)
 			{
-				RenderClipnodes& clip = renderClipnodes[i];
 				for (int k = 0; k < MAX_MAP_HULLS; k++)
 				{
 					if (clip.clipnodeBuffer[k])
@@ -2649,7 +2632,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 {
 	int modelIdx = ent ? ent->modelIdx : 0;
 
-	if (modelIdx < 0 || modelIdx >= numRenderModels)
+	if (modelIdx < 0 || modelIdx >= renderModels.size())
 	{
 		return;
 	}

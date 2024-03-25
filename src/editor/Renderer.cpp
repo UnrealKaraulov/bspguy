@@ -6,14 +6,13 @@
 #include "VertexBuffer.h"
 #include "shaders.h"
 #include "Gui.h"
-#include <algorithm>
-#include <map>
-#include <sstream>
-#include <chrono>
-#include <execution>
 #include "filedialog/ImFileDialog.h"
 #include "lodepng.h"
-#include <cstdlib>
+#include "util.h"
+#include "log.h"
+
+#include <chrono>
+#include <execution>
 
 Renderer* g_app = NULL;
 std::vector<BspRenderer*> mapRenderers{};
@@ -464,7 +463,6 @@ void Renderer::renderLoop()
 
 	double fpsTime = 0.0;
 	double mouseTime = 0.0;
-
 	double framerateTime = 0.0;
 
 	double xpos = 0.0, ypos = 0.0;
@@ -481,11 +479,17 @@ void Renderer::renderLoop()
 		if (g_rend_vsync != 0 || std::abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
 		{
 
-			if (std::abs(curTime - fpsTime) >= 0.50)
+			if (std::abs(curTime - fpsTime) >= 0.5)
 			{
 				fpsTime = curTime;
 				current_fps = frame_fps * 2;
 				frame_fps = 0;
+			}
+
+			if (std::abs(curTime - flushConsoleTime) > 0.25)
+			{
+				flushConsoleTime = curTime;
+				FlushConsoleLog();
 			}
 
 			mousePos = vec2((float)xpos, (float)ypos);

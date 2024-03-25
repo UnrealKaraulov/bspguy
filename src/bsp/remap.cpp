@@ -1,6 +1,6 @@
-#pragma once
 #include "remap.h"
 #include "Bsp.h"
+#include "log.h"
 
 STRUCTCOUNT::STRUCTCOUNT()
 {

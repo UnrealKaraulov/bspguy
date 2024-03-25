@@ -1,9 +1,9 @@
 #include "lang.h"
-#include <string.h>
 #include "Command.h"
 #include "Gui.h"
 #include <lodepng.h>
 #include "Settings.h"
+#include "log.h"
 
 
 Command::Command(std::string _desc, int _mapIdx)

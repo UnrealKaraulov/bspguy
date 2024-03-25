@@ -1,6 +1,6 @@
 #include "lang.h"
 #include "Sprite.h"
-#include "util.h"
+#include "log.h"
 #include "lodepng.h"
 #include "Renderer.h"
 #include "Settings.h"

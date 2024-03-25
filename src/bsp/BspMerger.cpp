@@ -1,9 +1,7 @@
 #include "lang.h"
 #include "BspMerger.h"
-#include <algorithm>
-#include <map>
-#include <set>
 #include "vis.h"
+#include "log.h"
 
 
 Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomergestyles)

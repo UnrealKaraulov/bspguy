@@ -6,17 +6,17 @@
 #include "shaders.h"
 #include "Settings.h"
 #include "Renderer.h"
-#include <lodepng.h>
-#include <algorithm>
-#include <string>
 #include "BspMerger.h"
 #include "filedialog/ImFileDialog.h"
 #include "imgui_stdlib.h"
 #include "quantizer.h"
-#include <execution>
 #include "vis.h"
-#include <cstdlib>
 #include "winding.h"
+#include "util.h"
+#include "log.h"
+
+#include <lodepng.h>
+#include <execution>
 
 float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip
 
@@ -10725,7 +10725,7 @@ void Gui::drawFaceEditorWidget()
 						if (shiftX != texinfo2.shiftS) shiftX = 0;
 						if (shiftY != texinfo2.shiftT) shiftY = 0;
 
-						if (isSpecial != (texinfo2.nFlags & TEX_SPECIAL)) isSpecial = false;
+						if (isSpecial == !(texinfo2.nFlags & TEX_SPECIAL)) isSpecial = false;
 
 						if (texinfo2.iMiptex != miptex)
 						{

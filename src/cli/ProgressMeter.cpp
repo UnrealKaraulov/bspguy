@@ -1,9 +1,6 @@
 #include "lang.h"
 #include "ProgressMeter.h"
-#include <string>
-#include <stdio.h> 
-#include "util.h"
-
+#include "log.h"
 #include "Settings.h"
 #include "Renderer.h"
 

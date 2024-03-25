@@ -1,10 +1,7 @@
 #include "lang.h"
 #include "Settings.h"
 #include "Renderer.h"
-#include "util.h"
-#include <iostream>
-#include <fstream>
-#include <string>
+#include "log.h"
 
 std::string g_settings_path = "";
 std::string g_game_dir = "/";

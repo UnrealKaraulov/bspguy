@@ -1,9 +1,6 @@
 #include "lang.h"
-#include <iostream>
-#include <fstream>
-#include <string.h>
 #include "Wad.h"
-#include "util.h"
+#include "log.h"
 #include "Settings.h"
 #include "Renderer.h"
 

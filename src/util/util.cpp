@@ -1,37 +1,34 @@
 #include "lang.h"
 #include "util.h"
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <algorithm>
-#include <cctype>
-#include <string.h>
 #include "Wad.h"
-#include <cfloat> 
-#include <stdarg.h>
+#include "Settings.h"
+#include "Renderer.h"
+#include "Bsp.h"
+#include "log.h"
+
 #ifdef WIN32
 #include <Windows.h>
 #include <Shlobj.h>
+#include <io.h>
+#define STDERR_FILENO 2
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
 #else 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/wait.h>
 #endif
+
+
 #include <stdio.h>
+
 #include <set>
-#include "Settings.h"
-#include "Renderer.h"
-
-#include "Bsp.h"
-
 #include <unordered_set>
 
 bool DebugKeyPressed = false;
 ProgressMeter g_progress = {};
 int g_render_flags;
-std::vector<std::string> g_log_buffer = { "" };
-std::vector<unsigned int> g_color_buffer = { 0 };
-
 std::mutex g_mutex_list[10] = {};
 
 bool fileExists(const std::string& fileName)
@@ -1284,59 +1281,6 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 	replaceAll(path, "//", "/");
 }
 
-unsigned int g_console_colors = 0;
-bool g_console_visible = true;
-void showConsoleWindow(bool show)
-{
-	g_console_visible = show;
-#ifdef WIN32		
-	if (::GetConsoleWindow())
-	{
-		::ShowWindow(::GetConsoleWindow(), show ? SW_SHOW : SW_HIDE);
-	}
-#endif
-}
-
-#ifdef WIN32
-void set_console_colors(unsigned int colors)
-{
-	HANDLE console = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (!console)
-		console = ::GetConsoleWindow();
-	if (console)
-	{
-		colors = colors ? colors : (FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
-		g_console_colors = colors;
-		SetConsoleTextAttribute(console, (WORD)colors);
-	}
-}
-#else 
-void set_console_colors(unsigned int colors)
-{
-	colors = colors ? colors : (PRINT_GREEN | PRINT_BLUE | PRINT_RED | PRINT_INTENSITY);
-	g_console_colors = colors;
-	if (colors == 0)
-	{
-		std::cout << "\x1B[0m";
-		return;
-	}
-	const char* mode = colors & PRINT_INTENSITY ? "1" : "0";
-	const char* color = "37";
-	switch (colors & ~PRINT_INTENSITY)
-	{
-	case PRINT_RED:								color = "31"; break;
-	case PRINT_GREEN:							color = "32"; break;
-	case PRINT_RED | PRINT_GREEN:				color = "33"; break;
-	case PRINT_BLUE:							color = "34"; break;
-	case PRINT_RED | PRINT_BLUE:				color = "35"; break;
-	case PRINT_GREEN | PRINT_BLUE:				color = "36"; break;
-	case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
-	}
-	std::cout << "\x1B[" << mode << ";" << color << "m";
-}
-#endif
-
-
 float AngleFromTextureAxis(vec3 axis, bool x, int type)
 {
 	float retval = 0.0f;
@@ -2262,17 +2206,6 @@ bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2
 	return true;
 }
 
-
-
-#ifdef WIN32
-#include <io.h>
-#define STDERR_FILENO 2
-#define STDIN_FILENO 0
-#define STDOUT_FILENO 1
-#else
-#include <sys/wait.h>
-#endif
-
 std::string Process::quoteIfNecessary(std::string toQuote)
 {
 	if (toQuote.find(' ') != std::string::npos)
@@ -2845,4 +2778,35 @@ std::string flt_to_str(float f)
 		}
 	}
 	return retstr;
+}
+
+float half_prefloat(unsigned short h)
+{
+	unsigned int	f = (h << 16) & 0x80000000;
+	unsigned int	em = h & 0x7fff;
+
+	if (em > 0x03ff)
+	{
+		f |= (em << 13) + ((127 - 15) << 23);
+	}
+	else
+	{
+		unsigned int m = em & 0x03ff;
+
+		if (m != 0)
+		{
+			unsigned int e = (em >> 10) & 0x1f;
+
+			while ((m & 0x0400) == 0)
+			{
+				m <<= 1;
+				e--;
+			}
+
+			m &= 0x3ff;
+			f |= ((e + (127 - 14)) << 23) | (m << 13);
+		}
+	}
+
+	return *((float*)&f);
 }

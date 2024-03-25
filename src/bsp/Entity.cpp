@@ -1,8 +1,5 @@
-#include <string.h>
-#include <string>
 #include "Entity.h"
 #include "util.h"
-#include <algorithm>
 
 
 void Entity::addKeyvalue(const std::string key, const std::string value, bool multisupport)

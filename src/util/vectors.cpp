@@ -1,5 +1,4 @@
 #include "vectors.h"
-#include <cmath>
 #include "mat4x4.h"
 #include "util.h"
 
@@ -758,9 +757,9 @@ float VectorNormalize(vec3& v)
 
 void VectorTransform(const vec3& in1, const float in2[3][4], vec3& out)
 {
-	out[0] = mDotProduct(in1, in2[0]) + in2[0][3];
-	out[1] = mDotProduct(in1, in2[1]) + in2[1][3];
-	out[2] = mDotProduct(in1, in2[2]) + in2[2][3];
+	out[0] = dotProduct(in1, vec3(in2[0][0], in2[0][1], in2[0][2])) + in2[0][3];
+	out[1] = dotProduct(in1, vec3(in2[1][0], in2[1][1], in2[1][2])) + in2[1][3];
+	out[2] = dotProduct(in1, vec3(in2[2][0], in2[2][1], in2[2][2])) + in2[2][3];
 }
 
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv)
@@ -959,9 +958,9 @@ void AngleIMatrix(const vec3& angles, float matrix[3][4])
 
 void VectorRotate(const vec3& in1, const float in2[3][4], vec3& out)
 {
-	out[0] = mDotProduct(in1, in2[0]);
-	out[1] = mDotProduct(in1, in2[1]);
-	out[2] = mDotProduct(in1, in2[2]);
+	out[0] = dotProduct(in1, vec3(in2[0][0], in2[0][1], in2[0][2]));
+	out[1] = dotProduct(in1, vec3(in2[1][0], in2[1][1], in2[1][2]));
+	out[2] = dotProduct(in1, vec3(in2[2][0], in2[2][1], in2[2][2]));
 }
 
 void mCrossProduct(const vec3& v1, const vec3& v2, vec3& cross)

@@ -1,8 +1,7 @@
-#include "lang.h"
 #include "Bsp.h"
+#include "lang.h"
 #include "util.h"
-#include <algorithm>
-#include <sstream>
+#include "log.h"
 #include "lodepng.h"
 #include "rad.h"
 #include "vis.h"
@@ -10,18 +9,15 @@
 #include "Settings.h"
 #include "Renderer.h"
 #include "BspRenderer.h"
-#include <set>
-#include <winding.h>
-#include "Wad.h"
-#include <vector>
+#include "winding.h"
 #include "forcecrc32.h"
 #include "quantizer.h"
-#include <execution>
-#include <unordered_set>
-#include <fstream>
-#include <deque>
+#include "Wad.h"
 
-typedef std::map< std::string, vec3 > mapStringToVector;
+#include "JACK_jmf.h"
+#include "XASH_csm.h"
+
+#include <execution>
 
 vec3 default_hull_extents[MAX_MAP_HULLS] = {
 	vec3(0.0f,  0.0f,  0.0f),	// hull 0
@@ -9957,10 +9953,13 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	}
 	else
 	{
+		csm_export->write(path + bsp_name + ".csm");
+
 		print_log(PRINT_GREEN, "VALIDATE START\n");
 		csm_export->validate();
 		print_log(PRINT_GREEN, "VALIDATE END\n");
-		csm_export->write(path + bsp_name + ".csm");/*
+
+		/*
 		csm_export->read(path + bsp_name + ".csm");
 		csm_export->validate();*/
 	}
@@ -12323,7 +12322,7 @@ void Bsp::setBspRender(BspRenderer* rnd)
 
 void Bsp::decalShoot(vec3 pos, const std::string& texname)
 {
-	if (!renderer || !renderer->faceMaths)
+	if (!renderer || renderer->faceMaths.empty())
 		return;
 
 	Texture* tex = g_app->giveMeTexture(texname);
@@ -12333,7 +12332,7 @@ void Bsp::decalShoot(vec3 pos, const std::string& texname)
 	int bestMath = -1;
 	float bestDist = 30.01f;
 
-	for (int faceIdx = 0; faceIdx < faceCount; faceIdx++)
+	for (int faceIdx = 0; faceIdx < renderer->faceMaths.size(); faceIdx++)
 	{
 		FaceMath& face = renderer->faceMaths[faceIdx];
 		if (renderer->pickFaceMath(pos + (face.normal * 0.01f), face.normal * -0.01f, face, bestDist))

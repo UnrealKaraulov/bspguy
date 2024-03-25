@@ -2,6 +2,7 @@
 #include "vis.h"
 #include "bsptypes.h"
 #include "Bsp.h"
+#include "log.h"
 
 bool g_debug_shift = false;
 

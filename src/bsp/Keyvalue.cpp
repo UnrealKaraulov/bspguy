@@ -1,6 +1,5 @@
 #include "Keyvalue.h"
 #include "util.h"
-#include <sstream>
 
 Keyvalues::Keyvalues(std::string& line)
 {

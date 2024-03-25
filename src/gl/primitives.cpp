@@ -1,6 +1,4 @@
 #include "primitives.h"
-#include <math.h>
-#include <string>
 #include "Wad.h"
 
 tQuad::tQuad(tVert _v1, tVert _v2, tVert _v3, tVert _v4) : v1(_v1), v2(_v2), v3(_v3), v4(_v4)
