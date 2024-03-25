@@ -17,6 +17,7 @@
 #include "JACK_jmf.h"
 #include "XASH_csm.h"
 
+#include <deque>
 #include <execution>
 
 vec3 default_hull_extents[MAX_MAP_HULLS] = {
