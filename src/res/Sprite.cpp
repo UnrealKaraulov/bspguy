@@ -237,7 +237,7 @@ Sprite::Sprite(const std::string& filename)
 }
 
 
-std::map<int, Sprite*> spr_models;
+std::map<unsigned int, Sprite*> spr_models;
 
 
 Sprite* AddNewSpriteToRender(const std::string& path, unsigned int sum)

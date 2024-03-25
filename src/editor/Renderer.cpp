@@ -87,6 +87,11 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 				print_log(get_localized_string(LANG_0897), tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
+			else if (lowerPath.ends_with(".csm"))
+			{
+				print_log(get_localized_string(LANG_0897), tmpPath.string());
+				g_app->addMap(new Bsp(tmpPath.string()));
+			}
 			else
 			{
 				print_log(get_localized_string(LANG_0898), tmpPath.string());
@@ -659,6 +664,15 @@ void Renderer::renderLoop()
 						SelectedMap->map_spr->DrawBBox();
 					}
 					SelectedMap->map_spr->DrawSprite();
+					continue;
+				}
+
+				if (SelectedMap->is_mdl_model && SelectedMap->map_csm)
+				{
+					matmodel.loadIdentity();
+					modelShader->bind();
+					modelShader->updateMatrixes();
+					SelectedMap->map_csm->draw();
 					continue;
 				}
 

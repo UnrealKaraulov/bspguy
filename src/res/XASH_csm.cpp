@@ -1,6 +1,9 @@
 #include "XASH_csm.h"
 #include "util.h"
 #include "log.h"
+#include "forcecrc32.h"
+#include "Settings.h"
+#include "Renderer.h"
 
 void CSMFile::parseMaterialsFromString(const std::string& materialsStr)
 {
@@ -27,11 +30,29 @@ std::string CSMFile::getStringFromMaterials()
 CSMFile::CSMFile()
 {
 	readed = false;
+	for (auto& m : model)
+		delete m;
+	model.clear();
 }
 
 CSMFile::CSMFile(std::string path)
 {
 	readed = read(path);
+	for (auto& m : model)
+		delete m;
+	model.clear();
+}
+
+CSMFile::~CSMFile()
+{
+	for (auto& tex : mat_textures)
+	{
+		delete tex;
+	}
+	mat_textures.clear();
+	for (auto& m : model)
+		delete m;
+	model.clear();
 }
 
 bool CSMFile::validate()
@@ -170,13 +191,13 @@ bool CSMFile::write(const std::string& filePath) {
 	header.version = IDCSM_VERSION;
 
 	std::string matstr = getStringFromMaterials();
-	
+
 	header.mat_size = (unsigned int)matstr.size() + 1;
 	header.vertex_size = sizeof(csm_vertex);
 	header.face_size = sizeof(csm_face);
 
 	header.mat_ofs = sizeof(csm_header);
-	header.vertex_ofs = header.mat_ofs + header.mat_size ;
+	header.vertex_ofs = header.mat_ofs + header.mat_size;
 	header.faces_ofs = header.vertex_ofs + (header.vertex_size * header.vertex_count);
 
 	file.write(reinterpret_cast<char*>(&header), sizeof(header));
@@ -191,4 +212,99 @@ bool CSMFile::write(const std::string& filePath) {
 
 	file.close();
 	return true;
+}
+
+void CSMFile::upload()
+{
+	for (auto& m : model)
+		delete m;
+	model.clear();
+
+	if (readed)
+	{
+		for (auto& f : faces)
+		{
+			bool added = false;
+
+			for (auto& m : model)
+			{
+				if (m->matid == f.matIdx)
+				{
+					added = true;
+					for (int i = 0; i < 3; i++)
+					{
+						modelVert tmpVert;
+						tmpVert.pos = vertices[f.vertIdx[i]].point.flip();
+						tmpVert.u = f.uvs->uv[i].x;
+						tmpVert.v = f.uvs->uv[i].y;
+						m->verts.push_back(tmpVert);
+					}
+					break;
+				}
+			}
+
+			if (!added)
+			{
+				CSM_MDL_MESH* tmpModel = new CSM_MDL_MESH();
+				tmpModel->matid = f.matIdx;
+				tmpModel->buffer = new VertexBuffer(g_app->modelShader, NULL, 0, GL_TRIANGLES);
+
+				for (int i = 0; i < 3; i++)
+				{
+					modelVert tmpVert;
+					tmpVert.pos = vertices[f.vertIdx[i]].point.flip();
+					tmpVert.u = f.uvs->uv[i].x;
+					tmpVert.v = f.uvs->uv[i].y;
+					tmpModel->verts.push_back(tmpVert);
+				}
+
+				model.push_back(tmpModel);
+			}
+		}
+	}
+
+	if (model.size())
+	{
+		for (auto& m : model)
+		{
+			m->buffer->setData(&m->verts[0], m->verts.size());
+			m->buffer->uploaded = false;
+		}
+	}
+}
+
+void CSMFile::draw()
+{
+	if (!model.size())
+	{
+		upload();
+	}
+
+	if (model.size())
+	{
+		missingTex->bind(0);
+		for (auto& m : model)
+		{
+			if (m && m->buffer)
+				m->buffer->drawFull();
+		}
+	}
+}
+
+
+std::map<unsigned int, CSMFile*> csm_models;
+CSMFile* AddNewXashCsmToRender(const std::string& path, unsigned int sum)
+{
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int)path.size(), sum);
+
+	if (csm_models.find(crc32) != csm_models.end())
+	{
+		return csm_models[crc32];
+	}
+	else
+	{
+		CSMFile* newModel = new CSMFile(path);
+		csm_models[crc32] = newModel;
+		return newModel;
+	}
 }

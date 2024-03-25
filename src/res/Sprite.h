@@ -88,5 +88,5 @@ private:
 
 void TestSprite();
 
-extern std::map<int, Sprite*> spr_models;
+extern std::map<unsigned int, Sprite*> spr_models;
 Sprite* AddNewSpriteToRender(const std::string & path, unsigned int sum = 0);

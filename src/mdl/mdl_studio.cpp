@@ -1290,7 +1290,7 @@ int StudioModel::SetSkin(int iValue)
 	return iValue;
 }
 
-std::map<int, StudioModel*> mdl_models;
+std::map<unsigned int, StudioModel*> mdl_models;
 
 StudioModel* AddNewModelToRender(const std::string& path, unsigned int sum)
 {

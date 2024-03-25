@@ -11,6 +11,7 @@
 #include "bsptypes.h"
 #include "mdl_studio.h"
 #include "Sprite.h"
+#include "XASH_csm.h"
 
 class BspRenderer;
 
@@ -111,6 +112,7 @@ public:
 
 	StudioModel* map_mdl;
 	Sprite* map_spr;
+	CSMFile* map_csm;
 
 	Bsp* parentMap;
 	void selectModelEnt();

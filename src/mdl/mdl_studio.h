@@ -487,6 +487,9 @@ public:
 		{
 			delete tex;
 		}
+
+		mdl_textures.clear();
+
 		for (int i = 0; i < 32; i++)
 		{
 			if (m_panimhdr[i])
@@ -496,18 +499,15 @@ public:
 		}
 		for (auto& body : mdl_mesh_groups)
 		{
-			//for (auto& subbody : body)
+			for (auto& submesh : body)
 			{
-				//for (auto& submesh : subbody)
-				for (auto& submesh : body)
+				if (submesh.buffer)
 				{
-					if (submesh.buffer)
-					{
-						delete submesh.buffer;
-					}
+					delete submesh.buffer;
 				}
 			}
 		}
+		mdl_mesh_groups.clear();
 	}
 
 	void DrawMDL(int mesh = -1);
@@ -561,5 +561,5 @@ private:
 	//float colorData[MAX_VERTS_PER_CALL * 4];
 };
 
-extern std::map<int, StudioModel *> mdl_models;
+extern std::map<unsigned int, StudioModel *> mdl_models;
 StudioModel* AddNewModelToRender(const std::string& path, unsigned int sum = 0);

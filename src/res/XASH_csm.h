@@ -1,7 +1,12 @@
 #pragma once
-#include "vectors.h"
 #include <vector>
 #include <string>
+#include <map>
+
+#include "vectors.h"
+#include "Texture.h"
+#include "VertexBuffer.h"
+#include "primitives.h"
 
 
 // enumerate coordinate channels
@@ -76,6 +81,29 @@ struct csm_face
 
 #pragma pack(pop)
 
+struct CSM_MDL_MESH
+{
+	VertexBuffer* buffer;
+	unsigned int matid;
+	std::vector<modelVert> verts;
+	CSM_MDL_MESH()
+	{
+		buffer = NULL;
+		matid = 0;
+		verts = std::vector<modelVert>();
+	}
+	~CSM_MDL_MESH()
+	{
+		if (buffer)
+		{
+			delete buffer;
+		}
+		buffer = NULL;
+		matid = 0;
+		verts = std::vector<modelVert>();
+	}
+};
+
 
 #define IDCSMMODHEADER		(('M'<<24)+('S'<<16)+('C'<<8)+'I') // little-endian "ICSM"
 #define IDCSM_VERSION		2
@@ -85,15 +113,19 @@ struct csm_face
 class CSMFile {
 private:
 	bool readed;
+	std::vector<Texture*> mat_textures;
+	std::vector<CSM_MDL_MESH *> model;
 
 	void parseMaterialsFromString(const std::string& materialsStr);
-
 	std::string getStringFromMaterials();
-	
+	void upload();
+
 public:
 	CSMFile();
 
 	CSMFile(std::string path);
+
+	~CSMFile();
 
 	csm_header header;
 
@@ -104,4 +136,11 @@ public:
 	bool validate();
 	bool read(const std::string& filePath);
 	bool write(const std::string& filePath);
+
+	void draw();
 };
+
+
+
+extern std::map<unsigned int, CSMFile*> csm_models;
+CSMFile* AddNewXashCsmToRender(const std::string& path, unsigned int sum = 0);

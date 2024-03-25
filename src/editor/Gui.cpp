@@ -1925,6 +1925,13 @@ void Gui::drawMenuBar()
 					app->addMap(tmpMap);
 					app->selectMap(tmpMap);
 				}
+				else if (pathlowercase.ends_with(".csm"))
+				{
+					Bsp* tmpMap = new Bsp(res.string());
+					tmpMap->is_mdl_model = true;
+					app->addMap(tmpMap);
+					app->selectMap(tmpMap);
+				}
 				else
 				{
 					Bsp* tmpMap = new Bsp(res.string());
@@ -2690,11 +2697,23 @@ void Gui::drawMenuBar()
 					ImGui::EndTooltip();
 				}
 
-
 				if (ImGui::MenuItem(get_localized_string("OPEN_SPR_VIEW").c_str()))
 				{
 					filterNeeded = true;
 					ifd::FileDialog::Instance().Open("MapOpenDialog", "Select sprite path", "Sprite file (*.spr){.spr}", false, g_settings.lastdir);
+				}
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0527).c_str());
+					ImGui::EndTooltip();
+				}
+
+				if (ImGui::MenuItem(get_localized_string("OPEN_XASHNT_CSM_VIEW").c_str()))
+				{
+					filterNeeded = true;
+					ifd::FileDialog::Instance().Open("MapOpenDialog", "Select XashNT CSM path", "XashNT CSM model (*.csm){.csm}", false, g_settings.lastdir);
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
