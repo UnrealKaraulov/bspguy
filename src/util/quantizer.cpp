@@ -1,4 +1,5 @@
 #include "quantizer.h"
+#include <cstring>
 
 unsigned char FixBounds(int i)
 {
