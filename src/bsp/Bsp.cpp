@@ -184,7 +184,7 @@ Bsp::Bsp(std::string fpath)
 	else
 	{
 		std::string lowerpath = toLowerCase(fpath);
-		if (lowerpath.ends_with(".mdl_input"))
+		if (lowerpath.ends_with(".mdl"))
 		{
 			is_mdl_model = true;
 			if (fileExists(fpath))
@@ -5523,7 +5523,7 @@ void Bsp::delete_model(int modelIdx)
 		int entModel = ents[i]->getBspModelIdx();
 		if (entModel == modelIdx)
 		{
-			ents[i]->setOrAddKeyvalue("model", "error.mdl_input");
+			ents[i]->setOrAddKeyvalue("model", "error.mdl");
 		}
 		else if (entModel > modelIdx)
 		{
@@ -11662,8 +11662,8 @@ int Bsp::import_mdl_to_bspmodel(size_t ent, bool generateClipnodes)
 
 	if (renderer->renderEnts[ent].mdl)
 	{
-		auto mdl_input = renderer->renderEnts[ent].mdl;
-		if (mdl_input->mdl_mesh_groups.size())
+		auto rendmdl = renderer->renderEnts[ent].mdl;
+		if (rendmdl->mdl_mesh_groups.size())
 		{
 			bool is_valid_nodes = false;
 
@@ -11684,14 +11684,14 @@ int Bsp::import_mdl_to_bspmodel(size_t ent, bool generateClipnodes)
 
 			std::vector<vec3> all_verts;
 			std::vector<StudioMesh> merged_meshes;
-			for (size_t group = 0; group < mdl_input->mdl_mesh_groups.size(); group++)
+			for (size_t group = 0; group < rendmdl->mdl_mesh_groups.size(); group++)
 			{
-				for (size_t meshid = 0; meshid < mdl_input->mdl_mesh_groups[group].size(); meshid++)
+				for (size_t meshid = 0; meshid < rendmdl->mdl_mesh_groups[group].size(); meshid++)
 				{
-					merged_meshes.push_back(mdl_input->mdl_mesh_groups[group][meshid]);
+					merged_meshes.push_back(rendmdl->mdl_mesh_groups[group][meshid]);
 					if (generateClipnodes)
 					{
-						for (auto v : mdl_input->mdl_mesh_groups[group][meshid].verts)
+						for (auto v : rendmdl->mdl_mesh_groups[group][meshid].verts)
 							all_verts.push_back((angle_mat * vec4(v.pos.flipUV(), 1.0f)).xyz());
 					}
 				}
