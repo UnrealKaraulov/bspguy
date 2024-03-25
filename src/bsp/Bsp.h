@@ -10,6 +10,7 @@
 #include <set>
 #include "bsptypes.h"
 #include "mdl_studio.h"
+#include "Sprite.h"
 
 class BspRenderer;
 
@@ -107,7 +108,9 @@ public:
 	bool bsp_valid;
 	bool is_bsp_model;
 	bool is_mdl_model;
-	StudioModel* mdl;
+
+	StudioModel* map_mdl;
+	Sprite* map_spr;
 
 	Bsp* parentMap;
 	void selectModelEnt();

@@ -1918,6 +1918,13 @@ void Gui::drawMenuBar()
 					app->addMap(tmpMap);
 					app->selectMap(tmpMap);
 				}
+				else if (pathlowercase.ends_with(".spr"))
+				{
+					Bsp* tmpMap = new Bsp(res.string());
+					tmpMap->is_mdl_model = true;
+					app->addMap(tmpMap);
+					app->selectMap(tmpMap);
+				}
 				else
 				{
 					Bsp* tmpMap = new Bsp(res.string());
@@ -2674,6 +2681,20 @@ void Gui::drawMenuBar()
 				{
 					filterNeeded = true;
 					ifd::FileDialog::Instance().Open("MapOpenDialog", "Select model path", "Model file (*.mdl){.mdl}", false, g_settings.lastdir);
+				}
+
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(get_localized_string(LANG_0527).c_str());
+					ImGui::EndTooltip();
+				}
+
+
+				if (ImGui::MenuItem(get_localized_string("OPEN_SPR_VIEW").c_str()))
+				{
+					filterNeeded = true;
+					ifd::FileDialog::Instance().Open("MapOpenDialog", "Select sprite path", "Sprite file (*.spr){.spr}", false, g_settings.lastdir);
 				}
 
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)

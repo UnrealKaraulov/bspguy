@@ -82,6 +82,11 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 				print_log(get_localized_string(LANG_0897), tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
+			else if (lowerPath.ends_with(".spr"))
+			{
+				print_log(get_localized_string(LANG_0897), tmpPath.string());
+				g_app->addMap(new Bsp(tmpPath.string()));
+			}
 			else
 			{
 				print_log(get_localized_string(LANG_0898), tmpPath.string());
@@ -617,12 +622,43 @@ void Renderer::renderLoop()
 					continue;
 				}
 
-				if (SelectedMap->is_mdl_model && SelectedMap->mdl)
+				if (SelectedMap->is_mdl_model && SelectedMap->map_mdl)
 				{
 					matmodel.loadIdentity();
 					modelShader->bind();
 					modelShader->updateMatrixes();
-					SelectedMap->mdl->DrawMDL();
+					if (anyCtrlPressed)
+					{
+						if (SelectedMap->map_mdl->mdl_cube && SelectedMap->map_mdl->mdl_cube->axesBuffer)
+						{
+							SelectedMap->map_mdl->mdl_cube->axesBuffer->drawFull();
+						}
+					}
+					if (anyAltPressed)
+					{
+						if (SelectedMap->map_mdl->mdl_cube && SelectedMap->map_mdl->mdl_cube->cubeBuffer)
+						{
+							SelectedMap->map_mdl->mdl_cube->cubeBuffer->drawFull();
+						}
+					}
+					SelectedMap->map_mdl->DrawMDL();
+					continue;
+				}
+
+				if (SelectedMap->is_mdl_model && SelectedMap->map_spr)
+				{
+					matmodel.loadIdentity();
+					modelShader->bind();
+					modelShader->updateMatrixes();
+					if (anyCtrlPressed)
+					{
+						SelectedMap->map_spr->DrawAxes();
+					}
+					if (anyAltPressed)
+					{
+						SelectedMap->map_spr->DrawBBox();
+					}
+					SelectedMap->map_spr->DrawSprite();
 					continue;
 				}
 

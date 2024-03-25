@@ -111,7 +111,8 @@ Bsp::Bsp()
 	is_protected = false;
 	is_bsp_model = false;
 	is_mdl_model = false;
-	mdl = NULL;
+	map_mdl = NULL; 
+	map_spr = NULL;
 
 	undo_lightmaps.clear();
 
@@ -149,7 +150,8 @@ Bsp::Bsp(std::string fpath)
 	is_protected = false;
 	is_bsp_model = false;
 	is_mdl_model = false;
-	mdl = NULL;
+	map_mdl = NULL;
+	map_spr = NULL;
 
 	undo_lightmaps.clear();
 
@@ -189,7 +191,17 @@ Bsp::Bsp(std::string fpath)
 			is_mdl_model = true;
 			if (fileExists(fpath))
 			{
-				mdl = AddNewModelToRender(fpath);
+				map_mdl = AddNewModelToRender(fpath);
+			}
+			init_empty_bsp();
+			return;
+		}
+		if (lowerpath.ends_with(".spr"))
+		{
+			is_mdl_model = true;
+			if (fileExists(fpath))
+			{
+				map_spr = AddNewSpriteToRender(fpath);
 			}
 			init_empty_bsp();
 			return;
