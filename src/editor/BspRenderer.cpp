@@ -713,10 +713,10 @@ void BspRenderer::preRenderFaces()
 
 	for (auto & model : renderModels)
 	{
-		for (int k = 0; k < model.groupCount; k++)
+		for (auto & g : model.renderGroups)
 		{
-			if (model.renderGroups && model.renderGroups[k].buffer)
-				model.renderGroups[k].buffer->uploaded = false;
+			if (g.buffer)
+				g.buffer->uploaded = false;
 		}
 	}
 	for (auto f : g_app->pickInfo.selectedFaces)
@@ -739,7 +739,7 @@ void BspRenderer::genRenderFaces()
 
 	for (int m = 0; m < map->modelCount; m++)
 	{
-		int groupCount = refreshModel(m, false);
+		size_t groupCount = refreshModel(m, false);
 		if (m == 0)
 			worldRenderGroups += groupCount;
 		else
@@ -758,38 +758,6 @@ void BspRenderer::addNewRenderFace()
 		renderModels.resize(map->modelCount + 1);
 	renderModels[map->modelCount] = RenderModel();
 	print_log(get_localized_string(LANG_0279));
-}
-
-void BspRenderer::deleteRenderModel(RenderModel* renderModel)
-{
-	if (!renderModel)
-	{
-		return;
-	}
-
-	if (renderModel->wireframeBuffer)
-		delete renderModel->wireframeBuffer;
-	renderModel->wireframeBuffer = NULL;
-
-	if (renderModel->renderGroups)
-	{
-		for (int k = 0; k < renderModel->groupCount; k++)
-		{
-			RenderGroup& group = renderModel->renderGroups[k];
-
-			if (group.buffer)
-				delete group.buffer;
-
-			group.buffer = NULL;
-		}
-		delete[] renderModel->renderGroups;
-	}
-
-	if (renderModel->renderFaces)
-		delete[] renderModel->renderFaces;
-
-	renderModel->renderGroups = NULL;
-	renderModel->renderFaces = NULL;
 }
 
 void BspRenderer::deleteRenderClipnodes()
@@ -826,10 +794,6 @@ void BspRenderer::deleteRenderFaces()
 {
 	if (renderModels.size())
 	{
-		for (auto & model : renderModels)
-		{
-			deleteRenderModel(&model);
-		}
 		renderModels.clear();
 	}
 }
@@ -877,7 +841,7 @@ void BspRenderer::deleteFaceMaths()
 	faceMaths.clear();
 }
 
-int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangulate)
+size_t BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangulate)
 {
 	if (modelIdx < 0 || modelIdx >= map->modelCount)
 		return 0;
@@ -889,11 +853,10 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 	}
 
 	BSPMODEL& model = map->models[modelIdx];
-	RenderModel* renderModel = &renderModels[modelIdx];
+	RenderModel & renderModel = renderModels[modelIdx];
 
-	deleteRenderModel(renderModel);
-
-	renderModel->renderFaces = new RenderFace[model.nFaces];
+	renderModel.~RenderModel();
+	renderModel.renderFaces.resize(model.nFaces);
 
 	std::vector<RenderGroup> renderGroups{};
 	std::vector<std::vector<lightmapVert>> renderGroupVerts{};
@@ -1179,9 +1142,9 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			renderGroupVerts.emplace_back(std::vector<lightmapVert>());
 		}
 
-		renderModel->renderFaces[i].group = groupIdx;
-		renderModel->renderFaces[i].vertOffset = (int)renderGroupVerts[groupIdx].size();
-		renderModel->renderFaces[i].vertCount = vertCount;
+		renderModel.renderFaces[i].group = groupIdx;
+		renderModel.renderFaces[i].vertOffset = (int)renderGroupVerts[groupIdx].size();
+		renderModel.renderFaces[i].vertCount = vertCount;
 
 		renderGroupVerts[groupIdx].insert(renderGroupVerts[groupIdx].end(), verts, verts + vertCount);
 		wireframeVerts_full.insert(wireframeVerts_full.end(), wireframeVerts.begin(), wireframeVerts.end());
@@ -1189,20 +1152,19 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		delete[] verts;
 	}
 
-	renderModel->renderGroups = new RenderGroup[renderGroups.size()];
-	renderModel->groupCount = (int)renderGroups.size();
+	renderModel.renderGroups = renderGroups;
 
 
-	for (int i = 0; i < renderModel->groupCount; i++)
+	for (size_t i = 0; i < renderModel.renderGroups.size(); i++)
 	{
 		lightmapVert* result_verts = new lightmapVert[renderGroupVerts[i].size() + 1];
+
 		if (renderGroupVerts[i].size() > 0)
 			memcpy(result_verts, &renderGroupVerts[i][0], renderGroupVerts[i].size() * sizeof(lightmapVert));
 
-		renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, result_verts, renderGroupVerts[i].size(), GL_TRIANGLES);
-		renderGroups[i].buffer->ownData = true;
-		renderGroups[i].buffer->frameId = 0;
-		renderModel->renderGroups[i] = renderGroups[i];
+		renderModel.renderGroups[i].buffer = new VertexBuffer(g_app->bspShader, result_verts, renderGroupVerts[i].size(), GL_TRIANGLES);
+		renderModel.renderGroups[i].buffer->ownData = true;
+		renderModel.renderGroups[i].buffer->frameId = 0;
 	}
 
 	if (wireframeVerts_full.size())
@@ -1216,9 +1178,9 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		cVert* resultWireFrame = new cVert[cleanupWireframe.size()];
 		memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
 
-		renderModel->wireframeBuffer = new VertexBuffer(g_app->colorShader, resultWireFrame, cleanupWireframe.size(), GL_LINES);
-		renderModel->wireframeBuffer->ownData = true;
-		renderModel->wireframeBuffer->frameId = 0;
+		renderModel.wireframeBuffer = new VertexBuffer(g_app->colorShader, resultWireFrame, cleanupWireframe.size(), GL_LINES);
+		renderModel.wireframeBuffer->ownData = true;
+		renderModel.wireframeBuffer->frameId = 0;
 	}
 
 	for (int i = 0; i < model.nFaces; i++)
@@ -1229,7 +1191,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 	if (refreshClipnodes)
 		generateClipnodeBuffer(modelIdx);
 
-	return renderModel->groupCount;
+	return renderModel.renderGroups.size();
 }
 
 bool BspRenderer::refreshModelClipnodes(int modelIdx)
@@ -2460,7 +2422,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 					continue;
 				if (renderEnts[i].modelIdx > 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
-					if (clipnodeHull <= -1 && renderModels[renderEnts[i].modelIdx].groupCount > 0)
+					if (clipnodeHull <= -1 && renderModels[renderEnts[i].modelIdx].renderGroups.size())
 					{
 						continue; // skip rendering for models that have faces, if in auto mode
 					}
@@ -2722,10 +2684,8 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 	}
 
-	for (int i = 0; i < renderModels[modelIdx].groupCount; i++)
+	for (auto & rgroup : renderModels[modelIdx].renderGroups)
 	{
-		RenderGroup& rgroup = renderModels[modelIdx].renderGroups[i];
-
 		if (rgroup.special)
 		{
 			if (modelIdx == 0 && !(g_render_flags & RENDER_SPECIAL))
@@ -2992,9 +2952,10 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 		{
 			bool isSpecial = false;
-			for (int k = 0; k < renderModels[renderEnts[i].modelIdx].groupCount; k++)
+
+			for (auto & rgroup : renderModels[renderEnts[i].modelIdx].renderGroups)
 			{
-				if (renderModels[renderEnts[i].modelIdx].renderGroups[k].special)
+				if (rgroup.special)
 				{
 					isSpecial = true;
 					break;
@@ -3138,7 +3099,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 	bool selectWorldClips = modelIdx == 0 && (g_render_flags & RENDER_WORLD_CLIPNODES) && hullIdx != -1;
 	bool selectEntClips = modelIdx > 0 && (g_render_flags & RENDER_ENT_CLIPNODES);
 
-	if (hullIdx <= -1 && renderModels[modelIdx].groupCount == 0)
+	if (hullIdx <= -1 && renderModels[modelIdx].renderGroups.empty())
 	{
 		// clipnodes are visible for this model because it has no faces
 		hullIdx = getBestClipnodeHull(modelIdx);

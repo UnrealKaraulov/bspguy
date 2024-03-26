@@ -4869,7 +4869,7 @@ void Gui::drawMenuBar()
 				{
 					if (ImGui::MenuItem("Random DM spawn points"))
 					{
-						for (int i = map->ents.size() - 1; i >= 0; i--)
+						for (int i = (int)map->ents.size() - 1; i >= 0; i--)
 						{
 							if (map->ents[i]->classname == "info_player_deathmatch" ||
 								map->ents[i]->classname == "info_player_start")
@@ -5054,7 +5054,7 @@ void Gui::drawMenuBar()
 					map->update_lump_pointers();
 
 					vec3 org_mins = vec3(-256.0f, -256.0f, -256.0f), org_maxs = vec3(256.0f, 256.0f, 256.0f);
-					int scale_val = (int)((FLT_MAX_COORD - 2.0f) / 256.0f);
+					float scale_val = ((FLT_MAX_COORD - 2.0f) / 256.0f);
 
 					//map->get_bounding_box(mins, maxs);
 					int newModelIdx = ImportModel(map, "./primitives/skybox.bsp", true);

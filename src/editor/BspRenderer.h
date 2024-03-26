@@ -109,20 +109,35 @@ struct RenderFace
 
 struct RenderModel
 {
-	int groupCount;
-	int renderFaceCount;
+	std::vector<RenderFace> renderFaces;
+	std::vector<RenderGroup> renderGroups;
 
-	RenderFace* renderFaces;
-	RenderGroup* renderGroups;
 	VertexBuffer* wireframeBuffer;
 
 	bool highlighted;
 
 	RenderModel()
 	{
-		groupCount = renderFaceCount = 0;
-		renderFaces = NULL;
-		renderGroups = NULL;
+		renderFaces.clear();
+		renderGroups.clear();
+		wireframeBuffer = NULL;
+		highlighted = false;
+	}
+	~RenderModel()
+	{
+		if (wireframeBuffer)
+			delete wireframeBuffer;
+
+		for (auto& g : renderGroups)
+		{
+			if (g.buffer)
+			{
+				delete g.buffer;
+			}
+		}
+
+		renderFaces.clear();
+		renderGroups.clear();
 		wireframeBuffer = NULL;
 		highlighted = false;
 	}
@@ -198,7 +213,7 @@ public:
 
 	bool setRenderAngles(const std::string& classname, mat4x4& outmat, vec3& outangles);
 	void refreshEnt(size_t entIdx);
-	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool triangulate = true);
+	size_t refreshModel(int modelIdx, bool refreshClipnodes = true, bool triangulate = true);
 	bool refreshModelClipnodes(int modelIdx);
 	void refreshFace(int faceIdx);
 	void updateClipnodeOpacity(unsigned char newValue);
@@ -265,7 +280,6 @@ public:
 	void loadClipnodes();
 	void generateClipnodeBufferForHull(int modelIdx, int hullId);
 	void generateClipnodeBuffer(int modelIdx);
-	void deleteRenderModel(RenderModel* renderModel);
 	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);
 	void deleteRenderClipnodes();
 	void deleteRenderFaces();

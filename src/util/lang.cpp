@@ -117,6 +117,8 @@ void set_localize_lang(std::string lang)
 			catch (std::runtime_error & runtime)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, "Language parse from {} fatal error: {}\n", langfile, runtime.what());
+				delete lang_ini;
+				lang_ini = NULL;
 			}
 		}
 		last_lang = lang;

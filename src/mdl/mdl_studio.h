@@ -352,7 +352,7 @@ class StudioModel
 public:
 	// entity settings
 	float fps;
-	float frametime;        //for small fps render
+	double frametime;        //for small fps render
 	float m_frame;			// frame
 	int m_sequence;			// sequence index
 	int m_bodynum;			// bodypart selection	
@@ -410,7 +410,7 @@ public:
 		fps = 30.0;
 		m_bodynum = 0;
 		needForceUpdate = true;
-		frametime = 999999.0f;
+		frametime = 999999.0;
 		filename = modelname;
 		g_vright = vec3();
 		g_lambert = 1.0f;

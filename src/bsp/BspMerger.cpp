@@ -106,7 +106,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 						if (style < 255 && style >= start_toggle_lightstyle && remap_light_styles.find((unsigned char)style) != remap_light_styles.end())
 						{
 							remapped_lightents++;
-							mapB->ents[i]->setOrAddKeyvalue("style", std::to_string(remap_light_styles[style]));
+							mapB->ents[i]->setOrAddKeyvalue("style", std::to_string(remap_light_styles[(unsigned char)style]));
 						}
 					}
 				}

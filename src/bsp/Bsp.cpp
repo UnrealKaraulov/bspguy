@@ -4499,9 +4499,11 @@ bool Bsp::validate()
 		}
 		int bmins[2];
 		int bmaxs[2];
+
 		if (isValid)
 			isValid = GetFaceExtents(i, bmins, bmaxs);
-		else
+
+		if (!GetFaceExtents(i, bmins, bmaxs))
 			print_log(PRINT_RED | PRINT_INTENSITY, "Bad face {} extents\n", i);
 
 		if (isValid)
@@ -12541,8 +12543,8 @@ void Bsp::face_fix_duplicate_edges(int faceIdx)
 
 	for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
 	{
-		int& edgeIdx = surfedges[e];
-		BSPEDGE32 edge = edges[abs(edgeIdx)];
+		int edgeIdx = surfedges[e];
+		BSPEDGE32 & edge = edges[abs(edgeIdx)];
 		int vert = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 		if (verts_usage.count(vert))
 		{

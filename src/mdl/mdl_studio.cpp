@@ -171,7 +171,7 @@ void StudioModel::CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mst
 				// are we at the end of the repeating values section and there's another section with data?
 				if (panimvalue->num.total <= k + 1)
 				{
-					pos[j] += (panimvalue[panimvalue->num.valid].value * (1.0 - s) + s * panimvalue[panimvalue->num.valid + 2].value) * pbone->scale[j];
+					pos[j] += (panimvalue[panimvalue->num.valid].value * (1.0f - s) + s * panimvalue[panimvalue->num.valid + 2].value) * pbone->scale[j];
 				}
 				else
 				{
@@ -362,7 +362,7 @@ void StudioModel::Lighting(float* lv, int bone, int flags, const vec3& normal)
 	float 	illum;
 	float	lightcos;
 
-	illum = g_ambientlight;
+	illum = g_ambientlight * 1.0f;
 
 	if (flags & STUDIO_NF_FLATSHADE)
 	{
@@ -426,11 +426,11 @@ void StudioModel::Chrome(int* pchrome, int bone, const vec3& normal)
 
 	// calc s coord
 	n = dotProduct(normal, g_chromeright[bone]);
-	pchrome[0] = (n + 1.0) * 32; // FIX: make this a float
+	pchrome[0] = (int)round((n + 1.0f) * 32.0f);
 
 	// calc t coord
 	n = dotProduct(normal, g_chromeup[bone]);
-	pchrome[1] = (n + 1.0) * 32; // FIX: make this a float
+	pchrome[1] = (int)round((n + 1.0f) * 32.0f);
 }
 
 
@@ -838,7 +838,7 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 		for (int i = 0; i < texsize; i++)
 		{
 			if (data[i] == 255)
-				out[i].a = out[i].b = out[i].g = out[i].r = 0.0;
+				out[i].a = out[i].b = out[i].g = out[i].r = 0;
 			else
 				out[i] = pal[data[i]];
 		}
@@ -867,7 +867,7 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 studiohdr_t* StudioModel::LoadModel(std::string modelname, bool IsTexture)
 {
 	int size;
-	void* buffer = loadFile(modelname, size);
+	char* buffer = loadFile(modelname, size);
 	if (!buffer)
 	{
 		print_log(get_localized_string(LANG_0986), modelname);
@@ -879,6 +879,7 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname, bool IsTexture)
 
 	if (phdr->id != 'TSDI' || (phdr->name[0] == '\0' && !IsTexture))
 	{
+		delete buffer;
 		return NULL;
 	}
 
@@ -1159,13 +1160,14 @@ float StudioModel::SetController(int iController, float flValue)
 		}
 	}
 
-	int setting = 255 * (flValue - pbonecontroller->start) / (pbonecontroller->end - pbonecontroller->start);
+	float setting = 255.0f * (flValue - pbonecontroller->start) / (pbonecontroller->end - pbonecontroller->start);
 
-	if (setting < 0) setting = 0;
-	if (setting > 255) setting = 255;
-	m_controller[iController] = setting;
+	if (setting < 0.0f) setting = 0.0f;
+	if (setting > 255.0f) setting = 255.0f;
+	
+	m_controller[iController] = (unsigned char)round(setting);
 
-	return setting * (1.0 / 255.0) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
+	return setting * (1.0f / 255.0f) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
 }
 
 
@@ -1206,11 +1208,12 @@ float StudioModel::SetMouth(float flValue)
 		}
 	}
 
-	int setting = 64 * (flValue - pbonecontroller->start) / (pbonecontroller->end - pbonecontroller->start);
+	float setting = 64.0f * (flValue - pbonecontroller->start) / (pbonecontroller->end - pbonecontroller->start);
 
-	if (setting < 0) setting = 0;
-	if (setting > 64) setting = 64;
-	m_mouth = setting;
+	if (setting < 0.0f) setting = 0.0f;
+	if (setting > 64.0f) setting = 64.0f;
+
+	m_mouth = (unsigned char)round(setting);
 
 	return setting * (1.0f / 64.0f) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
 }
@@ -1241,12 +1244,12 @@ float StudioModel::SetBlending(int iBlender, float flValue)
 		}
 	}
 
-	int setting = 255 * (flValue - pseqdesc->blendstart[iBlender]) / (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]);
+	float setting = 255.0f * (flValue - pseqdesc->blendstart[iBlender]) / (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]);
 
-	if (setting < 0) setting = 0;
-	if (setting > 255) setting = 255;
+	if (setting < 0.0f) setting = 0.0f;
+	if (setting > 255.0f) setting = 255.0f;
 
-	m_blending[iBlender] = setting;
+	m_blending[iBlender] = (unsigned char)round(setting);
 
 	return setting * (1.0f / 255.0f) * (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]) + pseqdesc->blendstart[iBlender];
 }
@@ -1302,7 +1305,7 @@ StudioModel* AddNewModelToRender(const std::string& path, unsigned int sum)
 	}
 	else
 	{
-		StudioModel* newModel = new StudioModel(path);
+		StudioModel* newModel = new StudioModel(path); // memory leak (cache)
 		mdl_models[crc32] = newModel;
 		return newModel;
 	}

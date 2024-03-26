@@ -79,6 +79,14 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 	}
 
 	Winding facewinding(bsp, *f);
+
+	if (!facewinding.m_Points.size())
+	{
+		print_log(PRINT_RED, "CanFindFacePosition error facewinding face {} [facewind size {}]!\n", facenum, facewinding.m_Points.size());
+		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
+		return false;
+	}
+
 	Winding texwinding(facewinding.m_Points.size());
 
 	for (int x = 0; x < facewinding.m_Points.size(); x++)
@@ -91,7 +99,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 
 	if (texwinding.m_Points.size() == 0)
 	{
-		print_log(PRINT_RED, "CanFindFacePosition error texwinding face {} [facewind size {}]!\n", facenum, facewinding.m_Points.size());
+		print_log(PRINT_RED, "CanFindFacePosition error texwinding face {} [texwind size {}]!\n", facenum, texwinding.m_Points.size());
 		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}

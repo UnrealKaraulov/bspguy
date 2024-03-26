@@ -261,7 +261,7 @@ bool Fgd::parse()
 					}
 				}
 				classes.push_back(fgdClass);
-				fgdClass = new FgdClass(); //memory leak
+				fgdClass = new FgdClass();
 			}
 		}
 
@@ -305,6 +305,8 @@ bool Fgd::parse()
 			parseChoicesOrFlags(lastKey);
 		}
 	}
+
+	delete fgdClass;
 
 	processClassInheritance();
 	createEntGroups();
@@ -631,8 +633,7 @@ void Fgd::processClassInheritance()
 				auto tmpBaseClass = allBaseClasses[k];
 				for (size_t c = 0; c < tmpBaseClass->keyvalues.size(); c++)
 				{
-
-					auto tmpBaseKeys = tmpBaseClass->keyvalues[c];
+					auto & tmpBaseKeys = tmpBaseClass->keyvalues[c];
 					if (addedKeys.find(tmpBaseKeys.name) == addedKeys.end())
 					{
 						newKeyvalues.push_back(tmpBaseClass->keyvalues[c]);

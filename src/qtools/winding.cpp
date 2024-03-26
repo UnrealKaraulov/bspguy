@@ -113,42 +113,24 @@ Winding::Winding(const std::vector<vec3>& points, float epsilon)
 {
 	m_Points = points;
 
-	RemoveColinearPoints(
-		epsilon
-	);
+	RemoveColinearPoints(epsilon);
 }
 
 
 Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 {
-	int             se;
+	m_Points = std::vector<vec3>(face.nEdges);
 
-	const size_t NumPoints = face.nEdges;
-
-	m_Points = std::vector<vec3>(NumPoints);
-
-	unsigned i;
-	for (i = 0; i < NumPoints && i < face.nEdges; i++)
+	for (size_t e = 0; e < face.nEdges; e++)
 	{
-		se = bsp->surfedges[face.iFirstEdge + i];
+		int edgeIdx = bsp->surfedges[face.iFirstEdge + e];
+		BSPEDGE32& edge = bsp->edges[abs(edgeIdx)];
 
-		int v;
-
-		if (se < 0)
-		{
-			v = bsp->edges[-se].iVertex[1];
-		}
-		else
-		{
-			v = bsp->edges[se].iVertex[0];
-		}
-
-		m_Points[i] = bsp->verts[v];
+		int v = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+		m_Points[e] = bsp->verts[v];
 	}
 
-	RemoveColinearPoints(
-		epsilon
-	);
+	RemoveColinearPoints(epsilon);
 }
 
 
@@ -195,7 +177,6 @@ void Winding::RemoveColinearPoints(float epsilon)
 	}
 
 	m_Points.resize(NumPoints);
-
 }
 
 bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
@@ -303,9 +284,8 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 
 	m_Points = newPoints;
 
-	RemoveColinearPoints(
-		epsilon
-	);
+	RemoveColinearPoints(epsilon);
+
 	if (m_Points.empty() == 0)
 	{
 		return false;
