@@ -8505,7 +8505,13 @@ void Gui::drawSettings()
 			if (!g_settings.vsync)
 			{
 				ImGui::SameLine();
-				ImGui::DragInt("FPS LIMIT", &g_settings.fpslimit, 5, 30, 1000, "%u");
+				if (ImGui::DragInt("FPS LIMIT", &g_settings.fpslimit, 5, 30, 1000, "%u"))
+				{
+					if (g_settings.fpslimit < 5)
+						g_settings.fpslimit = 5;
+					if (g_settings.fpslimit > 2000)
+						g_settings.fpslimit = 2000;
+				}
 			}
 			ImGui::DragFloat(get_localized_string(LANG_0776).c_str(), &app->fov, 0.1f, 1.0f, 150.0f, get_localized_string(LANG_0777).c_str());
 			ImGui::DragFloat(get_localized_string(LANG_0778).c_str(), &app->zFar, 10.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f", ImGuiSliderFlags_Logarithmic);

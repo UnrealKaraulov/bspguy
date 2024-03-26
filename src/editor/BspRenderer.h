@@ -79,7 +79,9 @@ struct RenderEnt
 
 struct RenderGroup
 {
-	Texture* texture;
+	std::vector<Texture *> textures;
+	double frametime;
+	short frameid;
 	Texture* lightmapAtlas[MAX_LIGHTMAPS];
 	VertexBuffer* buffer;
 	bool transparent;
@@ -88,7 +90,9 @@ struct RenderGroup
 	{
 		buffer = NULL;
 		transparent = special = false;
-		texture = NULL;
+		textures.clear();
+		frameid = 0;
+		frametime = 0.0f;
 		for (int i = 0; i < MAX_LIGHTMAPS; i++)
 		{
 			lightmapAtlas[i] = NULL;
@@ -260,9 +264,9 @@ public:
 	int numLoadedTextures;
 
 
-	Texture** glTextures = NULL;
+	std::vector<Texture*> * glTextures = NULL;
 	// textures loaded in a separate thread
-	Texture** glTexturesSwap;
+	std::vector<Texture*> * glTexturesSwap;
 
 	Texture** glLightmapTextures = NULL;
 	std::future<void> texturesFuture;

@@ -358,98 +358,185 @@ void BspRenderer::loadTextures()
 
 	map->update_lump_pointers();
 
-	glTexturesSwap = new Texture * [map->textureCount];
+	glTexturesSwap = new std::vector<Texture*>[map->textureCount];
 	for (int i = 0; i < map->textureCount; i++)
 	{
 		int texOffset = ((int*)map->textures)[i + 1];
 		if (texOffset < 0)
 		{
-			glTexturesSwap[i] = missingTex;
+			glTexturesSwap[i].push_back(missingTex);
+			missingCount++;
 			continue;
 		}
 
 		BSPMIPTEX* tex = ((BSPMIPTEX*)(map->textures + texOffset));
 		if (tex->szName[0] == '\0' || tex->nWidth == 0 || tex->nHeight == 0 || strlen(tex->szName) >= MAXTEXTURENAME)
 		{
-			glTexturesSwap[i] = missingTex;
+			glTexturesSwap[i].push_back(missingTex);
+			missingCount++;
 			continue;
 		}
 
 		if (strcasecmp(tex->szName, "aaatrigger") == 0)
 		{
-			glTexturesSwap[i] = aaatriggerTex_rgba;
+			glTexturesSwap[i].push_back(aaatriggerTex_rgba);
 			continue;
 		}
 
-		if (strcasecmp(tex->szName, "sky") == 0)
+		if (memcmp(tex->szName, "sky", 3) == 0 || memcmp(tex->szName, "SKY", 3) == 0)
 		{
-			glTexturesSwap[i] = skyTex_rgba;
+			glTexturesSwap[i].push_back(skyTex_rgba);
 			continue;
 		}
 
-		COLOR3* imageData = NULL;
-		WADTEX* wadTex = NULL;
-		std::string wadName = "unknown.wad";
-		if (tex->nOffsets[0] <= 0)
+		std::vector<std::string> texNames;
+
+		if (/*tex->szName[0] == '-' || */tex->szName[0] == '+')
 		{
-			bool foundInWad = false;
-			for (size_t k = 0; k < wads.size(); k++)
+			char* newname = &tex->szName[2]; // +0BTN1 +1BTN1 +ABTN1 +BBTN1
+
+			bool is_int = (tex->szName[1] >= '0' && tex->szName[1] <= '9');
+
+			for (int n = 0; n < map->textureCount; n++)
 			{
-				if (wads[k]->hasTexture(tex->szName))
+				int offset2 = ((int*)map->textures)[n + 1];
+				if (offset2 >= 0)
 				{
-					foundInWad = true;
-					wadName = wads[k]->wadname;
-					wadTex = wads[k]->readTexture(tex->szName);
-					imageData = ConvertWadTexToRGB(wadTex);
-					wadTexCount++;
-					break;
+					BSPMIPTEX* tex2 = (BSPMIPTEX*)(map->textures + offset2);
+					if (strlen(tex2->szName) > 2 && strcasecmp(newname, &tex2->szName[2]) == 0)
+					{
+						if (is_int == (tex2->szName[1] >= '0' && tex2->szName[1] <= '9'))
+						{
+							/*if (tex->szName[0] == '-')
+							{
+								if (rand() % 50 > 30)
+								{
+									texNames.push_back(tex2->szName);
+									break;
+								}
+							}
+							else
+							{*/
+								texNames.push_back(tex2->szName);
+							/*}*/
+						}
+					}
 				}
 			}
 
-			if (!foundInWad)
+			if (texNames.size() > 1)
 			{
-				glTexturesSwap[i] = missingTex;
-				missingCount++;
-				continue;
+				std::sort(texNames.begin(), texNames.end());
+				texNames.erase(std::unique(texNames.begin(), texNames.end()), texNames.end());
+			}
+			else if (texNames.empty())
+			{
+				texNames.push_back(tex->szName);
 			}
 		}
 		else
 		{
-			COLOR3 palette[256];
-			if (g_settings.pal_id >= 0)
+			texNames.push_back(tex->szName);
+		}
+
+
+		for (auto& tex_name : texNames)
+		{
+			COLOR3* imageData = NULL;
+			WADTEX* wadTex = NULL;
+			std::string wadName = "unknown.wad";
+			if (tex->nOffsets[0] <= 0)
 			{
-				memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+				bool foundInWad = false;
+				for (size_t k = 0; k < wads.size(); k++)
+				{
+					if (wads[k]->hasTexture(tex_name))
+					{
+						foundInWad = true;
+						wadName = wads[k]->wadname;
+						wadTex = wads[k]->readTexture(tex_name);
+						imageData = ConvertWadTexToRGB(wadTex);
+						wadTexCount++;
+						break;
+					}
+				}
+
+				if (!foundInWad)
+				{
+					if (texNames.size() == 1)
+					{
+						glTexturesSwap[i].push_back(missingTex);
+						missingCount++;
+					}
+					continue;
+				}
 			}
 			else
 			{
-				memcpy(palette, g_settings.palette_default,
-					256 * sizeof(COLOR3));
+				COLOR3 palette[256];
+				if (g_settings.pal_id >= 0)
+				{
+					memcpy(palette, g_settings.palettes[g_settings.pal_id].data, g_settings.palettes[g_settings.pal_id].colors * sizeof(COLOR3));
+				}
+				else
+				{
+					memcpy(palette, g_settings.palette_default,
+						256 * sizeof(COLOR3));
+				}
+
+				if (texNames.size() > 1)
+				{
+					for (int n = 0; n < map->textureCount; n++)
+					{
+						int offset2 = ((int*)map->textures)[n + 1];
+						if (offset2 >= 0)
+						{
+							tex = (BSPMIPTEX*)(map->textures + offset2);
+							if (strcasecmp(tex_name.c_str(), tex->szName) == 0)
+							{
+								break;
+							}
+						}
+					}
+				}
+
+				imageData = ConvertMipTexToRGB(tex, map->is_texture_with_pal(i) ? NULL : (COLOR3*)palette);
+				embedCount++;
 			}
 
-			imageData = ConvertMipTexToRGB(tex, map->is_texture_with_pal(i) ? NULL : (COLOR3*)palette);
-			embedCount++;
-		}
+			if (imageData)
+			{
+				if (wadTex)
+				{
+					Texture* tmpTex = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, tex_name);
+					tmpTex->setWadName(wadName);
+					glTexturesSwap[i].push_back(tmpTex);
+				}
+				else
+				{
+					Texture* tmpTex = new Texture(tex->nWidth, tex->nHeight, (unsigned char*)imageData, tex_name);
+					tmpTex->setWadName("internal");
+					glTexturesSwap[i].push_back(tmpTex);
+				}
+			}
+			else
+			{
+				if (texNames.size() == 1)
+				{
+					glTexturesSwap[i].push_back(missingTex);
+					missingCount++;
+				}
+			}
 
-		if (imageData)
-		{
 			if (wadTex)
-			{
-				glTexturesSwap[i] = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, wadTex->szName);
-				glTexturesSwap[i]->setWadName(wadName);
-			}
-			else
-			{
-				glTexturesSwap[i] = new Texture(tex->nWidth, tex->nHeight, (unsigned char*)imageData, tex->szName);
-				glTexturesSwap[i]->setWadName("internal");
-			}
-		}
-		else
-		{
-			glTexturesSwap[i] = missingTex;
+				delete wadTex;
 		}
 
-		if (wadTex)
-			delete wadTex;
+		if (glTexturesSwap[i].empty())
+		{
+			glTexturesSwap[i].push_back(missingTex);
+			missingCount++;
+		}
 	}
 
 	if (wadTexCount)
@@ -711,9 +798,9 @@ void BspRenderer::preRenderFaces()
 {
 	genRenderFaces();
 
-	for (auto & model : renderModels)
+	for (auto& model : renderModels)
 	{
-		for (auto & g : model.renderGroups)
+		for (auto& g : model.renderGroups)
 		{
 			if (g.buffer)
 				g.buffer->uploaded = false;
@@ -764,7 +851,7 @@ void BspRenderer::deleteRenderClipnodes()
 {
 	if (renderClipnodes.size())
 	{
-		for (auto & clip : renderClipnodes)
+		for (auto& clip : renderClipnodes)
 		{
 			deleteRenderModelClipnodes(&clip);
 		}
@@ -804,12 +891,15 @@ void BspRenderer::deleteTextures()
 	{
 		for (int i = 0; i < numLoadedTextures; i++)
 		{
-			if (glTextures[i] != missingTex
-				&& glTextures[i] != aaatriggerTex_rgba
-				&& glTextures[i] != skyTex_rgba)
+			for (auto& tex : glTextures[i])
 			{
-				delete glTextures[i];
-				glTextures[i] = missingTex;
+				if (tex != missingTex
+					&& tex != aaatriggerTex_rgba
+					&& tex != skyTex_rgba)
+				{
+					delete tex;
+					tex = missingTex;
+				}
 			}
 		}
 		delete[] glTextures;
@@ -853,7 +943,7 @@ size_t BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool trian
 	}
 
 	BSPMODEL& model = map->models[modelIdx];
-	RenderModel & renderModel = renderModels[modelIdx];
+	RenderModel& renderModel = renderModels[modelIdx];
 
 	renderModel.~RenderModel();
 	renderModel.renderFaces.resize(model.nFaces);
@@ -1106,7 +1196,7 @@ size_t BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool trian
 		{
 			if (texinfo.iMiptex <= -1 || texinfo.iMiptex >= map->textureCount)
 				continue;
-			bool textureMatch = !texturesLoaded || renderGroups[k].texture == glTextures[texinfo.iMiptex];
+			bool textureMatch = !texturesLoaded || std::find(renderGroups[k].textures.begin(), renderGroups[k].textures.end(), glTextures[texinfo.iMiptex][0]) != renderGroups[k].textures.end();
 			if (textureMatch && renderGroups[k].transparent == isTransparent)
 			{
 				bool allMatch = true;
@@ -1132,7 +1222,7 @@ size_t BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool trian
 			RenderGroup newGroup = RenderGroup();
 			newGroup.transparent = isTransparent;
 			newGroup.special = isSpecial;
-			newGroup.texture = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : greyTex;
+			newGroup.textures = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : std::vector<Texture*>{ greyTex };
 			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
 				newGroup.lightmapAtlas[s] = lightmapAtlas[s];
@@ -1540,7 +1630,7 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 {
 	if (!renderClipnodes.size())
 		return;
-	for (auto & clip : renderClipnodes)
+	for (auto& clip : renderClipnodes)
 	{
 		for (int k = 0; k < MAX_MAP_HULLS; k++)
 		{
@@ -1569,7 +1659,7 @@ void BspRenderer::preRenderEnts()
 	}
 }
 
-bool BspRenderer::setRenderAngles(const std::string & classname, mat4x4 & outmat, vec3 & outangles)
+bool BspRenderer::setRenderAngles(const std::string& classname, mat4x4& outmat, vec3& outangles)
 {
 	if (classname.empty())
 	{
@@ -2088,7 +2178,8 @@ void BspRenderer::reuploadTextures()
 
 	for (int i = 0; i < map->textureCount; i++)
 	{
-		glTextures[i]->upload();
+		for (auto& tex : glTextures[i])
+			tex->upload();
 	}
 
 	numLoadedTextures = map->textureCount;
@@ -2122,7 +2213,7 @@ void BspRenderer::delayLoadData()
 	{
 		if (renderClipnodes.size())
 		{
-			for (auto & clip : renderClipnodes)
+			for (auto& clip : renderClipnodes)
 			{
 				for (int k = 0; k < MAX_MAP_HULLS; k++)
 				{
@@ -2250,9 +2341,9 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 {
 	BSPFACE32& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-	if (texinfo.iMiptex < 0 || texinfo.iMiptex >= map->textureCount)
+	if (texinfo.iMiptex < 0 || texinfo.iMiptex >= map->textureCount || glTextures[texinfo.iMiptex].empty())
 		return missingTex->id;
-	return glTextures[texinfo.iMiptex]->id;
+	return glTextures[texinfo.iMiptex][0]->id;
 }
 
 void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
@@ -2684,7 +2775,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 	}
 
-	for (auto & rgroup : renderModels[modelIdx].renderGroups)
+	for (auto& rgroup : renderModels[modelIdx].renderGroups)
 	{
 		if (rgroup.special)
 		{
@@ -2711,9 +2802,24 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 
 				g_app->bspShader->bind();
 				g_app->bspShader->pushMatrix();
-				if (texturesLoaded && g_render_flags & RENDER_TEXTURES)
+
+				if (texturesLoaded && g_render_flags & RENDER_TEXTURES && !rgroup.textures.empty())
 				{
-					rgroup.texture->bind(0);
+					if (rgroup.textures.size() > 1)
+					{
+						if (std::abs(g_app->curTime - rgroup.frametime) > 0.1f)
+						{
+							rgroup.frametime = g_app->curTime;
+							rgroup.frameid++;
+							if (rgroup.frameid >= rgroup.textures.size())
+							{
+								rgroup.frameid = 0;
+							}
+						}
+					}
+
+
+					rgroup.textures[rgroup.frameid]->bind(0);
 				}
 				else
 				{
@@ -2953,7 +3059,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		{
 			bool isSpecial = false;
 
-			for (auto & rgroup : renderModels[renderEnts[i].modelIdx].renderGroups)
+			for (auto& rgroup : renderModels[renderEnts[i].modelIdx].renderGroups)
 			{
 				if (rgroup.special)
 				{
