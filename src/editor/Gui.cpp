@@ -519,7 +519,7 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	rend->reuploadTextures();
 
 	rend->loadLightmaps();
-	rend->calcFaceMaths();
+	rend->refreshModel(newModelIdx);
 	rend->preRenderEnts();
 
 	map->getBspRender()->pushModelUndoState("IMPORT MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
@@ -1438,7 +1438,7 @@ void Gui::drawBspContexMenu()
 								map->delete_hull(1, modelIdx, -1);
 								map->delete_hull(2, modelIdx, -1);
 								map->delete_hull(3, modelIdx, -1);
-								rend->refreshModelClipnodes(modelIdx);
+								rend->refreshModel(modelIdx);
 								checkValidHulls();
 								print_log(get_localized_string(LANG_0331), modelIdx);
 							}
@@ -1453,10 +1453,7 @@ void Gui::drawBspContexMenu()
 								{
 									map->delete_hull(i, modelIdx, -1);
 									checkValidHulls();
-									if (i == 0)
-										rend->refreshModel(modelIdx);
-									else
-										rend->refreshModelClipnodes(modelIdx);
+									rend->refreshModel(modelIdx);
 									print_log(get_localized_string(LANG_0332), i, modelIdx);
 								}
 							}
@@ -1471,7 +1468,7 @@ void Gui::drawBspContexMenu()
 								map->simplify_model_collision(modelIdx, 1);
 								map->simplify_model_collision(modelIdx, 2);
 								map->simplify_model_collision(modelIdx, 3);
-								rend->refreshModelClipnodes(modelIdx);
+								rend->refreshModel(modelIdx);
 								print_log(get_localized_string(LANG_0333), modelIdx);
 							}
 
@@ -1484,7 +1481,7 @@ void Gui::drawBspContexMenu()
 								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
 								{
 									map->simplify_model_collision(modelIdx, 1);
-									rend->refreshModelClipnodes(modelIdx);
+									rend->refreshModel(modelIdx);
 									print_log(get_localized_string(LANG_0334), i, modelIdx);
 								}
 							}
@@ -1511,7 +1508,7 @@ void Gui::drawBspContexMenu()
 										if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
 										{
 											map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
-											rend->refreshModelClipnodes(modelIdx);
+											rend->refreshModel(modelIdx);
 											checkValidHulls();
 											print_log(get_localized_string(LANG_0335), i, k, modelIdx);
 										}
@@ -1679,7 +1676,6 @@ void Gui::drawBspContexMenu()
 							}
 
 							map->getBspRender()->refreshModel(newmodelid);
-							map->getBspRender()->refreshModelClipnodes(newmodelid);
 						}
 
 
@@ -1694,7 +1690,6 @@ void Gui::drawBspContexMenu()
 						map->update_lump_pointers();
 
 						map->getBspRender()->loadLightmaps();
-						map->getBspRender()->calcFaceMaths();
 						map->getBspRender()->preRenderEnts();
 
 						map->getBspRender()->pushModelUndoState("MERGE {} and {} SELECTED BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
@@ -3458,7 +3453,6 @@ void Gui::drawMenuBar()
 					}
 				}
 				rend->loadLightmaps();
-				rend->calcFaceMaths();
 				rend->preRenderEnts();
 			}*/
 
@@ -3561,7 +3555,6 @@ void Gui::drawMenuBar()
 
 					rend->reuploadTextures();
 					rend->loadLightmaps();
-					rend->calcFaceMaths();
 
 
 					rend->preRenderFaces();
@@ -3706,7 +3699,6 @@ void Gui::drawMenuBar()
 				map->resize_all_lightmaps();
 
 				rend->loadLightmaps();
-				rend->calcFaceMaths();
 
 				map->update_ent_lump();
 				map->update_lump_pointers();
@@ -4193,7 +4185,6 @@ void Gui::drawMenuBar()
 							map->resize_all_lightmaps();
 
 							rend->loadLightmaps();
-							rend->calcFaceMaths();
 							rend->preRenderEnts();
 							rend->reloadClipnodes();
 
@@ -4216,7 +4207,7 @@ void Gui::drawMenuBar()
 					map->save_undo_lightmaps();
 					map->resize_all_lightmaps();
 					rend->loadLightmaps();
-					rend->calcFaceMaths();
+					rend->preRenderFaces();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -4238,7 +4229,7 @@ void Gui::drawMenuBar()
 					map->save_undo_lightmaps();
 					map->resize_all_lightmaps();
 					rend->loadLightmaps();
-					rend->calcFaceMaths();
+					rend->preRenderFaces();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -4260,7 +4251,7 @@ void Gui::drawMenuBar()
 						map->resize_all_lightmaps();
 
 						rend->loadLightmaps();
-						rend->calcFaceMaths();
+						rend->preRenderFaces();
 
 						map->update_ent_lump();
 						map->update_lump_pointers();
@@ -5048,7 +5039,7 @@ void Gui::drawMenuBar()
 					}
 
 					rend->loadLightmaps();
-					rend->calcFaceMaths();
+					rend->preRenderFaces();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -11280,7 +11271,6 @@ void Gui::drawFaceEditorWidget()
 
 			map->resize_all_lightmaps(true);
 			mapRenderer->loadLightmaps();
-			mapRenderer->calcFaceMaths();
 
 			reloadLimits();
 
@@ -11456,7 +11446,7 @@ void Gui::drawFaceEditorWidget()
 					}
 
 					mapRenderer->loadLightmaps();
-					mapRenderer->calcFaceMaths();
+					mapRenderer->preRenderFaces();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -11483,7 +11473,6 @@ void Gui::drawFaceEditorWidget()
 					}
 
 					mapRenderer->preRenderFaces();
-					mapRenderer->calcFaceMaths();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -11508,7 +11497,6 @@ void Gui::drawFaceEditorWidget()
 						selected_faces.pop_back();
 					}
 					mapRenderer->preRenderFaces();
-					mapRenderer->calcFaceMaths();
 
 					map->update_lump_pointers();
 
@@ -11532,7 +11520,6 @@ void Gui::drawFaceEditorWidget()
 					}
 
 					mapRenderer->preRenderFaces();
-					mapRenderer->calcFaceMaths();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
@@ -11557,7 +11544,6 @@ void Gui::drawFaceEditorWidget()
 					}
 
 					mapRenderer->preRenderFaces();
-					mapRenderer->calcFaceMaths();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();

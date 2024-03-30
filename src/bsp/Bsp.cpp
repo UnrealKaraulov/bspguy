@@ -9064,7 +9064,6 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	resize_all_lightmaps();
 	bsprend->reuploadTextures();
 	bsprend->loadLightmaps();
-	bsprend->calcFaceMaths();
 
 	update_ent_lump();
 	update_lump_pointers();
@@ -9441,7 +9440,6 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	resize_all_lightmaps();
 	bsprend->reloadTextures();
 	bsprend->loadLightmaps();
-	bsprend->calcFaceMaths();
 
 	update_ent_lump();
 	update_lump_pointers();
@@ -9485,8 +9483,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	resize_all_lightmaps();
 	bsprend->reuploadTextures();
 	bsprend->loadLightmaps();
-	bsprend->calcFaceMaths();
-
 
 	//g_app->reloading = true;
 	//bsprend->reload();
@@ -9554,10 +9550,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 		tmp.tick();
 		g_progress = tmp;
 		renderer->loadLightmaps();
-
-		tmp.tick();
-		g_progress = tmp;
-		renderer->calcFaceMaths();
 
 		tmp.tick();
 		g_progress = tmp;
@@ -10127,7 +10119,6 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		resize_all_lightmaps();
 		bsprend->reuploadTextures();
 		bsprend->loadLightmaps();
-		bsprend->calcFaceMaths();
 
 		update_ent_lump();
 		update_lump_pointers();
@@ -11286,7 +11277,6 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			resize_all_lightmaps();
 			bsprend->reloadTextures();
 			bsprend->loadLightmaps();
-			bsprend->calcFaceMaths();
 
 			update_ent_lump();
 			update_lump_pointers();
@@ -12351,7 +12341,7 @@ void Bsp::setBspRender(BspRenderer* rnd)
 
 void Bsp::decalShoot(vec3 pos, const std::string& texname)
 {
-	if (!renderer || renderer->faceMaths.empty())
+	/*if (!renderer || renderer->faceMaths.empty())
 		return;
 
 	Texture* tex = g_app->giveMeTexture(texname);
@@ -12371,7 +12361,7 @@ void Bsp::decalShoot(vec3 pos, const std::string& texname)
 	}
 
 	int modelidx = get_model_from_face(bestMath);
-	print_log(get_localized_string(LANG_0218), modelidx, bestMath, renderer->intersectVec.toKeyvalueString());
+	print_log(get_localized_string(LANG_0218), modelidx, bestMath, renderer->intersectVec.toKeyvalueString());*/
 
 	// 
 }

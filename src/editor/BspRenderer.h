@@ -41,6 +41,7 @@ struct FaceMath
 	vec3 normal;
 	float fdist;
 	std::vector<vec2> localVerts;
+
 	FaceMath()
 	{
 		worldToLocal = mat4x4();
@@ -50,36 +51,10 @@ struct FaceMath
 	}
 };
 
-struct RenderEnt
-{
-	mat4x4 modelMat4x4; // model matrix for rendering
-	mat4x4 modelMat4x4_angles; // model matrix for rendering with angles
-	mat4x4 modelMat4x4_calc;
-	mat4x4 modelMat4x4_calc_angles;
-	vec3 offset; // vertex transformations for picking
-	vec3 angles; // support angles
-	int modelIdx; // -1 = point entity
-	EntCube* pointEntCube;
-	bool needAngles;
-	bool isDuplicateModel;
-	StudioModel* mdl;
-	Sprite* spr;
-	std::string mdlFileName;
-	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()), modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
-	{
-		isDuplicateModel = false;
-		needAngles = false;
-		modelIdx = 0;
-		pointEntCube = NULL;
-		mdl = NULL;
-		mdlFileName = "";
-		spr = NULL;
-	}
-};
 
 struct RenderGroup
 {
-	std::vector<Texture *> textures;
+	std::vector<Texture*> textures;
 	double frametime;
 	short frameid;
 	Texture* lightmapAtlas[MAX_LIGHTMAPS];
@@ -90,13 +65,19 @@ struct RenderGroup
 	{
 		buffer = NULL;
 		transparent = special = false;
-		textures.clear();
+		textures = {};
 		frameid = 0;
 		frametime = 0.0f;
 		for (int i = 0; i < MAX_LIGHTMAPS; i++)
 		{
 			lightmapAtlas[i] = NULL;
 		}
+	}
+	~RenderGroup()
+	{
+		if (buffer)
+			delete buffer;
+
 	}
 };
 
@@ -111,64 +92,138 @@ struct RenderFace
 	}
 };
 
-struct RenderModel
-{
-	std::vector<RenderFace> renderFaces;
-	std::vector<RenderGroup> renderGroups;
-
-	VertexBuffer* wireframeBuffer;
-
-	bool highlighted;
-
-	RenderModel()
-	{
-		renderFaces.clear();
-		renderGroups.clear();
-		wireframeBuffer = NULL;
-		highlighted = false;
-	}
-	~RenderModel()
-	{
-		if (wireframeBuffer)
-			delete wireframeBuffer;
-
-		for (auto& g : renderGroups)
-		{
-			if (g.buffer)
-			{
-				delete g.buffer;
-			}
-		}
-
-		renderFaces.clear();
-		renderGroups.clear();
-		wireframeBuffer = NULL;
-		highlighted = false;
-	}
-};
-
 struct RenderClipnodes
 {
 	VertexBuffer* clipnodeBuffer[MAX_MAP_HULLS];
 	VertexBuffer* wireframeClipnodeBuffer[MAX_MAP_HULLS];
 	std::vector<FaceMath> faceMaths[MAX_MAP_HULLS];
+
 	RenderClipnodes()
 	{
 		for (int i = 0; i < MAX_MAP_HULLS; i++)
 		{
 			clipnodeBuffer[i] = NULL;
 			wireframeClipnodeBuffer[i] = NULL;
-			faceMaths[i].clear();
+			faceMaths[i] = {};
 		}
 	}
+
+	void cleanHull(int hull)
+	{
+		if (clipnodeBuffer[hull])
+			delete clipnodeBuffer[hull];
+		clipnodeBuffer[hull] = NULL;
+
+		if (wireframeClipnodeBuffer[hull])
+			delete wireframeClipnodeBuffer[hull];
+		wireframeClipnodeBuffer[hull] = NULL;
+
+		faceMaths[hull] = {};
+	}
+
 	~RenderClipnodes()
 	{
 		for (int i = 0; i < MAX_MAP_HULLS; i++)
 		{
+			if (clipnodeBuffer[i])
+				delete clipnodeBuffer[i];
 			clipnodeBuffer[i] = NULL;
+
+			if (wireframeClipnodeBuffer[i])
+				delete wireframeClipnodeBuffer[i];
 			wireframeClipnodeBuffer[i] = NULL;
-			faceMaths[i].clear();
 		}
+	}
+};
+
+struct RenderModel
+{
+	std::vector<RenderFace> renderFaces;
+	std::vector<RenderGroup> renderGroups;
+	std::vector<FaceMath> faceMaths;
+
+	RenderClipnodes clipNodes;
+	VertexBuffer* wireframeBuffer;
+
+	bool highlighted;
+
+	RenderModel()
+	{
+		renderFaces = {};
+		renderGroups = {};
+		faceMaths = {};
+
+		wireframeBuffer = NULL;
+		highlighted = false;
+
+		clipNodes = {};
+	}
+
+	void clear()
+	{
+		renderFaces = {};
+		renderGroups = {};
+		faceMaths = {};
+		if (wireframeBuffer)
+			delete wireframeBuffer;
+		wireframeBuffer = NULL;
+		highlighted = false;
+
+		clipNodes = {};
+	}
+
+	~RenderModel()
+	{
+		if (wireframeBuffer)
+			delete wireframeBuffer;
+		wireframeBuffer = NULL;
+
+		highlighted = false;
+	}
+};
+
+struct RenderEnt
+{
+	mat4x4 modelMat4x4; // model matrix for rendering
+	mat4x4 modelMat4x4_angles; // model matrix for rendering with angles
+	mat4x4 modelMat4x4_calc;
+	mat4x4 modelMat4x4_calc_angles;
+
+	vec3 offset; // vertex transformations for picking
+	vec3 angles; // support angles
+
+	bool needAngles;
+	bool isDuplicateModel;
+	int modelIdx; // -1 = point entity
+
+	EntCube* pointEntCube; // cached, no need to clean
+	StudioModel* mdl; // cached, no need to clean
+	Sprite* spr; // cached, no need to clean
+	std::string mdlFileName;
+
+	RenderModel rmodel;
+
+	RenderEnt() : modelMat4x4(mat4x4()), modelMat4x4_calc(mat4x4()), modelMat4x4_angles(mat4x4()), modelMat4x4_calc_angles(mat4x4()), offset(vec3()), angles(vec3())
+	{
+		isDuplicateModel = false;
+		needAngles = false;
+		modelIdx = 0;
+		pointEntCube = NULL;
+		mdl = NULL;
+		mdlFileName = "";
+		spr = NULL;
+		rmodel = {};
+	}
+
+	~RenderEnt()
+	{
+		isDuplicateModel = false;
+		needAngles = false;
+		modelIdx = 0;
+		pointEntCube = NULL;
+		mdl = NULL;
+		mdlFileName = "";
+		spr = NULL;
 	}
 };
 
@@ -215,23 +270,21 @@ public:
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
 	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
 
+	RenderEnt* getRenderEntByModel(int modelIdx);
+
 	bool setRenderAngles(const std::string& classname, mat4x4& outmat, vec3& outangles);
 	void refreshEnt(size_t entIdx);
-	size_t refreshModel(int modelIdx, bool refreshClipnodes = true, bool triangulate = true);
-	bool refreshModelClipnodes(int modelIdx);
-	void refreshFace(int faceIdx);
+	size_t refreshModel(size_t entIdx, bool refreshClipnodes = true, bool triangulate = true);
 	void updateClipnodeOpacity(unsigned char newValue);
 
 	void reload(); // reloads all geometry, textures, and lightmaps
 	void reloadLightmaps();
 	void reloadClipnodes();
-	RenderClipnodes* addClipnodeModel(int modelIdx);
 
 	// calculate vertex positions and uv coordinates once for faster rendering
 	// also combines faces that share similar properties into a single buffer
 	void preRenderFaces();
 	void preRenderEnts();
-	void calcFaceMaths();
 
 	void loadTextures(); // will reload them if already loaded
 	void reloadTextures();
@@ -250,9 +303,6 @@ public:
 
 	LightmapInfo* lightmaps;
 	std::vector<RenderEnt> renderEnts;
-	std::vector<RenderModel> renderModels;
-	std::vector<RenderClipnodes> renderClipnodes;
-	std::vector<FaceMath> faceMaths;
 
 	EntCube* leafCube;
 	EntCube* nodeCube;/*
@@ -280,13 +330,9 @@ public:
 
 	void loadLightmaps();
 	void genRenderFaces();
-	void addNewRenderFace();
 	void loadClipnodes();
-	void generateClipnodeBufferForHull(int modelIdx, int hullId);
-	void generateClipnodeBuffer(int modelIdx);
-	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);
-	void deleteRenderClipnodes();
-	void deleteRenderFaces();
+	void generateClipnodeBufferForHull(size_t entIdx, int hullId);
+	void generateClipnodeBuffer(size_t entIdx);
 	void deleteTextures();
 	void deleteLightmapTextures();
 	void deleteFaceMaths();
@@ -326,20 +372,6 @@ public:
 
 	vec3 intersectVec;
 private:
-
-	struct nodeBuffStr
-	{
-		int modelIdx = 0;
-		int hullIdx = 0;
-		nodeBuffStr()
-		{
-			modelIdx = 0;
-			hullIdx = 0;
-		}
-	};
-
-	std::map<int, nodeBuffStr> nodesBufferCache, clipnodesBufferCache;
-
 	std::set<int> drawedNodes;
 	std::set<int> drawedClipnodes;
 };

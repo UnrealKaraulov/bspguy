@@ -272,10 +272,8 @@ void DuplicateBspModelCommand::execute()
 	map->remove_unused_model_structures(CLEAN_LEAVES);
 
 	renderer->loadLightmaps();
-	renderer->calcFaceMaths();
 	renderer->refreshEnt(entIdx);
 
-	renderer->addClipnodeModel(newModelIdx);
 	renderer->refreshModel(newModelIdx);
 
 	g_app->pickInfo.selectedFaces.clear();
@@ -304,7 +302,6 @@ void DuplicateBspModelCommand::undo()
 	map->update_ent_lump();
 	renderer->reuploadTextures();
 	renderer->loadLightmaps();
-	renderer->calcFaceMaths();
 	renderer->preRenderEnts();
 	g_app->gui->refresh();
 }
@@ -354,7 +351,7 @@ void CreateBspModelCommand::execute()
 	BspRenderer* renderer = getBspRenderer();
 	if (!renderer)
 		return;
-	//renderer->addNewRenderFace();
+
 	int aaatriggerIdx = getDefaultTextureIdx();
 
 	int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES;
@@ -386,12 +383,10 @@ void CreateBspModelCommand::execute()
 	g_app->deselectObject();
 
 	//renderer->updateLightmapInfos();
-	//renderer->calcFaceMaths();
 	//renderer->preRenderFaces();
 	//renderer->preRenderEnts();
 	//renderer->reloadTextures();
 	//renderer->reloadLightmaps();
-	//renderer->addClipnodeModel(modelIdx);
 	//renderer->refreshModel(modelIdx);
 	//
 
@@ -403,8 +398,6 @@ void CreateBspModelCommand::execute()
 	if (NeedreloadTextures)
 		renderer->reuploadTextures();
 	renderer->loadLightmaps();
-	renderer->calcFaceMaths();
-	renderer->addClipnodeModel(modelIdx);
 	renderer->refreshModel(modelIdx);
 	renderer->refreshEnt(map->ents.size() - 1);
 	//g_app->reloading = true;
@@ -554,7 +547,6 @@ void EditBspModelCommand::undo()
 		if (renderer)
 		{
 			renderer->preRenderFaces();
-			renderer->calcFaceMaths();
 		}
 	}
 
@@ -595,7 +587,6 @@ void EditBspModelCommand::refresh()
 		renderer->refreshEnt(entIdx);
 	}
 
-	renderer->calcFaceMaths();
 	renderer->refreshModel(modelIdx);
 
 	g_app->gui->refresh();

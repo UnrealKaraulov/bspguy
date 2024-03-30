@@ -78,7 +78,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 		return false;
 	}
 
-	Winding facewinding(bsp, *f);
+	Winding facewinding(bsp->get_face_verts(facenum));
 
 	if (!facewinding.m_Points.size())
 	{
