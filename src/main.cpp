@@ -89,7 +89,7 @@
 // Solve: 
 // Create empty hull 0 box ?
 
-std::string g_version_string = "NewBSPGuy v4.24";
+std::string g_version_string = "NewBSPGuy v4.25";
 
 bool g_verbose = false;
 
