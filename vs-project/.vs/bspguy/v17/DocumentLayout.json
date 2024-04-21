@@ -1,0 +1,324 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Projects\\CS1.6\\newbspguy\\vs-project\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Command.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\BspRenderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|D:\\PROGRAM FILES\\MICROSOFT VISUAL STUDIO\\2022\\COMMUNITY\\VC\\TOOLS\\MSVC\\14.39.33519\\INCLUDE\\VECTOR||{3B902123-F8A7-4915-9F01-361F908088D0}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Renderer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\BspRenderer.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\gl\\VertexBuffer.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\Bsp.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Gui.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|D:\\PROGRAM FILES\\MICROSOFT VISUAL STUDIO\\2022\\COMMUNITY\\VC\\TOOLS\\MSVC\\14.39.33519\\INCLUDE\\XMEMORY||{3B902123-F8A7-4915-9F01-361F908088D0}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\debug_heap.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\bsptypes.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\BspMerger.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\imgui\\backends\\imgui_impl_opengl3.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\bsptypes.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\qtools\\winding.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\resources\\languages\\language.ini||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Renderer.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Clipper.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}|bspguy.vcxproj|C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Clipper.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 4,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "BspRenderer.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\BspRenderer.cpp",
+              "RelativeDocumentMoniker": "..\\src\\editor\\BspRenderer.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\BspRenderer.cpp",
+              "RelativeToolTip": "..\\src\\editor\\BspRenderer.cpp",
+              "ViewState": "AQIAAAUGAAAAAAAAAAAowBcGAAANAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-03-30T06:32:29.54Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "BspRenderer.h",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\BspRenderer.h",
+              "RelativeDocumentMoniker": "..\\src\\editor\\BspRenderer.h",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\BspRenderer.h",
+              "RelativeToolTip": "..\\src\\editor\\BspRenderer.h",
+              "ViewState": "AQIAAOYAAAAAAAAAAAAowPgAAAAoAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-03-30T06:32:31.277Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "debug_heap.cpp",
+              "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\debug_heap.cpp",
+              "RelativeDocumentMoniker": "..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\debug_heap.cpp",
+              "ToolTip": "C:\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\debug_heap.cpp",
+              "RelativeToolTip": "..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Source\\10.0.22621.0\\ucrt\\heap\\debug_heap.cpp",
+              "ViewState": "AQIAAPMDAAAAAAAAAAAuwAEEAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-04-21T05:41:05.683Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Renderer.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Renderer.cpp",
+              "RelativeDocumentMoniker": "..\\src\\editor\\Renderer.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Renderer.cpp",
+              "RelativeToolTip": "..\\src\\editor\\Renderer.cpp",
+              "ViewState": "AQIAAD8HAAAAAAAAAAAiwEwHAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-03-30T06:33:05.6Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Command.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Command.cpp",
+              "RelativeDocumentMoniker": "..\\src\\editor\\Command.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Command.cpp",
+              "RelativeToolTip": "..\\src\\editor\\Command.cpp",
+              "ViewState": "AQIAAHMBAAAAAAAAAAAowJEBAAAbAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-04-21T05:52:04.729Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "bsptypes.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\bsptypes.cpp",
+              "RelativeDocumentMoniker": "..\\src\\bsp\\bsptypes.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\bsptypes.cpp",
+              "RelativeToolTip": "..\\src\\bsp\\bsptypes.cpp",
+              "ViewState": "AQIAAC8AAAAAAAAAAAAowEEAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-04-21T05:27:08.499Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "xmemory",
+              "DocumentMoniker": "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\include\\xmemory",
+              "ToolTip": "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\include\\xmemory",
+              "ViewState": "AQIAANQCAAAAAAAAAAAiwOECAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-04-21T05:41:16.498Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "VertexBuffer.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\gl\\VertexBuffer.cpp",
+              "RelativeDocumentMoniker": "..\\src\\gl\\VertexBuffer.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\gl\\VertexBuffer.cpp",
+              "RelativeToolTip": "..\\src\\gl\\VertexBuffer.cpp",
+              "ViewState": "AQIAAGIAAAAAAAAAAAAiwG8AAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-04-15T17:17:42.59Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Bsp.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\Bsp.cpp",
+              "RelativeDocumentMoniker": "..\\src\\bsp\\Bsp.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\Bsp.cpp",
+              "RelativeToolTip": "..\\src\\bsp\\Bsp.cpp",
+              "ViewState": "AQIAAI0HAAAAAAAAAAAowG8HAAA1AAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-03-30T06:32:21.237Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Gui.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Gui.cpp",
+              "RelativeDocumentMoniker": "..\\src\\editor\\Gui.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Gui.cpp",
+              "RelativeToolTip": "..\\src\\editor\\Gui.cpp",
+              "ViewState": "AQIAAOAUAAAAAAAAAAAowPEUAACZAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-03-30T06:32:35.625Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "bsptypes.h",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\bsptypes.h",
+              "RelativeDocumentMoniker": "..\\src\\bsp\\bsptypes.h",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\bsptypes.h",
+              "RelativeToolTip": "..\\src\\bsp\\bsptypes.h",
+              "ViewState": "AQIAAPQBAAAAAAAAAAAowAkCAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-03-30T06:32:32.693Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "vector",
+              "DocumentMoniker": "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\include\\vector",
+              "ToolTip": "D:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.39.33519\\include\\vector",
+              "ViewState": "AQIAAFcHAAAAAAAAAAAiwGQHAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2024-04-21T05:41:22.738Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{e8b06f52-6d01-11d2-aa7d-00c04f990343}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "winding.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\qtools\\winding.cpp",
+              "RelativeDocumentMoniker": "..\\src\\qtools\\winding.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\qtools\\winding.cpp",
+              "RelativeToolTip": "..\\src\\qtools\\winding.cpp",
+              "ViewState": "AQIAAAEBAAAAAAAAAAAowBwBAAAgAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-04-21T05:28:15.082Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "imgui_impl_opengl3.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\imgui\\backends\\imgui_impl_opengl3.cpp",
+              "RelativeDocumentMoniker": "..\\imgui\\backends\\imgui_impl_opengl3.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\imgui\\backends\\imgui_impl_opengl3.cpp",
+              "RelativeToolTip": "..\\imgui\\backends\\imgui_impl_opengl3.cpp",
+              "ViewState": "AQIAANoCAAAAAAAAAAAowO8CAAAmAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-04-21T05:32:37.724Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "BspMerger.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\BspMerger.cpp",
+              "RelativeDocumentMoniker": "..\\src\\bsp\\BspMerger.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\bsp\\BspMerger.cpp",
+              "RelativeToolTip": "..\\src\\bsp\\BspMerger.cpp",
+              "ViewState": "AQIAAB4IAAAAAAAAAAAowDUIAABEAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-04-21T05:33:11.99Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Clipper.cpp",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Clipper.cpp",
+              "RelativeDocumentMoniker": "..\\src\\editor\\Clipper.cpp",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Clipper.cpp",
+              "RelativeToolTip": "..\\src\\editor\\Clipper.cpp",
+              "ViewState": "AQIAAEgAAAAAAAAAAAAnwFoAAAAeAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-03-30T06:32:33.582Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "Clipper.h",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Clipper.h",
+              "RelativeDocumentMoniker": "..\\src\\editor\\Clipper.h",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Clipper.h",
+              "RelativeToolTip": "..\\src\\editor\\Clipper.h",
+              "ViewState": "AQIAAA4AAAAAAAAAAABRwBIAAAAQAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-03-30T06:32:34.377Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "Renderer.h",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Renderer.h",
+              "RelativeDocumentMoniker": "..\\src\\editor\\Renderer.h",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\src\\editor\\Renderer.h",
+              "RelativeToolTip": "..\\src\\editor\\Renderer.h",
+              "ViewState": "AQIAAP8AAAAAAAAAAAAnwBEBAAAbAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
+              "WhenOpened": "2024-03-30T06:33:06.66Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "language.ini",
+              "DocumentMoniker": "C:\\Projects\\CS1.6\\newbspguy\\resources\\languages\\language.ini",
+              "RelativeDocumentMoniker": "..\\resources\\languages\\language.ini",
+              "ToolTip": "C:\\Projects\\CS1.6\\newbspguy\\resources\\languages\\language.ini",
+              "RelativeToolTip": "..\\resources\\languages\\language.ini",
+              "ViewState": "AQIAAA8CAAAAAAAAAIAwwCICAAAJAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002768|",
+              "WhenOpened": "2024-03-30T07:02:16.769Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

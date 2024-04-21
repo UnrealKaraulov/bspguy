@@ -1438,7 +1438,7 @@ void Gui::drawBspContexMenu()
 								map->delete_hull(1, modelIdx, -1);
 								map->delete_hull(2, modelIdx, -1);
 								map->delete_hull(3, modelIdx, -1);
-								rend->refreshModel(modelIdx);
+								rend->refreshModelClipnodes(modelIdx);
 								checkValidHulls();
 								print_log(get_localized_string(LANG_0331), modelIdx);
 							}
@@ -1453,7 +1453,10 @@ void Gui::drawBspContexMenu()
 								{
 									map->delete_hull(i, modelIdx, -1);
 									checkValidHulls();
+									if (i == 0)
 									rend->refreshModel(modelIdx);
+									else
+										rend->refreshModelClipnodes(modelIdx);
 									print_log(get_localized_string(LANG_0332), i, modelIdx);
 								}
 							}
@@ -1468,7 +1471,7 @@ void Gui::drawBspContexMenu()
 								map->simplify_model_collision(modelIdx, 1);
 								map->simplify_model_collision(modelIdx, 2);
 								map->simplify_model_collision(modelIdx, 3);
-								rend->refreshModel(modelIdx);
+								rend->refreshModelClipnodes(modelIdx);
 								print_log(get_localized_string(LANG_0333), modelIdx);
 							}
 
@@ -1481,7 +1484,7 @@ void Gui::drawBspContexMenu()
 								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
 								{
 									map->simplify_model_collision(modelIdx, 1);
-									rend->refreshModel(modelIdx);
+									rend->refreshModelClipnodes(modelIdx);
 									print_log(get_localized_string(LANG_0334), i, modelIdx);
 								}
 							}
@@ -1508,7 +1511,7 @@ void Gui::drawBspContexMenu()
 										if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
 										{
 											map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
-											rend->refreshModel(modelIdx);
+											rend->refreshModelClipnodes(modelIdx);
 											checkValidHulls();
 											print_log(get_localized_string(LANG_0335), i, k, modelIdx);
 										}
@@ -1676,6 +1679,7 @@ void Gui::drawBspContexMenu()
 							}
 
 							map->getBspRender()->refreshModel(newmodelid);
+							map->getBspRender()->refreshModelClipnodes(newmodelid);
 						}
 
 
@@ -1896,7 +1900,6 @@ void Gui::drawMenuBar()
 								map->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
 								map->update_ent_lump();
 								app->updateEnts();
-
 								app->reloading = true;
 								rend->reload();
 								app->reloading = false;
@@ -3097,34 +3100,43 @@ void Gui::drawMenuBar()
 			}
 
 
-			if (ImGui::BeginMenu(get_localized_string(LANG_0543).c_str(), !app->isLoading && map && !map->is_mdl_model))
+			if (ImGui::BeginMenu(get_localized_string(LANG_0543).c_str(), !app->isLoading))
 			{
-				if (ImGui::MenuItem(get_localized_string(LANG_0544).c_str(), NULL))
+				if (ImGui::MenuItem(get_localized_string(LANG_0544).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					showImportMapWidget_Type = SHOW_IMPORT_MODEL_BSP;
 					showImportMapWidget = true;
 				}
 
-				if (ImGui::MenuItem(get_localized_string(LANG_0545).c_str(), NULL))
+				if (ImGui::MenuItem(get_localized_string(LANG_0545).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					showImportMapWidget_Type = SHOW_IMPORT_MODEL_ENTITY;
 					showImportMapWidget = true;
 				}
 
-				if (map && ImGui::MenuItem(get_localized_string(LANG_1079).c_str(), NULL))
+				if (ImGui::MenuItem(get_localized_string(LANG_1079).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					map->ImportLightFile(map->bsp_path);
 				}
 
-				if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
 					ImGui::BeginTooltip();
 					ImGui::TextUnformatted(get_localized_string(LANG_0546).c_str());
 					ImGui::EndTooltip();
 				}
 
+				/*
+					if (ImGui::MenuItem("Create .BSP from .JMF"))
+					{
+						// import all brushes
+						// generate nodes
+						// ... ?
+					}
+				*/
 
-				if (ImGui::MenuItem(get_localized_string(LANG_1080).c_str(), NULL))
+
+				if (ImGui::MenuItem(get_localized_string(LANG_1080).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					if (map)
 					{
@@ -3166,7 +3178,7 @@ void Gui::drawMenuBar()
 					}
 				}
 
-				if (ImGui::MenuItem(get_localized_string(LANG_0547).c_str(), NULL))
+				if (ImGui::MenuItem(get_localized_string(LANG_0547).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					if (map)
 					{
@@ -3182,7 +3194,7 @@ void Gui::drawMenuBar()
 					}
 				}
 
-				if (ImGui::BeginMenu("Embedded##import"))
+				if (ImGui::BeginMenu("Embedded##import", map && !map->is_mdl_model))
 				{
 					if (ImGui::MenuItem(get_localized_string(LANG_0549).c_str(), 0, ditheringEnabled))
 						ditheringEnabled = !ditheringEnabled;
@@ -3205,7 +3217,7 @@ void Gui::drawMenuBar()
 					ImGui::EndMenu();
 				}
 
-				if (ImGui::BeginMenu(get_localized_string(LANG_0548).c_str()))
+				if (ImGui::BeginMenu(get_localized_string(LANG_0548).c_str(), map && !map->is_mdl_model))
 				{
 					if (ImGui::MenuItem(get_localized_string(LANG_0549).c_str(), 0, ditheringEnabled))
 						ditheringEnabled = !ditheringEnabled;
@@ -3316,10 +3328,10 @@ void Gui::drawMenuBar()
 #else 
 					std::quick_exit(0);
 #endif
+				}
 			}
-		}
 			ImGui::EndMenu();
-	}
+		}
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
 		{
@@ -5288,7 +5300,7 @@ void Gui::drawMenuBar()
 		}
 
 		ImGui::EndMainMenuBar();
-}
+	}
 
 	if (ImGui::BeginViewportSideBar("BottomBar", ImGui::GetMainViewport(), ImGuiDir_Down, ImGui::GetTextLineHeightWithSpacing(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar))
 	{

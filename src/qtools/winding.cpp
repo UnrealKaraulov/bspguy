@@ -282,7 +282,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 		print_log(get_localized_string(LANG_1009));
 	}
 
-	m_Points = newPoints;
+	m_Points = std::move(newPoints);
 
 	RemoveColinearPoints(epsilon);
 

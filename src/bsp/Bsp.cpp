@@ -10290,7 +10290,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			//}
 
 			MapBrush tmpBrush;
-			tmpBrush.contents = faceContents;
+			tmpBrush.contents = std::move(faceContents);
 			tmpBrush.plane = tmpPlane;
 			tmpBrush.texInfo = texinfo;
 			tmpBrush.mdlIdx = mdlid;

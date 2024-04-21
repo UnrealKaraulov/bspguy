@@ -89,7 +89,7 @@
 // Solve: 
 // Create empty hull 0 box ?
 
-std::string g_version_string = "NewBSPGuy v4.25";
+std::string g_version_string = "NewBSPGuy v4.26";
 
 bool g_verbose = false;
 
@@ -562,8 +562,8 @@ int transform(CommandLine& cli)
 		{
 			move = cli.getOptionVector("-move");
 
-			print_log("Applying offset ({:.2f}, {:.2f}, {:.2f})\n",
-				move.x, move.y, move.z);
+			print_log(fmt::format(fmt::runtime(get_localized_string("APPLY_OFFSET_STR")),
+				move.x, move.y, move.z));
 
 			map->move(move);
 		}

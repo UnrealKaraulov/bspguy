@@ -2140,6 +2140,7 @@ bool Renderer::transformAxisControls()
 					{
 						map->resize_all_lightmaps();
 						map->getBspRender()->refreshModel(modelIdx);
+						map->getBspRender()->refreshModelClipnodes(modelIdx);
 						applyTransform(map, true);
 						map->getBspRender()->pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
 					}
@@ -2170,6 +2171,7 @@ bool Renderer::transformAxisControls()
 
 						map->getBspRender()->refreshEnt((int)entIdx[0]);
 						map->getBspRender()->refreshModel(modelIdx);
+						map->getBspRender()->refreshModelClipnodes(modelIdx);
 						updateEntConnectionPositions();
 						map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
@@ -2219,6 +2221,7 @@ bool Renderer::transformAxisControls()
 					{
 						map->resize_all_lightmaps();
 						map->getBspRender()->refreshModel(modelIdx);
+						map->getBspRender()->refreshModelClipnodes(modelIdx);
 						map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
 					}
 				}

@@ -197,7 +197,6 @@ void CreateEntityCommand::execute()
 	*newEnt = *entData;
 	map->ents.push_back(newEnt);
 	map->update_ent_lump();
-	g_app->updateEnts();
 	BspRenderer* renderer = getBspRenderer();
 	if (!renderer)
 		return;
@@ -400,6 +399,7 @@ void CreateBspModelCommand::execute()
 	renderer->loadLightmaps();
 	renderer->refreshModel(modelIdx);
 	renderer->refreshEnt(map->ents.size() - 1);
+	renderer->calcFaceMaths();
 	//g_app->reloading = true;
 	//renderer->reload();
 	//g_app->reloading = false;

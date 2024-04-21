@@ -190,7 +190,7 @@ struct BSPPLANE
 
 	BSPPLANE() :vNormal(vec3())
 	{
-		fDist = 0.0f;
+		fDist = +0.0f;
 		nType = 0;
 	}
 
@@ -447,6 +447,12 @@ struct ScalableTexinfo
 	float oldShiftS, oldShiftT;
 	int planeIdx;
 	int faceIdx;
+	ScalableTexinfo()
+	{
+		texinfoIdx = planeIdx = faceIdx = 0;
+		oldS = oldT = vec3();
+		oldShiftS = oldShiftT = 0.0f;
+	}
 };
 // Rendering constants
 enum RenderMode : int

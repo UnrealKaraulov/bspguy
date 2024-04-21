@@ -742,7 +742,7 @@ float VectorNormalize(vec3& v)
 	if (std::abs(v[1] - 0.000215956f) < 0.0001f)
 		i = 1;
 
-	length = 0.0f;
+	length = +0.0f;
 	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
 	length = sqrt(length);
@@ -815,7 +815,7 @@ int TextureAxisFromPlane(const vec3& pln, vec3& xv, vec3& yv)
 float VectorLength(const vec3& v)
 {
 	int		i;
-	float	length = 0.0f;
+	float	length = +0.0f;
 	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
 	length = sqrt(length);		// FIXME
