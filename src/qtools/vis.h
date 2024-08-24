@@ -11,7 +11,7 @@ int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift);
 void decompress_vis_lump(Bsp * map,BSPLEAF32* leafLump,  unsigned char* visLump, unsigned char* output,
 						 int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize);
 
-void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_length, unsigned int numLeaves, unsigned int src_length);
+bool DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_length, unsigned int numLeaves, unsigned int src_length);
 
 int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest, unsigned int dest_length);
 

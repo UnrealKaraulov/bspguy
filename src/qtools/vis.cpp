@@ -221,7 +221,11 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 			}
 			// Tracing ... 
 			// print_log(get_localized_string(LANG_0996),leafLump[i].nVisOffset,visLumpMemSize);
-			DecompressVis((unsigned char*)(visLump + leafLump[i + 1].nVisOffset), dest, oldVisRowSize, visDataLeafCount, visLumpMemSize - leafLump[i + 1].nVisOffset);
+			if (!DecompressVis((unsigned char*)(visLump + leafLump[i + 1].nVisOffset), dest, oldVisRowSize, visDataLeafCount,
+				visLumpMemSize - leafLump[i + 1].nVisOffset))
+			{
+				//print_log("Error {} - {}\n", i, iterationLeaves);
+			}
 
 			// Leaf visibility row lengths are multiples of 64 leaves, so there are usually some unused bits at the end.
 			// Maps sometimes set those unused bits randomly (e.g. leaf index 100 is marked visible, but there are only 90 leaves...)
@@ -253,7 +257,7 @@ void decompress_vis_lump(Bsp* map, BSPLEAF32* leafLump, unsigned char* visLump, 
 // BEGIN COPIED QVIS CODE
 //
 
-void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_length, unsigned int numLeaves, unsigned int src_length)
+bool DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_length, unsigned int numLeaves, unsigned int src_length)
 {
 	unsigned char* startsrc = src;
 	unsigned char* startdst = dest;
@@ -262,7 +266,9 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 	unsigned char* out;
 	int             row;
 
-	row = (numLeaves + 7) >> 3; // same as the length used by VIS program in CompressVis
+	row = (numLeaves + 7) >> 3; 
+	
+	// same as the length used by VIS program in CompressVis
 	// The wrong size will cause DecompressVis to spend extremely long time once the source pointer runs into the invalid area in g_dvisdata (for example, in BuildFaceLights, some faces could hang for a few seconds), and sometimes to crash.
 
 	out = dest;
@@ -274,13 +280,15 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 			if (out > startdst + dest_length)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0998), (int)(out - startdst), dest_length);
-				return;
+				return false;
 			}
+
 			if (src > startsrc + src_length)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0999), (int)(src - startsrc), src_length);
-				return;
+				return false;
 			}
+
 			*out = *src;
 			out++;
 			src++;
@@ -294,18 +302,21 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 			if (out > startdst + dest_length)
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1142), (int)(out - startdst), dest_length);
-				return;
+				return false;
 			}
+
 			*out = 0;
 			out++;
 			c--;
 
 			if (out - dest >= row)
 			{
-				return;
+				return true;
 			}
 		}
 	} while (out - dest < row);
+
+	return true;
 }
 
 int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest, unsigned int dest_length)

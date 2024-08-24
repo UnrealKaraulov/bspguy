@@ -351,6 +351,22 @@ Bsp::Bsp(std::string fpath)
 		world->setOrAddKeyvalue("_editor", g_version_string);
 	}
 
+	for (int i = 0; i < faceCount; i++)
+	{
+		BSPFACE32& face = faces[i];
+		BSPTEXTUREINFO& info = texinfos[face.iTextureInfo];
+		if (info.nFlags & TEX_SPECIAL)
+		{
+			continue;
+		}
+		int bmins[2];
+		int bmaxs[2];
+		if (!GetFaceExtents(i, bmins, bmaxs))
+		{
+			info.nFlags |= TEX_SPECIAL;
+		}
+	}
+
 	save_undo_lightmaps();
 }
 
@@ -1849,6 +1865,8 @@ unsigned int Bsp::remove_unused_visdata(BSPLEAF32* oldLeaves, int oldLeafCount, 
 	int decompressedVisSize = oldLeafCount * oldVisRowSize;
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
 	memset(decompressedVis, 0xFF, decompressedVisSize);
+
+
 	decompress_vis_lump(this, oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
 		oldWorldLeaves, oldVisLeafCount - 1, oldVisLeafCount - 1, oldLeavesMemSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
 

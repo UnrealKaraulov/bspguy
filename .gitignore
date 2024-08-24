@@ -65,3 +65,5 @@ vs-project/fmt/fmt/Debug/fmtd.idb
 vs-project/glfw/src/Debug/glfw3.idb
 *.ent
 !demo/*.bsp
+vs-project/.vs/bspguy/v17/DocumentLayout.json
+/vs-project/.vs
