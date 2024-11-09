@@ -4257,6 +4257,7 @@ void Bsp::load_ents()
 					ents.push_back(ent);
 				else
 					print_log(get_localized_string(LANG_1022));
+
 				ent = NULL;
 			}
 			if (line.find('{') != std::string::npos)
@@ -5201,6 +5202,26 @@ int Bsp::pointLeaf(int iNode, const vec3& p, int hull, int& leafIdx, int& planeI
 
 		return iNode;
 	}
+}
+
+std::vector<int> Bsp::getLeafsFromPos(const vec3& p, float radius) {
+	std::vector<int> leafsInRadius;
+
+	for (int i = 1; i < leafCount; i++) {
+		vec3& mins = leaves[i].nMins;
+		vec3& maxs = leaves[i].nMaxs;
+
+		bool intersects =
+			(p.x + radius >= mins.x && p.x - radius <= maxs.x) &&
+			(p.y + radius >= mins.y && p.y - radius <= maxs.y) &&
+			(p.z + radius >= mins.z && p.z - radius <= maxs.z);
+
+		if (intersects) {
+			leafsInRadius.push_back(i);
+		}
+	}
+
+	return leafsInRadius;
 }
 
 int Bsp::pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx)
@@ -6201,7 +6222,7 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 
 		for (auto& dir_entry : std::filesystem::directory_iterator(texpath))
 		{
-			if (!dir_entry.is_directory() && ends_with(toLowerCase(dir_entry.path().string()),".png"))
+			if (!dir_entry.is_directory() && ends_with(toLowerCase(dir_entry.path().string()), ".png"))
 			{
 				files.emplace_back(dir_entry.path().string());
 			}

@@ -1908,7 +1908,7 @@ void Gui::drawMenuBar()
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				std::string pathlowercase = toLowerCase(res.string());
-				if (ends_with(pathlowercase,".wad"))
+				if (ends_with(pathlowercase, ".wad"))
 				{
 					if (!map)
 					{
@@ -1937,7 +1937,7 @@ void Gui::drawMenuBar()
 							if (wad->readInfo())
 							{
 								rend->wads.push_back(wad);
-								if (!ends_with(map->ents[0]->keyvalues["wad"],";"))
+								if (!ends_with(map->ents[0]->keyvalues["wad"], ";"))
 									map->ents[0]->keyvalues["wad"] += ";";
 								map->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
 								map->update_ent_lump();
@@ -1951,21 +1951,21 @@ void Gui::drawMenuBar()
 						}
 					}
 				}
-				else if (ends_with(pathlowercase,".mdl"))
+				else if (ends_with(pathlowercase, ".mdl"))
 				{
 					Bsp* tmpMap = new Bsp(res.string());
 					tmpMap->is_mdl_model = true;
 					app->addMap(tmpMap);
 					app->selectMap(tmpMap);
 				}
-				else if (ends_with(pathlowercase,".spr"))
+				else if (ends_with(pathlowercase, ".spr"))
 				{
 					Bsp* tmpMap = new Bsp(res.string());
 					tmpMap->is_mdl_model = true;
 					app->addMap(tmpMap);
 					app->selectMap(tmpMap);
 				}
-				else if (ends_with(pathlowercase,".csm"))
+				else if (ends_with(pathlowercase, ".csm"))
 				{
 					Bsp* tmpMap = new Bsp(res.string());
 					tmpMap->is_mdl_model = true;
@@ -3115,7 +3115,7 @@ void Gui::drawMenuBar()
 
 				if (ImGui::BeginMenu("UnrealMapDrawTool (.umd) [WIP]", map && !map->is_mdl_model))
 				{
-					static int cell_size = 32;
+					static int cell_size = 24;
 					static bool texture_support = true;
 					static bool fill_all_space = true;
 					static bool NO_OPTIMIZE = false;
@@ -3257,7 +3257,6 @@ void Gui::drawMenuBar()
 						int cell_layers = 2;
 
 						std::vector<std::string> umdTextures{};
-						umdTextures.push_back("CRETE4_FLR02");
 
 
 						std::vector<cell> cell_list(cell_x * cell_y * cell_levels * cell_layers);
@@ -3350,222 +3349,262 @@ void Gui::drawMenuBar()
 								faceVecs[i] = map->get_face_verts(faceIndices[i]);
 							}
 
-							int index = -1;
+							std::vector<vec3> offsets =
+							{
+								{0, 0, 0},
+								{cell_size / 3.f, 0, 0},
+								{-cell_size / 3.f, 0, 0},
+								{0, cell_size / 3.f, 0},
+								{0, -cell_size / 3.f, 0},
+								{0, 0, cell_size / 3.f},
+								{0, 0, -cell_size / 3.f},
+								{0, 0, cell_size / 2.2f},
+								{0, 0, -cell_size / 2.2f}
+							};
+
+							std::vector<float> parallel_X{};
+							for (float x = mins.x; x < maxs.x; x += cell_size)
+							{
+								parallel_X.push_back(x);
+							}
+
+							std::mutex paralel_muta;
 
 							for (float z = mins.z; z < maxs.z; z += cell_size)
 							{
+								print_log("\rProcess {} entity of {}... [{} of {}].........", entIdx, map->ents.size(), z, maxs.z);
+								FlushConsoleLog();
+
+								if (z > model_maxs.z || z < model_mins.z)
+								{
+									continue;
+								}
+
 								for (int layer = 0; layer < cell_layers; layer++)
 								{
+									if (layer != 0)
+									{
+										continue;
+									}
 									for (float y = mins.y; y < maxs.y; y += cell_size)
 									{
-										unsigned char texid = 0;
-										for (float x = mins.x; x < maxs.x; x += cell_size)
+										if (y > model_maxs.y || y < model_mins.y)
 										{
-											index++;
+											continue;
+										}
 
-											if (layer > 0)
-												continue;
-
-											vec3 pos = vec3(x, -y, z);
-											if ((size_t)index >= cell_list.size())
-												continue;
-											cell& cur_cell = cell_list[index];
-											expandBoundingBox(pos, pos_debug_mins, pos_debug_maxs);
-
-											if ((pos.x >= model_mins.x && pos.x <= model_maxs.x) &&
-												(pos.y >= model_mins.y && pos.y <= model_maxs.y) &&
-												(pos.z >= model_mins.z && pos.z <= model_maxs.z))
+										std::for_each(std::execution::par_unseq, parallel_X.begin(), parallel_X.end(),
+											[&](float x)
 											{
-
-											}
-											else
-											{
-												continue;
-											}
-
-											const vec3 offsets[7] = {
-												{0, 0, 0},
-												{cell_size / 2.5f, 0, 0},
-												{-cell_size / 2.5f, 0, 0},
-												{0, cell_size / 2.5f, 0},
-												{0, -cell_size / 2.5f, 0},
-												{0, 0, cell_size / 2.5f},
-												{0, 0, -cell_size / 2.5f}
-											};
-
-											bool found = false;
-											int leafIdx = 0;
-											int planeIdx = -1;
-
-											for (const auto& offset : offsets)
-											{
-												if (CONTENTS_SOLID == map->pointLeaf(headNode, pos + offset, hull, leafIdx, planeIdx)) {
-													found = true;
-													break;
-												}
-											}
-
-											if (found)
-											{
-												int minFace = -1;
-
-												if (texture_support)
+												if (x > model_maxs.x || x < model_mins.x)
 												{
-													float minDist = cell_size * 1.5f;
-													for (size_t f = 0; f < faceIndices.size(); f++)
+													return;
+												}
+
+												unsigned char texid = 0;
+
+												vec3 pos = vec3(x, y, z);
+
+												int index = cell_idx(pos, mins, (float)cell_size, cell_x, cell_y, cell_layers, layer);
+
+												if ((size_t)index >= cell_list.size())
+													return;
+												cell& cur_cell = cell_list[index];
+												expandBoundingBox(pos, pos_debug_mins, pos_debug_maxs);
+
+												bool found = false;
+												int leafIdx = 0;
+												int planeIdx = -1;
+
+												for (int off = 0; off < offsets.size(); off++)
+												{
+													int content = map->pointLeaf(headNode, pos + offsets[off], hull, leafIdx, planeIdx);
+													if (CONTENTS_SOLID == content || (modelIdx > 0 && content == CONTENTS_WATER))
 													{
-														BSPFACE32& face = map->faces[faceIndices[f]];
-
-														if (map->texinfos[face.iTextureInfo].nFlags & TEX_SPECIAL)
-														{
-															continue;
-														}
-
-														auto& faceMath = rend->faceMaths[faceIndices[f]];
-
-														float distanceToPlane = dotProduct(faceMath.normal, pos) - faceMath.fdist;
-														float dot = std::abs(distanceToPlane);
-
-														if (dot > minDist)
-														{
-															continue;
-														}
-
-														bool isInsideFace = true;
-														const std::vector<vec3>& vertices = faceVecs[f];
-
-														for (size_t i = 0; i < vertices.size(); i++) {
-															const vec3& v0 = vertices[i];
-															const vec3& v1 = vertices[(i + 1) % vertices.size()];
-															vec3 edge = v1 - v0;
-															vec3 edgeNormal = crossProduct(faceMath.normal, edge).normalize();
-
-															if (dotProduct(edgeNormal, pos - v0) > 0) {
-																isInsideFace = false;
-																break;
-															}
-														}
-
-														if (!isInsideFace)
-														{
-															continue;
-														}
-
-														if (dot < minDist) {
-															minDist = dot;
-															minFace = faceIndices[f];
-														}
+														found = true;
+														break;
 													}
 												}
-												else
+
+
+												/*bool found = false;
+
+												auto leaf_list = map->getLeafsFromPos(pos, cell_size);
+												for (auto& leaf : leaf_list)
 												{
-													float minDist = cell_size * 3.0f;
-													// more fast search
-													for (size_t f = 0; f < faceIndices.size(); f++)
+													if (map->leaves[leaf].nContents == CONTENTS_SOLID)
 													{
-														if (pos.dist(rend->faceMaths[faceIndices[f]].center) < minDist)
+														found = true;
+														break;
+													}
+												}*/
+
+												if (found /*|| leaf_list.empty()*/)
+												{
+													int minFace = -1;
+
+													if (texture_support)
+													{
+														float minDist = cell_size * 1.5f;
+														for (size_t f = 0; f < faceIndices.size(); f++)
 														{
-															if (map->texinfos[map->faces[faceIndices[f]].iTextureInfo].nFlags
-																& TEX_SPECIAL)
+															BSPFACE32& face = map->faces[faceIndices[f]];
+
+															if (map->texinfos[face.iTextureInfo].nFlags & TEX_SPECIAL)
 															{
 																continue;
 															}
 
-															minFace = faceIndices[f];
-															break;
+															auto& faceMath = rend->faceMaths[faceIndices[f]];
+
+															float distanceToPlane = dotProduct(faceMath.normal, pos) - faceMath.fdist;
+															float dot = std::abs(distanceToPlane);
+
+															if (dot > minDist)
+															{
+																continue;
+															}
+
+															bool isInsideFace = true;
+															const std::vector<vec3>& vertices = faceVecs[f];
+
+															for (size_t i = 0; i < vertices.size(); i++) {
+																const vec3& v0 = vertices[i];
+																const vec3& v1 = vertices[(i + 1) % vertices.size()];
+																vec3 edge = v1 - v0;
+																vec3 edgeNormal = crossProduct(faceMath.normal, edge).normalize();
+
+																if (dotProduct(edgeNormal, pos - v0) > 0) {
+																	isInsideFace = false;
+																	break;
+																}
+															}
+
+															if (!isInsideFace)
+															{
+																continue;
+															}
+
+															if (dot < minDist) {
+																minDist = dot;
+																minFace = faceIndices[f];
+															}
 														}
 													}
-												}
-
-												/*int minFace = -1;
-												float minDist = 1000.0f;
-
-												for (size_t f = 0; f < faceIndices.size(); f++)
+													else
 													{
-													float tmpDist = std::fabs(rend->faceMaths[faceIndices[f]].center.dist(pos));
-													if (tmpDist < minDist)
-													{
-														minDist = tmpDist;
-														minFace = faceIndices[f];
-													}
-												}*/
-
-												if (minFace >= 0)
-												{
-													BSPFACE32& face = map->faces[minFace];
-													if (face.iTextureInfo >= 0)
-													{
-														BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-														BSPMIPTEX* tex = NULL;
-
-														if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
+														float minDist = cell_size * 3.0f;
+														// more fast search
+														for (size_t f = 0; f < faceIndices.size(); f++)
 														{
-															int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-															if (texOffset >= 0)
+															if (pos.dist(rend->faceMaths[faceIndices[f]].center) < minDist)
 															{
-																tex = ((BSPMIPTEX*)(map->textures + texOffset));
-
-																bool hasTex = false;
-																for (size_t t = 0; t < umdTextures.size(); t++)
+																if (map->texinfos[map->faces[faceIndices[f]].iTextureInfo].nFlags
+																	& TEX_SPECIAL)
 																{
-																	if (umdTextures[t] == tex->szName)
-																	{
-																		if (t <= 0xFF)
-																		{
-																			texid = (unsigned char)t;
-																			hasTex = true;
-																			break;
-																		}
-																	}
+																	continue;
 																}
 
-																if (!hasTex && umdTextures.size() < 0xFF)
+																minFace = faceIndices[f];
+																break;
+															}
+														}
+													}
+
+													/*int minFace = -1;
+													float minDist = 1000.0f;
+
+													for (size_t f = 0; f < faceIndices.size(); f++)
+														{
+														float tmpDist = std::fabs(rend->faceMaths[faceIndices[f]].center.dist(pos));
+														if (tmpDist < minDist)
+														{
+															minDist = tmpDist;
+															minFace = faceIndices[f];
+														}
+													}*/
+
+													if (minFace >= 0)
+													{
+														BSPFACE32& face = map->faces[minFace];
+														if (face.iTextureInfo >= 0)
+														{
+															BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+															BSPMIPTEX* tex = NULL;
+
+															if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
+															{
+																int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+																if (texOffset >= 0)
 																{
-																	umdTextures.push_back(tex->szName);
-																	texid = (unsigned char)(umdTextures.size() - 1);
+																	tex = ((BSPMIPTEX*)(map->textures + texOffset));
+																	std::lock_guard<std::mutex> lock(paralel_muta);
+																	bool hasTex = false;
+																	for (size_t t = 0; t < umdTextures.size(); t++)
+																	{
+																		if (umdTextures[t] == tex->szName)
+																		{
+																			if (t <= 0xFF)
+																			{
+																				texid = (unsigned char)t;
+																				hasTex = true;
+																				break;
+																			}
+																		}
+																	}
+
+																	if (!hasTex && umdTextures.size() < 0xFF)
+																	{
+																		umdTextures.push_back(tex->szName);
+																		texid = (unsigned char)(umdTextures.size() - 1);
+																	}
 																}
 															}
 														}
 													}
-												}
 
-												if (minFace >= 0 || fill_all_space)
-												{
-													if (worldspawn)
+													if (minFace >= 0 || fill_all_space)
 													{
-														cur_cell = { 100, 0, texid, cell_brush };
-													}
-													else if (minFace >= 0)
-													{
-														if (entity->classname == "func_wall")
+														if (worldspawn)
 														{
-															cur_cell = { 100, 0, texid, cell_wall };
+															cur_cell = { 100, 0, texid, cell_brush };
 														}
-														else if (entity->classname == "func_water")
+														else if (minFace >= 0)
 														{
-															cur_cell = { 100, 0, texid, cell_waterzone };
-														}
-														else if (entity->classname == "func_buyzone")
-														{
-															cur_cell = { 100, 0, texid, cell_buyzone };
-														}
-														else if (entity->classname == "func_bomb_target")
-														{
-															cur_cell = { 100, 0, texid, cell_bombzone };
-														}
-														else
-														{
-															cur_cell = { 100, 0, texid, cell_wall };
+															if (entity->classname == "func_wall")
+															{
+																cur_cell = { 100, 0, texid, cell_wall };
+															}
+															else if (entity->classname == "func_water")
+															{
+																cur_cell = { 100, 0, texid, cell_waterzone };
+															}
+															else if (entity->classname == "func_buyzone")
+															{
+																cur_cell = { 100, 0, texid, cell_buyzone };
+															}
+															else if (entity->classname == "func_bomb_target")
+															{
+																cur_cell = { 100, 0, texid, cell_bombzone };
+															}
+															else
+															{
+																cur_cell = { 100, 0, texid, cell_wall };
+															}
 														}
 													}
 												}
 											}
-										}
+										);
 									}
 
 								}
 							}
 
+							if (umdTextures.empty())
+							{
+								umdTextures.push_back("SKY");
+							}
 
 							std::ofstream tmpmap("exported.umd", std::ios::out | std::ios::binary);
 							if (tmpmap.is_open()) {
@@ -5608,7 +5647,7 @@ void Gui::drawMenuBar()
 								{
 									BSPMIPTEX tex = *((BSPMIPTEX*)(map->textures + texOffset));
 									std::string texname = toLowerCase(tex.szName);
-									if (starts_with(texname,"sky"))
+									if (starts_with(texname, "sky"))
 									{
 										map->remove_face(f);
 									}
@@ -6580,6 +6619,13 @@ void Gui::drawDebugWidget()
 				}
 			}
 
+			ImGui::TextUnformatted("BEST LEAFS:");
+			auto leaf_list = map->getLeafsFromPos(cameraOrigin, 32);
+			for (auto& f : leaf_list)
+			{
+				ImGui::TextUnformatted(std::to_string(f).c_str());
+			}
+
 			if (ImGui::Button("Select best face"))
 			{
 				float minDist = 128.0f;
@@ -6805,7 +6851,7 @@ void Gui::drawKeyvalueEditor()
 
 
 			if (!fgdClass || (ent->hasKey("model") &&
-				(starts_with(ent->keyvalues["model"],'*') || ends_with(toLowerCase(ent->keyvalues["model"]),".bsp"))))
+				(starts_with(ent->keyvalues["model"], '*') || ends_with(toLowerCase(ent->keyvalues["model"]), ".bsp"))))
 			{
 				FgdClass* tmpfgdClass = app->fgd->getFgdClass(cname, FGD_CLASS_SOLID);
 				if (tmpfgdClass)
@@ -8689,7 +8735,7 @@ void Gui::drawSettings()
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0723).c_str());
 				ImGui::EndTooltip();
-			}
+		}
 #endif
 			ImGui::SameLine();
 
@@ -8831,7 +8877,7 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted(get_localized_string(LANG_0740).c_str());
 				ImGui::EndTooltip();
 			}
-		}
+	}
 		else if (settingsTab == 1)
 		{
 			for (size_t i = 0; i < g_settings.fgdPaths.size(); i++)
@@ -9365,7 +9411,7 @@ void Gui::drawSettings()
 		ImGui::EndChild();
 
 		ImGui::EndGroup();
-	}
+}
 	ImGui::End();
 
 

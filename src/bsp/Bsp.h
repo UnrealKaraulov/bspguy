@@ -144,6 +144,7 @@ public:
 	int modelLeafs(const BSPMODEL& model, std::vector<int>& modelLeafs);
 	int pointContents(int iNode, const vec3& p, int hull);
 	int pointLeaf(int iNode, const vec3& p, int hull, int& leafIdx, int & planeIdx);
+	std::vector<int> getLeafsFromPos(const vec3& p, float radius);
 	const char* getLeafContentsName(int contents);
 
 	// strips a collision hull from the given model index
