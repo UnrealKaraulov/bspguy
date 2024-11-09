@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #define HL_PI 3.141592f
 
@@ -89,16 +90,16 @@ struct vec3
 			z = +0.00f;
 		}
 	}
-	vec3 normalize(float length = 1.0f) const;
+	vec3 normalize(float length = 1.0f)  const;
 	vec3 snap(float snapSize);
-	vec3 normalize_angles();
+	vec3 normalize_angles() const;
 	vec3 swap_xz();
-	bool equal(vec3 to, float epsilon = EPSILON);
+	bool equal(vec3 to, float epsilon = EPSILON) const;
 	float size_test();
 	float sizeXY_test();
 	vec3 abs();
-	float length();
-	bool IsZero();
+	float length() const;
+	bool IsZero() const;
 	vec3 invert();
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
 	std::string toString();
@@ -107,6 +108,13 @@ struct vec3
 	vec3 unflip();
 	vec3 unflipUV();
 	float dist(vec3 to)  const;
+	float dot(const vec3& other) const {
+		return x * other.x + y * other.y + z * other.z;
+	}
+
+	vec3 cross(const vec3& other) const {
+		return { y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x };
+	}
 
 	void operator-=(const vec3& v);
 	void operator+=(const vec3& v);
@@ -124,6 +132,34 @@ struct vec3
 		y *= -1.f;
 		z *= -1.f;
 		return *this;
+	}
+
+	float operator [] (const size_t i) const
+	{
+		switch (i)
+		{
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
+		}
+		return z;
+	}
+
+	float& operator [] (const size_t i)
+	{
+		switch (i)
+		{
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
+		}
+		return z;
 	}
 
 	float operator [] (const int i) const
@@ -157,8 +193,8 @@ struct vec3
 };
 
 struct vec3Hash {
-	std::size_t operator()(const vec3(&v)) const {
-		std::size_t seed = 0;
+	size_t operator()(const vec3(&v)) const {
+		size_t seed = 0;
 		std::hash<float> hasher;
 		seed ^= hasher(v[0]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		seed ^= hasher(v[1]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -169,8 +205,8 @@ struct vec3Hash {
 
 struct pairHash {
 	template <typename T1, typename T2>
-	std::size_t operator()(const std::pair<T1, T2>& p) const {
-		std::size_t seed = 0;
+	size_t operator()(const std::pair<T1, T2>& p) const {
+		size_t seed = 0;
 		vec3Hash hasher;
 		seed ^= hasher(p.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		seed ^= hasher(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -191,6 +227,8 @@ vec3 operator/(vec3 v, float f);
 vec3 crossProduct(const vec3& v1, const vec3& v2);
 float dotProduct(const vec3& v1, const vec3& v2);
 void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up);
+float distanceToPlane(const vec3& point, const vec3& planeNormal, float planeDist);
+bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices);
 
 bool operator==(const vec3& v1, const vec3& v2);
 bool operator!=(const vec3& v1, const vec3& v2);

@@ -122,21 +122,21 @@ public:
 
 	std::vector<WADDIRENTRY> dirEntries = std::vector<WADDIRENTRY>();
 
-	Wad(const std::string& file);
+	Wad(std::string file);
 	Wad(void);
 
 	~Wad(void);
 
 	bool readInfo();
 
-	bool hasTexture(size_t dirIndex);
+	bool hasTexture(int dirIndex);
 	bool hasTexture(const std::string& name);
 
 	bool write(const std::string& filename, std::vector<WADTEX*> textures);
-	bool write(WADTEX** textures, size_t numTex);
+	bool write(WADTEX** textures, int numTex);
 	bool write(std::vector<WADTEX*> textures);
 
-	WADTEX* readTexture(size_t dirIndex, int* texturetype = NULL);
+	WADTEX* readTexture(int dirIndex, int* texturetype = NULL);
 	WADTEX* readTexture(const std::string& texname, int* texturetype = NULL);
 };
 

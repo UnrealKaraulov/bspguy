@@ -119,8 +119,12 @@ public:
 	std::vector<std::string> existsFlagNames;
 	std::vector<int> existsFlagNamesBits;
 
+	Fgd(std::string _path) : path(std::move(_path))
+	{
+		this->name = stripExt(basename(path));
+		this->lineNum = 0;
+	}
 
-	Fgd(std::string path);
 	Fgd() = default;
 	~Fgd();
 

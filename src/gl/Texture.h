@@ -39,7 +39,7 @@ public:
 	// use this texture for rendering
 	void bind(GLuint texnum);
 
-	size_t dataLen;
+	int dataLen;
 
 	bool uploaded;
 private:

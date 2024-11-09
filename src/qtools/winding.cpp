@@ -14,7 +14,7 @@ Winding& Winding::operator=(const Winding& other)
 	return *this;
 }
 
-Winding::Winding(size_t numpoints)
+Winding::Winding(int numpoints)
 {
 	m_Points = std::vector<vec3>(numpoints);
 }
@@ -109,19 +109,11 @@ void Winding::getPlane(BSPPLANE& plane) const
 	}
 }
 
-Winding::Winding(const std::vector<vec3>& points, float epsilon)
-{
-	m_Points = points;
-
-	RemoveColinearPoints(epsilon);
-}
-
-
 Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 {
 	m_Points = std::vector<vec3>(face.nEdges);
 
-	for (size_t e = 0; e < face.nEdges; e++)
+	for (int e = 0; e < face.nEdges; e++)
 	{
 		int edgeIdx = bsp->surfedges[face.iFirstEdge + e];
 		BSPEDGE32& edge = bsp->edges[abs(edgeIdx)];
@@ -152,7 +144,7 @@ void Winding::MergeVerts(Bsp* src, float epsilon)
 // Remove the colinear point of any three points that forms a triangle which is thinner than ON_EPSILON
 void Winding::RemoveColinearPoints(float epsilon)
 {
-	size_t NumPoints = m_Points.size();
+	int NumPoints = (int)m_Points.size();
 
 	for (int i = 0; i < NumPoints; i++)
 	{
@@ -185,7 +177,7 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 	int             sides[MAX_POINTS_ON_WINDING]{};
 	int             counts[3]{};
 	float           dot;
-	int             i, j;
+	size_t             i, j;
 
 	counts[0] = counts[1] = counts[2] = 0;
 
@@ -256,14 +248,14 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 
 		// generate a split point
 		vec3 mid;
-		unsigned int tmp = i + 1;
+		size_t tmp = i + 1;
 		if (tmp >= m_Points.size())
 		{
 			tmp = 0;
 		}
 		vec3 p2 = m_Points[tmp];
 		dot = dists[i] / (dists[i] - dists[i + 1]);
-		for (j = 0; j < 3; j++)
+		for (j = 0; j < 3ul; j++)
 		{                                                  // avoid round off error when possible
 			if (std::abs(split.vNormal[j] - 1.0f) < EPSILON)
 				mid[j] = split.fDist;
@@ -366,7 +358,7 @@ bool ArePointsOnALine(const std::vector<vec3>& points)
 	vec3 v = p2 - p1;
 
 	// Calculate the cross product of v and the vector between each other point and p1
-	for (int i = 2; i < points.size(); i++)
+	for (size_t i = 2; i < points.size(); i++)
 	{
 		vec3 u = points[i] - p1;
 		vec3 cross = crossProduct(v, u);
@@ -394,8 +386,8 @@ Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsil
 	vec3 p2 = vec3();
 
 
-	int i = 0;
-	int j = 0;
+	size_t i = 0;
+	size_t j = 0;
 
 	for (i = 0; i < m_Points.size(); i++)
 	{
@@ -450,7 +442,7 @@ Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsil
 	newf = new Winding();
 
 	// copy first polygon
-	for (int k = (i + 1) % m_Points.size(); k != i; k = (k + 1) % m_Points.size())
+	for (size_t k = (i + 1) % m_Points.size(); k != i; k = (k + 1) % m_Points.size())
 	{
 		if (k == (i + 1) % m_Points.size() && !keep2)
 			continue;
@@ -459,7 +451,7 @@ Winding* Winding::Merge(const Winding& other, const BSPPLANE& plane, float epsil
 	}
 
 	// copy second polygon
-	for (int l = (j + 1) % other.m_Points.size(); l != j; l = (l + 1) % other.m_Points.size())
+	for (size_t l = (j + 1) % other.m_Points.size(); l != j; l = (l + 1) % other.m_Points.size())
 	{
 		if (l == (j + 1) % other.m_Points.size() && !keep1)
 			continue;

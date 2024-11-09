@@ -2,15 +2,8 @@
 #include "Command.h"
 #include "Gui.h"
 #include <lodepng.h>
-#include "Settings.h"
 #include "log.h"
 
-
-Command::Command(std::string _desc, int _mapIdx)
-{
-	this->desc = _desc;
-	this->mapIdx = _mapIdx;
-}
 
 Bsp* Command::getBsp()
 {
@@ -32,21 +25,11 @@ BspRenderer* Command::getBspRenderer()
 	return mapRenderers[mapIdx];
 }
 
-
-//
-// Edit entity
-//
-EditEntityCommand::EditEntityCommand(std::string desc, size_t entIdx, Entity oldEntData, Entity newEntData)
-	: Command(desc, g_app->getSelectedMapId())
+EditEntityCommand::EditEntityCommand(std::string desc, int entIdx, Entity _oldEntData, Entity _newEntData)
+	: Command(desc, g_app->getSelectedMapId()), oldEntData(std::move(_oldEntData)), newEntData(std::move(_newEntData))
 {
 	this->entIdx = entIdx;
-	this->oldEntData = oldEntData;
-	this->newEntData = newEntData;
 	this->allowedDuringLoad = true;
-}
-
-EditEntityCommand::~EditEntityCommand()
-{
 }
 
 void EditEntityCommand::execute()
@@ -99,7 +82,7 @@ size_t EditEntityCommand::memoryUsage()
 //
 // Delete entity
 //
-DeleteEntityCommand::DeleteEntityCommand(std::string desc, size_t entIdx)
+DeleteEntityCommand::DeleteEntityCommand(std::string desc, int entIdx)
 	: Command(desc, g_app->getSelectedMapId())
 {
 	this->entIdx = entIdx;
@@ -198,16 +181,16 @@ void CreateEntityCommand::execute()
 	map->ents.push_back(newEnt);
 	map->update_ent_lump();
 	BspRenderer* renderer = getBspRenderer();
-	if (!renderer)
+	if (!renderer || map->ents.size() == 0)
 		return;
-	renderer->refreshEnt(map->ents.size() - 1);
+	renderer->refreshEnt((int)(map->ents.size()) - 1);
 	g_app->gui->refresh();
 }
 
 void CreateEntityCommand::undo()
 {
 	Bsp* map = getBsp();
-	if (!map)
+	if (!map || !map->ents.size())
 		return;
 
 	g_app->deselectObject();
@@ -230,10 +213,10 @@ size_t CreateEntityCommand::memoryUsage()
 //
 // Duplicate BSP Model command
 //
-DuplicateBspModelCommand::DuplicateBspModelCommand(std::string desc, size_t entIdx)
+DuplicateBspModelCommand::DuplicateBspModelCommand(std::string desc, int entIdx)
 	: Command(desc, g_app->getSelectedMapId())
 {
-	size_t tmpentIdx = entIdx;
+	int tmpentIdx = entIdx;
 	int modelIdx = -1;
 	Bsp* map = g_app->getSelectedMap();
 	if (map && tmpentIdx >= 0)
@@ -398,7 +381,8 @@ void CreateBspModelCommand::execute()
 		renderer->reuploadTextures();
 	renderer->loadLightmaps();
 	renderer->refreshModel(modelIdx);
-	renderer->refreshEnt(map->ents.size() - 1);
+	if (map->ents.size() > 0)
+		renderer->refreshEnt((int)(map->ents.size()) - 1);
 	renderer->calcFaceMaths();
 	//g_app->reloading = true;
 	//renderer->reload();
@@ -412,7 +396,7 @@ void CreateBspModelCommand::undo()
 	Bsp* map = getBsp();
 	BspRenderer* renderer = getBspRenderer();
 
-	if (!map || !renderer)
+	if (!map || !renderer || !map->ents.size())
 		return;
 
 	map->replace_lumps(oldLumps);
@@ -480,7 +464,7 @@ int CreateBspModelCommand::addDefaultTexture()
 //
 // Edit BSP model
 //
-EditBspModelCommand::EditBspModelCommand(std::string desc, size_t entIdx, LumpState oldLumps, LumpState newLumps,
+EditBspModelCommand::EditBspModelCommand(std::string desc, int entIdx, LumpState oldLumps, LumpState newLumps,
 	vec3 oldOrigin, unsigned int targetLumps) : Command(desc, g_app->getSelectedMapId())
 {
 
@@ -521,7 +505,7 @@ void EditBspModelCommand::execute()
 		return;
 
 	map->replace_lumps(newLumps);
-	if (entIdx < map->ents.size())
+	if (entIdx < (int)map->ents.size())
 	{
 		map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 		map->getBspRender()->undoEntityStateMap[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());

@@ -27,7 +27,7 @@ int pickCount = 0; // used to give unique IDs to text inputs so switching ents d
 // also used to refresh pick models
 int vertPickCount = 0; // used to refresh solid state
 
-size_t g_drawFrameId = 0;
+int g_drawFrameId = 0;
 
 Texture* whiteTex = NULL;
 Texture* redTex = NULL;
@@ -72,22 +72,22 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 
 		if (fileExists(tmpPath.string()))
 		{
-			if (lowerPath.ends_with(".bsp"))
+			if (ends_with(lowerPath,".bsp"))
 			{
 				print_log(get_localized_string(LANG_0896), tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
-			else if (lowerPath.ends_with(".mdl"))
+			else if (ends_with(lowerPath,".mdl"))
 			{
 				print_log(get_localized_string(LANG_0897), tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
-			else if (lowerPath.ends_with(".spr"))
+			else if (ends_with(lowerPath,".spr"))
 			{
 				print_log(get_localized_string(LANG_0897), tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
 			}
-			else if (lowerPath.ends_with(".csm"))
+			else if (ends_with(lowerPath,".csm"))
 			{
 				print_log(get_localized_string(LANG_0897), tmpPath.string());
 				g_app->addMap(new Bsp(tmpPath.string()));
@@ -555,7 +555,7 @@ void Renderer::renderLoop()
 						if (mdl > 0 && mdl < SelectedMap->modelCount)
 						{
 							int mdl_ent = SelectedMap->get_ent_from_model(mdl);
-							if (mdl_ent >= 0 && mdl_ent < SelectedMap->ents.size())
+							if (mdl_ent >= 0 && mdl_ent < (int)SelectedMap->ents.size())
 							{
 								pickInfo.AddSelectedEnt(mdl_ent);
 							}
@@ -1325,7 +1325,6 @@ void Renderer::vertexEditControls()
 
 void Renderer::cameraPickingControls()
 {
-
 	Bsp* map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
 
@@ -1336,15 +1335,14 @@ void Renderer::cameraPickingControls()
 
 	bool transforming = false;
 
-	//isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
-	//isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
-	//	|| (isTransformableSolid);
-	//isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
-
-
 	if (!pickClickHeld)
 	{
-		if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS && (pickMode == pick_modes::PICK_OBJECT && !movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin)))
+		if ((curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS) &&
+			pickMode == pick_modes::PICK_OBJECT &&
+			!movingEnt &&
+			!isTransformingWorld &&
+			!entIdx.empty() &&
+			(isTransformingValid || isMovingOrigin))
 		{
 			transforming = transformAxisControls();
 		}
@@ -1356,29 +1354,29 @@ void Renderer::cameraPickingControls()
 
 	if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS && !pickClickHeld)
 	{
-		bool anyHover = hoverVert != -1 || hoverEdge != -1;
+		bool anyHover = (hoverVert != -1) || (hoverEdge != -1);
 		if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid && anyHover)
 		{
 			if (!anyCtrlPressed)
 			{
-				for (size_t i = 0; i < modelEdges.size(); i++)
+				for (auto& edge : modelEdges)
 				{
-					modelEdges[i].selected = false;
+					edge.selected = false;
 				}
-				for (size_t i = 0; i < modelVerts.size(); i++)
+				for (auto& vert : modelVerts)
 				{
-					modelVerts[i].selected = false;
+					vert.selected = false;
 				}
 			}
 
-			if (hoverVert != -1 && hoverVert < modelVerts.size())
+			if (hoverVert != -1 && hoverVert < (int)modelVerts.size())
 			{
 				modelVerts[hoverVert].selected = anyCtrlPressed ? !modelVerts[hoverVert].selected : true;
 			}
-			else if (hoverEdge != -1 && hoverEdge < modelEdges.size())
+			else if (hoverEdge != -1 && hoverEdge < (int)modelEdges.size())
 			{
 				modelEdges[hoverEdge].selected = anyCtrlPressed ? !modelEdges[hoverEdge].selected : true;
-				for (int i = 0; i < 2; i++)
+				for (int i = 0; i < 2; ++i)
 				{
 					TransformVert& vert = modelVerts[modelEdges[hoverEdge].verts[i]];
 					vert.selected = modelEdges[hoverEdge].selected;
@@ -1388,13 +1386,9 @@ void Renderer::cameraPickingControls()
 			transforming = true;
 		}
 
-		if (curLeftMouse != GLFW_PRESS)
+		if (transformTarget == TRANSFORM_ORIGIN && originHovered)
 		{
-			if (transformTarget == TRANSFORM_ORIGIN && originHovered)
-			{
-				originSelected = !originSelected;
-			}
-
+			originSelected = !originSelected;
 			transforming = true;
 		}
 	}
@@ -1404,7 +1398,8 @@ void Renderer::cameraPickingControls()
 	{
 		if (hoverAxis == -1 || (!drawingScaleAxes && !drawingMoveAxes))
 		{
-			if ((curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE) || (pickMode != pick_modes::PICK_OBJECT && curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
+			if ((curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE) ||
+				(pickMode != pick_modes::PICK_OBJECT && curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
 			{
 				facePickTime = -1.0;
 				pickObject();
@@ -1856,6 +1851,7 @@ void Renderer::pickObject()
 		ent = SelectedMap->ents[entIdx[0]];
 		pointEntWasSelected = ent && !ent->isBspModel();
 	}
+
 	vec3 pickStart, pickDir;
 	getPickRay(pickStart, pickDir);
 
@@ -2053,7 +2049,7 @@ bool Renderer::transformAxisControls()
 					{
 						if (moveOrigin || modelIdx < 0)
 						{
-							for (size_t tmpentIdx : pickInfo.selectedEnts)
+							for (int tmpentIdx : pickInfo.selectedEnts)
 							{
 								Entity* tmpEnt = map->ents[tmpentIdx];
 								if (!tmpEnt)
@@ -2149,7 +2145,7 @@ bool Renderer::transformAxisControls()
 				{
 					if (moveOrigin || modelIdx < 0)
 					{
-						for (size_t tmpentIdx : pickInfo.selectedEnts)
+						for (int tmpentIdx : pickInfo.selectedEnts)
 						{
 							saveTranformResult = false;
 							map->getBspRender()->pushEntityUndoState("Move Entity", (int)tmpentIdx);
@@ -2470,7 +2466,7 @@ void Renderer::reloadBspModels()
 				if (entity->hasKey("model"))
 				{
 					std::string modelPath = entity->keyvalues["model"];
-					if (toLowerCase(modelPath).ends_with(".bsp"))
+					if (ends_with(toLowerCase(modelPath),".bsp"))
 					{
 						std::string newBspPath;
 						if (FindPathInAssets(bsprend->map, modelPath, newBspPath))
@@ -2765,7 +2761,6 @@ void Renderer::updateDragAxes()
 	{
 		float baseScale = (scaleAxes.origin - localCameraOrigin).length() * 0.005f;
 		float s = baseScale;
-		float s2 = baseScale * 2;
 		float d = baseScale * 32;
 
 
@@ -3019,7 +3014,7 @@ void Renderer::updateModelVerts()
 	}
 
 	modelVertCubes = new cCube[numCubes];
-	modelVertBuff = new VertexBuffer(colorShader, modelVertCubes, (6 * 6 * numCubes), GL_TRIANGLES);
+	modelVertBuff = new VertexBuffer(colorShader, modelVertCubes, (6 * 6 * (int)numCubes), GL_TRIANGLES);
 	//print_log(get_localized_string(LANG_0913),modelVerts.size());
 }
 
@@ -3052,19 +3047,20 @@ void Renderer::updateSelectionSize()
 		Entity* ent = map->ents[entIdx[0]];
 		EntCube* cube = pointEntRenderer->getEntCube(ent);
 		if (cube)
-			selectionSize = cube->maxs - cube->mins;
-	}
-	else
-	{
-		vec3 mins, maxs;
-		if (!map->get_model_vertex_bounds(modelIdx, mins, maxs))
 		{
-			mins = map->models[modelIdx].nMins;
-			maxs = map->models[modelIdx].nMaxs;
+			selectionSize = cube->maxs - cube->mins;
 		}
-		selectionSize = maxs - mins;
+		else
+		{
+			vec3 mins, maxs;
+			if (!map->get_model_vertex_bounds(modelIdx, mins, maxs))
+			{
+				mins = map->models[modelIdx].nMins;
+				maxs = map->models[modelIdx].nMaxs;
+			}
+			selectionSize = maxs - mins;
+		}
 	}
-
 }
 
 void Renderer::updateEntConnections()
@@ -3170,6 +3166,7 @@ void Renderer::updateEntConnections()
 		lines[idx++] = cVert(srcPos, callerColor);
 		lines[idx++] = cVert(ori, callerColor);
 	}
+
 	for (size_t i = 0; i < callerAndTarget.size() && cidx < numPoints && idx < numVerts; i++)
 	{
 		vec3 ori = getEntOrigin(map, callerAndTarget[i]).flip();
@@ -3178,8 +3175,8 @@ void Renderer::updateEntConnections()
 		lines[idx++] = cVert(ori, bothColor);
 	}
 
-	entConnections = new VertexBuffer(colorShader, lines, numVerts, GL_LINES);
-	entConnectionPoints = new VertexBuffer(colorShader, points, (numPoints * 6 * 6), GL_TRIANGLES);
+	entConnections = new VertexBuffer(colorShader, lines, (int)numVerts, GL_LINES);
+	entConnectionPoints = new VertexBuffer(colorShader, points, ((int)(numPoints) * 6 * 6), GL_TRIANGLES);
 	entConnections->ownData = true;
 	entConnectionPoints->ownData = true;
 }
@@ -3209,8 +3206,8 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 	outSolid.hullVerts = hullVerts;
 
 	// get verts for each plane
-	std::map<int, std::vector<size_t>> planeVerts;
-	for (size_t i = 0; i < hullVerts.size(); i++)
+	std::map<int, std::vector<int>> planeVerts;
+	for (int i = 0; i < (int)hullVerts.size(); i++)
 	{
 		for (size_t k = 0; k < hullVerts[i].iPlanes.size(); k++)
 		{
@@ -3225,7 +3222,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 	for (auto it = planeVerts.begin(); it != planeVerts.end(); ++it)
 	{
 		int iPlane = it->first;
-		std::vector<size_t> verts = it->second;
+		std::vector<int> verts = it->second;
 		BSPPLANE& plane = map->planes[iPlane];
 		if (verts.size() < 2)
 		{
@@ -3240,7 +3237,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 			tempVerts[i] = hullVerts[verts[i]].pos;
 		}
 
-		std::vector<size_t> orderedVerts = getSortedPlanarVertOrder(tempVerts);
+		std::vector<int> orderedVerts = getSortedPlanarVertOrder(tempVerts);
 		for (size_t i = 0; i < orderedVerts.size(); i++)
 		{
 			orderedVerts[i] = verts[orderedVerts[i]];
@@ -3524,7 +3521,7 @@ void Renderer::moveSelectedVerts(const vec3& delta)
 
 	Bsp* map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
-	if (map && entIdx.size())
+	if (entIdx.size())
 	{
 		Entity* ent = map->ents[entIdx[0]];
 		map->getBspRender()->refreshModel(ent->getBspModelIdx());
@@ -3542,8 +3539,8 @@ bool Renderer::splitModelFace()
 	}
 	BspRenderer* mapRenderer = map->getBspRender();
 	// find the pseudo-edge to split with
-	std::vector<size_t> selectedEdges;
-	for (size_t i = 0; i < modelEdges.size(); i++)
+	std::vector<int> selectedEdges;
+	for (int i = 0; i < (int)modelEdges.size(); i++)
 	{
 		if (modelEdges[i].selected)
 		{
@@ -3565,12 +3562,12 @@ bool Renderer::splitModelFace()
 	HullEdge& edge1 = modelEdges[selectedEdges[0]];
 	HullEdge& edge2 = modelEdges[selectedEdges[1]];
 	int commonPlane = -1;
-	for (size_t i = 0; i < 2 && commonPlane == -1; i++)
+	for (int i = 0; i < 2 && commonPlane == -1; i++)
 	{
-		size_t thisPlane = edge1.planes[i];
-		for (size_t k = 0; k < 2; k++)
+		int thisPlane = edge1.planes[i];
+		for (int k = 0; k < 2; k++)
 		{
-			size_t otherPlane = edge2.planes[k];
+			int otherPlane = edge2.planes[k];
 			if (thisPlane == otherPlane)
 			{
 				commonPlane = (int)thisPlane;
@@ -3614,9 +3611,9 @@ bool Renderer::splitModelFace()
 
 	// extrude split points so that the new planes aren't coplanar
 	{
-		size_t i0 = edge1.verts[0];
-		size_t i1 = edge1.verts[1];
-		size_t i2 = edge2.verts[0];
+		int i0 = edge1.verts[0];
+		int i1 = edge1.verts[1];
+		int i2 = edge2.verts[0];
 		if (i2 == i1 || i2 == i0)
 			i2 = edge2.verts[1];
 
@@ -3942,7 +3939,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 	selectEnt(map, map->ents.size() > 1 ? ((int)map->ents.size() - 1) : 0);
 }
 
-void Renderer::deleteEnt(size_t entIdx)
+void Renderer::deleteEnt(int entIdx)
 {
 	Bsp* map = SelectedMap;
 
@@ -3970,7 +3967,7 @@ void Renderer::deleteEnts()
 		for (auto entIdx : tmpEnts)
 		{
 			if (map->ents[entIdx]->hasKey("model") &&
-				toLowerCase(map->ents[entIdx]->keyvalues["model"]).ends_with(".bsp"))
+				ends_with(toLowerCase(map->ents[entIdx]->keyvalues["model"]),".bsp"))
 			{
 				reloadbspmdls = true;
 			}
@@ -4031,7 +4028,7 @@ void Renderer::deselectFaces()
 	pickInfo.selectedFaces.clear();
 }
 
-void Renderer::selectEnt(Bsp* map, size_t entIdx, bool add)
+void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 {
 	if (!map)
 		return;
@@ -4040,7 +4037,7 @@ void Renderer::selectEnt(Bsp* map, size_t entIdx, bool add)
 	pickInfo.selectedFaces.clear();
 
 	Entity* ent = NULL;
-	if (entIdx < map->ents.size())
+	if (entIdx < (int)map->ents.size())
 	{
 		ent = map->ents[entIdx];
 		if (!add)
@@ -4125,7 +4122,7 @@ void Renderer::goToFace(Bsp* map, int faceIdx)
 		if (model >= 0 && model < map->modelCount)
 		{
 			int ent = map->get_ent_from_model(model);
-			if (ent > 0 && ent < map->ents.size())
+			if (ent > 0 && ent < (int)map->ents.size())
 			{
 				offset = map->ents[ent]->origin;
 				flip = true;
@@ -4174,9 +4171,9 @@ void Renderer::goToCoords(const vec3& pos)
 	cameraOrigin.z = pos.z;
 }
 
-void Renderer::goToEnt(Bsp* map, size_t entIdx)
+void Renderer::goToEnt(Bsp* map, int entIdx)
 {
-	if (entIdx >= map->ents.size())
+	if (entIdx >= (int)map->ents.size())
 		return;
 
 	Entity* ent = map->ents[entIdx];
@@ -4286,9 +4283,9 @@ Texture* Renderer::giveMeTexture(const std::string& texname, const std::string& 
 					if (imageData)
 					{
 						Texture* tmpTex = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, texname);
-						glExteralTextures_names.push_back(texname);
-						glExteralTextures_wads.push_back(toLowerCase(wad->wadname));
-						glExteralTextures_textures.push_back(tmpTex);
+						glExteralTextures_names.emplace_back(texname);
+						glExteralTextures_wads.emplace_back(toLowerCase(wad->wadname));
+						glExteralTextures_textures.emplace_back(tmpTex);
 						delete wadTex;
 						return tmpTex;
 					}

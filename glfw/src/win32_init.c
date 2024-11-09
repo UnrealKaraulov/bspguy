@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.4 Win32 - www.glfw.org
+// GLFW 3.5 Win32 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
 // Copyright (c) 2006-2019 Camilla Löwy <elmindreda@glfw.org>
@@ -430,46 +430,6 @@ static GLFWbool createHelperWindow(void)
    return GLFW_TRUE;
 }
 
-// Creates the blank cursor
-//
-static void createBlankCursor(void)
-{
-    // HACK: Create a transparent cursor as using the NULL cursor breaks
-    //       using SetCursorPos when connected over RDP
-    int cursorWidth = GetSystemMetrics(SM_CXCURSOR);
-    int cursorHeight = GetSystemMetrics(SM_CYCURSOR);
-    unsigned char* andMask = _glfw_calloc(cursorWidth * cursorHeight / 8, sizeof(unsigned char));
-    unsigned char* xorMask = _glfw_calloc(cursorWidth * cursorHeight / 8, sizeof(unsigned char));
-
-    if (andMask != NULL && xorMask != NULL) {
-
-        memset(andMask, 0xFF, (size_t)(cursorWidth * cursorHeight / 8));
-
-        // Cursor creation might fail, but that's fine as we get NULL in that case,
-        // which serves as an acceptable fallback blank cursor (other than on RDP)
-        _glfw.win32.blankCursor = CreateCursor(NULL, 0, 0, cursorWidth, cursorHeight, andMask, xorMask);
-
-        _glfw_free(andMask);
-        _glfw_free(xorMask);
-    }
-}
-
-// Initialize for remote sessions
-//
-static void initRemoteSession(void)
-{
-    //Check if the current progress was started with Remote Desktop.
-    _glfw.win32.isRemoteSession = GetSystemMetrics(SM_REMOTESESSION) > 0;
-
-    // With Remote desktop, we need to create a blank cursor because of the cursor is Set to NULL
-    // if cannot be moved to center in capture mode. If not Remote Desktop win32.blankCursor stays NULL
-    // and will perform has before (normal).
-    if (_glfw.win32.isRemoteSession)
-    {
-        createBlankCursor();
-    }
-}
-
 //////////////////////////////////////////////////////////////////////////
 //////                       GLFW internal API                      //////
 //////////////////////////////////////////////////////////////////////////
@@ -738,15 +698,6 @@ int _glfwInitWin32(void)
     if (!createHelperWindow())
         return GLFW_FALSE;
 
-    //Some hacks are needed to support Remote Desktop...
-    initRemoteSession();
-    if (_glfw.win32.isRemoteSession && _glfw.win32.blankCursor == NULL )
-    {
-        _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
-                             "Win32: Failed to create blank cursor for remote session.");
-        return GLFW_FALSE;
-    }
-
     _glfwPollMonitorsWin32();
     return GLFW_TRUE;
 }
@@ -754,7 +705,7 @@ int _glfwInitWin32(void)
 void _glfwTerminateWin32(void)
 {
     if (_glfw.win32.blankCursor)
-        DestroyCursor(_glfw.win32.blankCursor);
+        DestroyIcon((HICON) _glfw.win32.blankCursor);
 
     if (_glfw.win32.deviceNotificationHandle)
         UnregisterDeviceNotification(_glfw.win32.deviceNotificationHandle);

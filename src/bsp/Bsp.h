@@ -140,9 +140,10 @@ public:
 	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1);
 
 	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
-	size_t modelLeafs(int modelIdx, std::vector<int>& modelLeafs);
-	size_t modelLeafs(const BSPMODEL& model, std::vector<int>& modelLeafs);
+	int modelLeafs(int modelIdx, std::vector<int>& modelLeafs);
+	int modelLeafs(const BSPMODEL& model, std::vector<int>& modelLeafs);
 	int pointContents(int iNode, const vec3& p, int hull);
+	int pointLeaf(int iNode, const vec3& p, int hull, int& leafIdx, int & planeIdx);
 	const char* getLeafContentsName(int contents);
 
 	// strips a collision hull from the given model index
@@ -287,7 +288,7 @@ public:
 	void remove_faces_by_content(int content);
 	std::vector<int> getFaceContents(int faceIdx);
 	int clone_world_leaf(int oldleafIdx);
-	int merge_two_models_ents(size_t src_ent, size_t dst_ent, int &try_again);
+	int merge_two_models_ents(int src_ent, int dst_ent, int &try_again);
 	int merge_two_models_idx(int src_model, int dst_model, int &try_again);
 
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
@@ -299,10 +300,10 @@ public:
 	int get_model_from_leaf(int leafIdx);
 
 	std::vector<int> get_face_edges(int faceIdx);
-	std::vector<vec3> get_face_verts(int faceIdx);
-	std::vector<int> get_face_verts_idx(int faceIdx);
+	std::vector<vec3> get_face_verts(int faceIdx, int limited = INT_MAX);
+	std::vector<int> get_face_verts_idx(int faceIdx, int limited = INT_MAX);
 
-	bool is_worldspawn_ent(size_t entIdx);
+	bool is_worldspawn_ent(int entIdx);
 
 	int get_ent_from_model(int modelIdx);
 
@@ -338,7 +339,7 @@ public:
 
 	void ExportToMapWIP(const std::string& path, bool selected, bool merge_faces, bool use_one_back_vert);
 
-	int import_mdl_to_bspmodel(size_t ent, bool generateClipnodes);
+	int import_mdl_to_bspmodel(int ent, bool generateClipnodes);
 	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes,mat4x4 angles, bool & valid_nodes);
 
 	int merge_all_planes();
@@ -360,10 +361,11 @@ public:
 	std::vector<int> getLeafFaces(BSPLEAF32& leaf);
 	std::vector<int> getFaceLeafs(int faceIdx);
 	int getFaceFromPlane(int iPlane);
+	int getFaceFromVec(const vec3& pos, int modelIdx, int& content);
 	std::vector<int> getFacesFromPlane(int iPlane);
 	bool is_texture_with_pal(int textureid);
 	int getBspTextureSize(int textureid);
-	size_t getEmbeddedTexCount();
+	int getEmbeddedTexCount();
 
 	int getWorlspawnEntId();
 	Entity * getWorldspawnEnt();
@@ -379,7 +381,7 @@ public:
 	void mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves);
 	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);
 
-	const BSPPLANE getPlaneFromFace(const BSPFACE32* const face);
+	BSPPLANE getPlaneFromFace(const BSPFACE32* const face);
 	bool GetFaceLightmapSize(int facenum, int size[2]);
 	int GetFaceLightmapSizeBytes(int facenum);
 	int GetFaceSingleLightmapSizeBytes(int facenum);
@@ -396,7 +398,7 @@ private:
 
 	void recurse_node_leafs(int nodeIdx, std::vector<int>& outLeafs);
 
-	bool load_lumps(std::string fname);
+	bool load_lumps(const std::string & fname);
 
 	void print_model_bsp(int modelIdx);
 	void print_leaf(const BSPLEAF32& leaf);
@@ -406,7 +408,7 @@ private:
 
 	std::string get_model_usage(int modelIdx);
 	std::vector<Entity*> get_model_ents(int modelIdx);
-	std::vector<size_t> get_model_ents_ids(int modelIdx);
+	std::vector<int> get_model_ents_ids(int modelIdx);
 
 	void write_csg_polys(int nodeIdx, FILE* fout, int flipPlaneSkip, bool debug);
 

@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.4...3.20 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.4...3.28 FATAL_ERROR)
 
-project(GLFW VERSION 3.4.0 LANGUAGES C)
+project(GLFW VERSION 3.5.0 LANGUAGES C)
 
 if (POLICY CMP0069)
     cmake_policy(SET CMP0069 NEW)
@@ -29,7 +29,7 @@ endif()
 
 if (DEFINED GLFW_USE_WAYLAND AND UNIX AND NOT APPLE)
     message(FATAL_ERROR
-        "GLFW_USE_WAYLAND has been removed; set the GLFW_BUILD_WAYLAND and GLFW_BUILD_X11 options")
+        "GLFW_USE_WAYLAND has been removed; delete the CMake cache and set GLFW_BUILD_WAYLAND and GLFW_BUILD_X11 instead")
 endif()
 
 cmake_dependent_option(GLFW_BUILD_WIN32 "Build support for Win32" ON "WIN32" OFF)
@@ -58,11 +58,6 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${GLFW_SOURCE_DIR}/CMake/modules")
 
 find_package(Threads REQUIRED)
-
-if (GLFW_BUILD_DOCS)
-    set(DOXYGEN_SKIP_DOT TRUE)
-    find_package(Doxygen)
-endif()
 
 #--------------------------------------------------------------------
 # Report backend selection
@@ -134,7 +129,7 @@ if (GLFW_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-if (DOXYGEN_FOUND AND GLFW_BUILD_DOCS)
+if (GLFW_BUILD_DOCS)
     add_subdirectory(docs)
 endif()
 
@@ -155,11 +150,6 @@ if (GLFW_INSTALL)
             DESTINATION "${GLFW_CONFIG_PATH}")
     install(FILES "${GLFW_BINARY_DIR}/src/glfw3.pc"
             DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
-
-    if (DOXYGEN_FOUND AND GLFW_BUILD_DOCS)
-        install(DIRECTORY "${GLFW_BINARY_DIR}/docs/html"
-                DESTINATION "${CMAKE_INSTALL_DOCDIR}")
-    endif()
 
     # Only generate this target if no higher-level project already has
     if (NOT TARGET uninstall)

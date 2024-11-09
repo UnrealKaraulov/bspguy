@@ -3,9 +3,9 @@
 #include "log.h"
 #include "Renderer.h"
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, size_t _numVerts, int primitive)
+VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, void* dat, int _numVerts, int primitive)
 {
-	frameId = (size_t)-1;
+	frameId = (int)-1;
 	uploaded = false;
 	vboId = 0xFFFFFFFF;
 	vaoId = 0xFFFFFFFF;
@@ -25,7 +25,7 @@ VertexBuffer::~VertexBuffer() {
 	numVerts = 0;
 }
 
-void VertexBuffer::setData(void* _data, size_t _numVerts)
+void VertexBuffer::setData(void* _data, int _numVerts)
 {
 	data = (unsigned char*)_data;
 	numVerts = _numVerts;
@@ -98,9 +98,9 @@ void VertexBuffer::deleteBuffer() {
 	vaoId = 0xFFFFFFFF;
 }
 
-void VertexBuffer::drawRange(int _primitive, size_t start, size_t end, bool hideErrors)
+void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors)
 {
-	if (frameId != (size_t)-1)
+	if (frameId != (int)-1)
 	{
 		if (frameId == g_drawFrameId)
 		{

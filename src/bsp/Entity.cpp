@@ -2,9 +2,9 @@
 #include "util.h"
 
 
-void Entity::addKeyvalue(const std::string key, const std::string value, bool multisupport)
+void Entity::addKeyvalue(const std::string & key, const std::string & value, bool multisupport)
 {
-	if (!strlen(key))
+	if (!nullstrlen(key))
 		return;
 
 	int dup = 1;
@@ -56,11 +56,11 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 	if (key == "model")
 		cachedModelIdx = -2;
 
-	if (key.starts_with("render"))
+	if (starts_with(key,"render"))
 		updateRenderModes();
 }
 
-void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
+void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value)
 {
 	if (!key.size())
 		return;
@@ -88,7 +88,7 @@ void Entity::removeKeyvalue(const std::string key)
 
 	targetsCached = false;
 
-	if (key.starts_with("render"))
+	if (starts_with(key,"render"))
 		updateRenderModes();
 }
 
@@ -109,7 +109,7 @@ bool Entity::renameKey(int idx, const std::string& newName)
 		}
 	}
 
-	if (keyName.starts_with("render"))
+	if (starts_with(keyName,"render"))
 		updateRenderModes();
 
 	if (keyName == "origin" || newName == "origin")
@@ -166,7 +166,7 @@ bool Entity::renameKey(const std::string& oldName, const std::string& newName)
 	if (idx == -1)
 		return false;
 
-	if (oldName.starts_with("render") || newName.starts_with("render"))
+	if (starts_with(oldName,"render") || starts_with(newName,"render"))
 		updateRenderModes();
 
 	if (oldName == "origin" || newName == "origin")
@@ -223,7 +223,7 @@ void Entity::clearEmptyKeyvalues()
 	keyOrder = std::move(newKeyOrder);
 }
 
-bool Entity::hasKey(const std::string key)
+bool Entity::hasKey(const std::string& key)
 {
 	if (keyvalues.empty() || keyOrder.empty()) {
 		return false; 
@@ -303,9 +303,7 @@ bool Entity::isWorldSpawn()
 	return getBspModelIdx() == 0;
 }
 
-// TODO: maybe store this in a text file or something
-#define TOTAL_TARGETNAME_KEYS 134
-const char* potential_tergetname_keys[TOTAL_TARGETNAME_KEYS] = {
+std::vector<std::string> potential_tergetname_keys = {
 	// common target-related keys
 	"targetname",
 	"target",
@@ -515,9 +513,10 @@ std::vector<std::string> Entity::getTargets()
 
 	std::vector<std::string> targets;
 
-	for (int i = 1; i < TOTAL_TARGETNAME_KEYS; i++)
-	{ // skip targetname
-		const char* key = potential_tergetname_keys[i];
+	for (size_t i = 1; i < potential_tergetname_keys.size(); i++)
+	{ 
+		// skip targetname
+		auto & key = potential_tergetname_keys[i];
 		if (hasKey(key))
 		{
 			targets.push_back(keyvalues[key]);
@@ -569,9 +568,9 @@ bool Entity::hasTarget(const std::string& checkTarget)
 
 void Entity::renameTargetnameValues(const std::string& oldTargetname, const std::string& newTargetname)
 {
-	for (int i = 0; i < TOTAL_TARGETNAME_KEYS; i++)
+	for (size_t i = 0; i < potential_tergetname_keys.size(); i++)
 	{
-		const char* key = potential_tergetname_keys[i];
+		auto & key = potential_tergetname_keys[i];
 		if (keyvalues.find(key) != keyvalues.end() && keyvalues[key] == oldTargetname)
 		{
 			keyvalues[key] = newTargetname;
@@ -598,7 +597,7 @@ void Entity::renameTargetnameValues(const std::string& oldTargetname, const std:
 			{
 				std::string newKey = newTargetname + suffix;
 				keyvalues[newKey] = keyvalues[keyOrder[i]];
-				keyOrder[i] = newKey;
+				keyOrder[i] = std::move(newKey);
 			}
 		}
 	}

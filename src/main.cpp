@@ -9,79 +9,16 @@
 #include "Sprite.h"
 #include "log.h"
 
-// super todo:
-// gui scale not accurate and mostly broken
-// invalid solid undo not reverting plane vertex positions sometimes
-// backwards mins/maxs when creating second teleport in scale mode and cant drag the handle
-// dbm_14 invisible triggers not showing clipndoes.
-// can't select by clipnodes when manually toggled on and rendering disabled for ents
-// deleting ents breaks entity report list when filter is used
-// update merge logic for v2 scripts
-// abort scale/vertex edits if an overflow occurs
-// 3d axes don't appear until moving mouse over 3D view sometimes
-// crash using 3d scale axes
-
-// todo:
-// add option to simplify clipnode hulls with QHull for shrinkwrap-style bounding volumes
-// merge redundant submodels and duplicate structures
-// no lightmap renders black faces if no lightmap data for face
-// select overlapping entities by holding mouse down
-// normalized clip type for clipnode regeneration (fixes broken collision around 90+ degree angle edges)
-// lerp plane distance in regenerated clipnodes between bbox height and width
-// uniform scaling
-// highlight non-planar faces in vertex edit mode
-// subdivided faces can't be transformed in verte edit mode
-// auto-clean after a while? Unused data will pile up after a lot of face splitting
-// reference aaatrigger from wad instead of embedding it if it doesnt exist
-// red highlight not working with lightmaps disabled
-// scaling allowing concave solids (merge0.bsp angled wedge)
-// make all commands available in the 3d editor
-// transforms gradually waste more and more planes+clipnodes until the map overflows (need smarter updates)
-// "Validate" doesn't return any response.. -Sparks (add a results window or something for that + clean/optimize)
-// copy-paste ents from Jack -Outerbeast
-// parse CFG and add bspguy_equip ents for each transition
-// clipnode models sometimes missing faces or extending to infinity
-// - floating point inaccuracies probably. Changing starting cube size also changes the model
-// show tooltip when hovering over ent target/caller
-// customize limits and remove auto-fgd logic so the editor isn't sven-specific in any way
-// Add tooltips for everything
-// first-time launch help window or something
-// make .bsp extension optional when opening editor
+// todo (newbspguy):
 // texture browser
+// ...
 
-// minor todo:
-// warn about game_playerjoin and other special names
-// dump model info for the rest of the data types
-// delete all frames from unused animated textures
-// moving maps can cause bad surface extents which could cause lightmap seams?
-// see if balancing the BSP tree is possible and if helps performance at all
-// - https://www.researchgate.net/publication/238348725_A_Tutorial_on_Binary_Space_Partitioning_Trees
-// - "Balanced is optimal only when the geometry is uniformly distributed, which is rarely the case."
-// delete all submodel leaves to save space. They're unused and waste space, yet the compiler includes them...?
-// vertex editing + clipping (+ CSG?) for all BSP models. Basically reimplement all of Hammer... and hlbsp/vis/rad... kek
-// delete embedded texture mipmaps to save space
-// vertex manipulation: face inversions should be invalid
-// vertex manipulation: max face extents should be invalid
-// vertex manipulation: colplanar node planes should be invalid
-// add command to check which ents are preventing hull 2 delete
+// minor todo (newbspguy):
+// ...
+// ...
 
-// refactoring:
-// stop mixing camel case and underscores
-// parse vertors in util, not Keyvalue
-// add class destructors and delete everything that's new'd
-// render and bsp classes are way too big and doing too many things and render has too many state checks
-
-// Ideas for commands:
-// copymodel:
-//		- copies a model from the source map into the target map (for adding new perfectly shaped brush ents)
-// addbox:
-//		- creates a new box-shaped brush model (faster than copymodel if you don't need anything fancy)
-// extract:
-//		- extracts an isolated room from the BSP
-// decompile:
-//      - to RMF. Try creating brushes from convex face connections?
-// export:
-//      - export BSP models to MDL models.
+// refactoring (newbspguy):
+// ...
 
 // Notes:
 // Removing HULL 0 from any model crashes when shooting unless it's EF_NODRAW or renderamt=0
@@ -89,7 +26,7 @@
 // Solve: 
 // Create empty hull 0 box ?
 
-std::string g_version_string = "NewBSPGuy v4.26";
+std::string g_version_string = "NewBSPGuy v4.27";
 
 bool g_verbose = false;
 
@@ -162,7 +99,7 @@ int test()
 	removed.print_delete_stats(1);
 
 	BspMerger merger;
-	Bsp* result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false,false);
+	Bsp* result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false, false);
 	print_log("\n");
 	if (result)
 	{
@@ -959,14 +896,14 @@ vec3 vec3mix(const vec3& a, const vec3& b, float t) {
 
 void CreateSkybox(std::vector<UVVERT>& vertices, vec3 mins, vec3 maxs) {
 	std::string sides[6] = { "right", "left", "up", "down", "front", "back" };
-    vec3 directions[6][4] = {
-        {maxs, {maxs.x, mins.y, maxs.z}, {maxs.x, mins.y, mins.z}, {maxs.x, maxs.y, mins.z}}, // Right
-        {mins, {mins.x, mins.y, maxs.z}, {mins.x, maxs.y, maxs.z}, {mins.x, maxs.y, mins.z}}, // Left
-        {maxs, {maxs.x, maxs.y, mins.z}, {mins.x, maxs.y, mins.z}, {mins.x, maxs.y, maxs.z}}, // Up
+	vec3 directions[6][4] = {
+		{maxs, {maxs.x, mins.y, maxs.z}, {maxs.x, mins.y, mins.z}, {maxs.x, maxs.y, mins.z}}, // Right
+		{mins, {mins.x, mins.y, maxs.z}, {mins.x, maxs.y, maxs.z}, {mins.x, maxs.y, mins.z}}, // Left
+		{maxs, {maxs.x, maxs.y, mins.z}, {mins.x, maxs.y, mins.z}, {mins.x, maxs.y, maxs.z}}, // Up
 		{mins, {maxs.x, mins.y, mins.z}, {maxs.x, mins.y, maxs.z}, {mins.x, mins.y, maxs.z}}, // Down
 		{{mins.x, mins.y, maxs.z}, {maxs.x, mins.y, maxs.z}, {maxs.x, maxs.y, maxs.z}, {mins.x, maxs.y, maxs.z}}, // Front
-        {mins, {mins.x, maxs.y, mins.z}, {maxs.x, maxs.y, mins.z}, {maxs.x, mins.y, mins.z}}, // Back
-    };
+		{mins, {mins.x, maxs.y, mins.z}, {maxs.x, maxs.y, mins.z}, {maxs.x, mins.y, mins.z}}, // Back
+	};
 
 	int divisions = 8;
 	for (int side = 0; side < 6; ++side) {
@@ -1098,11 +1035,11 @@ int main(int argc, char* argv[])
 			g_verbose = true;
 		}
 
-		if constexpr (sizeof(vec4) != 16 || 
+		if constexpr (sizeof(vec4) != 16 ||
 			sizeof(vec3) != 12 ||
 			sizeof(vec2) != 8 ||
 			sizeof(COLOR3) != 3 ||
-			sizeof(COLOR4) != 4 )
+			sizeof(COLOR4) != 4)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "sizeof() fatal error!\n");
 			return 1;
@@ -1266,7 +1203,7 @@ int main(int argc, char* argv[])
 			print_help(cli.command);
 			return 1;
 		}
-		}
+	}
 	catch (fs::filesystem_error& ex)
 	{
 		std::cout << "std::filesystem fatal error." << std::endl << "what():  " << ex.what() << '\n'
@@ -1288,5 +1225,5 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	return 0;
-	}
+}
 

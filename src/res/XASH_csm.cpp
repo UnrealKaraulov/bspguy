@@ -29,6 +29,7 @@ std::string CSMFile::getStringFromMaterials()
 
 CSMFile::CSMFile()
 {
+	header = {};
 	readed = false;
 	for (auto& m : model)
 		delete m;
@@ -37,6 +38,7 @@ CSMFile::CSMFile()
 
 CSMFile::CSMFile(std::string path)
 {
+	header = {};
 	readed = read(path);
 	for (auto& m : model)
 		delete m;
@@ -235,8 +237,8 @@ void CSMFile::upload()
 					{
 						modelVert tmpVert;
 						tmpVert.pos = vertices[f.vertIdx[i]].point.flip();
-						tmpVert.u = f.uvs->uv[i].x;
-						tmpVert.v = f.uvs->uv[i].y;
+						tmpVert.u = f.uvs[0].uv[i].x;
+						tmpVert.v = f.uvs[0].uv[i].y;
 						m->verts.push_back(tmpVert);
 					}
 					break;
@@ -253,8 +255,8 @@ void CSMFile::upload()
 				{
 					modelVert tmpVert;
 					tmpVert.pos = vertices[f.vertIdx[i]].point.flip();
-					tmpVert.u = f.uvs->uv[i].x;
-					tmpVert.v = f.uvs->uv[i].y;
+					tmpVert.u = f.uvs[0].uv[i].x;
+					tmpVert.v = f.uvs[0].uv[i].y;
 					tmpModel->verts.push_back(tmpVert);
 				}
 
@@ -267,7 +269,7 @@ void CSMFile::upload()
 	{
 		for (auto& m : model)
 		{
-			m->buffer->setData(&m->verts[0], m->verts.size());
+			m->buffer->setData(&m->verts[0], (int)m->verts.size());
 			m->buffer->uploaded = false;
 		}
 	}

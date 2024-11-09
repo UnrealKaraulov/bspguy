@@ -159,6 +159,29 @@ float dotProduct(const vec3& v1, const vec3& v2)
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
+float distanceToPlane(const vec3& point, const vec3& planeNormal, float planeDist) {
+	return std::abs(planeNormal.dot(point) - planeDist);
+}
+
+bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices) 
+{
+	vec3 v0 = faceVertices[1] - faceVertices[0];
+	vec3 v1 = faceVertices[2] - faceVertices[0];
+	vec3 v2 = point - faceVertices[0];
+
+	float dot00 = v0.dot(v0);
+	float dot01 = v0.dot(v1);
+	float dot02 = v0.dot(v2);
+	float dot11 = v1.dot(v1);
+	float dot12 = v1.dot(v2);
+
+	float invDenom = 1.0f / (dot00 * dot11 - dot01 * dot01);
+	float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+	return (u >= 0) && (v >= 0) && (u + v < 1);
+}
+
 void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 {
 	mat4x4 rotMat;
@@ -185,7 +208,7 @@ vec3 vec3::normalize(float length) const
 	return vec3(x * d, y * d, z * d);
 }
 
-bool vec3::equal(vec3 to, float epsilon)
+bool vec3::equal(vec3 to, float epsilon) const
 {
 	if (std::abs(x - to.x) >= epsilon)
 		return false;
@@ -221,7 +244,7 @@ float fullnormalizeangle(float angle)
 	return retval;
 }
 
-vec3 vec3::normalize_angles()
+vec3 vec3::normalize_angles() const
 {
 	return vec3(fullnormalizeangle(x), fullnormalizeangle(y), fullnormalizeangle(z));
 }
@@ -241,12 +264,12 @@ vec3 vec3::invert()
 	return vec3( -x , -y, -z );
 }
 
-float vec3::length()
+float vec3::length() const
 {
 	return sqrt((x * x) + (y * y) + (z * z));
 }
 
-bool vec3::IsZero()
+bool vec3::IsZero() const
 {
 	return (std::abs(x) + std::abs(y) + std::abs(z)) < EPSILON;
 }

@@ -515,7 +515,7 @@ void StudioModel::UpdateModelMeshList()
 
 	//SetupLighting();
 
-	if (mdl_mesh_groups.size() < (size_t)m_pstudiohdr->numbodyparts)
+	if ((int)mdl_mesh_groups.size() < m_pstudiohdr->numbodyparts)
 		mdl_mesh_groups.resize(m_pstudiohdr->numbodyparts);
 
 	for (i = 0; i < m_pstudiohdr->numbodyparts; i++)
@@ -614,7 +614,7 @@ void StudioModel::RefreshMeshList(int body)
 		}
 	}
 
-	if (mdl_mesh_groups[body].size() < (size_t)m_pmodel->nummesh)
+	if ((int)mdl_mesh_groups[body].size() < m_pmodel->nummesh)
 	{
 		mdl_mesh_groups[body].resize(m_pmodel->nummesh);
 
@@ -633,7 +633,7 @@ void StudioModel::RefreshMeshList(int body)
 		int texidx = ptexture && pskinref ? ptexture[pskinref[pmesh->skinref]].index : 0;
 		if (mdl_textures.size())
 		{
-			if ((size_t)texidx < mdl_textures.size())
+			if (texidx < (int)mdl_textures.size())
 			{
 				mdl_mesh_groups[body][j].texture = mdl_textures[texidx];
 			}
@@ -780,7 +780,7 @@ void StudioModel::RefreshMeshList(int body)
 		if ((int)mdl_mesh_groups[body][j].verts.size() < totalElements)
 		{
 			mdl_mesh_groups[body][j].verts.resize(totalElements);
-			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], mdl_mesh_groups[body][j].verts.size());
+			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], (int)(mdl_mesh_groups[body][j].verts.size()));
 		}
 		for (int z = 0; z < (int)mdl_mesh_groups[body][j].verts.size(); z++)
 		{
@@ -864,7 +864,7 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 
 
 
-studiohdr_t* StudioModel::LoadModel(std::string modelname, bool IsTexture)
+studiohdr_t* StudioModel::LoadModel(const std::string & modelname, bool IsTexture)
 {
 	int size;
 	char* buffer = loadFile(modelname, size);
@@ -898,7 +898,7 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname, bool IsTexture)
 }
 
 
-studioseqhdr_t* StudioModel::LoadDemandSequences(std::string modelname, int seqid)
+studioseqhdr_t* StudioModel::LoadDemandSequences(const std::string& modelname, int seqid)
 {
 	std::ostringstream str;
 	str << modelname.substr(0, modelname.size() - 4) << std::setw(2) << std::setfill('0') << seqid << ".mdl";
@@ -973,7 +973,7 @@ void StudioModel::DrawMDL(int meshnum)
 
 	if (meshnum >= 0)
 	{
-		if (mdl_mesh_groups.size() && (size_t)meshnum < mdl_mesh_groups[0].size())
+		if (mdl_mesh_groups.size() && meshnum < (int)mdl_mesh_groups[0].size())
 		{
 			Texture* validTexture = mdl_mesh_groups[0][meshnum].texture;
 
@@ -1018,7 +1018,7 @@ void StudioModel::DrawMDL(int meshnum)
 	}
 }
 
-void StudioModel::Init(std::string modelname)
+void StudioModel::Init(const std::string& modelname)
 {
 	m_pstudiohdr = LoadModel(modelname);
 	if (!m_pstudiohdr)

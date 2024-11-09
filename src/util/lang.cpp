@@ -38,7 +38,7 @@ std::string get_localized_string(int id)
 				replaceAll(tmp_value, "\\n", "\n");
 				replaceAll(tmp_value, "\\r", "\r");
 
-				value = tmp_value;
+				value = std::move(tmp_value);
 			}
 			catch(...)
 			{
@@ -72,7 +72,7 @@ std::string get_localized_string(const std::string& str_id)
 				std::string tmp_value = lang_ini->Get<std::string>(g_settings.selected_lang, str_id, fmt::format("NO {}", str_id));
 				replaceAll(tmp_value, "\\n", "\n");
 				replaceAll(tmp_value, "\\r", "\r");
-				value = tmp_value;
+				value = std::move(tmp_value);
 			}
 			catch (...)
 			{
@@ -87,7 +87,7 @@ std::string get_localized_string(const std::string& str_id)
 	return "LANG_ERROR_STRING\n";
 }
 
-void set_localize_lang(std::string lang)
+void set_localize_lang(const std::string & lang)
 {
 	static std::string last_lang = "";
 

@@ -43,14 +43,14 @@ public:
 		targetsCached = false;
 		setOrAddKeyvalue("classname", _classname);
 	}
-	void addKeyvalue(const std::string key, const std::string value, bool multisupport = false);
+	void addKeyvalue(const std::string& key, const std::string& value, bool multisupport = false);
 	void removeKeyvalue(const std::string key);
 	bool renameKey(int idx, const std::string& newName);
 	bool renameKey(const std::string& oldName, const std::string& newName);
 	void clearAllKeyvalues();
 	void clearEmptyKeyvalues();
 
-	void setOrAddKeyvalue(const std::string key, const std::string value);
+	void setOrAddKeyvalue(const std::string& key, const std::string& value);
 
 	// returns -1 for invalid idx
 	int getBspModelIdx();
@@ -60,7 +60,7 @@ public:
 
 	bool isWorldSpawn();
 
-	bool hasKey(const std::string key);
+	bool hasKey(const std::string& key);
 
 	std::vector<std::string> getTargets();
 

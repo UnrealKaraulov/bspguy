@@ -41,7 +41,7 @@ struct FaceMath
 	vec3 normal;
 	float fdist;
 	std::vector<vec2> localVerts;
-
+	vec3 center;
 	FaceMath()
 	{
 		worldToLocal = mat4x4();
@@ -171,16 +171,16 @@ struct RenderClipnodes
 class PickInfo
 {
 public:
-	std::vector<size_t> selectedEnts;
-	std::vector<size_t> selectedFaces;
+	std::vector<int> selectedEnts;
+	std::vector<int> selectedFaces;
 
 	float bestDist;
 	PickInfo();
 
-	void AddSelectedEnt(size_t entIdx);
-	void SetSelectedEnt(size_t entIdx);
-	void DelSelectedEnt(size_t entIdx);
-	bool IsSelectedEnt(size_t entIdx);
+	void AddSelectedEnt(int entIdx);
+	void SetSelectedEnt(int entIdx);
+	void DelSelectedEnt(int entIdx);
+	bool IsSelectedEnt(int entIdx);
 };
 
 class BspRenderer
@@ -205,15 +205,15 @@ public:
 
 	void drawModel(RenderEnt* ent, int transparent, bool highlight, bool edgesOnly);
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
-	void drawPointEntities(std::vector<size_t> highlightEnts, int pass);
+	void drawPointEntities(std::vector<int> highlightEnts, int pass);
 
 	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp** map);
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
 	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
 
 	bool setRenderAngles(const std::string& classname, mat4x4& outmat, vec3& outangles);
-	void refreshEnt(size_t entIdx);
-	size_t refreshModel(int modelIdx, bool refreshClipnodes = true, bool triangulate = true);
+	void refreshEnt(int entIdx);
+	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool triangulate = true);
 	bool refreshModelClipnodes(int modelIdx);
 	void refreshFace(int faceIdx);
 	void updateClipnodeOpacity(unsigned char newValue);
@@ -236,7 +236,7 @@ public:
 	void updateLightmapInfos();
 	bool isFinishedLoading();
 
-	void highlightFace(size_t faceIdx, int highlight, bool reupload = true);
+	void highlightFace(int faceIdx, int highlight, bool reupload = true);
 	void updateFaceUVs(int faceIdx);
 	unsigned int getFaceTextureId(int faceIdx);
 
@@ -254,7 +254,7 @@ public:
 	EntCube* nodeCube;/*
 	EntCube* nodePlaneCube;*/
 
-	size_t numLightmapAtlases;
+	int numLightmapAtlases;
 
 	int numRenderLightmapInfos;
 	int numLoadedTextures;
@@ -292,28 +292,28 @@ public:
 	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
 	std::vector<Command*> undoHistory;
 	std::vector<Command*> redoHistory;
-	std::map<size_t, Entity> undoEntityStateMap;
+	std::map<int, Entity> undoEntityStateMap;
 	LumpState undoLumpState{};
 
 	struct DelayEntUndo
 	{
 		std::string description;
-		size_t entIdx;
+		int entIdx;
 		Entity* ent;
 	};
 
 	std::vector<DelayEntUndo> delayEntUndoList;
 
 	void pushModelUndoState(const std::string& actionDesc, unsigned int targets);
-	void pushEntityUndoState(const std::string& actionDesc, size_t entIdx);
-	void pushEntityUndoStateDelay(const std::string& actionDesc, size_t entIdx, Entity* ent);
+	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
+	void pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity* ent);
 	void pushUndoCommand(Command* cmd);
 	void undo();
 	void redo();
 	void clearUndoCommands();
 	void clearRedoCommands();
 	void calcUndoMemoryUsage();
-	void saveEntityState(size_t entIdx);
+	void saveEntityState(int entIdx);
 	void saveLumpState();
 	void clearDrawCache();
 
@@ -321,6 +321,7 @@ public:
 	vec3 renderCameraAngles;
 
 	vec3 intersectVec;
+	float intersectDist;
 private:
 
 	struct nodeBuffStr

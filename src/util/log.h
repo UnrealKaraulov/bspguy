@@ -45,7 +45,7 @@ void print_log(unsigned int colors, const std::string& format, Args ...args) noe
 	g_mutex_list[0].lock();
 
 	//replaceAll(line, " ", "+");
-	auto newline = line.ends_with('\n');
+	auto newline = ends_with(line,'\n');
 	auto splitstr = splitString(line, "\n");
 
 	bool ret = line[0] == '\r';
@@ -58,7 +58,7 @@ void print_log(unsigned int colors, const std::string& format, Args ...args) noe
 		{
 			if (ret)
 			{
-				g_log_buffer[g_log_buffer.size() - 1] = line;
+				g_log_buffer[g_log_buffer.size() - 1] = std::move(line);
 				g_color_buffer[g_log_buffer.size() - 1] = colors;
 			}
 			else
@@ -71,7 +71,7 @@ void print_log(unsigned int colors, const std::string& format, Args ...args) noe
 		{
 			line.pop_back();
 
-			g_log_buffer[g_log_buffer.size() - 1] = line;
+			g_log_buffer[g_log_buffer.size() - 1] = std::move(line);
 			g_color_buffer[g_log_buffer.size() - 1] = colors;
 
 			g_log_buffer.emplace_back("");

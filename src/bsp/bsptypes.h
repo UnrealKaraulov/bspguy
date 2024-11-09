@@ -306,15 +306,15 @@ struct BSPNODE32
 		nMins = nMaxs = vec3();
 		iFirstFace = nFaces = 0;
 	}
-	BSPNODE32(int plane, std::array<int,2> childs, vec3 mins, vec3 maxs, int firstface, int faces)
+	BSPNODE32(int plane, const std::array<int, 2>& childs, const vec3& mins, const vec3& maxs, int firstface, int faces)
+		: iPlane(plane),
+		nMins(mins),
+		nMaxs(maxs),
+		iFirstFace(firstface),
+		nFaces(faces)
 	{
-		iPlane = plane;
 		iChildren[0] = childs[0];
 		iChildren[1] = childs[1];
-		nMins = mins;
-		nMaxs = maxs;
-		iFirstFace = firstface;
-		nFaces = faces;
 	}
 };
 
@@ -339,6 +339,10 @@ struct BSPCLIPNODE32
 
 bool operator ==(BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2);
 bool operator ==(BSPPLANE& struct1, BSPPLANE& struct2);
+
+
+bool operator !=(BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2);
+bool operator !=(BSPPLANE& struct1, BSPPLANE& struct2);
 
 
 struct CSGPLANE
@@ -508,14 +512,14 @@ struct TransformVert
 };
 struct HullEdge
 {
-	size_t verts[2]; // index into modelVerts/hullVerts
-	size_t planes[2]; // index into iPlanes
+	int verts[2]; // index into modelVerts/hullVerts
+	int planes[2]; // index into iPlanes
 	bool selected;
 };
 
 struct Face
 {
-	std::vector<size_t> verts; // index into hullVerts
+	std::vector<int> verts; // index into hullVerts
 	BSPPLANE plane;
 	int planeSide;
 	int iTextureInfo;

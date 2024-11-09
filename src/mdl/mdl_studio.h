@@ -400,7 +400,7 @@ public:
 
 	std::string filename;
 
-	StudioModel(const std::string modelname)
+	StudioModel(std::string modelname) : filename(std::move(modelname))
 	{
 		m_ptexturehdr = 0;
         m_iGroup = 0;
@@ -411,7 +411,6 @@ public:
 		m_bodynum = 0;
 		needForceUpdate = true;
 		frametime = 999999.0;
-		filename = modelname;
 		g_vright = vec3();
 		g_lambert = 1.0f;
 		mdl_textures = std::vector<Texture*>();
@@ -512,7 +511,7 @@ public:
 
 	void DrawMDL(int mesh = -1);
 
-	void Init(std::string modelname);
+	void Init(const std::string& modelname);
 	void RefreshMeshList(int body);
 	void UpdateModelMeshList(void);
 	void GetModelMeshes(int& bodies, int& subbodies, int& skins, int& meshes);
@@ -527,8 +526,8 @@ public:
 	int SetSkin(int iValue);
 	int SetSequence(int iSequence);
 	int GetSequence(void);
-	studiohdr_t* LoadModel(std::string modelname, bool IsTexture = false);
-	studioseqhdr_t* LoadDemandSequences(std::string modelname, int seqid);
+	studiohdr_t* LoadModel(const std::string& modelname, bool IsTexture = false);
+	studioseqhdr_t* LoadDemandSequences(const std::string& modelname, int seqid);
 	void CalcBoneAdj(void);
 	void CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec4& q);
 	void CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec3& pos);

@@ -17,7 +17,7 @@ struct ModelInfo
 	std::string model;
 	std::string val;
 	std::string usage;
-	size_t entIdx;
+	int entIdx;
 };
 
 struct StatInfo
@@ -85,7 +85,7 @@ public:
 
 private:
 	ImGuiIO* imgui_io = nullptr;
-	size_t settingsTab = 0;
+	int settingsTab = 0;
 
 	ImFont* defaultFont;
 	ImFont* smallFont;
@@ -126,9 +126,9 @@ private:
 	void drawDebugWidget();
 	void drawTextureBrowser();
 	void drawKeyvalueEditor();
-	void drawKeyvalueEditor_SmartEditTab(size_t entIdx);
-	void drawKeyvalueEditor_FlagsTab(size_t entIdx);
-	void drawKeyvalueEditor_RawEditTab(size_t entIdx);
+	void drawKeyvalueEditor_SmartEditTab(int entIdx);
+	void drawKeyvalueEditor_FlagsTab(int entIdx);
+	void drawKeyvalueEditor_RawEditTab(int entIdx);
 	void drawGOTOWidget();
 	void drawMDLWidget();
 	void drawTransformWidget();

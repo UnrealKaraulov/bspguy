@@ -19,8 +19,13 @@ public:
 	std::vector<vec3> m_Points;
 
 	Winding(Bsp* bsp, const BSPFACE32& face, float epsilon = ON_EPSILON);
-	Winding(const std::vector<vec3> & points, float epsilon = ON_EPSILON);
-	Winding(size_t numpoints);
+	Winding(std::vector<vec3> points, float epsilon = ON_EPSILON) : 
+		m_Points(std::move(points))
+	{
+		RemoveColinearPoints(epsilon);
+	}
+
+	Winding(int numpoints);
 	Winding(const BSPPLANE& plane, float epsilon = ON_EPSILON);
 	Winding();
 	Winding(const Winding& other);

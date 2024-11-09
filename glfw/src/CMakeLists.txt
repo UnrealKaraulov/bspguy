@@ -101,6 +101,7 @@ if (GLFW_BUILD_WAYLAND)
     generate_wayland_protocol("idle-inhibit-unstable-v1.xml")
     generate_wayland_protocol("pointer-constraints-unstable-v1.xml")
     generate_wayland_protocol("relative-pointer-unstable-v1.xml")
+    generate_wayland_protocol("fractional-scale-v1.xml")
     generate_wayland_protocol("xdg-activation-v1.xml")
     generate_wayland_protocol("xdg-decoration-unstable-v1.xml")
 endif()
@@ -150,10 +151,11 @@ endif()
 if (GLFW_BUILD_COCOA)
     target_link_libraries(glfw PRIVATE "-framework Cocoa"
                                        "-framework IOKit"
-                                       "-framework CoreFoundation")
+                                       "-framework CoreFoundation"
+                                       "-framework QuartzCore")
 
     set(glfw_PKG_DEPS "")
-    set(glfw_PKG_LIBS "-framework Cocoa -framework IOKit -framework CoreFoundation")
+    set(glfw_PKG_LIBS "-framework Cocoa -framework IOKit -framework CoreFoundation -framework QuartzCore")
 endif()
 
 if (GLFW_BUILD_WAYLAND)

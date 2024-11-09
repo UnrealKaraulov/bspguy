@@ -85,7 +85,7 @@ vec3 parseVector(const std::string& s);
 
 bool IsEntNotSupportAngles(const std::string& entname);
 
-bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist);
+bool pickAABB(const vec3& start, const vec3& rayDir, const vec3& mins, const vec3& maxs, float& bestDist);
 
 bool rayPlaneIntersect(const vec3& start, const vec3& dir, const vec3& normal, float fdist, float& intersectDist);
 
@@ -124,7 +124,7 @@ vec3 getNormalFromVerts(std::vector<vec3>& verts);
 std::vector<vec2> localizeVerts(std::vector<vec3>& verts);
 
 // Returns CCW sorted indexes into the verts, as viewed on the plane the verts define
-std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts);
+std::vector<int> getSortedPlanarVertOrder(std::vector<vec3>& verts);
 
 std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts);
 
@@ -148,7 +148,7 @@ int TextureAxisFromPlane(const vec3& pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);
 vec3 AxisFromTextureAngle(float angle, bool x, int type);
 
-size_t strlen(std::string str);
+size_t nullstrlen(const std::string & str);
 
 int GetImageColors(COLOR3* image, int size, int max_colors = 256);
 int ColorDistance(COLOR3 color, COLOR3 other);
@@ -181,8 +181,8 @@ void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 
 float floatRound(float f);
 
-std::string GetExecutableDir(std::string arg_0);
-std::string GetExecutableDir(std::wstring arg_0);
+std::string GetExecutableDir(const std::string& arg_0);
+std::string GetExecutableDir(const std::wstring& arg_0);
 
 std::vector<vec3> scaleVerts(const std::vector<vec3>& vertices, float stretch_value);
 std::vector<cVert> scaleVerts(const std::vector<cVert>& vertices, float stretch_value);
@@ -223,12 +223,12 @@ class Process
 {
 	std::string _program;
 	std::vector<std::string> _arguments;
-
+	bool quoteArgs = false;
 	std::string quoteIfNecessary(std::string toQuote);
 
 public:
 	Process(std::string program);
-	Process& arg(std::string arg);
+	Process& arg(const std::string& arg);
 	std::string getCommandlineString();
 	int executeAndWait(int sin, int sout, int serr);
 };
@@ -263,3 +263,12 @@ float str_to_float(const std::string& s);
 std::string flt_to_str(float f);
 
 float half_prefloat(unsigned short h);
+
+bool starts_with(const std::string& str, const std::string& prefix);
+bool starts_with(const std::wstring& str, const std::wstring& prefix);
+bool ends_with(const std::string& str, const std::string& suffix);
+bool ends_with(const std::wstring& str, const std::wstring& suffix);
+bool starts_with(const std::string& str, char prefix);
+bool starts_with(const std::wstring& str, wchar_t prefix);
+bool ends_with(const std::string& str, char suffix);
+bool ends_with(const std::wstring& str, wchar_t suffix);

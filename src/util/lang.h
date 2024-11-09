@@ -11,4 +11,4 @@ extern std::string lang_selected;
 std::string get_localized_string(int id);
 std::string get_localized_string(const std::string& str_id);
 
-void set_localize_lang(std::string lang);
+void set_localize_lang(const std::string & lang);

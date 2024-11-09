@@ -104,14 +104,15 @@ void Sprite::set_missing_sprite()
 
 Sprite::Sprite(const std::string& filename)
 {
+	current_group = 0;
+	colors = 0;
+	anim_time = 0.0f;
+	header = {};
 	if (!filename.size())
 	{
 		return;
 	}
 	this->name = stripExt(basename(filename));
-	current_group = 0;
-    colors = 0;
-    anim_time = 0.0f;
 
 	std::ifstream spr(filename, std::ios::binary);
 	if (!spr) {

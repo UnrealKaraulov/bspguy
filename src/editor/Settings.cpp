@@ -75,7 +75,7 @@ void AppSettings::loadDefault()
 
 
 	rad_path = "hlrad.exe";
-	rad_options = "{map_path}";
+	rad_options = "\"{map_path}\"";
 
 	conditionalPointEntTriggers.clear();
 	entsThatNeverNeedAnyHulls.clear();
@@ -163,72 +163,72 @@ void AppSettings::reset()
 	resPaths.push_back({ "/moddir_addon/",true });
 
 	conditionalPointEntTriggers.clear();
-	conditionalPointEntTriggers.push_back("trigger_once");
-	conditionalPointEntTriggers.push_back("trigger_multiple");
-	conditionalPointEntTriggers.push_back("trigger_counter");
-	conditionalPointEntTriggers.push_back("trigger_gravity");
-	conditionalPointEntTriggers.push_back("trigger_teleport");
+	conditionalPointEntTriggers.emplace_back("trigger_once");
+	conditionalPointEntTriggers.emplace_back("trigger_multiple");
+	conditionalPointEntTriggers.emplace_back("trigger_counter");
+	conditionalPointEntTriggers.emplace_back("trigger_gravity");
+	conditionalPointEntTriggers.emplace_back("trigger_teleport");
 
 	entsThatNeverNeedAnyHulls.clear();
-	entsThatNeverNeedAnyHulls.push_back("env_bubbles");
-	entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
-	entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
-	entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
-	entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
-	entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
+	entsThatNeverNeedAnyHulls.emplace_back("env_bubbles");
+	entsThatNeverNeedAnyHulls.emplace_back("func_tankcontrols");
+	entsThatNeverNeedAnyHulls.emplace_back("func_traincontrols");
+	entsThatNeverNeedAnyHulls.emplace_back("func_vehiclecontrols");
+	entsThatNeverNeedAnyHulls.emplace_back("trigger_autosave"); // obsolete in sven
+	entsThatNeverNeedAnyHulls.emplace_back("trigger_endsection"); // obsolete in sven
 
 	entsThatNeverNeedCollision.clear();
-	entsThatNeverNeedCollision.push_back("func_illusionary");
-	entsThatNeverNeedCollision.push_back("func_mortar_field");
+	entsThatNeverNeedCollision.emplace_back("func_illusionary");
+	entsThatNeverNeedCollision.emplace_back("func_mortar_field");
 
 	passableEnts.clear();
-	passableEnts.push_back("func_door");
-	passableEnts.push_back("func_door_rotating");
-	passableEnts.push_back("func_pendulum");
-	passableEnts.push_back("func_tracktrain");
-	passableEnts.push_back("func_train");
-	passableEnts.push_back("func_water");
-	passableEnts.push_back("momentary_door");
+	passableEnts.emplace_back("func_door");
+	passableEnts.emplace_back("func_door_rotating");
+	passableEnts.emplace_back("func_pendulum");
+	passableEnts.emplace_back("func_tracktrain");
+	passableEnts.emplace_back("func_train");
+	passableEnts.emplace_back("func_water");
+	passableEnts.emplace_back("momentary_door");
 
 	playerOnlyTriggers.clear();
-	playerOnlyTriggers.push_back("func_ladder");
-	playerOnlyTriggers.push_back("game_zone_player");
-	playerOnlyTriggers.push_back("player_respawn_zone");
-	playerOnlyTriggers.push_back("trigger_cdaudio");
-	playerOnlyTriggers.push_back("trigger_changelevel");
-	playerOnlyTriggers.push_back("trigger_transition");
+	playerOnlyTriggers.emplace_back("func_ladder");
+	playerOnlyTriggers.emplace_back("game_zone_player");
+	playerOnlyTriggers.emplace_back("player_respawn_zone");
+	playerOnlyTriggers.emplace_back("trigger_cdaudio");
+	playerOnlyTriggers.emplace_back("trigger_changelevel");
+	playerOnlyTriggers.emplace_back("trigger_transition");
 
 	monsterOnlyTriggers.clear();
-	monsterOnlyTriggers.push_back("func_monsterclip");
-	monsterOnlyTriggers.push_back("trigger_monsterjump");
+	monsterOnlyTriggers.emplace_back("func_monsterclip");
+	monsterOnlyTriggers.emplace_back("trigger_monsterjump");
 
 	entsNegativePitchPrefix.clear();
 
-	entsNegativePitchPrefix.push_back("ammo_");
-	entsNegativePitchPrefix.push_back("env_sprite");
-	entsNegativePitchPrefix.push_back("cycler");
-	entsNegativePitchPrefix.push_back("item_");
-	entsNegativePitchPrefix.push_back("monster_");
-	entsNegativePitchPrefix.push_back("weaponbox");
-	entsNegativePitchPrefix.push_back("worlditems");
-	entsNegativePitchPrefix.push_back("xen_");
+	entsNegativePitchPrefix.emplace_back("ammo_");
+	entsNegativePitchPrefix.emplace_back("env_sprite");
+	entsNegativePitchPrefix.emplace_back("cycler");
+	entsNegativePitchPrefix.emplace_back("item_");
+	entsNegativePitchPrefix.emplace_back("monster_");
+	entsNegativePitchPrefix.emplace_back("weaponbox");
+	entsNegativePitchPrefix.emplace_back("worlditems");
+	entsNegativePitchPrefix.emplace_back("xen_");
 
 	transparentTextures.clear();
-	transparentTextures.push_back("AAATRIGGER");
+	transparentTextures.emplace_back("AAATRIGGER");
 
 	transparentEntities.clear();
-	transparentEntities.push_back("func_buyzone");
+	transparentEntities.emplace_back("func_buyzone");
 }
 
 void AppSettings::fillLanguages(const std::string& folderPath)
 {
 	languages.clear();
-	languages.push_back("EN");
+	languages.emplace_back("EN");
 	for (const auto& entry : fs::directory_iterator(folderPath))
 	{
 		if (!entry.is_directory()) {
 			std::string filename = entry.path().filename().string();
-			if (filename.starts_with("language_") && filename.ends_with(".ini"))
+			if (starts_with(filename,"language_") && ends_with(filename,".ini"))
 			{
 				std::string language = filename.substr(9);
 				language.erase(language.size() - 4);
@@ -247,7 +247,7 @@ void AppSettings::fillPalettes(const std::string& folderPath)
 	{
 		if (!entry.is_directory()) {
 			std::string filename = entry.path().filename().string();
-			if (filename.ends_with(".pal"))
+			if (ends_with(filename,".pal"))
 			{
 				int len;
 				char* data = loadFile(entry.path().string(), len);
@@ -496,7 +496,7 @@ void AppSettings::load()
 		{
 			g_settings.rad_path = val;
 		}
-		else if (key == "hlrad_options")
+		else if (key == "hlrad_opts")
 		{
 			g_settings.rad_options = val;
 		}
@@ -795,7 +795,7 @@ void AppSettings::load()
 
 void AppSettings::save(std::string path)
 {
-	std::ostringstream file = {};
+	std::ostringstream file;
 
 	file << "window_width=" << g_settings.windowWidth << std::endl;
 	file << "window_height=" << g_settings.windowHeight << std::endl;
@@ -822,7 +822,7 @@ void AppSettings::save(std::string path)
 	file << "palette=" << g_settings.palette_name << std::endl;
 
 	file << "hlrad_path=" << g_settings.rad_path << std::endl;
-	file << "hlrad_options=" << g_settings.rad_options << std::endl;
+	file << "hlrad_opts=" << g_settings.rad_options << std::endl;
 
 	for (size_t i = 0; i < fgdPaths.size(); i++)
 	{

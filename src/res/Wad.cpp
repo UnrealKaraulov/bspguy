@@ -12,9 +12,8 @@ Wad::Wad(void)
 	filedata = NULL;
 }
 
-Wad::Wad(const std::string& file)
+Wad::Wad(std::string file) : filename(std::move(file))
 {
-	this->filename = file;
 	this->wadname = basename(file);
 	dirEntries.clear();
 	if (filedata)
@@ -156,7 +155,7 @@ bool Wad::hasTexture(const std::string& texname)
 	return false;
 }
 
-bool Wad::hasTexture(size_t dirIndex)
+bool Wad::hasTexture(int dirIndex)
 {
 	if (dirIndex >= (int)dirEntries.size())
 	{
@@ -165,7 +164,7 @@ bool Wad::hasTexture(size_t dirIndex)
 	return true;
 }
 
-WADTEX* Wad::readTexture(size_t dirIndex, int* texturetype)
+WADTEX* Wad::readTexture(int dirIndex, int* texturetype)
 {
 	if (dirIndex >= (int)dirEntries.size())
 	{
@@ -239,7 +238,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	return tex;
 }
 
-bool Wad::write(WADTEX** textures, size_t numTex)
+bool Wad::write(WADTEX** textures, int numTex)
 {
 	std::vector<WADTEX*> textList = std::vector<WADTEX*>(&textures[0], &textures[numTex]);
 	return write(filename, textList);
@@ -262,7 +261,7 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 	header.szMagic[3] = '3';
 	header.nDir = (int)textures.size();
 
-	size_t tSize = sizeof(BSPMIPTEX) * textures.size();
+	int tSize = (int)(sizeof(BSPMIPTEX) * textures.size());
 	for (size_t i = 0; i < textures.size(); i++)
 	{
 		int w = textures[i]->nWidth;
@@ -472,7 +471,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 		}
 	}
 
-	size_t newTexLumpSize = sizeof(BSPMIPTEX) + texDataSize;
+	int newTexLumpSize = sizeof(BSPMIPTEX) + texDataSize;
 
 	newTexLumpSize = ((newTexLumpSize + 3) & ~3);
 

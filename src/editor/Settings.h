@@ -39,9 +39,9 @@ struct PathToggleStruct
 	bool enabled;
 
 	PathToggleStruct(std::string filePath, bool isEnable)
+		: path(std::move(filePath)),
+		enabled(isEnable)
 	{
-		path = filePath;
-		enabled = isEnable;
 	}
 };
 
@@ -61,7 +61,7 @@ struct AppSettings
 	int maximized;
 	int undoLevels;
 	int fpslimit;
-	size_t settings_tab;
+	int settings_tab;
 	int render_flags;
 
 	float fov;

@@ -33,7 +33,8 @@ std::mutex g_mutex_list[10] = {};
 
 bool fileExists(const std::string& fileName)
 {
-	return fs::exists(fileName) && !fs::is_directory(fileName);
+	std::error_code err;
+	return fs::exists(fileName,err) && !fs::is_directory(fileName);
 }
 
 char* loadFile(const std::string& fileName, int& length)
@@ -71,7 +72,7 @@ bool writeFile(const std::string& fileName, const std::string& data)
 	{
 		return false;
 	}
-	file.write(data.c_str(), strlen(data));
+	file.write(data.c_str(), nullstrlen(data));
 	file.flush();
 	return true;
 }
@@ -79,7 +80,8 @@ bool writeFile(const std::string& fileName, const std::string& data)
 
 bool removeFile(const std::string& fileName)
 {
-	return fs::exists(fileName) && fs::remove(fileName);
+	std::error_code err;
+	return fs::exists(fileName,err) && fs::remove(fileName);
 }
 
 bool copyFile(const std::string& from, const std::string& to)
@@ -113,7 +115,7 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
 	size_t pos;
 	while ((pos = s.find(delimiter)) != std::string::npos && (maxParts == 0 || (int)split.size() < maxParts - 1)) {
 		if (pos != 0) {
-			split.push_back(s.substr(0, pos));
+			split.emplace_back(s.substr(0, pos));
 		}
 		s.erase(0, pos + delimiter.length());
 	}
@@ -355,164 +357,117 @@ bool operator==(COLOR4 c1, COLOR4 c2)
 	return c1.r == c2.r && c1.g == c2.g && c1.b == c2.b && c1.a == c2.a;
 }
 
-bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist)
+bool pickAABB(const vec3& start, const vec3& rayDir, const vec3& mins, const vec3& maxs, float& bestDist)
 {
-	/*
-	Fast Ray-Box Intersection
-	by Andrew Woo
-	from "Graphics Gems", Academic Press, 1990
-	https://web.archive.org/web/20090803054252/http://tog.acm.org/resources/GraphicsGems/gems/RayBox.c
-	*/
-
 	bool inside = true;
 	char quadrant[3];
-	int i;
-	int whichPlane;
-	float maxT[3];
+	int whichPlane = 0;
+	float maxT[3] = { -1.0f, -1.0f, -1.0f };
 	float candidatePlane[3];
 
-	float* origin = (float*)&start;
-	float* dir = (float*)&rayDir;
-	float* minB = (float*)&mins;
-	float* maxB = (float*)&maxs;
-	float coord[3];
-
-	const char RIGHT = 0;
-	const char LEFT = 1;
-	const char MIDDLE = 2;
-
-	/* Find candidate planes; this loop can be avoided if
-	rays cast all from the eye(assume perpsective view) */
-	for (i = 0; i < 3; i++)
+	for (int i = 0; i < 3; ++i)
 	{
-		if (origin[i] < minB[i])
+		if (start[i] < mins[i])
 		{
-			quadrant[i] = LEFT;
-			candidatePlane[i] = minB[i];
+			quadrant[i] = 1; // LEFT
+			candidatePlane[i] = mins[i];
 			inside = false;
 		}
-		else if (origin[i] > maxB[i])
+		else if (start[i] > maxs[i])
 		{
-			quadrant[i] = RIGHT;
-			candidatePlane[i] = maxB[i];
+			quadrant[i] = 0; // RIGHT
+			candidatePlane[i] = maxs[i];
 			inside = false;
 		}
 		else
 		{
-			quadrant[i] = MIDDLE;
+			quadrant[i] = 2; // MIDDLE
 		}
 	}
 
-	/* Ray origin inside bounding box */
-	if (inside)
+	if (inside) return false;
+
+	for (int i = 0; i < 3; ++i)
 	{
-		return false;
+		if (quadrant[i] != 2 && std::abs(rayDir[i]) >= EPSILON)
+			maxT[i] = (candidatePlane[i] - start[i]) / rayDir[i];
 	}
 
-	/* Calculate T distances to candidate planes */
-	for (i = 0; i < 3; i++)
-	{
-		if (quadrant[i] != MIDDLE && std::abs(dir[i]) >= EPSILON)
-			maxT[i] = (candidatePlane[i] - origin[i]) / dir[i];
-		else
-			maxT[i] = -1.0f;
-	}
-
-	/* Get largest of the maxT's for final choice of intersection */
-	whichPlane = 0;
-	for (i = 1; i < 3; i++)
+	for (int i = 1; i < 3; ++i)
 	{
 		if (maxT[whichPlane] < maxT[i])
 			whichPlane = i;
 	}
 
-	/* Check final candidate actually inside box */
-	if (maxT[whichPlane] < 0.0f)
-		return false;
+	if (maxT[whichPlane] < 0.0f) return false;
 
-	for (i = 0; i < 3; i++)
+	vec3 intersectPoint;
+	for (int i = 0; i < 3; ++i)
 	{
 		if (whichPlane != i)
 		{
-			coord[i] = origin[i] + maxT[whichPlane] * dir[i];
-			if (coord[i] < minB[i] || coord[i] > maxB[i])
+			intersectPoint[i] = start[i] + maxT[whichPlane] * rayDir[i];
+			if (intersectPoint[i] < mins[i] || intersectPoint[i] > maxs[i])
 				return false;
 		}
 		else
 		{
-			coord[i] = candidatePlane[i];
+			intersectPoint[i] = candidatePlane[i];
 		}
 	}
-	/* ray hits box */
 
-	vec3 intersectPoint(coord[0], coord[1], coord[2]);
 	float dist = (intersectPoint - start).length();
-
 	if (dist < bestDist)
 	{
 		bestDist = dist;
 		return true;
 	}
-
 	return false;
 }
 
 bool rayPlaneIntersect(const vec3& start, const vec3& dir, const vec3& normal, float fdist, float& intersectDist)
 {
-	float dot = dotProduct(dir, normal);
+	float dot = normal.dot(dir);
 
-	// don't select backfaces or parallel faces
-	if (std::abs(dot) < EPSILON)
-	{
-		return false;
-	}
-	intersectDist = dotProduct((normal * fdist) - start, normal) / dot;
+	if (std::abs(dot) < EPSILON) return false;
 
-	if (intersectDist < 0.f)
-	{
-		return false; // intersection behind ray
-	}
-
-	return true;
+	intersectDist = normal.dot((normal * fdist) - start) / dot;
+	return intersectDist >= 0.0f;
 }
 
 float getDistAlongAxis(const vec3& axis, const vec3& p)
 {
-	return dotProduct(axis, p) / sqrt(dotProduct(axis, axis));
+	return axis.dot(p) / axis.length();
 }
 
 bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& outDist)
 {
-	const float tolerance = 0.00001f; // normals more different than this = non-planar face
+    const float tolerance = 0.00001f;
 
-	size_t numVerts = verts.size();
-	for (size_t i = 0; i < numVerts; i++)
-	{
-		vec3 v0 = verts[(i + 0) % numVerts];
-		vec3 v1 = verts[(i + 1) % numVerts];
-		vec3 v2 = verts[(i + 2) % numVerts];
+    size_t numVerts = verts.size();
+    for (size_t i = 0; i < numVerts; ++i)
+    {
+        const vec3& v0 = verts[i];
+        const vec3& v1 = verts[(i + 1) % numVerts];
+        const vec3& v2 = verts[(i + 2) % numVerts];
 
-		vec3 ba = v1 - v0;
-		vec3 cb = v2 - v1;
+        vec3 ba = v1 - v0;
+        vec3 cb = v2 - v1;
 
-		vec3 normal = crossProduct(ba, cb).normalize(1.0f);
+        vec3 normal = ba.cross(cb).normalize();
 
-		if (i == 0)
-		{
-			outNormal = normal;
-		}
-		else
-		{
-			float dot = dotProduct(outNormal, normal);
-			if (std::abs(dot) < 1.0f - tolerance)
-			{
-				return false; // non-planar face
-			}
-		}
-	}
+        if (i == 0)
+        {
+            outNormal = normal;
+        }
+        else if (std::abs(outNormal.dot(normal)) < 1.0f - tolerance)
+        {
+            return false;
+        }
+    }
 
-	outDist = getDistAlongAxis(outNormal, verts[0]);
-	return true;
+    outDist = getDistAlongAxis(outNormal, verts[0]);
+    return true;
 }
 
 vec3 findBestBrushCenter(std::vector<vec3>& points)
@@ -713,15 +668,15 @@ int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p)
 std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE>& planes) {
 	std::vector<vec3> intersectVerts;
 
-	size_t numPlanes = planes.size();
+	int numPlanes = (int)(planes.size());
 
 	if (numPlanes < 3) {
 		return intersectVerts;
 	}
 
-	for (size_t i = 0; i < numPlanes - 2; i++) {
-		for (size_t j = i + 1; j < numPlanes - 1; j++) {
-			for (size_t k = j + 1; k < numPlanes; k++) {
+	for (int i = 0; i < numPlanes - 2; i++) {
+		for (int j = i + 1; j < numPlanes - 1; j++) {
+			for (int k = j + 1; k < numPlanes; k++) {
 				const vec3& n0 = planes[i].vNormal;
 				const vec3& n1 = planes[j].vNormal;
 				const vec3& n2 = planes[k].vNormal;
@@ -745,7 +700,7 @@ std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE>& planes) {
 
 				bool validVertex = true;
 
-				for (size_t m = 0; m < numPlanes; m++) {
+				for (int m = 0; m < numPlanes; m++) {
 					if (m != i && m != j && m != k) {
 						const BSPPLANE& pm = planes[m];
 						if (dotProduct(v, pm.vNormal) < pm.fDist + EPSILON) {
@@ -885,19 +840,19 @@ std::vector<vec2> localizeVerts(std::vector<vec3>& verts)
 	return localVerts;
 }
 
-std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts)
+std::vector<int> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 {
 	std::vector<vec2> localVerts = localizeVerts(verts);
 	if (localVerts.empty())
 	{
-		return std::vector<size_t>();
+		return std::vector<int>();
 	}
 
 	vec2 center = getCenter(localVerts);
-	std::vector<size_t> orderedVerts;
-	std::vector<size_t> remainingVerts;
+	std::vector<int> orderedVerts;
+	std::vector<int> remainingVerts;
 
-	for (size_t i = 0; i < localVerts.size(); i++)
+	for (int i = 0; i < (int)localVerts.size(); i++)
 	{
 		remainingVerts.push_back(i);
 	}
@@ -908,10 +863,10 @@ std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 	localVerts.erase(localVerts.begin() + 0);
 	for (size_t k = 0, sz = remainingVerts.size(); k < sz; k++)
 	{
-		size_t bestIdx = 0;
+		int bestIdx = 0;
 		float bestAngle = FLT_MAX;
 
-		for (size_t i = 0; i < remainingVerts.size(); i++)
+		for (int i = 0; i < (int)remainingVerts.size(); i++)
 		{
 			vec2 a = lastVert;
 			vec2 b = localVerts[i];
@@ -940,7 +895,7 @@ std::vector<size_t> getSortedPlanarVertOrder(std::vector<vec3>& verts)
 std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts)
 {
 	std::vector<vec3> outVerts;
-	std::vector<size_t> vertOrder = getSortedPlanarVertOrder(verts);
+	std::vector<int> vertOrder = getSortedPlanarVertOrder(verts);
 	if (vertOrder.empty())
 	{
 		return outVerts;
@@ -1119,7 +1074,8 @@ int ArrayXYtoId(int w, int x, int y)
 
 bool dirExists(const std::string& dirName)
 {
-	return fs::exists(dirName) && fs::is_directory(dirName);
+	std::error_code err;
+	return fs::exists(dirName,err) && fs::is_directory(dirName);
 }
 
 #ifndef WIN32
@@ -1130,7 +1086,7 @@ int mkdir_p(const char* dir, const mode_t mode)
 	char tmp[PATH_MAX_STRING_SIZE];
 	char* p = NULL;
 	struct stat sb;
-	size_t len;
+	int len;
 
 	/* copy path */
 	len = strnlen(dir, PATH_MAX_STRING_SIZE);
@@ -1382,9 +1338,9 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 }
 
 // For issue when string.size > 0 but string length is zero ("\0\0\0" string for example)
-size_t strlen(std::string str)
+size_t nullstrlen(const std::string & str)
 {
-	return str.size() ? strlen(str.c_str()) : 0;
+	return strlen(str.c_str());
 }
 
 int ColorDistance(COLOR3 color, COLOR3 other)
@@ -1870,13 +1826,13 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 	return retdir;
 }
 
-std::string GetExecutableDir(std::string arg_0)
+std::string GetExecutableDir(const std::string & arg_0)
 {
 	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
 	return GetExecutableDirInternal(retpath.string());
 }
 
-std::string GetExecutableDir(std::wstring arg_0)
+std::string GetExecutableDir(const std::wstring & arg_0)
 {
 	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
 	return GetExecutableDirInternal(retpath.string());
@@ -2124,12 +2080,12 @@ std::vector<cVert> removeDuplicateWireframeLines(const std::vector<cVert>& point
 
 void removeColinearPoints(std::vector<vec3>& verts, float epsilon) {
 
-	for (int i1 = 0; i1 < verts.size(); i1++)
+	for (size_t i1 = 0; i1 < verts.size(); i1++)
 	{
 		bool colinear = false;
-		for (int i2 = 0; !colinear && i2 < verts.size(); i2++)
+		for (size_t i2 = 0; !colinear && i2 < verts.size(); i2++)
 		{
-			for (int i3 = 0; i3 < verts.size(); i3++)
+			for (size_t i3 = 0; i3 < verts.size(); i3++)
 			{
 				if (i1 == i2 || i1 == i3 || i2 == i3)
 					continue;
@@ -2208,9 +2164,12 @@ bool checkCollision(const vec3& obj1Mins, const vec3& obj1Maxs, const vec3& obj2
 
 std::string Process::quoteIfNecessary(std::string toQuote)
 {
-	if (toQuote.find(' ') != std::string::npos)
+	if (quoteArgs)
 	{
-		toQuote = '\"' + toQuote + '\"';
+		if (toQuote.find(' ') != std::string::npos)
+		{
+			toQuote = '\"' + toQuote + '\"';
+		}
 	}
 
 	return toQuote;
@@ -2220,7 +2179,7 @@ Process::Process(std::string program) : _program(program), _arguments()
 {
 }
 
-Process& Process::arg(std::string arg)
+Process& Process::arg(const std::string& arg)
 {
 	_arguments.push_back(arg);
 	return *this;
@@ -2347,19 +2306,19 @@ std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& ma
 {
 	// Construct the augmented matrix
 	std::vector<std::vector<float>> augmentedMatrix(3, std::vector<float>(5));
-	for (size_t i = 0; i < 3; ++i) {
-		for (size_t j = 0; j < 4; ++j) {
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 4; ++j) {
 			augmentedMatrix[i][j] = matrix[i][j];
 		}
 		augmentedMatrix[i][4] = vector[i];
 	}
 
 	// Perform Gaussian elimination
-	for (size_t i = 0; i < 3; ++i) {
+	for (int i = 0; i < 3; ++i) {
 		// Find the row with the largest pivot element
-		size_t maxRow = i;
+		int maxRow = i;
 		float maxPivot = std::abs(augmentedMatrix[i][i]);
-		for (size_t j = i + 1; j < 3; ++j) {
+		for (int j = i + 1; j < 3; ++j) {
 			if (std::abs(augmentedMatrix[j][i]) > maxPivot) {
 				maxRow = j;
 				maxPivot = std::abs(augmentedMatrix[j][i]);
@@ -2372,9 +2331,9 @@ std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& ma
 		}
 
 		// Perform row operations to eliminate the lower triangular elements
-		for (size_t j = i + 1; j < 3; ++j) {
+		for (int j = i + 1; j < 3; ++j) {
 			float factor = augmentedMatrix[j][i] / augmentedMatrix[i][i];
-			for (size_t k = i; k < 5; ++k) {
+			for (int k = i; k < 5; ++k) {
 				augmentedMatrix[j][k] -= factor * augmentedMatrix[i][k];
 			}
 		}
@@ -2384,7 +2343,7 @@ std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& ma
 	std::vector<float> solution(4);
 	for (int i = 2; i >= 0; --i) {
 		float sum = augmentedMatrix[i][4];
-		for (size_t j = i + 1; j < 3; ++j) {
+		for (int j = i + 1; j < 3; ++j) {
 			sum -= augmentedMatrix[i][j] * solution[j];
 		}
 		solution[i] = sum / augmentedMatrix[i][i];
@@ -2402,7 +2361,7 @@ void calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vert
 
 	// Construct the vertices matrix with 3 rows, 4 columns
 	std::vector<std::vector<float>> verticesMat(3, std::vector<float>(4));
-	for (size_t i = 0; i < 3; ++i) {
+	for (int i = 0; i < 3; ++i) {
 		verticesMat[i][0] = vertices[i].x;
 		verticesMat[i][1] = vertices[i].y;
 		verticesMat[i][2] = vertices[i].z;
@@ -2412,7 +2371,7 @@ void calculateTextureInfo(BSPTEXTUREINFO& texinfo, const std::vector<vec3>& vert
 	// Split the UV coordinates
 	std::vector<float> uvsU(3);
 	std::vector<float> uvsV(3);
-	for (size_t i = 0; i < 3; ++i) {
+	for (int i = 0; i < 3; ++i) {
 		uvsU[i] = uvs[i].x;
 		uvsV[i] = uvs[i].y;
 	}
@@ -2541,12 +2500,12 @@ std::vector<std::vector<COLOR3>> splitImage(const std::vector<COLOR3>& input, in
 
 std::vector<COLOR3> getSubImage(const std::vector<std::vector<COLOR3>>& images, int x, int y, int x_parts)
 {
-	if (x < 0 || x >= images.size() || y < 0 || y >= images[0].size()) {
+	if (x < 0 || x >= (int)images.size() || y < 0 || y >= (int)images[0].size()) {
 		print_log(PRINT_RED, "getSubImage: INVALID INPUT COORDS!\n");
 		return std::vector<COLOR3>();
 	}
 
-	int index = y * x_parts + x;
+	size_t index = y * x_parts + x;
 	return images[index];
 }
 
@@ -2596,7 +2555,7 @@ bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles)
 	int intersectCount = 0;
 	vec3 rayDirection = { 0, 0, 1 }; // ray direction UPWARDS
 
-	for (size_t i = 0; i < glTriangles.size(); i += 3) {
+	for (int i = 0; i < glTriangles.size(); i += 3) {
 		const vec3& v0 = glTriangles[i];
 		const vec3& v1 = glTriangles[i + 1];
 		const vec3& v2 = glTriangles[i + 2];
@@ -2657,7 +2616,7 @@ std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<v
 				//	if (all_boxes[all_boxes.size() - 1].size() == current_boxes.size())
 				//	{
 				//		bool same = true;
-				//		for (size_t c1 = 0; c1 < all_boxes[all_boxes.size() - 1].size(); c1++)
+				//		for (int c1 = 0; c1 < all_boxes[all_boxes.size() - 1].size(); c1++)
 				//		{
 				//			if (all_boxes[all_boxes.size() - 1][c1].row != current_boxes[c1].row) same = false; 
 				//			if (abs(all_boxes[all_boxes.size() - 1][c1].mins.z - current_boxes[c1].mins.z) > 0.001f) same = false;
@@ -2772,7 +2731,7 @@ std::string flt_to_str(float f)
 	if (it != std::string::npos)
 	{
 		retstr.erase(retstr.find_last_not_of('0') + 1, std::string::npos);
-		if (retstr[retstr.size() - 1] == '.')
+		if (retstr.size() && retstr[retstr.size() - 1] == '.')
 		{
 			retstr = retstr.substr(0, retstr.size() - 1);
 		}
@@ -2809,4 +2768,47 @@ float half_prefloat(unsigned short h)
 	}
 
 	return *((float*)&f);
+}
+
+
+bool starts_with(const std::string& str, const std::string& prefix) {
+	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+}
+bool starts_with(const std::wstring& str, const std::wstring& prefix) {
+	return str.size() >= prefix.size() && str.compare(0, prefix.size(), prefix) == 0;
+}
+bool ends_with(const std::string& str, const std::string& suffix) {
+	if (str.size() < suffix.size()) return false;
+	return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+bool ends_with(const std::wstring& str, const std::wstring& suffix) {
+	if (str.size() < suffix.size()) return false;
+	return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+bool starts_with(const std::string& str, char prefix) {
+	return !str.empty() && str.front() == prefix;
+}
+
+bool starts_with(const std::wstring& str, wchar_t prefix) {
+	return !str.empty() && str.front() == prefix;
+}
+
+bool ends_with(const std::string& str, char suffix) {
+	return !str.empty() && str.back() == suffix;
+}
+
+bool ends_with(const std::wstring& str, wchar_t suffix) {
+	return !str.empty() && str.back() == suffix;
+}
+
+extern "C" uint64_t _dtoul3_legacy(const double x) {
+	uint64_t result;
+	__asm {
+		movsd xmm0, x; Move the double value into xmm0
+		cvttsd2si eax, xmm0; Convert the value in xmm0 to a 32 - bit integer in eax
+		xor edx, edx; Zero out the high part of the result
+		mov dword ptr[result], eax; Move the lower 32 bits to the result
+		mov dword ptr[result + 4], edx; Move the higher 32 bits to the result
+	}
+	return result;
 }

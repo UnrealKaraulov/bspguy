@@ -31,12 +31,12 @@ struct mat4x4
 
 	mat4x4 invert(bool * result = NULL);
 
-	float& operator ()(size_t idx)
+	float& operator ()(int idx)
 	{
 		return m[idx];
 	}
 
-	float operator ()(size_t idx) const
+	float operator ()(int idx) const
 	{
 		return m[idx];
 	}

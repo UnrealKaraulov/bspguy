@@ -607,7 +607,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 				ent->addKeyvalue("targetname", "bspguy_autos_" + source_map);
 				ent->keyvalues["classname"] = "trigger_relay";
 			}
-			if (cname.starts_with("monster_") && cname.rfind("_dead") != cname.size() - 5)
+			if (starts_with(cname,"monster_") && cname.rfind("_dead") != cname.size() - 5)
 			{
 				// replace with a squadmaker and spawn when this map section starts
 
@@ -1154,7 +1154,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 	g_progress.update("Merging entities", (int)(mapA.ents.size() + mapB.ents.size()));
 
 	// update model indexes since this map's models will be appended after the other map's models
-	size_t otherModelCount = (mapB.bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL)) - 1;
+	int otherModelCount = (mapB.bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL)) - 1;
 	for (size_t i = 0; i < mapA.ents.size(); i++)
 	{
 		if (!mapA.ents[i]->hasKey("model") || mapA.ents[i]->keyvalues["model"][0] != '*')
@@ -1168,7 +1168,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 			continue;
 		}
 
-		size_t newModelIdx = str_to_int(modelIdxStr) + otherModelCount;
+		int newModelIdx = str_to_int(modelIdxStr) + otherModelCount;
 		mapA.ents[i]->keyvalues["model"] = "*" + std::to_string(newModelIdx);
 
 		g_progress.tick();
@@ -1285,8 +1285,8 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-	size_t newLen = mergedPlanes.size() * sizeof(BSPPLANE);
-	size_t duplicates = (mapA.planeCount + mapB.planeCount) - mergedPlanes.size();
+	int newLen = (int)(mergedPlanes.size() * sizeof(BSPPLANE));
+	int duplicates = (mapA.planeCount + mapB.planeCount) - (int)mergedPlanes.size();
 
 	print_log(get_localized_string(LANG_0240), duplicates);
 	print_log("\n");
@@ -1381,7 +1381,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-	size_t duplicates = (mapA.textureCount + mapB.textureCount) - newTexCount;
+	int duplicates = (mapA.textureCount + mapB.textureCount) - newTexCount;
 
 	unsigned int texHeaderSize = (unsigned int)((newTexCount + 1) * sizeof(int));
 	unsigned int newLen = (unsigned int)((mipTexWritePtr - newMipTexData) + texHeaderSize);
@@ -1465,8 +1465,8 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-	size_t newLen = mergedInfo.size() * sizeof(BSPTEXTUREINFO);
-	size_t duplicates = (mapA.texinfoCount + mapB.texinfoCount) - mergedInfo.size();
+	int newLen = (int)(mergedInfo.size() * sizeof(BSPTEXTUREINFO));
+	int duplicates = (mapA.texinfoCount + mapB.texinfoCount) - (int)mergedInfo.size();
 
 	unsigned char* newTexinfoData = new unsigned char[newLen];
 	memcpy(newTexinfoData, &mergedInfo[0], newLen);
@@ -1516,7 +1516,7 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB)
 
 		BSPFACE32& face = newFaces[i];
 
-		if (face.iPlane >= planeRemap.size())
+		if (face.iPlane >= (int)planeRemap.size())
 		{
 			print_log(PRINT_RED, "FATAL ERROR! Invalid plane remap {}\n", face.iPlane);
 			continue;
@@ -1527,7 +1527,7 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB)
 		face.iFirstEdge = face.iFirstEdge + thisSurfEdgeCount;
 
 
-		if (face.iTextureInfo >= texInfoRemap.size())
+		if (face.iTextureInfo >= (int)texInfoRemap.size())
 		{
 			print_log(PRINT_RED, "FATAL ERROR! Invalid texinfo remap {}\n", face.iTextureInfo);
 			continue;
@@ -1592,7 +1592,7 @@ void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB)
 
 	otherLeafCount -= 1; // solid leaf removed
 
-	size_t newLen = mergedLeaves.size() * sizeof(BSPLEAF32);
+	int newLen = (int)(mergedLeaves.size() * sizeof(BSPLEAF32));
 
 	unsigned char* newLeavesData = new unsigned char[newLen];
 	memcpy(newLeavesData, &mergedLeaves[0], newLen);
@@ -1743,7 +1743,7 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-	size_t newLen = mergedNodes.size() * sizeof(BSPNODE32);
+	int newLen = (int)(mergedNodes.size() * sizeof(BSPNODE32));
 
 	unsigned char* newNodeData = new unsigned char[newLen];
 	memcpy(newNodeData, &mergedNodes[0], newLen);
@@ -1793,7 +1793,7 @@ void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-	size_t newLen = mergedNodes.size() * sizeof(BSPCLIPNODE32);
+	int newLen = (int)(mergedNodes.size() * sizeof(BSPCLIPNODE32));
 
 	unsigned char* newClipnodeData = new unsigned char[newLen];
 	memcpy(newClipnodeData, &mergedNodes[0], newLen);
@@ -1861,7 +1861,7 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
 	mergedModels[0].nMins = { std::min(amin.x, bmin.x), std::min(amin.y, bmin.y), std::min(amin.z, bmin.z) };
 	mergedModels[0].nMaxs = { std::max(amax.x, bmax.x), std::max(amax.y, bmax.y), std::max(amax.z, bmax.z) };
 
-	size_t newLen = mergedModels.size() * sizeof(BSPMODEL);
+	int newLen = (int)(mergedModels.size() * sizeof(BSPMODEL));
 
 	unsigned char* newModelData = new unsigned char[newLen];
 	memcpy(newModelData, &mergedModels[0], newLen);
@@ -1997,11 +1997,7 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 	g_progress.tick();
 	memcpy((unsigned char*)newRad + thisColorCount * sizeof(COLOR3), otherRad, otherColorCount * sizeof(COLOR3));
 
-	if (freemem)
-	{
-		delete[] otherRad;
-	}
-
+	
 	g_progress.tick();
 	mapA.replace_lump(LUMP_LIGHTING, newRad, totalColorCount * sizeof(COLOR3));
 
@@ -2010,6 +2006,11 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 		if (mapA.faces[i].nLightmapOffset >= 0)
 			mapA.faces[i].nLightmapOffset += thisColorCount * sizeof(COLOR3);
 		g_progress.tick();
+	}
+
+	if (freemem)
+	{
+		delete[] otherRad;
 	}
 }
 

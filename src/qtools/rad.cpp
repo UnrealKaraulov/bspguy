@@ -12,7 +12,7 @@
 
 
 // ApplyMatrix: (x y z 1)T -> matrix * (x y z 1)T
-void ApplyMatrix(const mat4x4& m, const vec3 in, vec3& out)
+void ApplyMatrix(const mat4x4& m, const vec3& in, vec3& out)
 {
 	out = (m * vec4(in, 1.0f)).xyz();
 }
@@ -64,8 +64,6 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 		return false;
 	}
 
-	BSPTEXTUREINFO& tex = bsp->texinfos[f->iTextureInfo];
-
 	TranslateWorldToTex(bsp, facenum, worldtotex);
 
 	bool canInvert = true;
@@ -87,9 +85,9 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 		return false;
 	}
 
-	Winding texwinding(facewinding.m_Points.size());
+	Winding texwinding((int)(facewinding.m_Points.size()));
 
-	for (int x = 0; x < facewinding.m_Points.size(); x++)
+	for (size_t x = 0; x < facewinding.m_Points.size(); x++)
 	{
 		ApplyMatrix(worldtotex, facewinding.m_Points[x], texwinding.m_Points[x]);
 		texwinding.m_Points[x][2] = 0.0;
@@ -104,7 +102,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 		return false;
 	}
 
-	for (int x = 0; x < texwinding.m_Points.size(); x++)
+	for (size_t x = 0; x < texwinding.m_Points.size(); x++)
 	{
 		for (int k = 0; k < 2; k++)
 		{

@@ -75,7 +75,7 @@ extern Texture* clipTex_rgba;
 extern int pickCount; 
 extern int vertPickCount;
 
-extern size_t g_drawFrameId;
+extern int g_drawFrameId;
 
 
 extern std::vector<BspRenderer*> mapRenderers;
@@ -326,7 +326,7 @@ public:
 	void cutEnt();
 	void copyEnt();
 	void pasteEnt(bool noModifyOrigin);
-	void deleteEnt(size_t entIdx = 0);
+	void deleteEnt(int entIdx = 0);
 	void deleteEnts();
 	void scaleSelectedObject(Bsp* map, float x, float y, float z);
 	void scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool logging = false);
@@ -334,8 +334,8 @@ public:
 	void deselectObject(bool onlyobject = false); // keep map selected but unselect all objects
 	void selectFace(Bsp* map, int face, bool add = false);
 	void deselectFaces();
-	void selectEnt(Bsp* map, size_t entIdx, bool add = false);
-	void goToEnt(Bsp* map, size_t entIdx);
+	void selectEnt(Bsp* map, int entIdx, bool add = false);
+	void goToEnt(Bsp* map, int entIdx);
 	void goToCoords(float x, float y, float z);
 	void goToCoords(const vec3& pos);
 	void goToFace(Bsp* map, int faceIdx);

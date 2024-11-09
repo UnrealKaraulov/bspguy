@@ -557,7 +557,7 @@ void Quantizer::ApplyColorTableDither(COLOR3* image, int width, int height)
 {
 	if (!m_pPalette)
 		ProcessImage(image, width * height);
-	for (unsigned int i = 0; i < width * height; i++)
+	for (int i = 0; i < width * height; i++)
 	{
 		image[i] = m_pPalette[GetNearestIndexDither(image[i], m_pPalette)];
 	}

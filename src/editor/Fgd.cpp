@@ -16,12 +16,6 @@ std::map<std::string, int> fgdKeyTypes{
 	{"target_destination", FGD_KEY_TARGET_DST}
 };
 
-Fgd::Fgd(std::string _path)
-{
-	this->path = _path;
-	this->name = stripExt(basename(path));
-	this->lineNum = 0;
-}
 
 Fgd::~Fgd()
 {
@@ -106,7 +100,7 @@ bool Fgd::parse()
 		lineNum++;
 		line = trimSpaces(line);
 
-		if (line.empty() || line.starts_with("//"))
+		if (line.empty() || starts_with(line,"//"))
 			continue;
 
 		if (line[0] == '[' || line[0] == ']')
@@ -114,7 +108,7 @@ bool Fgd::parse()
 			inputLines.push_back(line);
 			inputLineNums.push_back(lineNum);
 		}
-		else if (line.ends_with('['))
+		else if (ends_with(line,'['))
 		{
 			line.pop_back();
 			inputLines.push_back(line);
@@ -177,7 +171,7 @@ bool Fgd::parse()
 					}
 				}
 			}
-			else if (line.ends_with(']'))
+			else if (ends_with(line,']'))
 			{
 				line.pop_back();
 				inputLines.push_back(line);
@@ -243,7 +237,7 @@ bool Fgd::parse()
 			bracketNestLevel++;
 		}
 
-		if ((line.size() && (line[0] == ']' || line[line.size() - 1] == ']')))
+		if (line.size() && (line[0] == ']' || line[line.size() - 1] == ']'))
 		{
 			bracketNestLevel--;
 			if (bracketNestLevel == 0)
@@ -352,7 +346,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 	{
 		std::string lpart = toLowerCase(typeParts[i]);
 
-		if (lpart.starts_with("base("))
+		if (starts_with(lpart,"base("))
 		{
 			std::vector<std::string> baseClassList = splitString(getValueInParens(typeParts[i]), ",");
 			for (size_t k = 0; k < baseClassList.size(); k++)
@@ -361,7 +355,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 				fgdClass.baseClasses.push_back(baseClass);
 			}
 		}
-		else if (lpart.starts_with("size("))
+		else if (starts_with(lpart,"size("))
 		{
 			std::vector<std::string> sizeList = splitString(getValueInParens(typeParts[i]), ",");
 
@@ -383,7 +377,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 
 			fgdClass.sizeSet = true;
 		}
-		else if (lpart.starts_with("color("))
+		else if (starts_with(lpart,"color("))
 		{
 			std::vector<std::string> nums = splitString(getValueInParens(typeParts[i]), " ");
 
@@ -397,7 +391,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			fgdClass.colorSet = true;
 		}
-		else if (lpart.starts_with("offset("))
+		else if (starts_with(lpart,"offset("))
 		{
 			std::vector<std::string> nums = splitString(getValueInParens(typeParts[i]), " ");
 
@@ -410,7 +404,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 				print_log(get_localized_string("LANG_FGD_BAD_OFFSET"), lineNum, name);
 			}
 		}
-		else if (lpart.starts_with("studio("))
+		else if (starts_with(lpart,"studio("))
 		{
 			std::string mdlpath = getValueInParens(typeParts[i]);
 			if (mdlpath.size())
@@ -420,33 +414,33 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			fgdClass.isModel = true;
 		}
-		else if (lpart.starts_with("sequence("))
+		else if (starts_with(lpart,"sequence("))
 		{
 			fgdClass.modelSequence = str_to_int(getValueInParens(typeParts[i]));
 		}
-		else if (lpart.starts_with("body("))
+		else if (starts_with(lpart,"body("))
 		{
 			fgdClass.modelBody = str_to_int(getValueInParens(typeParts[i]));
 		}
-		else if (lpart.starts_with("iconsprite("))
+		else if (starts_with(lpart,"iconsprite("))
 		{
 			fgdClass.sprite = getValueInParens(typeParts[i]);
 			fgdClass.isSprite = true;
 			if (fgdClass.sprite.size())
 				fixupPath(fgdClass.sprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 		}
-		else if (lpart.starts_with("sprite("))
+		else if (starts_with(lpart,"sprite("))
 		{
 			fgdClass.sprite = getValueInParens(typeParts[i]);
 			fgdClass.isSprite = true;
 			if (fgdClass.sprite.size())
 				fixupPath(fgdClass.sprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 		}
-		else if (lpart.starts_with("decal("))
+		else if (starts_with(lpart,"decal("))
 		{
 			fgdClass.isDecal = true;
 		}
-		else if (lpart.starts_with("flags("))
+		else if (starts_with(lpart,"flags("))
 		{
 			std::vector<std::string> flagsList = splitString(getValueInParens(typeParts[i]), ",");
 			for (size_t k = 0; k < flagsList.size(); k++)

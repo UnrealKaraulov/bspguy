@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.4 Wayland - www.glfw.org
+// GLFW 3.5 Wayland - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2014 Jonas Ådahl <jadahl@gmail.com>
 //
@@ -46,6 +46,7 @@
 #include "viewporter-client-protocol.h"
 #include "relative-pointer-unstable-v1-client-protocol.h"
 #include "pointer-constraints-unstable-v1-client-protocol.h"
+#include "fractional-scale-v1-client-protocol.h"
 #include "xdg-activation-v1-client-protocol.h"
 #include "idle-inhibit-unstable-v1-client-protocol.h"
 
@@ -76,6 +77,10 @@
 
 #define types _glfw_pointer_constraints_types
 #include "pointer-constraints-unstable-v1-client-protocol-code.h"
+#undef types
+
+#define types _glfw_fractional_scale_types
+#include "fractional-scale-v1-client-protocol-code.h"
 #undef types
 
 #define types _glfw_xdg_activation_types
@@ -132,6 +137,13 @@ static void registryHandleGlobal(void* userData,
                 wl_registry_bind(registry, name, &wl_seat_interface,
                                  _glfw_min(4, version));
             _glfwAddSeatListenerWayland(_glfw.wl.seat);
+
+            if (wl_seat_get_version(_glfw.wl.seat) >=
+                WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION)
+            {
+                _glfw.wl.keyRepeatTimerfd =
+                    timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
+            }
         }
     }
     else if (strcmp(interface, "wl_data_device_manager") == 0)
@@ -187,6 +199,13 @@ static void registryHandleGlobal(void* userData,
         _glfw.wl.activationManager =
             wl_registry_bind(registry, name,
                              &xdg_activation_v1_interface,
+                             1);
+    }
+    else if (strcmp(interface, "wp_fractional_scale_manager_v1") == 0)
+    {
+        _glfw.wl.fractionalScaleManager =
+            wl_registry_bind(registry, name,
+                             &wp_fractional_scale_manager_v1_interface,
                              1);
     }
 }
@@ -693,6 +712,32 @@ int _glfwInitWayland(void)
     _glfw.wl.xkb.compose_state_get_one_sym = (PFN_xkb_compose_state_get_one_sym)
         _glfwPlatformGetModuleSymbol(_glfw.wl.xkb.handle, "xkb_compose_state_get_one_sym");
 
+    if (!_glfw.wl.xkb.context_new ||
+        !_glfw.wl.xkb.context_unref ||
+        !_glfw.wl.xkb.keymap_new_from_string ||
+        !_glfw.wl.xkb.keymap_unref ||
+        !_glfw.wl.xkb.keymap_mod_get_index ||
+        !_glfw.wl.xkb.keymap_key_repeats ||
+        !_glfw.wl.xkb.keymap_key_get_syms_by_level ||
+        !_glfw.wl.xkb.state_new ||
+        !_glfw.wl.xkb.state_unref ||
+        !_glfw.wl.xkb.state_key_get_syms ||
+        !_glfw.wl.xkb.state_update_mask ||
+        !_glfw.wl.xkb.state_key_get_layout ||
+        !_glfw.wl.xkb.state_mod_index_is_active ||
+        !_glfw.wl.xkb.compose_table_new_from_locale ||
+        !_glfw.wl.xkb.compose_table_unref ||
+        !_glfw.wl.xkb.compose_state_new ||
+        !_glfw.wl.xkb.compose_state_unref ||
+        !_glfw.wl.xkb.compose_state_feed ||
+        !_glfw.wl.xkb.compose_state_get_status ||
+        !_glfw.wl.xkb.compose_state_get_one_sym)
+    {
+        _glfwInputError(GLFW_PLATFORM_ERROR,
+                        "Wayland: Failed to load all entry points from libxkbcommon");
+        return GLFW_FALSE;
+    }
+
     if (_glfw.hints.init.wl.libdecorMode == GLFW_WAYLAND_PREFER_LIBDECOR)
         _glfw.wl.libdecor.handle = _glfwPlatformLoadModule("libdecor-0.so.0");
 
@@ -813,12 +858,6 @@ int _glfwInitWayland(void)
                                      &libdecorReadyListener,
                                      NULL);
         }
-    }
-
-    if (wl_seat_get_version(_glfw.wl.seat) >= WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION)
-    {
-        _glfw.wl.keyRepeatTimerfd =
-            timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC | TFD_NONBLOCK);
     }
 
     if (!_glfw.wl.wmBase)
@@ -943,6 +982,8 @@ void _glfwTerminateWayland(void)
         zwp_idle_inhibit_manager_v1_destroy(_glfw.wl.idleInhibitManager);
     if (_glfw.wl.activationManager)
         xdg_activation_v1_destroy(_glfw.wl.activationManager);
+    if (_glfw.wl.fractionalScaleManager)
+        wp_fractional_scale_manager_v1_destroy(_glfw.wl.fractionalScaleManager);
     if (_glfw.wl.registry)
         wl_registry_destroy(_glfw.wl.registry);
     if (_glfw.wl.display)

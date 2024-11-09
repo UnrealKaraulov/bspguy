@@ -36,7 +36,7 @@ CommandLine::CommandLine(int argc, char* argv[])
 			options.push_back(arg);
 		}
 
-		if ((i == 1 || i == 2) && larg.starts_with("help") || larg.starts_with("/?") || larg.starts_with("--help") || larg.starts_with("-help") || larg.starts_with("-h"))
+		if ((i == 1 || i == 2) && starts_with(larg,"help") || starts_with(larg,"/?") || starts_with(larg,"--help") || starts_with(larg,"-help") || starts_with(larg,"-h"))
 		{
 			askingForHelp = true;
 		}
@@ -47,11 +47,11 @@ CommandLine::CommandLine(int argc, char* argv[])
 		return;
 	}
 
-	for (size_t i = 0; i < options.size(); i++)
+	for (int i = 0; i < (int)options.size(); i++)
 	{
 		std::string opt = toLowerCase(options[i]);
 
-		if (i < options.size() - 1)
+		if (i < (int)options.size() - 1)
 		{
 			optionVals[opt] = options[i + 1];
 		}

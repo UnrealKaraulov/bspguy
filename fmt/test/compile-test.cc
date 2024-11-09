@@ -8,19 +8,12 @@
 #include "fmt/compile.h"
 
 #include <type_traits>
+#include <vector>
 
 #include "fmt/chrono.h"
 #include "fmt/ranges.h"
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
-
-TEST(iterator_test, counting_iterator) {
-  auto it = fmt::detail::counting_iterator();
-  auto prev = it++;
-  EXPECT_EQ(prev.count(), 0);
-  EXPECT_EQ(it.count(), 1);
-  EXPECT_EQ((it + 41).count(), 42);
-}
 
 TEST(compile_test, compile_fallback) {
   // FMT_COMPILE should fallback on runtime formatting when `if constexpr` is
@@ -206,7 +199,7 @@ TEST(compile_test, format_to_n) {
   EXPECT_STREQ("2a", buffer);
 }
 
-#  ifdef __cpp_lib_bit_cast
+#  if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940)
 TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t size = fmt::formatted_size(FMT_COMPILE("{}"), 42);
   EXPECT_EQ(size, 2);
@@ -237,10 +230,14 @@ TEST(compile_test, unknown_format_fallback) {
   EXPECT_EQ(" 42 ",
             fmt::format(FMT_COMPILE("{name:^4}"), fmt::arg("name", 42)));
 
-  std::vector<char> v;
-  fmt::format_to(std::back_inserter(v), FMT_COMPILE("{name:^4}"),
+  std::vector<char> v1;
+  fmt::format_to(std::back_inserter(v1), FMT_COMPILE("{}"), 42);
+  EXPECT_EQ("42", fmt::string_view(v1.data(), v1.size()));
+
+  std::vector<char> v2;
+  fmt::format_to(std::back_inserter(v2), FMT_COMPILE("{name:^4}"),
                  fmt::arg("name", 42));
-  EXPECT_EQ(" 42 ", fmt::string_view(v.data(), v.size()));
+  EXPECT_EQ(" 42 ", fmt::string_view(v2.data(), v2.size()));
 
   char buffer[4];
   auto result = fmt::format_to_n(buffer, 4, FMT_COMPILE("{name:^5}"),
@@ -273,11 +270,23 @@ TEST(compile_test, to_string_and_formatter) {
   fmt::format(FMT_COMPILE("{}"), to_stringable());
 }
 
+struct std_context_test {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<std_context_test> : formatter<int> {
+  auto format(std_context_test, format_context& ctx) const
+      -> decltype(ctx.out()) {
+    return ctx.out();
+  }
+};
+FMT_END_NAMESPACE
+
 TEST(compile_test, print) {
   EXPECT_WRITE(stdout, fmt::print(FMT_COMPILE("Don't {}!"), "panic"),
                "Don't panic!");
   EXPECT_WRITE(stderr, fmt::print(stderr, FMT_COMPILE("Don't {}!"), "panic"),
                "Don't panic!");
+  fmt::print(FMT_COMPILE("{}"), std_context_test());
 }
 #endif
 
@@ -342,6 +351,7 @@ TEST(compile_time_formatting_test, integer) {
   EXPECT_EQ("0X4A", test_format<5>(FMT_COMPILE("{:#X}"), 0x4a));
 
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42));
+  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42l));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ll));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ull));
 

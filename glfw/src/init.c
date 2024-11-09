@@ -1,5 +1,5 @@
 //========================================================================
-// GLFW 3.4 - www.glfw.org
+// GLFW 3.5 - www.glfw.org
 //------------------------------------------------------------------------
 // Copyright (c) 2002-2006 Marcus Geelnard
 // Copyright (c) 2006-2018 Camilla Löwy <elmindreda@glfw.org>
@@ -244,30 +244,6 @@ int _glfw_min(int a, int b)
 int _glfw_max(int a, int b)
 {
     return a > b ? a : b;
-}
-
-float _glfw_fminf(float a, float b)
-{
-    if (a != a)
-        return b;
-    else if (b != b)
-        return a;
-    else if (a < b)
-        return a;
-    else
-        return b;
-}
-
-float _glfw_fmaxf(float a, float b)
-{
-    if (a != a)
-        return b;
-    else if (b != b)
-        return a;
-    else if (a > b)
-        return a;
-    else
-        return b;
 }
 
 void* _glfw_calloc(size_t count, size_t size)
