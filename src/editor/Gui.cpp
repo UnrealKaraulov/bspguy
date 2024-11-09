@@ -3120,7 +3120,7 @@ void Gui::drawMenuBar()
 					static bool fill_all_space = true;
 					static bool NO_OPTIMIZE = false;
 
-					if (ImGui::BeginMenu("Options###2"))
+					if (ImGui::BeginMenu("Options###1"))
 					{
 						if (ImGui::BeginMenu("[Scan] Cell size"))
 						{
@@ -3196,12 +3196,12 @@ void Gui::drawMenuBar()
 
 					int hull_for_export = -1;
 
-					if (ImGui::MenuItem("Do Export [MAP]###1", NULL))
+					if (ImGui::MenuItem("Do Export [MAP]###2", NULL))
 					{
 						hull_for_export = 0;
 					}
 
-					if (ImGui::MenuItem("Do Export [HEAD_HULL]###1", NULL))
+					if (ImGui::MenuItem("Do Export [HEAD_HULL]###3", NULL))
 					{
 						hull_for_export = 3;
 					}
