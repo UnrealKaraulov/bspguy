@@ -61,7 +61,7 @@ jobs:
     needs: get_time_build
     runs-on: windows-latest
     env:
-      solution: vs-project/bspguy.sln
+      solution: vs-project/bspguy.vcxproj
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
@@ -90,9 +90,11 @@ jobs:
               Write-Host "components were not installed"
               exit 1
           }
-      - name: Build app for release
-        run: >
-          msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=Release
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+      - name: Build release
+        run: |
+          msbuild ${{ env.solution }} -m /p:Configuration=Release /p:Platform=x64
       - name: Create Windows release archive
         run: >
           mkdir -p build\win64_release
@@ -108,9 +110,13 @@ jobs:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
             build/newbspguy_win7_x64_release.zip
-      - name: Build app for release WinXP 32bit
-        run: >
-          msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=ReleaseXPx86
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: Win32
+      - name: Build XP
+        run: |
+          msbuild ${{ env.solution }} -m /p:Configuration=ReleaseXPx86 /p:Platform=x86
       - name: Create Windows release WinXP archive
         run: >
           mkdir -p build\win32_release
@@ -126,9 +132,11 @@ jobs:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
             build/newbspguy_winxp_x86_release.zip
-      - name: Build app for debug
-        run: >
-          msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=DebugGithub
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+      - name: Build Debug
+        run: |
+          msbuild ${{ env.solution }} -m /p:Configuration=Debug /p:Platform=x64
       - name: Create Windows debug archive
         run: >
           mkdir -p build\win64_debug

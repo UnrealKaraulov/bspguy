@@ -484,8 +484,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <WarningLevel>Level4</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <SDLCheck>false</SDLCheck>
       <IntrinsicFunctions>true</IntrinsicFunctions>

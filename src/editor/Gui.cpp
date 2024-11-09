@@ -572,7 +572,7 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 {
 	Bsp* bspModel = new Bsp();
-	bspModel->setBspRender(bspModel->getBspRender());
+	bspModel->setBspRender(src_map->getBspRender());
 	bspModel->bsp_valid = true;
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
@@ -782,7 +782,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->models[newModelIdx].iHeadnodes[i] = bspModel->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
 	}
 
-	//app->deselectObject();
+	bspModel->models[newModelIdx].nVisLeafs = bspModel->leafCount - 1;
 
 	STRUCTCOUNT removed = bspModel->remove_unused_model_structures();
 	if (!removed.allZero())
@@ -826,6 +826,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 
 	unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
 	memset(tmpCompressed, 0xFF, MAX_MAP_LEAVES / 8);
+
 
 	// ADD LEAFS TO ALL VISIBILITY BYTES
 	for (int i = 0; i < bspModel->leafCount; i++)
