@@ -61,7 +61,7 @@ jobs:
     needs: get_time_build
     runs-on: windows-latest
     env:
-      solution: vs-project/bspguy.vcxproj
+      solution: vs-project/bspguy.sln
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
@@ -116,7 +116,7 @@ jobs:
           arch: Win32
       - name: Build XP
         run: |
-          msbuild ${{ env.solution }} -m /p:Configuration=ReleaseXPx86 /p:Platform=x86
+          msbuild ${{ env.solution }} -m /p:Configuration=ReleaseXPx86 /p:Platform=Win32
       - name: Create Windows release WinXP archive
         run: >
           mkdir -p build\win32_release
