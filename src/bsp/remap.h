@@ -1,6 +1,6 @@
 #pragma once
 class Bsp;
-
+#include <vector>
 // excludes entities
 class STRUCTCOUNT
 {
@@ -35,17 +35,17 @@ public:
 class STRUCTUSAGE
 {
 public:
-	bool* nodes;
-	bool* clipnodes;
-	bool* leaves;
-	bool* planes;
-	bool* verts;
-	bool* texInfo;
-	bool* faces;
-	bool* textures;
-	bool* markSurfs;
-	bool* surfEdges;
-	bool* edges;
+	std::vector<bool> nodes;
+	std::vector<bool> clipnodes;
+	std::vector<bool> leaves;
+	std::vector<bool> planes;
+	std::vector<bool> verts;
+	std::vector<bool> texInfo;
+	std::vector<bool> faces;
+	std::vector<bool> textures;
+	std::vector<bool> markSurfs;
+	std::vector<bool> surfEdges;
+	std::vector<bool> edges;
 
 	STRUCTCOUNT count; // size of each array
 	STRUCTCOUNT sum;
@@ -54,7 +54,7 @@ public:
 
 	STRUCTUSAGE();
 	STRUCTUSAGE(Bsp* map);
-	~STRUCTUSAGE();
+	~STRUCTUSAGE() = default;
 
 	void compute_sum();
 };
@@ -63,26 +63,26 @@ public:
 class STRUCTREMAP
 {
 public:
-	int* nodes;
-	int* clipnodes;
-	int* leaves;
-	int* planes;
-	int* verts;
-	int* texInfo;
-	int* faces;
-	int* textures;
-	int* markSurfs;
-	int* surfEdges;
-	int* edges;
+	std::vector<int> nodes;
+	std::vector<int> clipnodes;
+	std::vector<int> leaves;
+	std::vector<int> planes;
+	std::vector<int> verts;
+	std::vector<int> texInfo;
+	std::vector<int> faces;
+	std::vector<int> textures;
+	std::vector<int> markSurfs;
+	std::vector<int> surfEdges;
+	std::vector<int> edges;
 
 	// don't try to update the same nodes twice
-	bool* visitedNodes;
-	bool* visitedClipnodes;
-	bool* visitedLeaves;
-	bool* visitedFaces;
+	std::vector<bool> visitedNodes;
+	std::vector<bool> visitedClipnodes;
+	std::vector<bool> visitedLeaves;
+	std::vector<bool> visitedFaces;
 
 	STRUCTCOUNT count; // size of each array
 	STRUCTREMAP();
 	STRUCTREMAP(Bsp* map);
-	~STRUCTREMAP();
+	~STRUCTREMAP() = default;
 };

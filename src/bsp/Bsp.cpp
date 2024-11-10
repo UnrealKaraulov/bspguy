@@ -1495,9 +1495,7 @@ void Bsp::split_shared_model_structures(int modelIdx)
 	replace_lump(LUMP_CLIPNODES, newClipnodes, newClipnodeCount * sizeof(BSPCLIPNODE32));
 	replace_lump(LUMP_TEXINFO, newTexinfos, newTexinfoCount * sizeof(BSPTEXTUREINFO));
 
-	bool* newVisitedClipnodes = new bool[newClipnodeCount];
-	memset(newVisitedClipnodes, 0, newClipnodeCount);
-	delete[] remappedStuff.visitedClipnodes;
+	std::vector<bool> newVisitedClipnodes(newClipnodeCount,false);
 	remappedStuff.visitedClipnodes = newVisitedClipnodes;
 
 	remap_model_structures(modelIdx, &remappedStuff);
@@ -1626,7 +1624,7 @@ void Bsp::replace_lumps(const LumpState& state)
 	update_lump_pointers();
 }
 
-unsigned int Bsp::remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes)
+unsigned int Bsp::remove_unused_structs(int lumpIdx, std::vector<bool>& usedStructs, std::vector<int> & remappedIndexes)
 {
 	int structSize = 0;
 
@@ -1691,7 +1689,7 @@ unsigned int Bsp::remove_unused_structs(int lumpIdx, bool* usedStructs, int* rem
 	return removeCount;
 }
 
-unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexes, int* removeddata)
+unsigned int Bsp::remove_unused_textures(std::vector<bool>& usedTextures, std::vector<int>& remappedIndexes, int* removeddata)
 {
 	int oldTexCount = textureCount;
 
@@ -1805,7 +1803,7 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 	return removeCount;
 }
 
-unsigned int Bsp::remove_unused_lightmaps(bool* usedFaces)
+unsigned int Bsp::remove_unused_lightmaps(std::vector<bool>& usedFaces)
 {
 	int oldLightdataSize = lightDataLength;
 
@@ -2190,6 +2188,11 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	if (edgeCount > 0)
 	{
 		usedStructures.edges[0] = true;
+	}
+
+	if (leafCount > 0)
+	{
+		usedStructures.leaves[0] = true;
 	}
 
 	update_lump_pointers();
@@ -5075,9 +5078,9 @@ void Bsp::recurse_node_print(int nodeIdx, int depth)
 			print_log(PRINT_RED, "!LEAF ERROR!");
 			return;
 		}
-		BSPLEAF32& leaf = leaves[~nodeIdx];
-		print_leaf(leaf);
-		print_log(get_localized_string(LANG_0143), ~nodeIdx);
+		//BSPLEAF32& leaf = leaves[~nodeIdx];
+		//print_log(get_localized_string(LANG_0143), ~nodeIdx);
+		print_leaf(~nodeIdx);
 		return;
 	}
 	else
@@ -6317,6 +6320,21 @@ int Bsp::create_leaf(int contents)
 	return newLeafIdx;
 }
 
+int Bsp::create_leaf_back(int contents)
+{
+	BSPLEAF32* newLeaves = new BSPLEAF32[leafCount + 1]{};
+	memcpy(&newLeaves[1], leaves, leafCount * sizeof(BSPLEAF32));
+
+	BSPLEAF32& newLeaf = newLeaves[0];
+
+	newLeaf.nVisOffset = -1;
+	newLeaf.nContents = contents;
+
+	replace_lump(LUMP_LEAVES, newLeaves, (leafCount + 1) * sizeof(BSPLEAF32));
+
+	return 0;
+}
+
 void Bsp::create_inside_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx)
 {
 	create_primitive_box(min, max, targetModel, textureIdx, true);
@@ -7173,19 +7191,18 @@ int Bsp::create_texinfo()
 	return texinfoCount - 1;
 }
 
-void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
+void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUCTUSAGE& usage, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 	std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 	std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
 	std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport)
 {
-	STRUCTUSAGE usage(this);
-	mark_model_structures(modelIdx, &usage, !forExport);
-
-	if (forExport && leafCount > 0)
-		usage.leaves[0] = true;
+	//if (forExport && leafCount > 0)
+	//	usage.leaves[0] = true;
 
 	if (forExport && edgeCount > 0)
 		usage.edges[0] = true;
+
+	mark_model_structures(modelIdx, &usage, !forExport);
 
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{
@@ -7435,7 +7452,8 @@ void Bsp::duplicate_model_structures(int modelIdx)
 	std::vector<int> newMarkSurfaces;
 
 	STRUCTREMAP remap(this);
-	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
+	STRUCTUSAGE usage(this);
+	copy_bsp_model(modelIdx, this, remap, usage, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
 		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
 
 	for (auto& s : newTextures)
@@ -7529,7 +7547,8 @@ int Bsp::duplicate_model(int modelIdx)
 	std::vector<int> newMarkSurfaces;
 
 	STRUCTREMAP remap(this);
-	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
+	STRUCTUSAGE usage(this);
+	copy_bsp_model(modelIdx, this, remap, usage, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
 		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces);
 
 	for (auto& s : newTextures)
@@ -9011,8 +9030,15 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 
 void Bsp::print_leaf(const BSPLEAF32& leaf)
 {
-	print_log(getLeafContentsName(leaf.nContents));
-	print_log(" {} surfs, Min({}, {}, {}), Max({} {} {})", leaf.nMarkSurfaces,
+	print_log(" {} -> {} surfs, Min({}, {}, {}), Max({} {} {})", getLeafContentsName(leaf.nContents), leaf.nMarkSurfaces,
+		leaf.nMins[0], leaf.nMins[1], leaf.nMins[2],
+		leaf.nMaxs[0], leaf.nMaxs[1], leaf.nMaxs[2]);
+}
+
+void Bsp::print_leaf(int leafid)
+{
+	BSPLEAF32& leaf = leaves[leafid];
+	print_log("(LEAF {})\n {} -> {} surfs, Min({}, {}, {}), Max({} {} {})", leafid, getLeafContentsName(leaf.nContents), leaf.nMarkSurfaces,
 		leaf.nMins[0], leaf.nMins[1], leaf.nMins[2],
 		leaf.nMaxs[0], leaf.nMaxs[1], leaf.nMaxs[2]);
 }
@@ -11406,8 +11432,9 @@ void recurse_node_map(Bsp* map, int nodeIdx)
 {
 	if (nodeIdx < 0)
 	{
-		//BSPLEAF32& leaf = map->leaves[~nodeIdx];
+		BSPLEAF32& leaf = map->leaves[~nodeIdx];
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1038), ~nodeIdx);
+		map->print_leaf(leaf);
 		return;
 	}
 

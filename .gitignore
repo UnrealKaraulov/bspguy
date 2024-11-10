@@ -67,3 +67,6 @@ vs-project/glfw/src/Debug/glfw3.idb
 !demo/*.bsp
 vs-project/.vs/bspguy/v17/DocumentLayout.json
 /vs-project/.vs
+*.json
+*.command
+vs-project/bspguy/Debug/bspguy.vcxproj.FileListAbsolute.txt

@@ -386,8 +386,9 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	std::vector<BSPLEAF32> newLeaves;
 	std::vector<int> newMarkSurfaces;
 
-	STRUCTREMAP remap = STRUCTREMAP(map);
-	bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
+	STRUCTREMAP remap(bspModel);
+	STRUCTUSAGE usage(bspModel);
+	bspModel->copy_bsp_model(0, map, remap, usage, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
 		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces, true);
 
 	if (!noclip && newClipnodes.size())
@@ -603,6 +604,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	bspModel->ents.clear();
 	bspModel->ents.push_back(new Entity("worldspawn"));
 
+
 	int src_entId = src_map->get_ent_from_model(0);
 
 	if (src_entId >= 0)
@@ -628,8 +630,10 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	std::vector<BSPLEAF32> newLeaves;
 	std::vector<int> newMarkSurfaces;
 
-	STRUCTREMAP remap = STRUCTREMAP(src_map);
-	src_map->copy_bsp_model(model_id, bspModel, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
+	STRUCTREMAP remap(src_map);
+	STRUCTUSAGE usage(src_map);
+
+	src_map->copy_bsp_model(model_id, bspModel, remap, usage, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces,
 		newLightmaps, newNodes, newClipnodes, newTextures, newLeaves, newMarkSurfaces, true);
 
 	if (newEdges.size())
@@ -782,8 +786,6 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->models[newModelIdx].iHeadnodes[i] = bspModel->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
 	}
 
-	bspModel->models[newModelIdx].nVisLeafs = bspModel->leafCount - 1;
-
 	STRUCTCOUNT removed = bspModel->remove_unused_model_structures();
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
@@ -826,8 +828,13 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 
 	unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
 	memset(tmpCompressed, 0xFF, MAX_MAP_LEAVES / 8);
+	print_log("test1\n");
+	while (bspModel->models[newModelIdx].nVisLeafs >= bspModel->leafCount)
+	{
+		bspModel->create_leaf_back(CONTENTS_SOLID);
+	}
 
-
+	bspModel->models[newModelIdx].nVisLeafs = bspModel->leafCount - 1;
 	// ADD LEAFS TO ALL VISIBILITY BYTES
 	for (int i = 0; i < bspModel->leafCount; i++)
 	{
@@ -842,9 +849,13 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	}
 	// recompile vis lump, remove unused textures
 	bspModel->remove_unused_model_structures();
+	print_log("test2\n");
+	bspModel->models[newModelIdx].nVisLeafs = bspModel->leafCount - 1;
+	print_log("test3\n");
+
 	bspModel->validate();
 	bspModel->write(bspModel->bsp_path);
-
+	print_log("test4\n");
 	bspModel->setBspRender(NULL);
 	delete bspModel;
 	delete[] tmpCompressed;

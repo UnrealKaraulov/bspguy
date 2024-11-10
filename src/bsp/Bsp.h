@@ -235,6 +235,7 @@ public:
 	int create_solid(Solid& solid, int targetModelIdx = -1);
 
 	int create_leaf(int contents);
+	int create_leaf_back(int contents);
 	void create_inside_box(const vec3& min, const vec3& max, BSPMODEL* targetModel, int textureIdx);
 	void create_primitive_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int textureIdx, bool inside = false);
 	void create_solid_nodes(Solid& solid, BSPMODEL* targetModel);
@@ -275,7 +276,7 @@ public:
 	int create_edge();
 	int create_surfedge();
 
-	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
+	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUCTUSAGE& usage, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 		std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 		std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
 		std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32> & newLeafs, std::vector<int>& newMarkSurfs, bool forExport = false);
@@ -391,11 +392,10 @@ public:
 
 	int CalcFaceTextureStep(int facenum);
 
-private:
-	unsigned int remove_unused_lightmaps(bool* usedFaces);
+	unsigned int remove_unused_lightmaps(std::vector<bool> & usedFaces);
 	unsigned int remove_unused_visdata(BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
-	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes, int* removeddata = NULL);
-	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
+	unsigned int remove_unused_textures(std::vector<bool>& usedTextures, std::vector<int>& remappedIndexes, int* removeddata = NULL);
+	unsigned int remove_unused_structs(int lumpIdx, std::vector<bool>& usedStructs, std::vector<int>& remappedIndexes);
 
 	void recurse_node_leafs(int nodeIdx, std::vector<int>& outLeafs);
 
@@ -403,6 +403,7 @@ private:
 
 	void print_model_bsp(int modelIdx);
 	void print_leaf(const BSPLEAF32& leaf);
+	void print_leaf(int leaf);
 	void print_node(const BSPNODE32& node);
 	void print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem);
 	void print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bool isMem);
