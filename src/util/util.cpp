@@ -2801,7 +2801,7 @@ bool ends_with(const std::wstring& str, wchar_t suffix) {
 	return !str.empty() && str.back() == suffix;
 }
 
-#ifdef WIN_XP_86
+#ifdef WIN_XP_86_NOGIT
 
 extern "C" uint64_t _dtoul3_legacy(const double x) {
 	uint64_t result;
