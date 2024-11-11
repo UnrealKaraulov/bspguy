@@ -582,28 +582,13 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->bsp_header.lump[i].nLength = 0;
 		bspModel->replacedLump[i] = false;
 	}
-	bspModel->update_ent_lump();
-	//unsigned char* texLump = new unsigned char[sizeof(int) * 2 + sizeof(BSPMIPTEX)];
-	//*(int*)texLump = 1;
-	//*(int*)(texLump + 4) = 8;
-	//BSPMIPTEX tmpTex;
-	//tmpTex.nOffsets[0] = tmpTex.nOffsets[1] = tmpTex.nOffsets[2] = tmpTex.nOffsets[3] = 0;
-	//tmpTex.nHeight = 64;
-	//tmpTex.nWidth = 64;
-	//tmpTex.szName[0] = 'N';
-	//tmpTex.szName[1] = 'U';
-	//tmpTex.szName[2] = 'L';
-	//tmpTex.szName[3] = 'L';
-	//tmpTex.szName[4] = '\0';
-	//memcpy(texLump + 8, &tmpTex, sizeof(BSPMIPTEX));
-	//bspModel->replace_lump(LUMP_TEXTURES, texLump, sizeof(int) * 2 + sizeof(BSPMIPTEX));
+
 	bspModel->replace_lump(LUMP_TEXTURES,
 		new unsigned char[sizeof(int)] {0, 0, 0, 0}, sizeof(int));
 	bspModel->textureCount = 0;
 
 	bspModel->ents.clear();
 	bspModel->ents.push_back(new Entity("worldspawn"));
-
 
 	int src_entId = src_map->get_ent_from_model(0);
 
@@ -615,7 +600,16 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 			bspModel->ents[bspModel->ents.size() - 1]->setOrAddKeyvalue("message", "bsp model");
 		}
 	}
+
 	bspModel->update_ent_lump();
+
+	/*bspModel->create_node(true);
+	bspModel->create_clipnode(true);
+	bspModel->create_leaf_back(CONTENTS_SOLID);*/
+
+	bspModel->create_node();
+	bspModel->create_clipnode();
+	bspModel->create_leaf(CONTENTS_SOLID);
 
 	std::vector<BSPPLANE> newPlanes;
 	std::vector<vec3> newVerts;
@@ -680,11 +674,9 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 			if (tex->data && ExportType != 0)
 			{
 				auto data = ConvertWadTexToRGB(tex);
-				/*	lodepng_encode24_file((std::string(tex->szName) + "_1.png").c_str(), (unsigned char*)data, tex->nWidth, tex->nHeight);*/
 				int mip = bspModel->add_texture(tex->szName, (unsigned char*)data, tex->nWidth, tex->nHeight);
 				delete[]data;
 				data = ConvertMipTexToRGB(bspModel->find_embedded_texture(tex->szName, mip));
-				/*	lodepng_encode24_file((std::string(tex->szName) + "_2.png").c_str(), (unsigned char*)data, tex->nWidth, tex->nHeight);*/
 				delete[]data;
 			}
 			else
@@ -740,10 +732,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 						if (ExportType != 0)
 						{
 							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
-
-							//lodepng_encode24_file(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
 							newMiptex = src_map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
-
 							delete[] imageData;
 						}
 						else
@@ -776,19 +765,18 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	}
 
 	int newModelIdx = bspModel->create_model();
+
 	bspModel->models[newModelIdx] = src_map->models[model_id];
-
 	bspModel->models[newModelIdx].iFirstFace = remap.faces[bspModel->models[newModelIdx].iFirstFace];
-	bspModel->models[newModelIdx].iHeadnodes[0] = bspModel->models[newModelIdx].iHeadnodes[0] < 0 ? -1 : remap.nodes[bspModel->models[newModelIdx].iHeadnodes[0]];
-
+	bspModel->models[newModelIdx].iHeadnodes[0] = remap.nodes[bspModel->models[newModelIdx].iHeadnodes[0]];
 	for (int i = 1; i < MAX_MAP_HULLS; i++)
 	{
-		bspModel->models[newModelIdx].iHeadnodes[i] = bspModel->models[newModelIdx].iHeadnodes[i] < 0 ? -1 : remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
+		bspModel->models[newModelIdx].iHeadnodes[i] = remap.clipnodes[bspModel->models[newModelIdx].iHeadnodes[i]];
 	}
 
-	STRUCTCOUNT removed = bspModel->remove_unused_model_structures();
+	/*STRUCTCOUNT removed = bspModel->remove_unused_model_structures();
 	if (!removed.allZero())
-		removed.print_delete_stats(1);
+		removed.print_delete_stats(1);*/
 
 	if (movemodel)
 	{
@@ -803,9 +791,6 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->update_lump_pointers();
 		update_unused_wad_files(src_map, bspModel, ExportType);
 	}
-
-	bspModel->create_node(true);
-	bspModel->create_clipnode(true);
 
 	if (ExportType == 1)
 	{
@@ -828,13 +813,14 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 
 	unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
 	memset(tmpCompressed, 0xFF, MAX_MAP_LEAVES / 8);
-	print_log("test1\n");
+
+	/* if something bad */
 	while (bspModel->models[newModelIdx].nVisLeafs >= bspModel->leafCount)
 	{
 		bspModel->create_leaf_back(CONTENTS_SOLID);
 	}
-
 	bspModel->models[newModelIdx].nVisLeafs = bspModel->leafCount - 1;
+
 	// ADD LEAFS TO ALL VISIBILITY BYTES
 	for (int i = 0; i < bspModel->leafCount; i++)
 	{
@@ -848,15 +834,12 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		}
 	}
 	// recompile vis lump, remove unused textures
-	bspModel->remove_unused_model_structures();
-	print_log("test2\n");
-	bspModel->models[newModelIdx].nVisLeafs = bspModel->leafCount - 1;
-	print_log("test3\n");
+	bspModel->remove_unused_model_structures(CLEAN_VISDATA | CLEAN_TEXTURES);
 
 	bspModel->validate();
 	bspModel->write(bspModel->bsp_path);
-	print_log("test4\n");
 	bspModel->setBspRender(NULL);
+
 	delete bspModel;
 	delete[] tmpCompressed;
 
@@ -8747,7 +8730,7 @@ void Gui::drawSettings()
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0723).c_str());
 				ImGui::EndTooltip();
-		}
+			}
 #endif
 			ImGui::SameLine();
 
@@ -8889,7 +8872,7 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted(get_localized_string(LANG_0740).c_str());
 				ImGui::EndTooltip();
 			}
-	}
+		}
 		else if (settingsTab == 1)
 		{
 			for (size_t i = 0; i < g_settings.fgdPaths.size(); i++)
@@ -9423,7 +9406,7 @@ void Gui::drawSettings()
 		ImGui::EndChild();
 
 		ImGui::EndGroup();
-}
+	}
 	ImGui::End();
 
 
@@ -12414,10 +12397,20 @@ void Gui::drawFaceEditorWidget()
 			ImGui::TextUnformatted(fmt::format("Leaf list. Leaf:{}", last_leaf).c_str());
 			ImGui::TextUnformatted(fmt::format("Leaf model id:{}", last_leaf_mdl).c_str());
 
+			float flContents = map->leaves[last_leaf].nContents * 1.0f;
+
 			if (last_leaf >= 0 && last_leaf < map->leafCount)
 			{
 				ImGui::TextUnformatted(fmt::format("Vis offset:{}", map->leaves[last_leaf].nVisOffset).c_str());
-				ImGui::TextUnformatted(fmt::format("Contents:{}", map->leaves[last_leaf].nContents).c_str());
+				ImGui::TextUnformatted("Contents:");
+				ImGui::SameLine();
+				ImGui::PushItemWidth(30);
+				if (ImGui::DragFloat("##leaf1", &flContents, 0.0f, 0, 0, "%.0f"))
+				{
+					if (flContents != map->leaves[last_leaf].nContents * 1.0f)
+						updatedLeafVec = true;
+				}
+				ImGui::PopItemWidth();
 			}
 
 
@@ -12727,41 +12720,47 @@ void Gui::drawFaceEditorWidget()
 			vertIdx++;
 			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0423)), vertIdx).c_str(), &mins.x, 0.0f, 0, 0, "X1:%.2f"))
 			{
-				updatedLeafVec = true;
+				if (mins != tmpLeaf.nMins)
+					updatedLeafVec = true;
 			}
 
 			vertIdx++;
 			ImGui::SameLine();
 			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &mins.y, 0.0f, 0, 0, "Y1:%.2f"))
 			{
-				updatedLeafVec = true;
+				if (mins != tmpLeaf.nMins)
+					updatedLeafVec = true;
 			}
 
 			vertIdx++;
 			ImGui::SameLine();
-			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &mins.z, 0.0f, 0, 0, "Z1:%.2f"))
+			if (ImGui::DragFloat((fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx)).c_str(), &mins.z, 0.0f, 0, 0, "Z1:%.2f"))
 			{
-				updatedLeafVec = true;
+				if (mins != tmpLeaf.nMins)
+					updatedLeafVec = true;
 			}
 
 			vertIdx++;
 			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0423)), vertIdx).c_str(), &maxs.x, 0.0f, 0, 0, "X2:%.2f"))
 			{
-				updatedLeafVec = true;
+				if (maxs != tmpLeaf.nMaxs)
+					updatedLeafVec = true;
 			}
 
 			vertIdx++;
 			ImGui::SameLine();
 			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0424)), vertIdx).c_str(), &maxs.y, 0.0f, 0, 0, "Y2:%.2f"))
 			{
-				updatedLeafVec = true;
+				if (maxs != tmpLeaf.nMaxs)
+					updatedLeafVec = true;
 			}
 
 			vertIdx++;
 			ImGui::SameLine();
 			if (ImGui::DragFloat(fmt::format(fmt::runtime(get_localized_string(LANG_0425)), vertIdx).c_str(), &maxs.z, 0.0f, 0, 0, "Z2:%.2f"))
 			{
-				updatedLeafVec = true;
+				if (maxs != tmpLeaf.nMaxs)
+					updatedLeafVec = true;
 			}
 			vertIdx++;
 			ImGui::PopItemWidth();
@@ -12774,10 +12773,12 @@ void Gui::drawFaceEditorWidget()
 				mapRenderer->leafCube->mins = tmpLeaf.nMins;
 				mapRenderer->leafCube->maxs = tmpLeaf.nMaxs;
 
+				map->leaves[last_leaf].nContents = (int)std::round(flContents);
+
 				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
 				updatedLeafVec = false;
 
-				mapRenderer->pushModelUndoState("UPDATE LEAF MINS/MAXS", FL_LEAVES);
+				mapRenderer->pushModelUndoState("EDIT LEAF", FL_LEAVES);
 			}
 
 			std::vector<int> leafNodes{};

@@ -7099,11 +7099,9 @@ int Bsp::create_node(bool force_reversed, int reversed_id)
 		newNodes.push_back(nodes[i]);
 	}
 
-
 	BSPNODE32* newNodesArray = new BSPNODE32[newNodes.size()];
 	memcpy(newNodesArray, newNodes.data(), newNodes.size() * sizeof(BSPNODE32));
 	replace_lump(LUMP_NODES, newNodesArray, newNodes.size() * sizeof(BSPNODE32));
-
 
 	for (int i = 0; i < nodeCount; i++)
 	{
@@ -7196,8 +7194,8 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, STRUC
 	std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
 	std::vector<BSPCLIPNODE32>& newClipnodes, std::vector<WADTEX*>& newTextures, std::vector<BSPLEAF32>& newLeafs, std::vector<int>& newMarkSurfs, bool forExport)
 {
-	//if (forExport && leafCount > 0)
-	//	usage.leaves[0] = true;
+	if (forExport && leafCount > 0)
+		usage.leaves[0] = true;
 
 	if (forExport && edgeCount > 0)
 		usage.edges[0] = true;
@@ -9038,7 +9036,8 @@ void Bsp::print_leaf(const BSPLEAF32& leaf)
 void Bsp::print_leaf(int leafid)
 {
 	BSPLEAF32& leaf = leaves[leafid];
-	print_log("(LEAF {})\n {} -> {} surfs, Min({}, {}, {}), Max({} {} {})", leafid, getLeafContentsName(leaf.nContents), leaf.nMarkSurfaces,
+	print_log(fmt::format(fmt::runtime(get_localized_string(LANG_0143)), leafid));
+	print_log(" {} -> {} surfs, Min({}, {}, {}), Max({} {} {})\n", getLeafContentsName(leaf.nContents), leaf.nMarkSurfaces,
 		leaf.nMins[0], leaf.nMins[1], leaf.nMins[2],
 		leaf.nMaxs[0], leaf.nMaxs[1], leaf.nMaxs[2]);
 }

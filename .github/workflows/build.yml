@@ -136,7 +136,7 @@ jobs:
         uses: egor-tensin/vs-shell@v2
       - name: Build Debug
         run: |
-          msbuild ${{ env.solution }} -m /p:Configuration=Debug /p:Platform=x64
+          msbuild ${{ env.solution }} -m /p:Configuration=DebugGithub /p:Platform=x64
       - name: Create Windows debug archive
         run: >
           mkdir -p build\win64_debug

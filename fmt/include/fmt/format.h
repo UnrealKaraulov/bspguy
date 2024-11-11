@@ -505,8 +505,8 @@ constexpr auto to_pointer(OutputIt, size_t) -> T* {
 template <typename T>
 FMT_CONSTEXPR20 auto to_pointer(basic_appender<T> it, size_t n) -> T* {
   buffer<T>& buf = get_container(it);
+  buf.try_reserve(buf.size() + n);
   auto size = buf.size();
-  buf.try_reserve(size + n);
   if (buf.capacity() < size + n) return nullptr;
   buf.try_resize(size + n);
   return buf.data() + size;
@@ -937,12 +937,6 @@ template <typename T, size_t SIZE, typename Allocator>
 struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 };
 
-FMT_END_EXPORT
-namespace detail {
-FMT_API auto write_console(int fd, string_view text) -> bool;
-FMT_API void print(FILE*, string_view);
-}  // namespace detail
-
 // Suppress a misleading warning in older versions of clang.
 FMT_PRAGMA_CLANG(diagnostic ignored "-Wweak-vtables")
 
@@ -954,6 +948,12 @@ class FMT_SO_VISIBILITY("default") format_error : public std::runtime_error {
 
 class loc_value;
 
+FMT_END_EXPORT
+namespace detail {
+FMT_API auto write_console(int fd, string_view text) -> bool;
+FMT_API void print(FILE*, string_view);
+}  // namespace detail
+
 namespace detail {
 template <typename Char, size_t N> struct fixed_string {
   FMT_CONSTEXPR20 fixed_string(const Char (&s)[N]) {
@@ -964,15 +964,15 @@ template <typename Char, size_t N> struct fixed_string {
 };
 
 // Converts a compile-time string to basic_string_view.
-template <typename Char, size_t N>
-FMT_EXPORT constexpr auto compile_string_to_view(const Char (&s)[N])
+FMT_EXPORT template <typename Char, size_t N>
+constexpr auto compile_string_to_view(const Char (&s)[N])
     -> basic_string_view<Char> {
   // Remove trailing NUL character if needed. Won't be present if this is used
   // with a raw character array (i.e. not defined as a string).
   return {s, N - (std::char_traits<Char>::to_int_type(s[N - 1]) == 0 ? 1 : 0)};
 }
-template <typename Char>
-FMT_EXPORT constexpr auto compile_string_to_view(basic_string_view<Char> s)
+FMT_EXPORT template <typename Char>
+constexpr auto compile_string_to_view(basic_string_view<Char> s)
     -> basic_string_view<Char> {
   return s;
 }
@@ -1695,7 +1695,7 @@ FMT_API auto is_printable(uint32_t cp) -> bool;
 
 inline auto needs_escape(uint32_t cp) -> bool {
   if (cp < 0x20 || cp == 0x7f || cp == '"' || cp == '\\') return true;
-  if (FMT_OPTIMIZE_SIZE > 1) return false;
+  if (const_check(FMT_OPTIMIZE_SIZE > 1)) return false;
   return !is_printable(cp);
 }
 
@@ -1718,7 +1718,7 @@ auto find_escape(const Char* begin, const Char* end)
 
 inline auto find_escape(const char* begin, const char* end)
     -> find_escape_result<char> {
-  if (!use_utf8) return find_escape<char>(begin, end);
+  if (const_check(!use_utf8)) return find_escape<char>(begin, end);
   auto result = find_escape_result<char>{end, nullptr, 0};
   for_each_codepoint(string_view(begin, to_unsigned(end - begin)),
                      [&](uint32_t cp, string_view sv) {
