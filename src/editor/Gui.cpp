@@ -807,6 +807,14 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 		bspModel->bsp_header.nVersion = 30;
 	}
 
+	//if (src_entId >= 0)
+	//{
+	//	if (src_map->ents[src_entId]->classname == "func_water")
+	//	{
+	//		bspModel->models[0].vOrigin = getCenter(bspModel->models[0].nMins, bspModel->models[0].nMaxs);
+	//	}
+	//}
+
 	bspModel->bsp_path = g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp";
 	bspModel->write(bspModel->bsp_path);
 	removeFile(bspModel->bsp_path);
@@ -815,10 +823,6 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	memset(tmpCompressed, 0xFF, MAX_MAP_LEAVES / 8);
 
 	/* if something bad */
-	while (bspModel->models[newModelIdx].nVisLeafs >= bspModel->leafCount)
-	{
-		bspModel->create_leaf_back(CONTENTS_SOLID);
-	}
 	bspModel->models[newModelIdx].nVisLeafs = bspModel->leafCount - 1;
 
 	// ADD LEAFS TO ALL VISIBILITY BYTES
@@ -3130,7 +3134,7 @@ void Gui::drawMenuBar()
 									tmpSize += 8;
 								}
 
-								if (ImGui::MenuItem((std::to_string(tmpSize) + " units###2").c_str(), NULL, cell_size == tmpSize))
+								if (ImGui::MenuItem((std::to_string(tmpSize) + " units###" + std::to_string(tmpSize)).c_str(), NULL, cell_size == tmpSize))
 								{
 									cell_size = tmpSize;
 								}
@@ -3204,6 +3208,10 @@ void Gui::drawMenuBar()
 					if (hull_for_export >= 0)
 					{
 						print_log("Start exporting to UnrealMapDrawTool....\n");
+
+
+						mapFixLightEnts(map);
+						rend->pushModelUndoState("Create lights", FL_ENTITIES);
 						FlushConsoleLog();
 						vec3 mins{}, maxs{};
 						/*map->get_bounding_box(mins, maxs);*/
@@ -3595,66 +3603,70 @@ void Gui::drawMenuBar()
 
 								}
 							}
-
-							if (umdTextures.empty())
-							{
-								umdTextures.push_back("SKY");
-							}
-
-							std::ofstream tmpmap("exported.umd", std::ios::out | std::ios::binary);
-							if (tmpmap.is_open()) {
-								tmpmap.write(reinterpret_cast<const char*>(&UMD_MAGIC), 4);
-
-								int zero = 0;
-								tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
-								tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
-								tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
-								tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
-
-								tmpmap.write(reinterpret_cast<const char*>(&cell_x), 4);
-								tmpmap.write(reinterpret_cast<const char*>(&cell_y), 4);
-								tmpmap.write(reinterpret_cast<const char*>(&cell_size), 4);
-								tmpmap.write(reinterpret_cast<const char*>(&cell_size), 4);
-								tmpmap.write(reinterpret_cast<const char*>(&cell_levels), 4);
-								tmpmap.write(reinterpret_cast<const char*>(&cell_layers), 4);
-
-								for (const auto& tmpcell : cell_list)
-								{
-									tmpmap.write(reinterpret_cast<const char*>(&tmpcell.height), 1);
-									tmpmap.write(reinterpret_cast<const char*>(&tmpcell.height_offset), 1);
-									tmpmap.write(reinterpret_cast<const char*>(&tmpcell.texid), 1);
-									tmpmap.write(reinterpret_cast<const char*>(&tmpcell.type), 1);
-								}
-
-								int skybool = 0;
-								tmpmap.write(reinterpret_cast<const char*>(&skybool), 4);
-
-								unsigned int options = 0;
-								if (texture_support)
-								{
-									options |= umd_flags::UMD_TEXTURES_SKIP_OPTIMIZE;
-								}
-								if (NO_OPTIMIZE)
-								{
-									options |= umd_flags::UMD_OPTIMIZE_DISABLED;
-								}
-
-								tmpmap.write(reinterpret_cast<const char*>(&options), 4);
-
-								// textures
-								int textureCount = (int)umdTextures.size();
-								tmpmap.write(reinterpret_cast<const char*>(&textureCount), 4);
-
-								for (const auto& texture : umdTextures) {
-									int length = (int)texture.length();
-									tmpmap.write(reinterpret_cast<const char*>(&length), 4);
-									tmpmap.write(texture.c_str(), length);
-								}
-
-								tmpmap.close();
-							}
 						}
 
+
+						if (umdTextures.empty())
+						{
+							umdTextures.push_back("SKY");
+						}
+						createDir(g_working_dir);
+
+						std::ofstream tmpmap(g_working_dir + "exported.umd", std::ios::out | std::ios::binary);
+
+						print_log("\nSaved .umd map to {} path\n", g_working_dir + "exported.umd");
+
+						if (tmpmap.is_open()) {
+							tmpmap.write(reinterpret_cast<const char*>(&UMD_MAGIC), 4);
+
+							int zero = 0;
+							tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
+							tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
+							tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
+							tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
+
+							tmpmap.write(reinterpret_cast<const char*>(&cell_x), 4);
+							tmpmap.write(reinterpret_cast<const char*>(&cell_y), 4);
+							tmpmap.write(reinterpret_cast<const char*>(&cell_size), 4);
+							tmpmap.write(reinterpret_cast<const char*>(&cell_size), 4);
+							tmpmap.write(reinterpret_cast<const char*>(&cell_levels), 4);
+							tmpmap.write(reinterpret_cast<const char*>(&cell_layers), 4);
+
+							for (const auto& tmpcell : cell_list)
+							{
+								tmpmap.write(reinterpret_cast<const char*>(&tmpcell.height), 1);
+								tmpmap.write(reinterpret_cast<const char*>(&tmpcell.height_offset), 1);
+								tmpmap.write(reinterpret_cast<const char*>(&tmpcell.texid), 1);
+								tmpmap.write(reinterpret_cast<const char*>(&tmpcell.type), 1);
+							}
+
+							int skybool = 0;
+							tmpmap.write(reinterpret_cast<const char*>(&skybool), 4);
+
+							unsigned int options = 0;
+							if (texture_support)
+							{
+								options |= umd_flags::UMD_TEXTURES_SKIP_OPTIMIZE;
+							}
+							if (NO_OPTIMIZE)
+							{
+								options |= umd_flags::UMD_OPTIMIZE_DISABLED;
+							}
+
+							tmpmap.write(reinterpret_cast<const char*>(&options), 4);
+
+							// textures
+							int textureCount = (int)umdTextures.size();
+							tmpmap.write(reinterpret_cast<const char*>(&textureCount), 4);
+
+							for (const auto& texture : umdTextures) {
+								int length = (int)texture.length();
+								tmpmap.write(reinterpret_cast<const char*>(&length), 4);
+								tmpmap.write(texture.c_str(), length);
+							}
+
+							tmpmap.close();
+						}
 
 						print_log("Success! Pos debug mins/maxs {},{},{} / {},{},{}!\n", pos_debug_mins.x, pos_debug_mins.y, pos_debug_mins.z, pos_debug_maxs.x, pos_debug_maxs.y, pos_debug_maxs.z);
 
@@ -5197,105 +5209,7 @@ void Gui::drawMenuBar()
 
 				if (ImGui::MenuItem("Fix light entities"))
 				{
-					std::vector<int> modelLeafs;
-					map->modelLeafs(0, modelLeafs);
-
-					std::vector<vec3> ignore_mins;
-					std::vector<vec3> ignore_maxs;
-
-					std::vector<int> add_leafs;
-					std::vector<float> add_leafs_power;
-
-					for (auto i : modelLeafs)
-					{
-						if (map->leaves[i].nContents == CONTENTS_EMPTY)
-						{
-							if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 250.0 &&
-								(map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() < 1000.0f)
-							{
-								bool skip = false;
-								for (size_t v = 0; v < ignore_maxs.size(); v++)
-								{
-									if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
-									{
-										skip = true;
-										break;
-									}
-								}
-								if (!skip)
-								{
-									ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
-									ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
-									add_leafs.push_back(i);
-									add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
-								}
-							}
-						}
-					}
-
-					for (auto i : modelLeafs)
-					{
-						if (map->leaves[i].nContents == CONTENTS_EMPTY)
-						{
-							if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 250.0)
-							{
-								bool skip = false;
-								for (size_t v = 0; v < ignore_maxs.size(); v++)
-								{
-									if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
-									{
-										skip = true;
-										break;
-									}
-								}
-								if (!skip)
-								{
-									ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
-									ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
-									add_leafs.push_back(i);
-									add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
-								}
-							}
-						}
-					}
-					for (auto i : modelLeafs)
-					{
-						if (map->leaves[i].nContents == CONTENTS_EMPTY)
-						{
-							if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 175.0)
-							{
-								bool skip = false;
-								for (size_t v = 0; v < ignore_maxs.size(); v++)
-								{
-									if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
-									{
-										skip = true;
-										break;
-									}
-								}
-								if (!skip)
-								{
-									ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
-									ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
-									add_leafs.push_back(i);
-									add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
-								}
-							}
-						}
-					}
-
-
-
-					for (size_t i = 0; i < add_leafs.size(); i++)
-					{
-						map->ents.push_back(new Entity("light"));
-						vec3 lightPlace = getCenter(map->leaves[add_leafs[i]].nMaxs, map->leaves[add_leafs[i]].nMins);
-						lightPlace.z = std::max(map->leaves[i].nMins.z, map->leaves[i].nMaxs.z) - 16.0f;
-						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", getCenter(map->leaves[add_leafs[i]].nMaxs, map->leaves[add_leafs[i]].nMins).toKeyvalueString());
-						map->ents[map->ents.size() - 1]->setOrAddKeyvalue("_light", vec4(255.0f, 255.0f, 255.0f, std::min(300.0f, add_leafs_power[i] * 0.5f)).toKeyvalueString(true));
-					}
-
-					map->update_ent_lump();
+					mapFixLightEnts(map);
 					g_app->updateEnts();
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -6784,6 +6698,7 @@ void Gui::drawTextureBrowser()
 				clipper.End();
 				ImGui::EndTabItem();
 			}
+
 			if (ImGui::BeginTabItem(get_localized_string(LANG_0653).c_str()))
 			{
 				ImGui::Dummy(ImVec2(0, 10));

@@ -34,7 +34,7 @@ std::mutex g_mutex_list[10] = {};
 bool fileExists(const std::string& fileName)
 {
 	std::error_code err;
-	return fs::exists(fileName,err) && !fs::is_directory(fileName);
+	return fs::exists(fileName, err) && !fs::is_directory(fileName);
 }
 
 char* loadFile(const std::string& fileName, int& length)
@@ -81,7 +81,7 @@ bool writeFile(const std::string& fileName, const std::string& data)
 bool removeFile(const std::string& fileName)
 {
 	std::error_code err;
-	return fs::exists(fileName,err) && fs::remove(fileName);
+	return fs::exists(fileName, err) && fs::remove(fileName);
 }
 
 bool copyFile(const std::string& from, const std::string& to)
@@ -442,32 +442,32 @@ float getDistAlongAxis(const vec3& axis, const vec3& p)
 
 bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& outDist)
 {
-    const float tolerance = 0.00001f;
+	const float tolerance = 0.00001f;
 
-    size_t numVerts = verts.size();
-    for (size_t i = 0; i < numVerts; ++i)
-    {
-        const vec3& v0 = verts[i];
-        const vec3& v1 = verts[(i + 1) % numVerts];
-        const vec3& v2 = verts[(i + 2) % numVerts];
+	size_t numVerts = verts.size();
+	for (size_t i = 0; i < numVerts; ++i)
+	{
+		const vec3& v0 = verts[i];
+		const vec3& v1 = verts[(i + 1) % numVerts];
+		const vec3& v2 = verts[(i + 2) % numVerts];
 
-        vec3 ba = v1 - v0;
-        vec3 cb = v2 - v1;
+		vec3 ba = v1 - v0;
+		vec3 cb = v2 - v1;
 
-        vec3 normal = ba.cross(cb).normalize();
+		vec3 normal = ba.cross(cb).normalize();
 
-        if (i == 0)
-        {
-            outNormal = normal;
-        }
-        else if (std::abs(outNormal.dot(normal)) < 1.0f - tolerance)
-        {
-            return false;
-        }
-    }
+		if (i == 0)
+		{
+			outNormal = normal;
+		}
+		else if (std::abs(outNormal.dot(normal)) < 1.0f - tolerance)
+		{
+			return false;
+		}
+	}
 
-    outDist = getDistAlongAxis(outNormal, verts[0]);
-    return true;
+	outDist = getDistAlongAxis(outNormal, verts[0]);
+	return true;
 }
 
 vec3 findBestBrushCenter(std::vector<vec3>& points)
@@ -1002,7 +1002,7 @@ void WriteBMP_RGB(const std::string& fileName, unsigned char* pixels_rgb, int wi
 	fclose(outputFile);
 }
 
-void WriteBMP_PAL(const std::string& fileName, unsigned char* pixels_indexes, int width, int height, COLOR3 * pal)
+void WriteBMP_PAL(const std::string& fileName, unsigned char* pixels_indexes, int width, int height, COLOR3* pal)
 {
 	FILE* outputFile = NULL;
 	fopen_s(&outputFile, fileName.c_str(), "wb");
@@ -1046,7 +1046,7 @@ void WriteBMP_PAL(const std::string& fileName, unsigned char* pixels_indexes, in
 	fwrite(&colorsUsed, 4, 1, outputFile);
 	int importantColors = ALL_COLORS_REQUIRED;
 	fwrite(&importantColors, 4, 1, outputFile);
-	
+
 	COLOR4 pal4[256];
 	for (int i = 0; i < 256; i++)
 	{
@@ -1075,7 +1075,7 @@ int ArrayXYtoId(int w, int x, int y)
 bool dirExists(const std::string& dirName)
 {
 	std::error_code err;
-	return fs::exists(dirName,err) && fs::is_directory(dirName);
+	return fs::exists(dirName, err) && fs::is_directory(dirName);
 }
 
 #ifndef WIN32
@@ -1170,16 +1170,19 @@ void removeDir(const std::string& dirName)
 }
 
 
-void replaceAll(std::string& str, const std::string& from, const std::string& to)
+bool replaceAll(std::string& str, const std::string& from, const std::string& to)
 {
 	if (from.empty())
-		return;
+		return false;
 	size_t start_pos = 0;
+	bool found = false;
 	while ((start_pos = str.find(from, start_pos)) != std::string::npos)
 	{
 		str.replace(start_pos, from.length(), to);
 		start_pos += to.length();
+		found = true;
 	}
+	return found;
 }
 void fixupPath(char* path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH endslash)
 {
@@ -1192,22 +1195,29 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 {
 	if (path.empty())
 		return;
-	replaceAll(path, "\"", "");
-	replaceAll(path, "\'", "");
-	replaceAll(path, "/", "\\");
-	replaceAll(path, "\\\\", "\\");
-	replaceAll(path, "\\", "/");
-	replaceAll(path, "//", "/");
+
+	if (path.back() == '\"')
+	{
+		path.pop_back();
+		if (!path.empty() && path.front() == '\"')
+		{
+			path.erase(path.begin());
+		}
+	}
+
+	while (replaceAll(path, "\\", "/")) {};
+	while (replaceAll(path, "//", "/")) {};
+
 	if (startslash == FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE)
 	{
-		if (path[0] != '\\' && path[0] != '/')
+		if (path[0] != '/')
 		{
 			path = "/" + path;
 		}
 	}
 	else if (startslash == FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE)
 	{
-		if (path[0] == '\\' || path[0] == '/')
+		if (path[0] == '/')
 		{
 			path.erase(path.begin());
 		}
@@ -1215,26 +1225,20 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 
 	if (endslash == FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE)
 	{
-		if (path.empty() || (path.back() != '\\' && path.back() != '/'))
+		if (path.empty() || (path.back() != '/'))
 		{
 			path = path + "/";
 		}
 	}
 	else if (endslash == FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE)
 	{
-		if (path.empty())
-			return;
-
-		if (path.back() == '\\' || path.back() == '/')
+		if (path.empty() && path.back() == '/')
 		{
 			path.pop_back();
 		}
 	}
 
-	replaceAll(path, "/", "\\");
-	replaceAll(path, "\\\\", "\\");
-	replaceAll(path, "\\", "/");
-	replaceAll(path, "//", "/");
+	while (replaceAll(path, "//", "/")) {};
 }
 
 float AngleFromTextureAxis(vec3 axis, bool x, int type)
@@ -1338,7 +1342,7 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 }
 
 // For issue when string.size > 0 but string length is zero ("\0\0\0" string for example)
-size_t nullstrlen(const std::string & str)
+size_t nullstrlen(const std::string& str)
 {
 	return strlen(str.c_str());
 }
@@ -1824,15 +1828,15 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 #endif
 	}
 	return retdir;
-}
+	}
 
-std::string GetExecutableDir(const std::string & arg_0)
+std::string GetExecutableDir(const std::string& arg_0)
 {
 	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
 	return GetExecutableDirInternal(retpath.string());
 }
 
-std::string GetExecutableDir(const std::wstring & arg_0)
+std::string GetExecutableDir(const std::wstring& arg_0)
 {
 	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
 	return GetExecutableDirInternal(retpath.string());
@@ -2816,3 +2820,107 @@ extern "C" uint64_t _dtoul3_legacy(const double x) {
 }
 
 #endif
+
+
+void mapFixLightEnts(Bsp* map)
+{
+	std::vector<int> modelLeafs;
+	map->modelLeafs(0, modelLeafs);
+
+	std::vector<vec3> ignore_mins;
+	std::vector<vec3> ignore_maxs;
+
+	std::vector<int> add_leafs;
+	std::vector<float> add_leafs_power;
+
+	for (auto i : modelLeafs)
+	{
+		if (map->leaves[i].nContents == CONTENTS_EMPTY)
+		{
+			if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 250.0 &&
+				(map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() < 1000.0f)
+			{
+				bool skip = false;
+				for (size_t v = 0; v < ignore_maxs.size(); v++)
+				{
+					if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
+					{
+						skip = true;
+						break;
+					}
+				}
+				if (!skip)
+				{
+					ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
+					ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
+					add_leafs.push_back(i);
+					add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
+				}
+			}
+		}
+	}
+
+	for (auto i : modelLeafs)
+	{
+		if (map->leaves[i].nContents == CONTENTS_EMPTY)
+		{
+			if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 250.0)
+			{
+				bool skip = false;
+				for (size_t v = 0; v < ignore_maxs.size(); v++)
+				{
+					if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
+					{
+						skip = true;
+						break;
+					}
+				}
+				if (!skip)
+				{
+					ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
+					ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
+					add_leafs.push_back(i);
+					add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
+				}
+			}
+		}
+	}
+	for (auto i : modelLeafs)
+	{
+		if (map->leaves[i].nContents == CONTENTS_EMPTY)
+		{
+			if ((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test() > 175.0)
+			{
+				bool skip = false;
+				for (size_t v = 0; v < ignore_maxs.size(); v++)
+				{
+					if (checkCollision(map->leaves[i].nMins, map->leaves[i].nMaxs, ignore_mins[v], ignore_maxs[v]))
+					{
+						skip = true;
+						break;
+					}
+				}
+				if (!skip)
+				{
+					ignore_mins.push_back(map->leaves[i].nMins + vec3(-1.0f, -1.0f, -1.0f));
+					ignore_maxs.push_back(map->leaves[i].nMaxs + vec3(1.0f, 1.0f, 1.0f));
+					add_leafs.push_back(i);
+					add_leafs_power.push_back((map->leaves[i].nMaxs - map->leaves[i].nMins).abs().size_test());
+				}
+			}
+		}
+	}
+
+
+
+	for (size_t i = 0; i < add_leafs.size(); i++)
+	{
+		map->ents.push_back(new Entity("light"));
+		vec3 lightPlace = getCenter(map->leaves[add_leafs[i]].nMaxs, map->leaves[add_leafs[i]].nMins);
+		lightPlace.z = std::max(map->leaves[i].nMins.z, map->leaves[i].nMaxs.z) - 16.0f;
+		map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", getCenter(map->leaves[add_leafs[i]].nMaxs, map->leaves[add_leafs[i]].nMins).toKeyvalueString());
+		map->ents[map->ents.size() - 1]->setOrAddKeyvalue("_light", vec4(255.0f, 255.0f, 255.0f, std::min(300.0f, add_leafs_power[i] * 0.5f)).toKeyvalueString(true));
+	}
+
+	map->update_ent_lump();
+}

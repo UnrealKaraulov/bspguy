@@ -24,7 +24,7 @@ extern std::string g_version_string;
 extern std::mutex g_mutex_list[10];
 
 #ifndef WIN32
-#define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
+#define fopen_s(pFile, filename, mode) (*(pFile) = fopen((filename), (mode)), (*(pFile) != NULL ? 0 : errno))
 #endif
 
 static const vec3  s_baseaxis[18] = {
@@ -43,7 +43,7 @@ extern ProgressMeter g_progress;
 std::vector<std::string> splitStringIgnoringQuotes(const std::string& s, const std::string& delimitter);
 std::vector<std::string> splitString(const std::string& s, const std::string& delimiter, int maxParts = 0);
 
-void replaceAll(std::string& str, const std::string& from, const std::string& to);
+bool replaceAll(std::string& str, const std::string& from, const std::string& to);
 
 bool fileExists(const std::string& fileName);
 
@@ -272,3 +272,4 @@ bool starts_with(const std::string& str, char prefix);
 bool starts_with(const std::wstring& str, wchar_t prefix);
 bool ends_with(const std::string& str, char suffix);
 bool ends_with(const std::wstring& str, wchar_t suffix);
+void mapFixLightEnts(Bsp* map);

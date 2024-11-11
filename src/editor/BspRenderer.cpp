@@ -1284,10 +1284,10 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 	{
 		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(wireframeVerts_full);
 
+#ifdef _DEBUG
 		if (g_verbose)
 			print_log("Optimize wireframe {} model: {} to {} lines.\n", modelIdx, wireframeVerts_full.size(), cleanupWireframe.size());
-
-
+#endif
 		cVert* resultWireFrame = new cVert[cleanupWireframe.size()];
 		memcpy(resultWireFrame, cleanupWireframe.data(), cleanupWireframe.size() * sizeof(cVert));
 

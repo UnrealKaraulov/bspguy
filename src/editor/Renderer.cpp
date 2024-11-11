@@ -3907,6 +3907,8 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 		return;
 	}
 
+	clearSelection();
+	selectMap(map);
 	vec3 baseOrigin = getEntOrigin(map, copiedEnts[0]);
 
 	for (size_t i = 0; i < copiedEnts.size(); i++)
@@ -3932,11 +3934,8 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 
 		CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), copiedEnts[i]);
 		map->getBspRender()->pushUndoCommand(createCommand);
+		selectEnt(map, map->ents.size() > 1 ? ((int)map->ents.size() - 1) : 0, true);
 	}
-
-	clearSelection();
-	selectMap(map);
-	selectEnt(map, map->ents.size() > 1 ? ((int)map->ents.size() - 1) : 0);
 }
 
 void Renderer::deleteEnt(int entIdx)
