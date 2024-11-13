@@ -351,7 +351,7 @@ Bsp::Bsp(std::string fpath)
 		world->setOrAddKeyvalue("_editor", g_version_string);
 	}
 
-	for (int i = 0; i < faceCount; i++)
+	/*for (int i = 0; i < faceCount; i++)
 	{
 		BSPFACE32& face = faces[i];
 		BSPTEXTUREINFO& info = texinfos[face.iTextureInfo];
@@ -365,7 +365,7 @@ Bsp::Bsp(std::string fpath)
 		{
 			info.nFlags |= TEX_SPECIAL;
 		}
-	}
+	}*/
 
 	save_undo_lightmaps();
 }
@@ -448,19 +448,6 @@ bool Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 		expandBoundingBox(s.pos, mins, maxs);
 	}
 
-	/*for (int i = 0; i < model.nFaces; i++)
-	{
-		BSPFACE32& face = faces[model.iFirstFace + i];
-
-		for (int e = 0; e < face.nEdges; e++)
-		{
-			int edgeIdx = surfedges[face.iFirstEdge + e];
-			BSPEDGE32& edge = edges[abs(edgeIdx)];
-			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
-
-			expandBoundingBox(verts[vertIdx], mins, maxs);
-		}
-	}*/
 	return true;
 }
 
@@ -478,7 +465,7 @@ std::vector<int> Bsp::getModelVertsIds(int modelIdx)
 		{
 			int edgeIdx = surfedges[face.iFirstEdge + e];
 			BSPEDGE32& edge = edges[abs(edgeIdx)];
-			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+			int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 
 			if (!visited.count(vertIdx))
 			{
@@ -504,7 +491,7 @@ std::vector<TransformVert> Bsp::getModelTransformVerts(int modelIdx)
 		{
 			int edgeIdx = surfedges[face.iFirstEdge + e];
 			BSPEDGE32& edge = edges[abs(edgeIdx)];
-			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+			int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 
 			if (!visited.count(vertIdx))
 			{
@@ -614,7 +601,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 			{
 				int edgeIdx = surfedges[face.iFirstEdge + e];
 				BSPEDGE32& edge = edges[abs(edgeIdx)];
-				int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+				int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 
 				if (verts[vertIdx] != v)
 				{
@@ -5373,7 +5360,7 @@ void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 	{
 		int edgeIdx = surfedges[face.iFirstEdge + e];
 		BSPEDGE32& edge = edges[abs(edgeIdx)];
-		int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+		int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 
 		usage->surfEdges[face.iFirstEdge + e] = true;
 		usage->edges[abs(edgeIdx)] = true;
@@ -8669,7 +8656,7 @@ std::vector<vec3> Bsp::get_face_verts(int faceIdx, int limited)
 	{
 		int edgeIdx = surfedges[e];
 		BSPEDGE32& edge = edges[abs(edgeIdx)];
-		vec3 v = edgeIdx < 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
+		vec3 v = edgeIdx > 0 ? verts[edge.iVertex[0]] : verts[edge.iVertex[1]];
 		out.push_back(v);
 		limited--;
 		if (limited == 0)
@@ -8685,7 +8672,7 @@ std::vector<int> Bsp::get_face_verts_idx(int faceIdx, int limited)
 	{
 		int edgeIdx = surfedges[e];
 		BSPEDGE32& edge = edges[abs(edgeIdx)];
-		out.push_back(edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0]);
+		out.push_back(edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1]);
 		limited--;
 		if (limited == 0)
 			break;
@@ -9004,7 +8991,7 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 				{
 					int edgeIdx = surfedges[e];
 					BSPEDGE32& edge = edges[abs(edgeIdx)];
-					vec3 v = edgeIdx < 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
+					vec3 v = edgeIdx > 0 ? verts[edge.iVertex[0]] : verts[edge.iVertex[1]];
 					fprintf(polyfile, "%5.8f %5.8f %5.8f\n", v.x, v.y, v.z);
 				}
 			}
@@ -9014,7 +9001,7 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 				{
 					int edgeIdx = surfedges[e];
 					BSPEDGE32& edge = edges[abs(edgeIdx)];
-					vec3 v = edgeIdx < 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
+					vec3 v = edgeIdx > 0 ? verts[edge.iVertex[0]] : verts[edge.iVertex[1]];
 					fprintf(polyfile, "%5.8f %5.8f %5.8f\n", v.x, v.y, v.z);
 				}
 			}
@@ -12273,16 +12260,16 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 
 			BSPPLANE& plane = newplanes[newfaces[v].iPlane];
 
-			int vert_id1 = newsurfedges[edgeIdx + 0] < 0 ? newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[1]
-				: newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[0];
+			int vert_id1 = newsurfedges[edgeIdx + 0] > 0 ? newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[0]
+				: newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[1];
 			vec3 vertex1 = newverts[vert_id1];
 
-			int vert_id2 = newsurfedges[edgeIdx + 1] < 0 ? newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[1]
-				: newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[0];
+			int vert_id2 = newsurfedges[edgeIdx + 1] > 0 ? newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[0]
+				: newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[1];
 			vec3 vertex2 = newverts[vert_id2];
 
-			int vert_id3 = newsurfedges[edgeIdx + 2] < 0 ? newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[1]
-				: newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[0];
+			int vert_id3 = newsurfedges[edgeIdx + 2] > 0 ? newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[0]
+				: newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[1];
 			vec3 vertex3 = newverts[vert_id3];
 
 
@@ -12293,12 +12280,12 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 
 			// Texture coordinates
 			std::vector<vec2> uvs{};
-			uvs.push_back(newsurfedges[edgeIdx + 0] < 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[1]]
-				: newuv[newedges[abs(newsurfedges[edgeIdx])].iVertex[0]]);
-			uvs.push_back(newsurfedges[edgeIdx + 1] < 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[1]]
-				: newuv[newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[0]]);
-			uvs.push_back(newsurfedges[edgeIdx + 2] < 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[1]]
-				: newuv[newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[0]]);
+			uvs.push_back(newsurfedges[edgeIdx + 0] > 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 0])].iVertex[0]]
+				: newuv[newedges[abs(newsurfedges[edgeIdx])].iVertex[1]]);
+			uvs.push_back(newsurfedges[edgeIdx + 1] > 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[0]]
+				: newuv[newedges[abs(newsurfedges[edgeIdx + 1])].iVertex[1]]);
+			uvs.push_back(newsurfedges[edgeIdx + 2] > 0 ? newuv[newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[0]]
+				: newuv[newedges[abs(newsurfedges[edgeIdx + 2])].iVertex[1]]);
 
 			for (auto& uv : uvs)
 			{
@@ -12691,7 +12678,7 @@ bool Bsp::is_texture_with_pal(int textureid)
 	return is_texture_has_pal;
 }
 
-void Bsp::face_fix_duplicate_edges(int faceIdx)
+void Bsp::face_fix_duplicate_edges_index(int faceIdx)
 {
 	if (faceIdx < 0 || faceIdx >= faceCount)
 	{
@@ -12705,7 +12692,7 @@ void Bsp::face_fix_duplicate_edges(int faceIdx)
 	{
 		int edgeIdx = surfedges[e];
 		BSPEDGE32& edge = edges[abs(edgeIdx)];
-		int vert = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+		int vert = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];;
 		if (verts_usage.count(vert))
 		{
 			int newedge_id = create_edge();
@@ -12750,7 +12737,7 @@ bool Bsp::is_face_duplicate_edges(int faceIdx)
 	{
 		int edgeIdx = surfedges[e];
 		BSPEDGE32 edge = edges[abs(edgeIdx)];
-		int vert = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+		int vert = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 		if (verts_usage.count(vert))
 		{
 			return true;

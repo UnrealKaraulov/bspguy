@@ -1099,7 +1099,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		{
 			int edgeIdx = map->surfedges[face.iFirstEdge + e];
 			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
-			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+			int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 
 			vec3 vert = map->verts[vertIdx];
 			verts[e].pos = vert.flip();
@@ -2128,7 +2128,7 @@ void BspRenderer::refreshFace(int faceIdx)
 	{
 		int edgeIdx = map->surfedges[face.iFirstEdge + e];
 		BSPEDGE32& edge = map->edges[abs(edgeIdx)];
-		int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+		int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 		allVerts[e] = map->verts[vertIdx];
 
 		// 2 verts can share the same position on a face, so need to find one that isn't shared (aomdc_1intro)
@@ -3244,7 +3244,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 			{
 				int edgeIdx = map->surfedges[e];
 				BSPEDGE32 edge = map->edges[abs(edgeIdx)];
-				vec3& v = edgeIdx < 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+				vec3& v = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
 				if (vectest != vec3() && vectest == v)
 				{
 					badface = true;

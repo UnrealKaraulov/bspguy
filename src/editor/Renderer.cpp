@@ -4133,7 +4133,7 @@ void Renderer::goToFace(Bsp* map, int faceIdx)
 		{
 			int edgeIdx = map->surfedges[face.iFirstEdge + i];
 			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
-			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+			int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 			edgeVerts.push_back(map->verts[vertIdx]);
 		}
 

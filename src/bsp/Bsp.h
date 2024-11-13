@@ -165,7 +165,7 @@ public:
 
 	// face has duplicate verts, this is bad?
 	bool is_face_duplicate_edges(int faceIdx);
-	void face_fix_duplicate_edges(int faceIdx);
+	void face_fix_duplicate_edges_index(int faceIdx);
 
 	// get all verts used by this model
 	// TODO: split any verts shared with other models!

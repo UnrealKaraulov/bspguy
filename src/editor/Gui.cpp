@@ -3225,7 +3225,7 @@ void Gui::drawMenuBar()
 							{
 								int edgeIdx = map->surfedges[face.iFirstEdge + e];
 								BSPEDGE32& edge = map->edges[abs(edgeIdx)];
-								int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+								int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 								expandBoundingBox(map->verts[vertIdx], mins, maxs);
 							}
 						}
@@ -3326,7 +3326,7 @@ void Gui::drawMenuBar()
 									{
 										int edgeIdx = map->surfedges[face.iFirstEdge + e];
 										BSPEDGE32& edge = map->edges[abs(edgeIdx)];
-										int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+										int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
 										expandBoundingBox(map->verts[vertIdx], model_mins, model_maxs);
 									}
 								}
@@ -11394,7 +11394,7 @@ void Gui::drawFaceEditorWidget()
 					{
 						int edgeIdx = map->surfedges[e];
 						BSPEDGE32 edge = map->edges[abs(edgeIdx)];
-						vec3 v = edgeIdx < 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+						vec3 v = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
 						edgeVerts.push_back(v);
 					}
 				}
@@ -11518,7 +11518,7 @@ void Gui::drawFaceEditorWidget()
 						int edgeIdx = map->surfedges[e];
 						BSPEDGE32 edge = map->edges[abs(edgeIdx)];
 
-						vec3& vec = edgeIdx < 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+						vec3& vec = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
 
 						for (int v = 0; v < map->vertCount; v++)
 						{
@@ -11655,36 +11655,6 @@ void Gui::drawFaceEditorWidget()
 				}
 				ImGui::SetClipboardText(outstr.c_str());
 			}
-
-			//if (ImGui::Button("Optimize"))
-			//{
-			//	auto edge_copy_verts = edgeVerts;
-			//	removeColinearPoints(edge_copy_verts, EPSILON);
-
-			//	bool swap_need = false;
-			//	for (int e = face.iFirstEdge, v = 0; e < face.iFirstEdge + face.nEdges && v < (int)edge_copy_verts.size(); e++, v++)
-			//	{
-			//		int edge_id = map->surfedges[e];
-			//		BSPEDGE32 edge = map->edges[abs(edge_id)];
-			//		vec3 vert = edge_id >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
-			//		if (vert == edge_copy_verts[v]) continue; // already in 
-			//	
-			//		for (int z = e; z < face.iFirstEdge + face.nEdges - 1; z++)
-			//		{
-			//			map->surfedges[z] = map->surfedges[z + 1];
-			//		}
-
-			//		e--;
-			//		v--;
-			//		face.nEdges--;
-			//	}
-
-			//	face.nEdges = (int)edge_copy_verts.size();
-
-			//	edgeVerts = edge_copy_verts;
-
-			//	updatedFaceVec = true;
-			//}
 		}
 
 		ImGui::PopItemWidth();
@@ -11848,7 +11818,7 @@ void Gui::drawFaceEditorWidget()
 				{
 					int edgeIdx = map->surfedges[e];
 					BSPEDGE32 edge = map->edges[abs(edgeIdx)];
-					vec3& v = edgeIdx < 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+					vec3& v = edgeIdx > 0 ? map->verts[edge.iVertex[0]] : map->verts[edge.iVertex[1]];
 					v = edgeVerts[vecId];
 				}
 			}

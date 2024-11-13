@@ -80,7 +80,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum, int imins[2], int imaxs[2])
 
 	if (!facewinding.m_Points.size())
 	{
-		print_log(PRINT_RED, "CanFindFacePosition error facewinding face {} [facewind size {}]!\n", facenum, facewinding.m_Points.size());
+		print_log(PRINT_RED, "CanFindFacePosition error face {} [facewind size {} verts {}]!\n", facenum, facewinding.m_Points.size(), bsp->get_face_verts(facenum).size());
 		imins[0] = imins[1] = imaxs[0] = imaxs[1] = 1;
 		return false;
 	}
