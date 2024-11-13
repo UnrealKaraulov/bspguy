@@ -9752,6 +9752,15 @@ void Gui::drawLimits()
 	Bsp* map = app->getSelectedMap();
 	std::string title = map ? "Limits - " + map->bsp_name : "Limits";
 
+	static Bsp* oldMap = NULL;
+
+	if (map != oldMap)
+	{
+		reloadLimits();
+		oldMap = map;
+	}
+
+
 	if (ImGui::Begin(fmt::format("{}###LIMITS_WIDGET", title).c_str(), &showLimitsWidget))
 	{
 		if (!map)
@@ -9865,7 +9874,6 @@ void Gui::drawLimits()
 
 void Gui::drawLimitTab(Bsp* map, int sortMode)
 {
-
 	int maxCount = 0;
 	const char* countName = "None";
 	switch (sortMode)
