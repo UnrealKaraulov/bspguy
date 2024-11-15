@@ -8587,7 +8587,8 @@ void Gui::loadFonts()
 
 void Gui::drawLog()
 {
-	static bool AutoScroll = true;  // Keep scrolling if already at the bottom
+	static bool AutoScroll = true;
+	static bool scroll_to_bottom = false;
 
 	ImGui::SetNextWindowSize(ImVec2(750.f, 300.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
@@ -8605,13 +8606,13 @@ void Gui::drawLog()
 	{
 		log_buffer_copy = g_log_buffer;
 		color_buffer_copy = g_color_buffer;
+		scroll_to_bottom = true; 
 	}
 	g_mutex_list[0].unlock();
 
 	ImGui::BeginChild(get_localized_string(LANG_0706).c_str(), ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
 	bool copy = false;
-	bool toggledAutoScroll = false;
 	if (ImGui::BeginPopupContextWindow())
 	{
 		if (ImGui::MenuItem(get_localized_string(LANG_1165).c_str()))
@@ -8627,14 +8628,13 @@ void Gui::drawLog()
 		}
 		if (ImGui::MenuItem(get_localized_string(LANG_0708).c_str(), NULL, &AutoScroll))
 		{
-			toggledAutoScroll = true;
+			
 		}
 		ImGui::EndPopup();
 	}
 
 	ImGui::PushFont(consoleFont);
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-
 
 	if (copy)
 	{
@@ -8646,31 +8646,23 @@ void Gui::drawLog()
 		ImGui::SetClipboardText(logStr.c_str());
 	}
 
-	ImGuiListClipper clipper;
-	clipper.Begin((int)log_buffer_copy.size(), ImGui::GetTextLineHeightWithSpacing());
-	while (clipper.Step())
+	for (size_t i = 0; i < log_buffer_copy.size(); i++)
 	{
-		int line_start = clipper.DisplayStart;
-		int line_count = clipper.DisplayEnd - clipper.DisplayStart;
-		for (int i = 0; i < line_count; i++)
-		{
-			if (line_start + i < (int)log_buffer_copy.size())
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[line_start + i]));
-				ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
-				ImGui::TextWrapped(log_buffer_copy[line_start + i].c_str());
-				ImGui::PopStyleVar();
-				ImGui::PopStyleColor();
-			}
-		}
+		ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[i]));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+		ImGui::TextWrapped(log_buffer_copy[i].c_str());
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor();
 	}
-	clipper.End();
+
+	if (AutoScroll && scroll_to_bottom)
+	{
+		ImGui::SetScrollHereY(1.0f);
+		scroll_to_bottom = false;
+	}
 
 	ImGui::PopFont();
 	ImGui::PopStyleVar();
-
-	if (AutoScroll && (ImGui::GetScrollY() >= ImGui::GetScrollMaxY() || toggledAutoScroll))
-		ImGui::SetScrollHereY(1.0f);
 
 	ImGui::EndChild();
 	ImGui::End();
@@ -9348,6 +9340,7 @@ void Gui::drawSettings()
 			bool renderModels = g_render_flags & RENDER_MODELS;
 			bool renderAnimatedModels = g_render_flags & RENDER_MODELS_ANIMATED;
 			bool renderSelectedAtTop = g_render_flags & RENDER_SELECTED_AT_TOP;
+			bool renderMapBoundary = g_render_flags & RENDER_MAP_BOUNDARY;
 
 			ImGui::Text(get_localized_string(LANG_0779).c_str());
 
@@ -9440,7 +9433,11 @@ void Gui::drawSettings()
 					mapRenderers[i]->updateClipnodeOpacity(transparentNodes ? 128 : 255);
 				}
 			}
-
+			if (ImGui::Checkbox("Map boundary", &renderMapBoundary))
+			{
+				g_render_flags ^= RENDER_MAP_BOUNDARY;
+			}
+			
 			ImGui::Columns(1);
 
 			ImGui::Separator();
