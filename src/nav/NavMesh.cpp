@@ -6,7 +6,7 @@
 #include <string.h>
 #include "GLFW/glfw3.h"
 
-bool NavNode::addLink(int node, int srcEdge, int dstEdge, int zDist, uint8_t _flags) {
+bool NavNode::addLink(int node, int srcEdge, int dstEdge, int zDist, unsigned char _flags) {
 	if (srcEdge < 0 || srcEdge >= MAX_NAV_POLY_VERTS) {
 		print_log("Error: add link to invalid src edge {}\n", srcEdge);
 		return false;
@@ -88,7 +88,7 @@ NavMesh::NavMesh(std::vector<Polygon3D> faces) {
 		sizeof(NavNode), sizeof(NavLink));
 }
 
-bool NavMesh::addLink(int from, int to, int srcEdge, int dstEdge, int zDist, uint8_t flags) {
+bool NavMesh::addLink(int from, int to, int srcEdge, int dstEdge, int zDist, unsigned char flags) {
 	if (from < 0 || to < 0 || from >= MAX_NAV_POLYS || to >= MAX_NAV_POLYS) {
 		print_log("Error: add link from/to invalid node {} {}\n", from, to);
 		return false;

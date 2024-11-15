@@ -629,8 +629,6 @@ vec3 Entity::getHullOrigin(Bsp* map) {
 	int modelIdx = getBspModelIdx();
 
 	if (modelIdx != -1) {
-		BSPMODEL& model = map->models[modelIdx];
-
 		vec3 mins, maxs;
 		map->get_model_vertex_bounds(modelIdx, mins, maxs);
 		ori += (maxs + mins) * 0.5f;

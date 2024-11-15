@@ -28,9 +28,9 @@ struct MAPBLOCK
 		float zdelta_neg = other.maxs.z - mins.z;
 		float zdelta_pos = maxs.z - other.mins.z;
 
-		int xdelta = xdelta_neg < xdelta_pos ? ceilf(xdelta_neg + 1.5f) : -ceilf(xdelta_pos + 1.5f);
-		int ydelta = ydelta_neg < ydelta_pos ? ceilf(ydelta_neg + 1.5f) : -ceilf(ydelta_pos + 1.5f);
-		int zdelta = zdelta_neg < zdelta_pos ? ceilf(zdelta_neg + 1.5f) : -ceilf(zdelta_pos + 1.5f);
+		float xdelta = xdelta_neg < xdelta_pos ? ceilf(xdelta_neg + 1.5f) : -ceilf(xdelta_pos + 1.5f);
+		float ydelta = ydelta_neg < ydelta_pos ? ceilf(ydelta_neg + 1.5f) : -ceilf(ydelta_pos + 1.5f);
+		float zdelta = zdelta_neg < zdelta_pos ? ceilf(zdelta_neg + 1.5f) : -ceilf(zdelta_pos + 1.5f);
 
 		result.moveFixes = vec3(xdelta, ydelta, zdelta);
 		result.moveFixes2 = vec3(-xdelta, -ydelta, -zdelta);

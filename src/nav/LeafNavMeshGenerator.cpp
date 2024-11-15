@@ -15,11 +15,11 @@
 
 
 LeafNavMesh* LeafNavMeshGenerator::generate(Bsp* map) {
-	float NavMeshGeneratorGenStart = glfwGetTime();
+	double NavMeshGeneratorGenStart = glfwGetTime();
 
-	float createLeavesStart = glfwGetTime();
+	double createLeavesStart = NavMeshGeneratorGenStart;
 	std::vector<LeafNode> leaves = getHullLeaves(map, 0, CONTENTS_EMPTY);
-	print_log("Created {} leaf nodes in {}\n", leaves.size(), glfwGetTime() - createLeavesStart);
+	print_log("Created {} leaf nodes in {}\n", leaves.size(), (float)(glfwGetTime() - createLeavesStart));
 	
 	LeafOctree* octree = createLeafOctree(map, leaves, octreeDepth);
 	LeafNavMesh* navmesh = new LeafNavMesh(leaves, octree);
@@ -124,7 +124,7 @@ std::vector<LeafNode> LeafNavMeshGenerator::getHullLeaves(Bsp* map, int modelIdx
 					expandBoundingBox(face.verts[k], leaf.mins, leaf.maxs);
 				}
 			}
-			leaf.center /= leaf.leafFaces.size();
+			leaf.center /= (float)leaf.leafFaces.size();
 			leaf.id = (int)emptyLeaves.size();
 			leaf.origin = leaf.center;
 
@@ -150,7 +150,7 @@ void LeafNavMeshGenerator::getOctreeBox(Bsp* map, vec3& min, vec3& max) {
 }
 
 LeafOctree* LeafNavMeshGenerator::createLeafOctree(Bsp* map, std::vector<LeafNode>& nodes, int treeDepth) {
-	float treeStart = glfwGetTime();
+	double treeStart = glfwGetTime();
 
 	vec3 treeMin, treeMax;
 	getOctreeBox(map, treeMin, treeMax);
@@ -162,13 +162,13 @@ LeafOctree* LeafNavMeshGenerator::createLeafOctree(Bsp* map, std::vector<LeafNod
 	}
 
 	print_log("Create octree depth {}, size {} -> {} in {}\n", treeDepth,
-		treeMax.x, treeMax.x / pow(2, treeDepth), (float)glfwGetTime() - treeStart);
+		treeMax.x, treeMax.x / pow(2, treeDepth), (float)(glfwGetTime() - treeStart));
 
 	return octree;
 }
 
 void LeafNavMeshGenerator::setLeafOrigins(Bsp* map, LeafNavMesh* mesh) {
-	float timeStart = glfwGetTime();
+	double timeStart = glfwGetTime();
 
 	for (int i = 0; i < mesh->nodes.size(); i++) {
 		LeafNode& node = mesh->nodes[i];
@@ -196,7 +196,7 @@ void LeafNavMeshGenerator::setLeafOrigins(Bsp* map, LeafNavMesh* mesh) {
 		}
 	}
 
-	print_log("Set leaf origins in {}\n", (float)glfwGetTime() - timeStart);
+	print_log("Set leaf origins in {}\n", (float)(glfwGetTime() - timeStart));
 }
 
 vec3 LeafNavMeshGenerator::getBestPolyOrigin(Bsp* map, Polygon3D& poly, vec3 bias) {
@@ -215,8 +215,8 @@ vec3 LeafNavMeshGenerator::getBestPolyOrigin(Bsp* map, Polygon3D& poly, vec3 bia
 	vec3 bestPos = bias;
 	float pad = 1.0f + EPSILON; // don't choose a point right against a face of the volume
 
-	for (int y = poly.localMins.y + pad; y < poly.localMaxs.y - pad; y += step) {
-		for (int x = poly.localMins.x + pad; x < poly.localMaxs.x - pad; x += step) {
+	for (float y = poly.localMins.y + pad; y < poly.localMaxs.y - pad; y += step) {
+		for (float x = poly.localMins.x + pad; x < poly.localMaxs.x - pad; x += step) {
 			vec3 testPos = poly.unproject(vec2(x, y));
 			testPos.z += NAV_BOTTOM_EPSILON;
 
@@ -250,7 +250,7 @@ vec3 LeafNavMeshGenerator::getBestPolyOrigin(Bsp* map, Polygon3D& poly, vec3 bia
 
 void LeafNavMeshGenerator::linkNavLeaves(Bsp* map, LeafNavMesh* mesh) {
 	int numLinks = 0;
-	float linkStart = glfwGetTime();
+	double linkStart = glfwGetTime();
 
 	std::vector<bool> regionLeaves;
 	regionLeaves.resize(mesh->nodes.size());
@@ -274,7 +274,7 @@ void LeafNavMeshGenerator::linkNavLeaves(Bsp* map, LeafNavMesh* mesh) {
 		}
 	}
 
-	print_log("Added {} nav leaf links in {}\n", numLinks, (float)glfwGetTime() - linkStart);
+	print_log("Added {} nav leaf links in {}\n", numLinks, (float)(glfwGetTime() - linkStart));
 }
 
 void LeafNavMeshGenerator::linkEntityLeaves(Bsp* map, LeafNavMesh* mesh) {
@@ -428,7 +428,7 @@ int LeafNavMeshGenerator::tryFaceLinkLeaves(Bsp* map, LeafNavMesh* mesh, int src
 }
 
 void LeafNavMeshGenerator::calcPathCosts(Bsp* bsp, LeafNavMesh* mesh) {
-	float markStart = glfwGetTime();
+	double markStart = glfwGetTime();
 
 	for (int i = 0; i < mesh->nodes.size(); i++) {
 		LeafNode& node = mesh->nodes[i];
@@ -459,13 +459,13 @@ void LeafNavMeshGenerator::calcPathCosts(Bsp* bsp, LeafNavMesh* mesh) {
 		}
 	}
 
-	print_log("Calculated path costs in {}\n", (float)glfwGetTime() - markStart);
+	print_log("Calculated path costs in {}\n", (float)(glfwGetTime() - markStart));
 }
 
 void LeafNavMeshGenerator::addPathCost(LeafLink& link, Bsp* bsp, vec3 start, vec3 end, bool isDrop) {
 	TraceResult tr;
 
-	int steps = (end - start).length() / 8.0f;
+	float steps = (end - start).length() / 8.0f;
 	vec3 delta = end - start;
 	vec3 dir = delta.normalize();
 

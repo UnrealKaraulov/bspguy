@@ -14,9 +14,9 @@
 #define NAV_AUTOCLIMB_HEIGHT 117
 
 struct NavLink {
-	uint8_t srcEdge : 4; // edge to move from in source poly
-	uint8_t dstEdge : 4; // edge to move to in target/destination poly
-	uint8_t flags;
+	unsigned char srcEdge : 4; // edge to move from in source poly
+	unsigned char dstEdge : 4; // edge to move to in target/destination poly
+	unsigned char flags;
 	int node; // which poly is linked to. -1 = end of links
 	int zDist; // minimum height difference between the connecting edges
 };
@@ -27,7 +27,7 @@ struct NavNode {
 	unsigned int id;
 
 	// adds a link to node "node" on edge "edge" with height difference "zDist"
-	bool addLink(int node, int srcEdge, int dstEdge, int zDist, uint8_t flags);
+	bool addLink(int node, int srcEdge, int dstEdge, int zDist, unsigned char flags);
 	int numLinks();
 };
 
@@ -43,7 +43,7 @@ public:
 
 	NavMesh(std::vector<Polygon3D> polys);
 
-	bool addLink(int from, int to, int srcEdge, int dstEdge, int zDist, uint8_t flags);
+	bool addLink(int from, int to, int srcEdge, int dstEdge, int zDist, unsigned char flags);
 
 	void clear();
 

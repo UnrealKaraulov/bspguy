@@ -441,11 +441,11 @@ namespace GrahamScan {
 	}
 
 	int squaredDist(vec2 p1, vec2 p2) {
-		return ((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
+		return (int)((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
 	}
 
 	int direction(vec2 a, vec2 b, vec2 c) {
-		int val = (b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y);
+		int val = (int)((b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y));
 		if (val == 0)
 			return 0;    //colinear
 		else if (val < 0)
@@ -464,13 +464,13 @@ namespace GrahamScan {
 
 	std::vector<vec2> findConvexHull(vec2 points[], int n) {
 		std::vector<vec2> convexHullPoints;
-		int minY = points[0].y, min = 0;
+		int minY = (int)points[0].y, min = 0;
 
 		for (int i = 1; i < n; i++) {
-			int y = points[i].y;
+			int y = (int)points[i].y;
 			//find bottom most or left most point
 			if ((y < minY) || (minY == y) && points[i].x < points[min].x) {
-				minY = points[i].y;
+				minY = (int)points[i].y;
 				min = i;
 			}
 		}

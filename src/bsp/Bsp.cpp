@@ -2938,7 +2938,7 @@ void Bsp::delete_oob_data(int clipFlags) {
 		print_log("    Deleted {} entities\n", deletedEnts);
 	ents = newEnts;
 
-	uint8_t* oobFaces = new uint8_t[faceCount];
+	unsigned char* oobFaces = new unsigned char[faceCount];
 	memset(oobFaces, 0, faceCount * sizeof(bool));
 	int oobFaceCount = 0;
 
@@ -3039,7 +3039,7 @@ void Bsp::delete_oob_data(int clipFlags) {
 		}
 		else {
 			for (int k = 0; k < leaf.nMarkSurfaces; k++) {
-				unsigned int faceIdx = marksurfs[leaf.iFirstMarkSurface + k];
+				int faceIdx = marksurfs[leaf.iFirstMarkSurface + k];
 
 				int offset = 0;
 				for (int j = 0; j < faceIdx; j++) {
@@ -3264,7 +3264,7 @@ void Bsp::delete_box_data(vec3 clipMins, vec3 clipMaxs) {
 		print_log("    Deleted {} entities\n", deletedEnts);
 	ents = newEnts;
 
-	uint8_t* oobFaces = new uint8_t[faceCount];
+	unsigned char* oobFaces = new unsigned char[faceCount];
 	memset(oobFaces, 0, faceCount * sizeof(bool));
 	int oobFaceCount = 0;
 
@@ -3358,7 +3358,7 @@ void Bsp::delete_box_data(vec3 clipMins, vec3 clipMaxs) {
 		}
 		else {
 			for (int k = 0; k < leaf.nMarkSurfaces; k++) {
-				unsigned int faceIdx = marksurfs[leaf.iFirstMarkSurface + k];
+				int faceIdx = marksurfs[leaf.iFirstMarkSurface + k];
 
 				int offset = 0;
 				for (int j = 0; j < faceIdx; j++) {
@@ -3766,11 +3766,11 @@ bool Bsp::subdivide_face(int faceIdx) {
 		std::vector<vec3>& cutPoly = polys[k];
 
 		newFaces[faceIdx + k] = faces[faceIdx];
-		newFaces[faceIdx + k].iFirstEdge = surfedgePtr - newSurfEdges;
+		newFaces[faceIdx + k].iFirstEdge = (int)(surfedgePtr - newSurfEdges);
 		newFaces[faceIdx + k].nEdges = (int)cutPoly.size();
 
-		int vertOffset = vertPtr - newVerts;
-		int edgeOffset = edgePtr - newEdges;
+		int vertOffset = (int)(vertPtr - newVerts);
+		int edgeOffset = (int)(edgePtr - newEdges);
 
 		for (int i = 0; i < cutPoly.size(); i++) {
 			edgePtr->iVertex[0] = vertOffset + i;
@@ -4062,9 +4062,9 @@ bool Bsp::downscale_texture(int textureId, int newWidth, int newHeight) {
 	adjust_downscaled_texture_coordinates(textureId, oldWidth, oldHeight);
 
 	// shrink texture lump
-	int removedBytes = palette - newPalette;
+	int removedBytes = (int)(palette - newPalette);
 	unsigned char* texEnd = newPalette + 256 * sizeof(COLOR3);
-	int shiftBytes = (texEnd - textures) + removedBytes;
+	int shiftBytes = (int)(texEnd - textures) + removedBytes;
 
 	memcpy(texEnd, texEnd + removedBytes, bsp_header.lump[LUMP_TEXTURES].nLength - shiftBytes);
 	for (int k = textureId + 1; k < textureCount; k++) {
@@ -4193,7 +4193,7 @@ void Bsp::downscale_invalid_textures() {
 			continue;
 		}
 
-		if (tex.nWidth * tex.nHeight > MAX_TEXTURE_SIZE) {
+		if ((unsigned int)tex.nWidth * tex.nHeight > MAX_TEXTURE_SIZE) {
 
 			int oldWidth = tex.nWidth;
 			int oldHeight = tex.nHeight;
@@ -4204,13 +4204,13 @@ void Bsp::downscale_invalid_textures() {
 
 			while (newWidth > 16) {
 				newWidth -= 16;
-				newHeight = newWidth * ratio;
+				newHeight = (int)(newWidth * ratio);
 
 				if (newHeight % 16 != 0) {
 					continue;
 				}
 
-				if (newWidth * newHeight <= MAX_TEXTURE_SIZE) {
+				if ((unsigned int)newWidth * newHeight <= MAX_TEXTURE_SIZE) {
 					break;
 				}
 			}
@@ -6354,7 +6354,7 @@ bool Bsp::validate()
 					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
 				}
 			}
-			else if (tex->nWidth * tex->nHeight > MAX_TEXTURE_SIZE) {
+			else if ((unsigned int)tex->nWidth * tex->nHeight > MAX_TEXTURE_SIZE) {
 				print_log("Texture '{}' too large ({}x{})\n", tex->szName, tex->nWidth, tex->nHeight);
 			}
 		}

@@ -12,7 +12,7 @@
 #include "GLFW/glfw3.h"
 
 NavMesh* NavMeshGenerator::generate(Bsp* map, int hull) {
-	float NavMeshGeneratorGenStart = glfwGetTime();
+	double NavMeshGeneratorGenStart = glfwGetTime();
 
 	std::vector<Polygon3D*> solidFaces = getHullFaces(map, hull);
 	std::vector<Polygon3D> faces = getInteriorFaces(map, hull, solidFaces);
@@ -24,7 +24,7 @@ NavMesh* NavMeshGenerator::generate(Bsp* map, int hull) {
 			delete solidFaces[i];
 	}
 
-	print_log("Generated nav mesh in {}\n", faces.size(), glfwGetTime() - NavMeshGeneratorGenStart);
+	print_log("Generated nav mesh in {}\n", faces.size(), (float)(glfwGetTime() - NavMeshGeneratorGenStart));
 
 	NavMesh* navmesh = new NavMesh(faces);
 	linkNavPolys(map, navmesh);
@@ -141,7 +141,7 @@ std::vector<Polygon3D> NavMeshGenerator::getInteriorFaces(Bsp* map, int hull, st
 	size_t cuttingPolyCount = faces.size();
 	size_t presplit = faces.size();
 	int numSplits = 0;
-	float startTime = glfwGetTime();
+	double startTime = glfwGetTime();
 	bool doSplit = true;
 	bool doCull = true;
 	bool walkableSurfacesOnly = true;
@@ -234,7 +234,7 @@ std::vector<Polygon3D> NavMeshGenerator::getInteriorFaces(Bsp* map, int hull, st
 }
 
 void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
-	float mergeStart = glfwGetTime();
+	double mergeStart = glfwGetTime();
 
 	vec3 treeMin, treeMax;
 	getOctreeBox(map, treeMin, treeMax);
@@ -340,7 +340,7 @@ void NavMeshGenerator::cullTinyFaces(std::vector<Polygon3D>& faces) {
 void NavMeshGenerator::linkNavPolys(Bsp* map, NavMesh* mesh) {
 	int numLinks = 0;
 
-	float linkStart = glfwGetTime();
+	double linkStart = glfwGetTime();
 
 	for (int i = 0; i < mesh->numPolys; i++) {
 		for (int k = i + 1; k < mesh->numPolys; k++) {
@@ -350,7 +350,7 @@ void NavMeshGenerator::linkNavPolys(Bsp* map, NavMesh* mesh) {
 		}
 	}
 
-	print_log("Added {} nav poly links in {}\n", numLinks, (float)glfwGetTime() - linkStart);
+	print_log("Added {} nav poly links in {}\n", numLinks, (float)(glfwGetTime() - linkStart));
 }
 
 int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, int dstPolyIdx) {
@@ -388,7 +388,7 @@ int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, 
 			float min2 = std::min(e3.z, e4.z);
 			float max2 = std::max(e3.z, e4.z);
 
-			int zDist = 0; // 0 = edges are are the same height or cross at some point
+			float zDist = 0.0f; // 0 = edges are are the same height or cross at some point
 			if (max1 < min2) { // dst is above src
 				zDist = ceilf(min2 - max1);
 			}
@@ -441,17 +441,17 @@ int NavMeshGenerator::tryEdgeLinkPolys(Bsp* map, NavMesh* mesh, int srcPolyIdx, 
 				// hard to pull off and no map requires that
 
 				if (srcPoly.verts[i].z < dstPoly.verts[k].z) {
-					mesh->addLink(dstPolyIdx, srcPolyIdx, k, i, -zDist, 0);
+					mesh->addLink(dstPolyIdx, srcPolyIdx, k, i, (int)-zDist, 0);
 				}
 				else {
-					mesh->addLink(srcPolyIdx, dstPolyIdx, i, k, zDist, 0);
+					mesh->addLink(srcPolyIdx, dstPolyIdx, i, k, (int)zDist, 0);
 				}
 
 				return 1;
 			}
 
-			mesh->addLink(srcPolyIdx, dstPolyIdx, i, k, zDist, 0);
-			mesh->addLink(dstPolyIdx, srcPolyIdx, k, i, -zDist, 0);
+			mesh->addLink(srcPolyIdx, dstPolyIdx, i, k, (int)zDist, 0);
+			mesh->addLink(dstPolyIdx, srcPolyIdx, k, i, (int)-zDist, 0);
 
 			// TODO: multiple edge links are possible for overlapping polys
 			return 2;

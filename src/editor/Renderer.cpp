@@ -868,7 +868,7 @@ void Renderer::renderLoop()
 							Line2D otherEdge(linkPoly.topdownVerts[k], linkPoly.topdownVerts[knext]);
 
 							float t0, t1, t2, t3;
-							float overlapDist = thisEdge.getOverlapRanges(otherEdge, t0, t1, t2, t3);
+							thisEdge.getOverlapRanges(otherEdge, t0, t1, t2, t3);
 
 							vec3 delta1 = poly.verts[inext] - poly.verts[n];
 							vec3 delta2 = linkPoly.verts[knext] - linkPoly.verts[k];
@@ -889,7 +889,6 @@ void Renderer::renderLoop()
 							float stepUnits = 1.0f;
 							float step = stepUnits / flatLen;
 							TraceResult tr;
-							bool isBlocked = true;
 							for (float f = 0; f < 0.5f; f += step) {
 								vec3 test1 = mid1 + (delta1 * f) + testOffset;
 								vec3 test2 = mid2 + (delta2 * f) + testOffset;
@@ -912,10 +911,6 @@ void Renderer::renderLoop()
 									drawLine(test3, test4, COLOR4(255, 0, 0, 255));
 								}
 							}
-
-							//if (isBlocked) {
-							//	continue;
-							//}
 						}
 
 						glEnable(GL_DEPTH_TEST);
@@ -2852,7 +2847,7 @@ void Renderer::drawPolygon3D(Polygon3D& poly, COLOR4 color) {
 		verts[i].c = color;
 	}
 
-	VertexBuffer buffer(g_app->colorShader, verts, poly.verts.size(), GL_TRIANGLE_FAN);
+	VertexBuffer buffer(g_app->colorShader, verts, (int)poly.verts.size(), GL_TRIANGLE_FAN);
 	buffer.drawFull();
 }
 
