@@ -1,11 +1,11 @@
 #include "lang.h"
 #include "Gui.h"
+#include "Renderer.h"
 #include "ShaderProgram.h"
 #include "primitives.h"
 #include "VertexBuffer.h"
 #include "shaders.h"
 #include "Settings.h"
-#include "Renderer.h"
 #include "BspMerger.h"
 #include "filedialog/ImFileDialog.h"
 #include "imgui_stdlib.h"
@@ -21,8 +21,9 @@
 #include <ranges>
 #endif
 #include <algorithm>
+#include "LeafNavMesh.h"
 
-float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip
+float g_tooltip_delay = 0.6f; // time in seconds before showing a IMGUI_TOOLTIP
 
 bool filterNeeded = true;
 
@@ -64,6 +65,17 @@ int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int
 	int lvl = static_cast<int>(floatRound((pos.z - mins.z) / cell_size));
 	int index = (lvl * cell_layers + layer) * cell_y * cell_x + y * cell_x + x;
 	return index < 0 ? 0 : index;
+}
+
+void IMGUI_TOOLTIP(ImGuiContext& g, const std::string& IMGUI_TOOLTIP)
+{
+	if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+		ImGui::TextUnformatted(IMGUI_TOOLTIP.c_str());
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
 }
 
 Gui::Gui(Renderer* app)
@@ -1842,12 +1854,12 @@ void Gui::drawMenuBar()
 {
 	ImGuiContext& g = *GImGui;
 	static bool ditheringEnabled = false;
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ?
+		rend = map->getBspRender() : NULL;
 
 	if (ImGui::BeginMainMenuBar())
 	{
-		Bsp* map = app->getSelectedMap();
-		BspRenderer* rend = NULL;
-
 		if (ifd::FileDialog::Instance().IsDone("PngDirOpenDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
@@ -1871,7 +1883,6 @@ void Gui::drawMenuBar()
 
 		if (map)
 		{
-			rend = map->getBspRender();
 			if (ifd::FileDialog::Instance().IsDone("WadOpenDialog"))
 			{
 				if (ifd::FileDialog::Instance().HasResult())
@@ -3882,6 +3893,24 @@ void Gui::drawMenuBar()
 				}
 			}
 
+			/*
+
+				if (ImGui::MenuItem("Merge", NULL, false, !app->isLoading)) {
+					char* fname = tinyfd_openFileDialog("Merge Map", "",
+						1, bspFilterPatterns, "GoldSrc Map Files (*.bsp)", 1);
+
+					if (fname)
+						g_app->merge(fname);
+				}
+				Bsp* map = g_app->mapRenderers[0]->map;
+				tooltip(g, ("Merge one other BSP into the current file.\n\n"
+					"Equivalent CLI command:\nbspguy merge " + map->name + " -noscript -noripent -maps \""
+					+ map->name + ",other_map\"\n\nUse the CLI for automatic arrangement and optimization of "
+					"many maps. The CLI also offers ripent fixes and script setup which can "
+					"generate a playable map without you having to make any manual edits (Sven Co-op only).").c_str());
+
+			*/
+
 			if (ImGui::MenuItem(get_localized_string(LANG_0552).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
 			{
 				app->reloadMaps();
@@ -3950,7 +3979,6 @@ void Gui::drawMenuBar()
 			bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
 			bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
 			bool entSelected = app->pickInfo.selectedEnts.size();
-			bool mapSelected = map;
 			bool nonWorldspawnEntSelected = entSelected;
 
 			if (nonWorldspawnEntSelected)
@@ -3987,7 +4015,7 @@ void Gui::drawMenuBar()
 				if (app->pickInfo.selectedFaces.size())
 					copyTexture();
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1157).c_str(), get_localized_string(LANG_1158).c_str(), false, mapSelected && app->copiedEnts.size()))
+			if (ImGui::MenuItem(get_localized_string(LANG_1157).c_str(), get_localized_string(LANG_1158).c_str(), false, app->getSelectedMap() && app->copiedEnts.size()))
 			{
 				app->pasteEnt(false);
 			}
@@ -4006,6 +4034,17 @@ void Gui::drawMenuBar()
 				app->updateEntConnections();
 				pickCount++;
 			}
+
+
+			const char* clipBoardText = ImGui::GetClipboardText();
+			if (ImGui::MenuItem("Paste entities from clipboard", 0, false, clipBoardText && clipBoardText[0] == '{')) {
+				app->pasteEntsFromText(clipBoardText);
+			}
+
+			IMGUI_TOOLTIP(g, "Creates entities from text data. You can use this to transfer entities "
+				"from one bspguy window to another, or paste from .ent file text. Copy any entity "
+				"in the viewer then paste to a text editor to see the format of the text data.");
+
 
 			ImGui::Separator();
 
@@ -4329,7 +4368,169 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::BeginMenu("MAP TRANFORMATION [WIP]", map))
+			if (ImGui::BeginMenu("Porting tools"))
+			{
+				if (ImGui::BeginMenu("Delete OOB Data", !app->isLoading && app->getSelectedMap()))
+				{
+
+					static const char* optionNames[10] = {
+						"All Axes",
+						"X Axis",
+						"X Axis (positive only)",
+						"X Axis (negative only)",
+						"Y Axis",
+						"Y Axis (positive only)",
+						"Y Axis (negative only)",
+						"Z Axis",
+						"Z Axis (positive only)",
+						"Z Axis (negative only)",
+					};
+
+					static int clipFlags[10] = {
+						-1,
+						OOB_CLIP_X | OOB_CLIP_X_NEG,
+						OOB_CLIP_X,
+						OOB_CLIP_X_NEG,
+						OOB_CLIP_Y | OOB_CLIP_Y_NEG,
+						OOB_CLIP_Y,
+						OOB_CLIP_Y_NEG,
+						OOB_CLIP_Z | OOB_CLIP_Z_NEG,
+						OOB_CLIP_Z,
+						OOB_CLIP_Z_NEG,
+					};
+
+					for (int i = 0; i < 10; i++) {
+						if (ImGui::MenuItem(optionNames[i], 0, false, !app->isLoading && app->getSelectedMap())) {
+							if (map->ents[0]->hasKey("origin")) {
+								vec3 ori = map->ents[0]->origin;
+								print_log("Moved worldspawn origin by {} {} {}\n", ori.x, ori.y, ori.z);
+								map->move(ori);
+								map->ents[0]->removeKeyvalue("origin");
+
+							}
+
+							DeleteOobDataCommand* command = new DeleteOobDataCommand("Delete OOB Data",
+								app->getSelectedMapId(), clipFlags[i], rend->undoLumpState);
+							rend->pushUndoCommand(command);
+						}
+						IMGUI_TOOLTIP(g, "Deletes BSP data and entities outside of the "
+							"max map boundary.\n\n"
+							"This is useful for splitting maps to run in an engine with stricter map limits.");
+					}
+
+					ImGui::EndMenu();
+				}
+				if (ImGui::MenuItem("Delete Boxed Data", 0, false, !app->isLoading && app->getSelectedMap())) {
+					if (!g_app->hasCullbox) {
+						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
+					}
+					else {
+						DeleteBoxedDataCommand* command = new DeleteBoxedDataCommand("Delete Boxed Data",
+							app->getSelectedMapId(), g_app->cullMins, g_app->cullMaxs, rend->undoLumpState);
+						rend->pushUndoCommand(command);
+					}
+
+				}
+				IMGUI_TOOLTIP(g, "Deletes BSP data and entities inside of a box defined by 2 \"cull\" entities "
+					"(for the min and max extent of the box). This is useful for getting maps to run in an "
+					"engine with stricter map limits.\n\n"
+					"Create 2 cull entities from the \"Create\" menu to define the culling box. "
+					"A transparent red box will form between them.");
+				if (ImGui::MenuItem("Deduplicate Models", 0, false, !app->isLoading && app->getSelectedMap())) {
+					DeduplicateModelsCommand* command = new DeduplicateModelsCommand("Deduplicate models",
+						app->getSelectedMapId(), rend->undoLumpState);
+					rend->pushUndoCommand(command);
+				}
+				IMGUI_TOOLTIP(g, "Scans for duplicated BSP models and updates entity model keys to reference only one model in set of duplicated models. "
+					"This lowers the model count and allows more game models to be precached.\n\n"
+					"This does not delete BSP data structures unless you run the Clean command afterward.");
+				if (ImGui::MenuItem("Downscale Invalid Textures", "(WIP)", false, !app->isLoading && app->getSelectedMap())) {
+					map->downscale_invalid_textures();
+
+					if (rend)
+					{
+						rend->preRenderFaces();
+						g_app->gui->refresh();
+						reloadLimits();
+					}
+				}
+				IMGUI_TOOLTIP(g, "Shrinks textures that exceed the max texture size and adjusts texture coordinates accordingly. Does not work with WAD textures yet.\n");
+				if (ImGui::BeginMenu("Fix Bad Surface Extents", !app->isLoading && app->getSelectedMap()))
+				{
+					if (ImGui::MenuItem("Shrink Textures (512)", 0, false, !app->isLoading && app->getSelectedMap())) {
+						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Shrink textures (512)",
+							app->getSelectedMapId(), false, true, 512, rend->undoLumpState);
+						rend->pushUndoCommand(command);
+					}
+					IMGUI_TOOLTIP(g, "Downscales embedded textures on bad faces to a max resolution of 512x512 pixels. "
+						"This alone will likely not be enough to fix all faces with bad surface extents."
+						"You may also have to apply the Subdivide or Scale methods.");
+
+					if (ImGui::MenuItem("Shrink Textures (256)", 0, false, !app->isLoading && app->getSelectedMap())) {
+						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Shrink textures (256)",
+							app->getSelectedMapId(), false, true, 256, rend->undoLumpState);
+						rend->pushUndoCommand(command);
+					}
+					IMGUI_TOOLTIP(g, "Downscales embedded textures on bad faces to a max resolution of 256x256 pixels. "
+						"This alone will likely not be enough to fix all faces with bad surface extents."
+						"You may also have to apply the Subdivide or Scale methods.");
+
+					if (ImGui::MenuItem("Shrink Textures (128)", 0, false, !app->isLoading && app->getSelectedMap())) {
+						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Shrink textures (128)",
+							app->getSelectedMapId(), false, true, 128, rend->undoLumpState);
+						rend->pushUndoCommand(command);
+					}
+					IMGUI_TOOLTIP(g, "Downscales embedded textures on bad faces to a max resolution of 128x128 pixels. "
+						"This alone will likely not be enough to fix all faces with bad surface extents."
+						"You may also have to apply the Subdivide or Scale methods.");
+
+					if (ImGui::MenuItem("Shrink Textures (64)", 0, false, !app->isLoading && app->getSelectedMap())) {
+						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Shrink textures (64)",
+							app->getSelectedMapId(), false, true, 64, rend->undoLumpState);
+						rend->pushUndoCommand(command);
+					}
+					IMGUI_TOOLTIP(g, "Downscales embedded textures to a max resolution of 64x64 pixels. "
+						"This alone will likely not be enough to fix all faces with bad surface extents."
+						"You may also have to apply the Subdivide or Scale methods.");
+
+					ImGui::Separator();
+
+					if (ImGui::MenuItem("Scale", 0, false, !app->isLoading && app->getSelectedMap())) {
+						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Scale faces",
+							app->getSelectedMapId(), true, false, 0, rend->undoLumpState);
+						rend->pushUndoCommand(command);
+					}
+					IMGUI_TOOLTIP(g, "Scales up face textures until they have valid extents. The drawback to this method is shifted texture coordinates and lower apparent texture quality.");
+
+					if (ImGui::MenuItem("Subdivide", 0, false, !app->isLoading && app->getSelectedMap())) {
+						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Subdivide faces",
+							app->getSelectedMapId(), false, false, 0, rend->undoLumpState);
+						rend->pushUndoCommand(command);
+					}
+					IMGUI_TOOLTIP(g, "Subdivides faces until they have valid extents. The drawback to this method is reduced in-game performace from higher poly counts.");
+
+					ImGui::MenuItem("##", "WIP");
+					IMGUI_TOOLTIP(g, "Anything you choose here will break lightmaps. "
+						"Run the map through a RAD compiler to fix, and pray that the mapper didn't "
+						"customize compile settings much.");
+					ImGui::EndMenu();
+				}
+				if (ImGui::MenuItem("Cull Entity", 0, false, app->getSelectedMap())) {
+					Entity* newEnt = new Entity();
+					vec3 origin = (cameraOrigin + app->cameraForward * 100);
+					if (app->gridSnappingEnabled)
+						origin = app->snapToGrid(origin);
+					newEnt->addKeyvalue("origin", origin.toKeyvalueString());
+					newEnt->addKeyvalue("classname", "cull");
+
+					CreateEntityCommand* createCommand = new CreateEntityCommand("Create Entity", app->getSelectedMapId(), newEnt);
+					delete newEnt;
+					rend->pushUndoCommand(createCommand);
+				}
+				IMGUI_TOOLTIP(g, "Create a point entity for use with the culling tool. 2 of these define the bounding box for structure culling operations.\n");
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("MAP TRANSFORMATION [WIP]", map))
 			{
 				if (ImGui::MenuItem("Mirror map x/y", NULL, false, map))
 				{
@@ -5401,7 +5602,6 @@ void Gui::drawMenuBar()
 			}
 			ImGui::EndMenu();
 		}
-
 		if (ImGui::BeginMenu(get_localized_string(LANG_0592).c_str()))
 		{
 			if (map && map->is_mdl_model)
@@ -5836,7 +6036,6 @@ void Gui::drawMenuBar()
 
 			if (selectedMap)
 			{
-				BspRenderer* rend = selectedMap->getBspRender();
 				if (rend)
 				{
 					ImGui::TextUnformatted(fmt::format("Click [{:^5},{:^5},{:^5}]", floatRound(rend->intersectVec.x), floatRound(rend->intersectVec.y), floatRound(rend->intersectVec.z)).c_str());
@@ -5870,7 +6069,6 @@ void Gui::drawMenuBar()
 		}
 		ImGui::End();
 	}
-
 }
 
 void Gui::drawToolbar()
@@ -6351,6 +6549,16 @@ void Gui::drawDebugWidget()
 							if (i == 0)
 							{
 								ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0381)), leafIdx).c_str());
+							}
+							else if (i == 3 && g_app->debugLeafNavMesh) {
+								int tmpLeafIdx = map->get_leaf(renderer->localCameraOrigin, 3);
+								int leafNavIdx = -1;
+
+								if (tmpLeafIdx >= 0 && tmpLeafIdx < MAX_MAP_CLIPNODE_LEAVES) {
+									leafNavIdx = g_app->debugLeafNavMesh->leafMap[tmpLeafIdx];
+								}
+
+								ImGui::Text("Nav ID: %d", leafNavIdx);
 							}
 							ImGui::Text(fmt::format("Parent Node: {} (child {})",
 								nodeBranch.size() ? nodeBranch[nodeBranch.size() - 1] : headNode,
@@ -9592,26 +9800,28 @@ void Gui::drawMergeWindow()
 					print_log("\n");
 				}
 				BspMerger merger;
-				Bsp* result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript, NoStyles);
+				MergeResult result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript, false, NoStyles);
 
 				print_log("\n");
-				if (result->isValid()) result->write(outPath);
-				print_log("\n");
-				result->print_info(false, 0, 0);
-
-				app->clearMaps();
-
-				fixupPath(outPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
-
-				if (fileExists(outPath))
+				if (result.map && result.map->isValid())
 				{
-					result = new Bsp(outPath);
-					app->addMap(result);
-				}
-				else
-				{
-					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0398));
-					app->addMap(new Bsp());
+					result.map->write(outPath);
+					print_log("\n");
+					result.map->print_info(false, 0, 0);
+
+					app->clearMaps();
+
+					fixupPath(outPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
+
+					if (fileExists(outPath))
+					{
+						app->addMap(new Bsp(outPath));
+					}
+					else
+					{
+						print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0398));
+						app->addMap(new Bsp());
+					}
 				}
 
 				for (auto& map : maps)

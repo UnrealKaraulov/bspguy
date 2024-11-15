@@ -623,6 +623,12 @@ void AppSettings::load()
 			MAX_TEXTURE_DIMENSION = str_to_int(val);
 			MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
 		}
+		else if (key == "MAX_MAP_BOUNDARY")
+		{
+			MAX_MAP_BOUNDARY = str_to_float(val);
+			if (std::abs(MAX_MAP_BOUNDARY) < 512.0f)
+				MAX_MAP_BOUNDARY = 4096;
+		}
 		else if (key == "TEXTURE_STEP")
 		{
 			TEXTURE_STEP = str_to_int(val);
@@ -917,6 +923,7 @@ void AppSettings::save(std::string path)
 	file << "MAX_MAP_TEXTURES=" << MAX_MAP_TEXTURES << std::endl;
 	file << "MAX_MAP_LIGHTDATA=" << MAX_MAP_LIGHTDATA / (1024 * 1024) << std::endl;
 	file << "MAX_TEXTURE_DIMENSION=" << MAX_TEXTURE_DIMENSION << std::endl;
+	file << "MAX_MAP_BOUNDARY=" << MAX_MAP_BOUNDARY << std::endl;
 	file << "TEXTURE_STEP=" << TEXTURE_STEP << std::endl;
 
 	file.flush();

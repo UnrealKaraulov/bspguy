@@ -21,6 +21,8 @@ unsigned int MAX_MAP_LIGHTDATA = 64 * (1024 * 1024); // 64 MB
 unsigned int MAX_TEXTURE_DIMENSION = 1024;
 unsigned int MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
 
+float MAX_MAP_BOUNDARY = 4096.0f;
+
 unsigned int MAX_KEY_LEN = 256; // not sure if this includes the null char
 unsigned int MAX_VAL_LEN = 4096; // not sure if this includes the null char
 
@@ -45,6 +47,8 @@ void ResetBspLimits()
 
 	MAX_KEY_LEN = 256;
 	MAX_VAL_LEN = 4096;
+
+	MAX_MAP_BOUNDARY = 4096.0f;
 
 	TEXTURE_STEP = 16;
 

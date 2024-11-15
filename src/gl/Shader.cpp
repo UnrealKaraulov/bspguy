@@ -1,7 +1,8 @@
 #include "lang.h"
-#include <GL/glew.h>
 #include "Shader.h"
 #include "log.h"
+
+#include <GL/glew.h>
 
 Shader::Shader(const char* sourceCode, int shaderType)
 {

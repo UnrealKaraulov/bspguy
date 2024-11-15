@@ -4,14 +4,19 @@
 #include "log.h"
 
 
-Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomergestyles)
+MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles)
 {
+	MergeResult result;
+	result.fpath = "";
+	result.map = NULL;
+	result.moveFixes = vec3();
+	result.overflow = false;
 	if (maps.size() < 2)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0219));
-		return NULL;
+		return result;
 	}
-
+	result.fpath = maps[1]->bsp_path;
 	skipLightStyles = nomergestyles;
 
 
@@ -122,7 +127,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 	}
 
 
-	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap);
+	std::vector<std::vector<std::vector<MAPBLOCK>>> blocks = separate(maps, gap, nomove, result);
 
 
 	print_log(get_localized_string(LANG_0220));
@@ -245,7 +250,9 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 		}
 	}
 
-	return output;
+	result.map = output;
+	result.overflow = !output->isValid();
+	return result;
 }
 
 void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType)
@@ -258,7 +265,7 @@ void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType)
 	merge(*dst.map, *src.map);
 }
 
-std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<Bsp*>& maps, const vec3& gap)
+std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result)
 {
 	std::vector<MAPBLOCK> blocks;
 
@@ -292,21 +299,42 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	}
 
 	bool noOverlap = true;
-	for (size_t i = 0; i < blocks.size() && noOverlap; i++)
-	{
-		for (size_t k = i + i; k < blocks.size(); k++)
-		{
-			if (blocks[i].intersects(blocks[k]))
-			{
+	for (int i = 0; i < blocks.size() && noOverlap; i++) {
+		for (int k = 0; k < blocks.size(); k++) {
+			if (i != k && blocks[i].intersects(blocks[k])) {
 				noOverlap = false;
+
+				if (nomove) {
+					print_log("Merge aborted because the maps overlap.\n");
+					blocks[i].suggest_intersection_fix(blocks[k], result);
+				}
+
 				break;
 			}
 		}
 	}
 
-	if (noOverlap)
-	{
-		print_log(get_localized_string(LANG_0224));
+	if (noOverlap) {
+		if (!nomove)
+			print_log("Maps do not overlap. They will be merged without moving.\n");
+
+		std::vector<std::vector<MAPBLOCK>> col;
+		std::vector<MAPBLOCK> row;
+		for (const MAPBLOCK& block : blocks) {
+			row.push_back(block);
+			if (block.map->ents[0]->hasKey("origin")) {
+				// apply the transform move in the GUI
+				block.map->move(block.map->ents[0]->origin);
+				block.map->ents[0]->removeKeyvalue("origin");
+			}
+		}
+		col.push_back(row);
+		orderedBlocks.push_back(col);
+
+		return orderedBlocks;
+	}
+
+	if (nomove) {
 		return orderedBlocks;
 	}
 

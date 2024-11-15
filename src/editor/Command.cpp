@@ -209,6 +209,113 @@ size_t CreateEntityCommand::memoryUsage()
 	return sizeof(CreateEntityCommand) + entData->getMemoryUsage();
 }
 
+//
+// Create Entities From Text
+//
+CreateEntityFromTextCommand::CreateEntityFromTextCommand(std::string desc, int mapIdx, std::string textData) : Command(desc, mapIdx) {
+	this->textData = textData;
+	this->allowedDuringLoad = true;
+}
+
+CreateEntityFromTextCommand::~CreateEntityFromTextCommand() {
+}
+
+void CreateEntityFromTextCommand::execute() {
+	Bsp* map = getBsp();
+
+	std::istringstream in(textData);
+
+	int lineNum = 0;
+	int lastBracket = -1;
+	Entity* ent = NULL;
+
+	std::vector<Entity*> ents;
+
+	std::string line = "";
+	while (std::getline(in, line))
+	{
+		lineNum++;
+		if (line.length() < 1 || line[0] == '\n')
+			continue;
+
+		if (line[0] == '{')
+		{
+			if (lastBracket == 0)
+			{
+				print_log("clipboard ent text data (line {}): Unexpected '{'\n", lineNum);
+				continue;
+			}
+			lastBracket = 0;
+
+			if (ent != NULL)
+				delete ent;
+			ent = new Entity();
+		}
+		else if (line[0] == '}')
+		{
+			if (lastBracket == 1)
+				print_log("clipboard ent text data (line {}): Unexpected '}'\n", lineNum);
+			lastBracket = 1;
+
+			if (ent == NULL)
+				continue;
+
+			if (ent->keyvalues.count("classname"))
+				ents.push_back(ent);
+			else
+				print_log("Found unknown classname entity. Skip it.\n");
+			ent = NULL;
+
+			// you can end/start an ent on the same line, you know
+			if (line.find("{") != std::string::npos)
+			{
+				ent = new Entity();
+				lastBracket = 0;
+			}
+		}
+		else if (lastBracket == 0 && ent != NULL) // currently defining an entity
+		{
+			Keyvalues keyvals(line);
+			for (size_t k = 0; k < keyvals.keys.size();k++)
+			{
+				if (keyvals.keys[k].length() && keyvals.values[k].length())
+					ent->addKeyvalue(keyvals.keys[k], keyvals.values[k]);
+			}
+		}
+	}
+
+	for (Entity* e : ents) {
+		map->ents.push_back(e);
+	}
+	createdEnts = ents.size();
+	print_log("Pasted {} entities from clipboard\n", createdEnts);
+	
+	refresh();
+}
+
+void CreateEntityFromTextCommand::undo() {
+	Bsp* map = getBsp();
+
+	g_app->deselectObject();
+
+	for (int i = 0; i < createdEnts; i++) {
+		delete map->ents[map->ents.size() - 1];
+		map->ents.pop_back();
+	}
+	
+	refresh();
+}
+
+void CreateEntityFromTextCommand::refresh() {
+	BspRenderer* renderer = getBspRenderer();
+	renderer->preRenderEnts();
+	g_app->gui->refresh();
+	g_app->updateCullBox();
+}
+
+size_t CreateEntityFromTextCommand::memoryUsage() {
+	return sizeof(CreateEntityFromTextCommand) + textData.size();
+}
 
 //
 // Duplicate BSP Model command
@@ -591,6 +698,58 @@ size_t EditBspModelCommand::memoryUsage()
 }
 
 
+//
+// Delete boxed data
+//
+DeleteBoxedDataCommand::DeleteBoxedDataCommand(std::string desc, int mapIdx, vec3 mins, vec3 maxs, LumpState oldLumps) : Command(desc, mapIdx) {
+	this->oldLumps = oldLumps;
+	this->allowedDuringLoad = false;
+	this->mins = mins;
+	this->maxs = maxs;
+}
+
+DeleteBoxedDataCommand::~DeleteBoxedDataCommand()
+{
+
+}
+
+void DeleteBoxedDataCommand::execute() {
+	Bsp* map = getBsp();
+
+	map->delete_box_data(mins, maxs);
+
+	refresh();
+}
+
+void DeleteBoxedDataCommand::undo() {
+	Bsp* map = getBsp();
+
+	map->replace_lumps(oldLumps);
+	map->load_ents();
+
+	refresh();
+}
+
+void DeleteBoxedDataCommand::refresh() {
+	BspRenderer* renderer = getBspRenderer();
+
+	renderer->reload();
+	g_app->deselectObject();
+	g_app->gui->refresh();
+}
+
+size_t DeleteBoxedDataCommand::memoryUsage() 
+{
+	size_t size = sizeof(DeleteBoxedDataCommand);
+
+	for (int i = 0; i < HEADER_LUMPS; i++) {
+		size += oldLumps.lumps[i].size();
+	}
+
+	return size;
+}
+
+
 
 //
 // Clean Map
@@ -660,6 +819,204 @@ size_t CleanMapCommand::memoryUsage()
 }
 
 
+//
+// Delete OOB data
+//
+DeleteOobDataCommand::DeleteOobDataCommand(std::string desc, int mapIdx, int clipFlags, LumpState oldLumps) : Command(desc, mapIdx) {
+	this->oldLumps = oldLumps;
+	this->allowedDuringLoad = false;
+	this->clipFlags = clipFlags;
+}
+
+DeleteOobDataCommand::~DeleteOobDataCommand() 
+{
+
+}
+
+void DeleteOobDataCommand::execute() {
+	Bsp* map = getBsp();
+
+	map->delete_oob_data(clipFlags);
+
+	refresh();
+}
+
+void DeleteOobDataCommand::undo() {
+	Bsp* map = getBsp();
+
+	map->replace_lumps(oldLumps);
+	map->load_ents();
+
+	refresh();
+}
+
+void DeleteOobDataCommand::refresh() {
+	BspRenderer* renderer = getBspRenderer();
+
+	renderer->reload();
+	g_app->deselectObject();
+	g_app->gui->refresh();
+}
+
+size_t DeleteOobDataCommand::memoryUsage() {
+	size_t size = sizeof(DeleteOobDataCommand);
+
+	for (int i = 0; i < HEADER_LUMPS; i++) {
+		size += oldLumps.lumps[i].size();
+	}
+
+	return size;
+}
+
+
+//
+// Fix bad surface extents
+//
+FixSurfaceExtentsCommand::FixSurfaceExtentsCommand(std::string desc, int mapIdx, bool scaleNotSubdivide,
+		bool downscaleOnly, int maxTextureDim, LumpState oldLumps) : Command(desc, mapIdx) {
+	this->oldLumps = oldLumps;
+	this->allowedDuringLoad = false;
+	this->scaleNotSubdivide = scaleNotSubdivide;
+	this->downscaleOnly = downscaleOnly;
+	this->maxTextureDim = maxTextureDim;
+}
+
+FixSurfaceExtentsCommand::~FixSurfaceExtentsCommand() 
+{
+	
+}
+
+void FixSurfaceExtentsCommand::execute() {
+	Bsp* map = getBsp();
+
+	map->fix_bad_surface_extents(scaleNotSubdivide, downscaleOnly, maxTextureDim);
+
+	refresh();
+}
+
+void FixSurfaceExtentsCommand::undo() {
+	Bsp* map = getBsp();
+
+	map->replace_lumps(oldLumps);
+
+	refresh();
+}
+
+void FixSurfaceExtentsCommand::refresh() {
+	BspRenderer* renderer = getBspRenderer();
+
+	renderer->reload();
+	g_app->deselectObject();
+	g_app->gui->refresh();
+}
+
+size_t FixSurfaceExtentsCommand::memoryUsage() {
+	size_t size = sizeof(FixSurfaceExtentsCommand);
+
+	for (int i = 0; i < HEADER_LUMPS; i++) {
+		size += oldLumps.lumps[i].size();
+	}
+
+	return size;
+}
+
+
+//
+// Deduplicate models
+//
+DeduplicateModelsCommand::DeduplicateModelsCommand(std::string desc, int mapIdx, LumpState oldLumps) : Command(desc, mapIdx) {
+	this->oldLumps = oldLumps;
+	this->allowedDuringLoad = false;
+}
+
+DeduplicateModelsCommand::~DeduplicateModelsCommand() {
+
+}
+
+void DeduplicateModelsCommand::execute() {
+	Bsp* map = getBsp();
+
+	map->deduplicate_models();
+
+	refresh();
+}
+
+void DeduplicateModelsCommand::undo() {
+	Bsp* map = getBsp();
+
+	map->replace_lumps(oldLumps);
+	map->load_ents();
+
+	refresh();
+}
+
+void DeduplicateModelsCommand::refresh() {
+	BspRenderer* renderer = getBspRenderer();
+
+	renderer->reload();
+	g_app->deselectObject();
+	g_app->gui->refresh();
+}
+
+size_t DeduplicateModelsCommand::memoryUsage() {
+	size_t size = sizeof(DeduplicateModelsCommand);
+
+	for (int i = 0; i < HEADER_LUMPS; i++) {
+		size += oldLumps.lumps[i].size();
+	}
+
+	return size;
+}
+
+
+//
+// Move the entire map
+//
+MoveMapCommand::MoveMapCommand(std::string desc, int mapIdx, vec3 offset, LumpState oldLumps) : Command(desc, mapIdx) {
+	this->oldLumps = oldLumps;
+	this->allowedDuringLoad = false;
+	this->offset = offset;
+}
+
+MoveMapCommand::~MoveMapCommand() {
+
+}
+
+void MoveMapCommand::execute() {
+	Bsp* map = getBsp();
+
+	map->ents[0]->removeKeyvalue("origin");
+	map->move(offset);
+
+	refresh();
+}
+
+void MoveMapCommand::undo() {
+	Bsp* map = getBsp();
+
+	map->replace_lumps(oldLumps);
+	map->ents[0]->setOrAddKeyvalue("origin", offset.toKeyvalueString());
+
+	refresh();
+}
+
+void MoveMapCommand::refresh() {
+	BspRenderer* renderer = getBspRenderer();
+
+	renderer->reload();
+	g_app->deselectObject();
+	g_app->gui->refresh();
+}
+
+size_t MoveMapCommand::memoryUsage() {
+	size_t size = sizeof(MoveMapCommand);
+
+	for (int i = 0; i < HEADER_LUMPS; i++) {
+		size += oldLumps.lumps[i].size();
+	}
+
+	return size;
+}
 
 //
 // Optimize Map

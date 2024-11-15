@@ -145,6 +145,18 @@ void vec3::operator/=(float f)
 	y /= f;
 	z /= f;
 }
+vec3 crossProduct( vec3 v1, vec3 v2 )
+{
+	float x = v1.y*v2.z - v2.y*v1.z; 
+	float y = v2.x*v1.z - v1.x*v2.z; 
+	float z = v1.x*v2.y - v1.y*v2.x;
+	return vec3(x, y, z);
+}
+
+float crossProduct(vec2 v1, vec2 v2)
+{
+	return (v1.x * v2.y) - (v1.y * v2.x);
+}
 
 vec3 crossProduct(const vec3& v1, const vec3& v2)
 {
@@ -157,6 +169,10 @@ vec3 crossProduct(const vec3& v1, const vec3& v2)
 float dotProduct(const vec3& v1, const vec3& v2)
 {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
+float dotProduct(vec2 v1, vec2 v2) {
+	return v1.x * v2.x + v1.y * v2.y;
 }
 
 float distanceToPlane(const vec3& point, const vec3& planeNormal, float planeDist) {
@@ -267,6 +283,11 @@ vec3 vec3::invert()
 float vec3::length() const
 {
 	return sqrt((x * x) + (y * y) + (z * z));
+}
+
+float vec3::lengthSquared() const
+{
+	return (x * x) + (y * y) + (z * z);
 }
 
 bool vec3::IsZero() const
@@ -479,6 +500,8 @@ vec2 vec2::swap()
 {
 	return vec2(y, x);
 }
+
+
 
 bool operator==(const vec4& v1, const vec4& v2)
 {

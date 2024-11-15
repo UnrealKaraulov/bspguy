@@ -145,6 +145,48 @@
     <ClCompile Include=".\..\src\util\log.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
+    <ClCompile Include=".\..\src\nav\LeafNavMesh.h">
+      <Filter>Header Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\LeafNavMeshGenerator.h">
+      <Filter>Header Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\LeafOctree.h">
+      <Filter>Header Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\NavMesh.h">
+      <Filter>Header Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\NavMeshGenerator.h">
+      <Filter>Header Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\PolyOctree.h">
+      <Filter>Header Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\LeafNavMesh.cpp">
+      <Filter>Source Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\LeafNavMeshGenerator.cpp">
+      <Filter>Source Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\LeafOctree.cpp">
+      <Filter>Source Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\NavMesh.cpp">
+      <Filter>Source Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\NavMeshGenerator.cpp">
+      <Filter>Source Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\nav\PolyOctree.cpp">
+      <Filter>Source Files\nav</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\util\Line2D.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\util\Polygon3D.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -279,6 +321,12 @@
     <ClInclude Include=".\..\src\util\log.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
+    <ClInclude Include=".\..\src\util\Polygon3D.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\util\Line2D.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -349,6 +397,12 @@
     </Filter>
     <Filter Include="Source Files\res">
       <UniqueIdentifier>{523fefee-7d40-4552-ae1a-f27341a6fd76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\nav">
+      <UniqueIdentifier>{20c145d4-0591-44cc-88cd-a1dc0f0d64e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\nav">
+      <UniqueIdentifier>{a03f7762-92c3-48be-a7ca-269eda99d76e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -172,7 +172,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -206,10 +206,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -252,7 +252,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -286,10 +286,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -332,7 +332,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -364,10 +364,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -401,7 +401,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugGithub|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -433,10 +433,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -470,7 +470,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -508,10 +508,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -553,7 +553,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -592,10 +592,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -637,7 +637,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -678,10 +678,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -726,7 +726,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -767,10 +767,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\src\nav;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\src\nav;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -856,6 +856,22 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <ClCompile Include=".\..\src\util\vectors.cpp" />
     <ClInclude Include=".\..\src\util\mat4x4.h" />
     <ClCompile Include=".\..\src\util\mat4x4.cpp" />
+    <ClInclude Include=".\..\src\util\Line2D.h" />
+    <ClCompile Include=".\..\src\util\Line2D.cpp" />
+    <ClInclude Include=".\..\src\util\Polygon3D.h" />
+    <ClCompile Include=".\..\src\util\Polygon3D.cpp" />
+    <ClCompile Include=".\..\src\nav\LeafNavMesh.h" />
+    <ClCompile Include=".\..\src\nav\LeafNavMesh.cpp" />
+    <ClCompile Include=".\..\src\nav\LeafNavMeshGenerator.h" />
+    <ClCompile Include=".\..\src\nav\LeafNavMeshGenerator.cpp" />
+    <ClCompile Include=".\..\src\nav\LeafOctree.h" />
+    <ClCompile Include=".\..\src\nav\LeafOctree.cpp" />
+    <ClCompile Include=".\..\src\nav\NavMesh.h" />
+    <ClCompile Include=".\..\src\nav\NavMesh.cpp" />
+    <ClCompile Include=".\..\src\nav\NavMeshGenerator.h" />
+    <ClCompile Include=".\..\src\nav\NavMeshGenerator.cpp" />
+    <ClCompile Include=".\..\src\nav\PolyOctree.h" />
+    <ClCompile Include=".\..\src\nav\PolyOctree.cpp" />
     <ClInclude Include=".\..\src\gl\shaders.h" />
     <ClCompile Include=".\..\src\gl\shaders.cpp" />
     <ClInclude Include=".\..\src\gl\primitives.h" />

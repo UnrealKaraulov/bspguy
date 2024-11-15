@@ -62,6 +62,8 @@ public:
 	void refresh();
 
 
+
+	bool polycount = false;
 	bool showDebugWidget = false;
 	bool showKeyvalueWidget = false;
 	bool showTransformWidget = false;
