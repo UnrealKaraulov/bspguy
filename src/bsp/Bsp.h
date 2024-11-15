@@ -1,19 +1,27 @@
 #pragma once
 #include <chrono>
 #include <ctime> 
+#include <set>
+#include <string.h>
+
 #include "Wad.h"
 #include "Entity.h"
 #include "bsplimits.h"
 #include "rad.h"
-#include <string.h>
 #include "remap.h"
-#include <set>
 #include "bsptypes.h"
 #include "mdl_studio.h"
 #include "Sprite.h"
 #include "XASH_csm.h"
+#include "Polygon3D.h"
 
 class BspRenderer;
+#define OOB_CLIP_X 1
+#define OOB_CLIP_X_NEG 2
+#define OOB_CLIP_Y 4
+#define OOB_CLIP_Y_NEG 8
+#define OOB_CLIP_Z 16
+#define OOB_CLIP_Z_NEG 32
 
 struct membuf : std::streambuf
 {
@@ -137,15 +145,23 @@ public:
 	void recurse_node_print(int node, int depth);
 
 	void get_last_node(int nodeIdx, int& node, int& count, int last_node = -1);
-	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1);
+	void get_last_clipnode(int nodeIdx, int& node, int& count, int last_node = -1);	// get leaf index from world position
+	int get_leaf(vec3 pos, int hull);
 
 	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
 	int modelLeafs(int modelIdx, std::vector<int>& modelLeafs);
 	int modelLeafs(const BSPMODEL& model, std::vector<int>& modelLeafs);
 	int pointContents(int iNode, const vec3& p, int hull);
+	bool recursiveHullCheck(int hull, int num, float p1f, float p2f, vec3 p1, vec3 p2, TraceResult* trace);
+	void traceHull(vec3 start, vec3 end, int hull, TraceResult* ptr);
 	int pointLeaf(int iNode, const vec3& p, int hull, int& leafIdx, int & planeIdx);
 	std::vector<int> getLeafsFromPos(const vec3& p, float radius);
 	const char* getLeafContentsName(int contents);
+	// returns true if leaf is in the PVS from the given position
+	bool is_leaf_visible(int ileaf, vec3 pos);
+
+	bool is_face_visible(int faceIdx, vec3 pos, vec3 angles);
+	int count_visible_polys(vec3 pos, vec3 angles);
 
 	// strips a collision hull from the given model index
 	// and redirects to the given hull, if redirect>0
@@ -161,7 +177,7 @@ public:
 	void get_bounding_box(vec3& mins, vec3& maxs);
 
 	// get the bounding box for all vertexes in a BSP tree
-	bool get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs);
+	void get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs);
 
 	// face has duplicate verts, this is bad?
 	bool is_face_duplicate_edges(int faceIdx);
@@ -180,10 +196,14 @@ public:
 	bool is_convex(int modelIdx);
 	bool is_node_hull_convex(int iNode);
 
+	// true if the center of this face is touching an empty leaf
+	bool isInteriorFace(const Polygon3D& poly, int hull);
+
 	// get cuts required to create bounding volumes for each solid leaf in the model
-	std::vector<NodeVolumeCuts> get_model_leaf_volume_cuts(int modelIdx, int hullIdx);
-	void get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output);
-	void get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output);
+	std::vector<NodeVolumeCuts> get_model_leaf_volume_cuts(int modelIdx, int hullIdx, int contents);
+	void get_clipnode_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output, int contents);
+	void get_node_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output, int contents);
+
 
 	void get_leaf_nodes(int leaf, std::vector<int>& out_nodes);
 
@@ -221,6 +241,76 @@ public:
 
 	// conditionally deletes hulls for entities that aren't using them
 	STRUCTCOUNT delete_unused_hulls(bool noProgress = false);
+
+	
+	// deletes data outside the map bounds
+	void delete_oob_data(int clipFlags);
+
+	void delete_oob_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder, 
+		int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
+	
+	void delete_oob_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
+		int oobFlags, bool* oobHistory, bool isFirstPass, int& removedNodes);
+
+	// deletes data inside a bounding box
+	void delete_box_data(vec3 clipMins, vec3 clipMaxs);
+	void delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
+		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes);
+	void delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder,
+		vec3 clipMins, vec3 clipMaxs, bool* oobHistory, bool isFirstPass, int& removedNodes);
+
+	// assumes contiguous leaves starting at 0. Only works for worldspawn, which is the only model which
+	// should have leaves anyway.
+	void count_leaves(int iNode, int& leafCount);
+
+	// searches for entities that have very similar models,
+	// then updates the entities to share a single model reference
+	// this reduces the precached model count even though the models are still present in the bsp
+	void deduplicate_models();
+	
+	// scales up texture axes for any face with bad surface extents
+	// connected planar faces which use the same texture will also be scaled up to prevent seams
+	// showing between faces with different texture scales
+	// scaleNotSubdivide:true = scale face textures to lower extents
+	// scaleNotSubdivide:false = subdivide face textures to lower extents
+	// downscaleOnly:true = don't scale or subdivide anything, just downscale the textures
+	// maxTextureDim = downscale textures first if they are larger than this (0 = disable)
+	void fix_bad_surface_extents(bool scaleNotSubdivide, bool downscaleOnly, int maxTextureDim);
+
+	// subdivide a face until it has valid surface extents
+	void fix_bad_surface_extents_with_subdivide(int faceIdx);
+
+	// reduces size of textures that exceed game limits and adjusts face scales accordingly
+	void downscale_invalid_textures();
+
+	void downscale_textures(int maxDim);
+
+	// downscales a texture to the maximum specified width/height
+	// allowWad:true = texture coordinates will be scaled even if the the texture is from a WAD and must be scaled separately
+	// returns true if was downscaled
+	bool downscale_texture(int textureId, int maxDim, bool allowWad);
+
+	bool downscale_texture(int textureId, int newWidth, int newHeight);
+
+	bool rename_texture(const char* oldName, const char* newName);
+
+	// updates texture coordinates after a texture has been downscaled
+	void adjust_downscaled_texture_coordinates(int textureId, int oldWidth, int oldHeight);
+
+	vec3 get_face_center(int faceIdx);
+
+	// scales up texture sizes on models that aren't used by visible entities
+	void allocblock_reduction();
+
+	// gets estimated number of allocblocks filled
+	// actual amount will vary because there is some wasted space when the engine generates lightmap atlases
+	float calc_allocblock_usage();
+
+	// subdivides along the axis with the most texture pixels (for biggest surface extent reduction)
+	bool subdivide_face(int faceIdx);
+
+	// select faces connected to the given one, which lie on the same plane and use the same texture
+	std::set<int> selectConnectedTexture(int modelId, int faceId);
 
 	// returns true if the map has eny entities that make use of hull 2
 	bool has_hull2_ents();
@@ -423,6 +513,9 @@ public:
 
 	BspRenderer* renderer;
 	unsigned int originCrc32 = 0;
+
+	bool* pvsFaces = NULL; // flags which faces are marked for rendering in the PVS
+	int pvsFaceCount = 0;
 };
 
 void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type = 0);

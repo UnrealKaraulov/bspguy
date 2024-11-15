@@ -1,5 +1,4 @@
 #include "lang.h"
-#include <GL/glew.h>
 #include "ShaderProgram.h"
 #include "log.h"
 #include "Renderer.h"

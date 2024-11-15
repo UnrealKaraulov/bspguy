@@ -1,6 +1,6 @@
 #include "lang.h"
-#include <GL/glew.h>
 #include "Wad.h"
+#include <GL/glew.h>
 #include "Texture.h"
 #include "lodepng.h"
 #include "log.h"

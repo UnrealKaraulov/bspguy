@@ -1,14 +1,17 @@
 #pragma once
 #pragma once
 #include "Bsp.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include "Texture.h"
 #include "ShaderProgram.h"
 #include "LightmapNode.h"
 #include "VertexBuffer.h"
 #include "primitives.h"
 #include "PointEntRenderer.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include "NavMeshGenerator.h"
+#include "LeafNavMeshGenerator.h"
+
 #include <future>
 #include "mdl_studio.h"
 #include "Sprite.h"
@@ -258,7 +261,8 @@ public:
 
 	int numRenderLightmapInfos;
 	int numLoadedTextures;
-
+	std::vector<Polygon3D> debugFaces;
+	NavMesh* debugNavMesh;
 
 	std::vector<Texture*>* glTextures = NULL;
 	// textures loaded in a separate thread
@@ -279,7 +283,9 @@ public:
 	void addNewRenderFace();
 	void loadClipnodes();
 	void generateClipnodeBufferForHull(int modelIdx, int hullId);
-	void generateClipnodeBuffer(int modelIdx);
+	void generateClipnodeBuffer(int modelIdx);	
+	void generateNavMeshBuffer();
+	void generateLeafNavMeshBuffer();
 	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);
 	void deleteRenderClipnodes();
 	void deleteRenderFaces();

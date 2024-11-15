@@ -9,6 +9,15 @@ cQuad::cQuad(cVert _v1, cVert _v2, cVert _v3, cVert _v4) : v1(_v1), v2(_v2), v3(
 {
 
 }
+cQuad::cQuad(float x, float y, float w, float h, COLOR4 color) {
+	v1 = cVert(x, y, 0, color);
+	v2 = cVert(x, y + h, 0, color);
+	v3 = cVert(x + w, y + h, 0, color);
+
+	v4 = cVert(x, y, 0, color);
+	v5 = cVert(x + w, y + h, 0, color);
+	v6 = cVert(x + w, y, 0, color);
+}
 
 void cQuad::setColor(COLOR4 c)
 {

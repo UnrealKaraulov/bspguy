@@ -100,13 +100,13 @@ int test()
 	removed.print_delete_stats(1);
 
 	BspMerger merger;
-	Bsp* result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false, false);
+	MergeResult result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false, false, false);
 	print_log("\n");
-	if (result)
+	if (result.map)
 	{
-		result->write("yabma_move.bsp");
-		result->write("D:/Steam/steamapps/common/Sven Co-op/svencoop_addon/maps/yabma_move.bsp");
-		result->print_info(false, 0, 0);
+		result.map->write("yabma_move.bsp");
+		result.map->write("D:/Steam/steamapps/common/Sven Co-op/svencoop_addon/maps/yabma_move.bsp");
+		result.map->print_info(false, 0, 0);
 	}
 
 	start_viewer("yabma_move.bsp");
@@ -172,18 +172,20 @@ int merge_maps(CommandLine& cli)
 	std::string output_name = cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile;
 
 	BspMerger merger;
-	Bsp* result = merger.merge(maps, gap, output_name, cli.hasOption("-noripent"), cli.hasOption("-noscript"), cli.hasOption("-nostyles"));
+	MergeResult result = merger.merge(maps, gap, output_name, cli.hasOption("-noripent"), cli.hasOption("-noscript"), cli.hasOption("-nomove"), cli.hasOption("-nostyles"));
 
 	print_log("\n");
-	if (result->validate() && result->isValid()) result->write(output_name);
-	print_log("\n");
-	result->print_info(false, 0, 0);
+	if (result.map && result.map->validate() && result.map->isValid())
+	{
+		result.map->write(output_name);
+		print_log("\n");
+		result.map->print_info(false, 0, 0);
+	}
 
 	for (size_t i = 0; i < maps.size(); i++)
 	{
 		delete maps[i];
 	}
-
 	return 0;
 }
 

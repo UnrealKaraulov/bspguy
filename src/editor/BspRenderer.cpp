@@ -11,7 +11,7 @@
 #include "Command.h"
 #include "Sprite.h"
 #include "Gui.h"
-
+#include "Polygon3D.h"
 #include "util.h"
 #include "log.h"
 
@@ -1369,6 +1369,267 @@ void BspRenderer::loadClipnodes()
 	);
 }
 
+
+void BspRenderer::generateNavMeshBuffer() {
+	int hull = 3;
+	RenderClipnodes* renderClip = &renderClipnodes[0];
+	renderClip->clipnodeBuffer[hull] = NULL;
+	renderClip->wireframeClipnodeBuffer[hull] = NULL;
+
+	NavMesh* navMesh = NavMeshGenerator().generate(map, hull);
+	std::vector<Polygon3D> navPolys = navMesh->getPolys();
+
+	g_app->debugNavMesh = navMesh;
+	g_app->debugNavPoly = 529;
+	debugNavMesh = navMesh;
+	debugFaces = navPolys;
+
+	static COLOR4 hullColors[] = {
+		COLOR4(255, 255, 255, 128),
+		COLOR4(96, 255, 255, 128),
+		COLOR4(255, 96, 255, 128),
+		COLOR4(255, 255, 96, 128),
+	};
+	COLOR4 color = hullColors[hull];
+
+	std::vector<cVert> allVerts;
+	std::vector<cVert> wireframeVerts;
+	std::vector<FaceMath> navFaceMaths;
+
+	for (int m = 0; m < navPolys.size(); m++) {
+		Polygon3D& poly = navPolys[m];
+
+		vec3 normal = poly.plane_z;
+
+		// calculations for face picking
+		{
+			FaceMath faceMath;
+			faceMath.normal = normal;
+			faceMath.fdist = poly.fdist;
+			faceMath.worldToLocal = poly.worldToLocal;
+			faceMath.localVerts = poly.localVerts;
+			navFaceMaths.push_back(faceMath);
+		}
+
+		// create the verts for rendering
+		{
+			std::vector<vec3> renderVerts;
+			renderVerts.resize(poly.verts.size());
+			for (int i = 0; i < poly.verts.size(); i++) {
+				renderVerts[i] = poly.verts[i].flip();
+			}
+
+			COLOR4 wireframeColor = { 0, 0, 0, 255 };
+			for (int k = 0; k < renderVerts.size(); k++) {
+				wireframeVerts.push_back(cVert(renderVerts[k], wireframeColor));
+				wireframeVerts.push_back(cVert(renderVerts[(k + 1) % renderVerts.size()], wireframeColor));
+			}
+
+			vec3 lightDir = vec3(1, 1, -1).normalize();
+			float dot = (dotProduct(normal, lightDir) + 1) / 2.0f;
+			if (dot > 0.5f) {
+				dot = dot * dot;
+			}
+			color = hullColors[hull];
+			if (normal.z < -0.8 || true) {
+				static int r = 0;
+				r = (r + 1) % 8;
+				if (r == 0) {
+					color = COLOR4(255, 32, 32, 255);
+				}
+				else if (r == 1) {
+					color = COLOR4(255, 255, 32, 255);
+				}
+				else if (r == 2) {
+					color = COLOR4(255, 32, 255, 255);
+				}
+				else if (r == 3) {
+					color = COLOR4(255, 128, 255, 255);
+				}
+				else if (r == 4) {
+					color = COLOR4(32, 32, 255, 255);
+				}
+				else if (r == 5) {
+					color = COLOR4(32, 255, 255, 255);
+				}
+				else if (r == 6) {
+					color = COLOR4(32, 128, 255, 255);
+				}
+				else if (r == 7) {
+					color = COLOR4(32, 255, 128, 255);
+				}
+			}
+			COLOR4 faceColor = color * (dot);
+
+			// convert from TRIANGLE_FAN style verts to TRIANGLES
+			for (int k = 2; k < renderVerts.size(); k++) {
+				allVerts.push_back(cVert(renderVerts[0], faceColor));
+				allVerts.push_back(cVert(renderVerts[k - 1], faceColor));
+				allVerts.push_back(cVert(renderVerts[k], faceColor));
+			}
+		}
+	}
+
+	cVert* output = new cVert[allVerts.size()];
+	for (int i = 0; i < allVerts.size(); i++) {
+		output[i] = allVerts[i];
+	}
+
+	cVert* wireOutput = new cVert[wireframeVerts.size()];
+	for (int i = 0; i < wireframeVerts.size(); i++) {
+		wireOutput[i] = wireframeVerts[i];
+	}
+
+	if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
+		renderClip->clipnodeBuffer[hull] = NULL;
+		renderClip->wireframeClipnodeBuffer[hull] = NULL;
+		return;
+	}
+
+	renderClip->clipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, output, (int)allVerts.size(), GL_TRIANGLES);
+	renderClip->clipnodeBuffer[hull]->ownData = true;
+
+	renderClip->wireframeClipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, wireOutput, (int)wireframeVerts.size(), GL_LINES);
+	renderClip->wireframeClipnodeBuffer[hull]->ownData = true;
+
+	renderClip->faceMaths[hull] = navFaceMaths;
+
+	std::ofstream file(map->bsp_name + "_hull" + std::to_string(hull) + ".obj", std::ios::out | std::ios::trunc);
+	for (int i = 0; i < allVerts.size(); i++) {
+		vec3 v = vec3(allVerts[i].pos.x, allVerts[i].pos.y, allVerts[i].pos.z);
+		file << "v " << std::fixed << std::setprecision(2) << v.x << " " << v.y << " " << v.z << std::endl;
+	}
+	for (int i = 0; i < allVerts.size(); i += 3) {
+		file << "f " << (i + 1) << " " << (i + 2) << " " << (i + 3) << std::endl;
+	}
+	print_log("Wrote {} verts\n", allVerts.size());
+	file.close();
+}
+
+void BspRenderer::generateLeafNavMeshBuffer() {
+	int hull = NAV_HULL;
+	RenderClipnodes* renderClip = &renderClipnodes[0];
+	renderClip->clipnodeBuffer[hull] = NULL;
+	renderClip->wireframeClipnodeBuffer[hull] = NULL;
+
+	LeafNavMesh* navMesh = LeafNavMeshGenerator().generate(map);
+	g_app->debugLeafNavMesh = navMesh;
+
+	static COLOR4 hullColors[] = {
+		COLOR4(255, 255, 255, 128),
+		COLOR4(96, 255, 255, 128),
+		COLOR4(255, 96, 255, 128),
+		COLOR4(255, 255, 96, 128),
+	};
+	COLOR4 color = hullColors[hull];
+
+	std::vector<cVert> allVerts;
+	std::vector<cVert> wireframeVerts;
+	std::vector<FaceMath> navFaceMaths;
+
+	for (int lf = 0; lf < navMesh->nodes.size(); lf++) {
+		LeafNode& mesh = navMesh->nodes[lf];
+
+		color = hullColors[hull];
+		static int r = 0;
+		r = (r + 1) % 8;
+		if (r == 0) {
+			color = COLOR4(255, 32, 32, 128);
+		}
+		else if (r == 1) {
+			color = COLOR4(255, 255, 32, 128);
+		}
+		else if (r == 2) {
+			color = COLOR4(255, 32, 255, 128);
+		}
+		else if (r == 3) {
+			color = COLOR4(255, 128, 255, 128);
+		}
+		else if (r == 4) {
+			color = COLOR4(32, 32, 255, 128);
+		}
+		else if (r == 5) {
+			color = COLOR4(32, 255, 255, 128);
+		}
+		else if (r == 6) {
+			color = COLOR4(32, 128, 255, 128);
+		}
+		else if (r == 7) {
+			color = COLOR4(32, 255, 128, 128);
+		}
+
+		for (int m = 0; m < mesh.leafFaces.size(); m++) {
+			Polygon3D& poly = mesh.leafFaces[m];
+
+			vec3 normal = poly.plane_z;
+
+			// calculations for face picking
+			{
+				FaceMath faceMath;
+				faceMath.normal = normal;
+				faceMath.fdist = poly.fdist;
+				faceMath.worldToLocal = poly.worldToLocal;
+				faceMath.localVerts = poly.localVerts;
+				navFaceMaths.push_back(faceMath);
+			}
+
+			// create the verts for rendering
+			{
+				std::vector<vec3> renderVerts;
+				renderVerts.resize(poly.verts.size());
+				for (int i = 0; i < poly.verts.size(); i++) {
+					renderVerts[i] = poly.verts[i].flip();
+				}
+
+				COLOR4 wireframeColor = { 0, 0, 0, 255 };
+				for (int k = 0; k < renderVerts.size(); k++) {
+					wireframeVerts.push_back(cVert(renderVerts[k], wireframeColor));
+					wireframeVerts.push_back(cVert(renderVerts[(k + 1) % renderVerts.size()], wireframeColor));
+				}
+
+				vec3 lightDir = vec3(1, 1, -1).normalize();
+				float dot = (dotProduct(normal, lightDir) + 1) / 2.0f;
+				if (dot > 0.5f) {
+					dot = dot * dot;
+				}
+				COLOR4 faceColor = color * (dot);
+
+				// convert from TRIANGLE_FAN style verts to TRIANGLES
+				for (int k = 2; k < renderVerts.size(); k++) {
+					allVerts.push_back(cVert(renderVerts[0], faceColor));
+					allVerts.push_back(cVert(renderVerts[k - 1], faceColor));
+					allVerts.push_back(cVert(renderVerts[k], faceColor));
+				}
+			}
+		}
+	}
+
+	cVert* output = new cVert[allVerts.size()];
+	for (int i = 0; i < allVerts.size(); i++) {
+		output[i] = allVerts[i];
+	}
+
+	cVert* wireOutput = new cVert[wireframeVerts.size()];
+	for (int i = 0; i < wireframeVerts.size(); i++) {
+		wireOutput[i] = wireframeVerts[i];
+	}
+
+	if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
+		renderClip->clipnodeBuffer[hull] = NULL;
+		renderClip->wireframeClipnodeBuffer[hull] = NULL;
+		return;
+	}
+
+	renderClip->clipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, output, (int)allVerts.size(), GL_TRIANGLES);
+	renderClip->clipnodeBuffer[hull]->ownData = true;
+
+	renderClip->wireframeClipnodeBuffer[hull] = new VertexBuffer(g_app->colorShader, wireOutput, (int)wireframeVerts.size(), GL_LINES);
+	renderClip->wireframeClipnodeBuffer[hull]->ownData = true;
+
+	renderClip->faceMaths[hull] = navFaceMaths;
+}
+
+
 void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 {
 	if (hullIdx < 0 || hullIdx > 3)
@@ -1433,11 +1694,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 		memcpy(wireOutput, cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->data,
 			cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts * sizeof(cVert));
 
-		renderClip->clipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, output,
+		renderClip->clipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader, output,
 			(GLsizei)cachedRenderClip->clipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts, GL_TRIANGLES);
 		renderClip->clipnodeBuffer[hullIdx]->ownData = true;
 
-		renderClip->wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(colorShader,  wireOutput,
+		renderClip->wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(g_app->colorShader,  wireOutput,
 
 
 
@@ -1446,7 +1707,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	}
 
 
-	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, hullIdx);
+	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, hullIdx, CONTENTS_SOLID);
 	//
 	std::vector<CMesh> meshes;
 	for (size_t k = 0; k < solidNodes.size(); k++)
@@ -1655,6 +1916,12 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 	for (int i = 0; i < MAX_MAP_HULLS; i++)
 	{
 		generateClipnodeBufferForHull(modelIdx, i);
+	}
+
+	if (modelIdx == 0) 
+	{
+		/*generateNavMeshBuffer();
+		generateLeafNavMeshBuffer();*/
 	}
 }
 
@@ -3271,7 +3538,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 		hullIdx = getBestClipnodeHull(modelIdx);
 	}
 
-	if (clipnodesLoaded && (selectWorldClips || selectEntClips) && hullIdx != -1)
+	if (clipnodesLoaded && (selectWorldClips || selectEntClips) && hullIdx >= 0 && modelIdx >= 0 && modelIdx < map->modelCount)
 	{
 		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
 		nodeBuffStr oldHullIdxStruct = nodeBuffStr();
@@ -3294,7 +3561,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 			oldHullIdxStruct.hullIdx = hullIdx;
 			generateClipnodeBufferForHull(modelIdx, hullIdx);
 		}
-		for (size_t i = 0; i < renderClipnodes[oldHullIdxStruct.modelIdx].faceMaths[oldHullIdxStruct.hullIdx].size(); i++)
+		for (int i = 0; i < (int)renderClipnodes[oldHullIdxStruct.modelIdx].faceMaths[oldHullIdxStruct.hullIdx].size(); i++)
 		{
 			FaceMath& faceMath = renderClipnodes[oldHullIdxStruct.modelIdx].faceMaths[oldHullIdxStruct.hullIdx][i];
 
@@ -3304,6 +3571,25 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 				foundBetterPick = true;
 				tempPickInfo.bestDist = t;
 				tempPickInfo.selectedFaces.clear();
+
+
+				// Nav mesh WIP code
+				if (g_app->debugNavMesh && modelIdx == 0 && hullIdx == 3) {
+					static int lastPick = 0;
+
+					g_app->debugPoly = debugFaces[i];
+					g_app->debugNavPoly = i;
+
+					//Polygon3D merged = debugFaces[lastPick].merge(debugFaces[i]);
+					//vector<vector<vec3>> split = debugFaces[i].split(debugFaces[lastPick]);
+					//logf("split %d by %d == %d\n", i, lastPick, split.size());
+
+					NavNode& node = g_app->debugNavMesh->nodes[i];
+
+					lastPick = i;
+					print_log("Picked hull {}, face {}, verts {}, area {}\nNav links {}\n", hullIdx, i, debugFaces[i].verts.size(), debugFaces[i].area, node.numLinks());
+				}
+
 			}
 		}
 	}
@@ -3392,7 +3678,6 @@ void BspRenderer::pushEntityUndoStateDelay(const std::string& actionDesc, int en
 {
 	delayEntUndoList.push_back({ actionDesc,entIdx,ent });
 }
-
 
 void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 {

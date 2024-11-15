@@ -48,7 +48,6 @@ struct COLOR4
 	}
 };
 
-
 struct vec3
 {
 	float x, y, z;
@@ -99,6 +98,7 @@ struct vec3
 	float sizeXY_test();
 	vec3 abs();
 	float length() const;
+	float lengthSquared() const;
 	bool IsZero() const;
 	vec3 invert();
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
@@ -277,6 +277,11 @@ vec2 operator/(vec2 v, float f);
 
 bool operator==(const vec2& v1, const vec2& v2);
 bool operator!=(const vec2& v1, const vec2& v2);
+
+
+float dotProduct(vec2 v1, vec2 v2);
+float crossProduct(vec2 v1, vec2 v2);
+
 
 struct vec4
 {

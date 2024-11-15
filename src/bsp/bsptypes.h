@@ -546,3 +546,18 @@ struct BBOX
 	vec3 mins, maxs;
 	int row;
 };
+
+
+struct TraceResult
+{
+	int		fAllSolid;			// if true, plane is not valid
+	int		fStartSolid;		// if true, the initial point was in a solid area
+	int		fInOpen;
+	int		fInWater;
+	float	flFraction;			// time completed, 1.0 = didn't hit anything
+	vec3	vecEndPos;			// final position
+	float	flPlaneDist;
+	vec3	vecPlaneNormal;		// surface normal at impact
+	//edict_t* pHit;				// entity the surface is on
+	int		iHitgroup;			// 0 == generic, non zero is specific body part
+};

@@ -1,6 +1,7 @@
 #include "Entity.h"
 #include "util.h"
-
+#include "Bsp.h"
+#include <set>
 
 void Entity::addKeyvalue(const std::string & key, const std::string & value, bool multisupport)
 {
@@ -623,6 +624,21 @@ size_t Entity::getMemoryUsage()
 	return size;
 }
 
+vec3 Entity::getHullOrigin(Bsp* map) {
+	vec3 ori = origin;
+	int modelIdx = getBspModelIdx();
+
+	if (modelIdx != -1) {
+		BSPMODEL& model = map->models[modelIdx];
+
+		vec3 mins, maxs;
+		map->get_model_vertex_bounds(modelIdx, mins, maxs);
+		ori += (maxs + mins) * 0.5f;
+	}
+
+	return ori;
+}
+
 void Entity::updateRenderModes()
 {
 	rendermode = kRenderNormal;
@@ -647,3 +663,67 @@ void Entity::updateRenderModes()
 		rendercolor = vec3(color[0] / 255.f, color[1] / 255.f, color[2] / 255.f);
 	}
 }
+
+bool Entity::isEverVisible() {
+	std::string cname = keyvalues["classname"];
+	std::string tname = hasKey("targetname") ? keyvalues["targetname"] : "";
+
+	static std::set<std::string> invisibleEnts = {
+		"env_bubbles",
+		"func_clip",
+		"func_friction",
+		"func_ladder",
+		"func_monsterclip",
+		"func_mortar_field",
+		"func_op4mortarcontroller",
+		"func_tankcontrols",
+		"func_traincontrols",
+		"trigger_autosave",
+		"trigger_cameratarget",
+		"trigger_cdaudio",
+		"trigger_changelevel",
+		"trigger_counter",
+		"trigger_endsection",
+		"trigger_gravity",
+		"trigger_hurt",
+		"trigger_monsterjump",
+		"trigger_multiple",
+		"trigger_once",
+		"trigger_push",
+		"trigger_teleport",
+		"trigger_transition",
+		"game_zone_player",
+		"info_hullshape",
+		"player_respawn_zone",
+	};
+
+	if (invisibleEnts.count(cname)) {
+		return false;
+	}
+
+	if (!tname.length() && hasKey("rendermode") && atoi(keyvalues["rendermode"].c_str()) != 0) {
+		if (!hasKey("renderamt") || atoi(keyvalues["renderamt"].c_str()) == 0) {
+			// starts invisible and likely nothing will change that because it has no targetname
+			return false;
+		}
+	}
+
+	return true;
+}
+
+std::string Entity::serialize() 
+{
+	std::stringstream ent_data;
+
+	ent_data << "{\n";
+
+	for (int k = 0; k < keyOrder.size(); k++) {
+		std::string key = keyOrder[k];
+		ent_data << "\"" << key << "\" \"" << keyvalues[key] << "\"\n";
+	}
+
+	ent_data << "}\n";
+
+	return ent_data.str();
+}
+

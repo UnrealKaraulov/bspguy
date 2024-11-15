@@ -4,14 +4,13 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_internal.h"
+#include "BspMerger.h"
 #include "ShaderProgram.h"
 #include "BspRenderer.h"
 #include "Fgd.h"
 #include <thread>
 #include <future>
 #include "Command.h"
-#include <GLFW/glfw3.h>
-#include <GL/glew.h>
 #include "mdl_studio.h"
 
 #define EDIT_MODEL_LUMPS (FL_PLANES | FL_TEXTURES | FL_VERTICES | FL_NODES | FL_TEXINFO | FL_FACES | FL_LIGHTING | FL_CLIPNODES | FL_LEAVES | FL_EDGES | FL_SURFEDGES | FL_MODELS | FL_MARKSURFACES)
@@ -98,6 +97,18 @@ public:
 	vec3 debugVec1;
 	vec3 debugVec2;
 	vec3 debugVec3;
+	
+	vec3 debugLine0;
+	vec3 debugLine1;
+	Line2D debugCut;
+	Polygon3D debugPoly;
+	Polygon3D debugPoly2;
+	NavMesh* debugNavMesh = NULL;
+	LeafNavMesh* debugLeafNavMesh = NULL;
+	int debugNavPoly = -1;
+	vec3 debugTraceStart;
+	TraceResult debugTrace;
+	MergeResult mergeResult;
 
 
 	unsigned int colorShaderMultId;
@@ -118,6 +129,10 @@ public:
 	Fgd* fgd = NULL;
 
 	bool hideGui = false;
+	bool isFocused = false;
+	bool isHovered = false;
+	bool isIconified = false;
+	
 	bool isModelsReloading = false;
 
 	Renderer();
@@ -280,6 +295,10 @@ public:
 	bool isTransformingWorld = false;
 	bool oldTransforming = false;
 
+	bool hasCullbox;
+	vec3 cullMins;
+	vec3 cullMaxs;
+
 	vec3 getMoveDir();
 	void controls();
 	void cameraPickingControls();
@@ -302,6 +321,12 @@ public:
 	void drawTransformAxes();
 	void drawEntConnections();
 	void drawLine(vec3& start, vec3& end, COLOR4 color);
+	void drawLine2D(vec2 start, vec2 end, COLOR4 color);
+	void drawBox(vec3 center, float width, COLOR4 color);
+	void drawBox(vec3 mins, vec3 maxs, COLOR4 color);
+	void drawPolygon3D(Polygon3D& poly, COLOR4 color);
+	float drawPolygon2D(Polygon3D poly, vec2 pos, vec2 maxSz, COLOR4 color); // returns render scale
+	void drawBox2D(vec2 center, float width, COLOR4 color);
 	void drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset = vec3());
 	void drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset = vec3());
 	void drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset = vec3());
@@ -319,6 +344,7 @@ public:
 	bool getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, Solid& outSolid); // calculate face vertices from plane intersections
 	void moveSelectedVerts(const vec3& delta);
 	bool splitModelFace();
+	void updateCullBox();
 
 	vec3 snapToGrid(vec3 pos);
 
@@ -326,6 +352,7 @@ public:
 	void cutEnt();
 	void copyEnt();
 	void pasteEnt(bool noModifyOrigin);
+	void pasteEntsFromText(std::string text);
 	void deleteEnt(int entIdx = 0);
 	void deleteEnts();
 	void scaleSelectedObject(Bsp* map, float x, float y, float z);
@@ -341,6 +368,7 @@ public:
 	void goToFace(Bsp* map, int faceIdx);
 	void ungrabEnt();
 	void loadFgds();
+	void merge(std::string fpath);
 
 	std::vector<std::string> glExteralTextures_names;
 	std::vector<Texture*> glExteralTextures_textures;

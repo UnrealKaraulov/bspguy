@@ -1,5 +1,16 @@
-#include "util.h"
+#pragma once 
 #include "Bsp.h"
+#include "vectors.h"
+
+struct MergeResult {
+	Bsp* map;
+
+	// merge failed if map is null, and below are suggested fixes
+	std::string fpath;
+	vec3 moveFixes;
+	vec3 moveFixes2;
+	bool overflow;
+};
 
 // bounding box for a map, used for arranging maps for merging
 struct MAPBLOCK
@@ -7,6 +18,23 @@ struct MAPBLOCK
 	vec3 mins, maxs, size, offset;
 	Bsp* map;
 	std::string merge_name;
+	
+	void suggest_intersection_fix(MAPBLOCK& other, MergeResult& result)
+	{
+		float xdelta_neg = other.maxs.x - mins.x;
+		float xdelta_pos = maxs.x - other.mins.x;
+		float ydelta_neg = other.maxs.y - mins.y;
+		float ydelta_pos = maxs.y - other.mins.y;
+		float zdelta_neg = other.maxs.z - mins.z;
+		float zdelta_pos = maxs.z - other.mins.z;
+
+		int xdelta = xdelta_neg < xdelta_pos ? ceilf(xdelta_neg + 1.5f) : -ceilf(xdelta_pos + 1.5f);
+		int ydelta = ydelta_neg < ydelta_pos ? ceilf(ydelta_neg + 1.5f) : -ceilf(ydelta_pos + 1.5f);
+		int zdelta = zdelta_neg < zdelta_pos ? ceilf(zdelta_neg + 1.5f) : -ceilf(zdelta_pos + 1.5f);
+
+		result.moveFixes = vec3(xdelta, ydelta, zdelta);
+		result.moveFixes2 = vec3(-xdelta, -ydelta, -zdelta);
+	}
 
 	bool intersects(MAPBLOCK& other)
 	{
@@ -24,7 +52,8 @@ public:
 	// merges all maps into one
 	// noripent - don't change any entity logic
 	// noscript - don't add support for the bspguy map script (worse performance + buggy, but simpler)
-	Bsp* merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomergestyles);
+
+	MergeResult merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript, bool nomove, bool nomergestyles);
 
 
 	// wrapper around BSP data merging for nicer console output
@@ -33,7 +62,7 @@ public:
 	// merge BSP data
 	bool merge(Bsp& mapA, Bsp& mapB, bool modelMerge = false);
 
-	std::vector<std::vector<std::vector<MAPBLOCK>>> separate(std::vector<Bsp*>& maps, const vec3& gap);
+	std::vector<std::vector<std::vector<MAPBLOCK>>> separate(std::vector<Bsp*>& maps, const vec3& gap, bool nomove, MergeResult& result);
 
 	// for maps in a series:
 	// - changelevels should be replaced with teleports or respawn triggers

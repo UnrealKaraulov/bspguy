@@ -3,6 +3,7 @@
 #include <map>
 
 typedef std::map< std::string, std::string > hashmap;
+class Bsp;
 
 class Entity
 {
@@ -72,7 +73,15 @@ public:
 
 	size_t getMemoryUsage(); // aproximate
 
-	vec3 origin;
+	vec3 origin;	
+	
+	vec3 getHullOrigin(Bsp* map);
+
+	
+	bool isEverVisible();
+
+	std::string serialize();
+	
 	int rendermode;
 	int renderamt;
 	int renderfx;
