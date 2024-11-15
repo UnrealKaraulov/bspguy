@@ -64,11 +64,20 @@ set(SOURCE_FILES
 	# utils
 	src/util/lodepng.h				src/util/lodepng.cpp
 	src/util/quantizer.h			src/util/quantizer.cpp
+	src/util/Polygon3D.h			src/util/Polygon3D.cpp
+	src/util/Line2D.h				src/util/Line2D.cpp
 	src/util/ini.h
 	src/util/lang_defs.h
 	src/util/lang.h					src/util/lang.cpp
-	src/util/quantizer.h			src/util/quantizer.cpp
 	src/util/log.h					src/util/log.cpp
+	
+	# nav
+	src/nav/LeafNavMesh.h			src/nav/LeafNavMesh.cpp
+	src/nav/LeafNavMeshGenerator.h	src/nav/LeafNavMeshGenerator.cpp
+	src/nav/LeafOctree.h			src/nav/LeafOctree.cpp
+	src/nav/NavMesh.h				src/nav/NavMesh.cpp
+	src/nav/NavMeshGenerator.h		src/nav/NavMeshGenerator.cpp
+	src/nav/PolyOctree.h		src/nav/PolyOctree.cpp
 	
 	# 3D model viewer
 	src/mdl/mdl_studio.h			src/mdl/mdl_studio.cpp
@@ -92,6 +101,7 @@ include_directories(src/editor)
 include_directories(src/filedialog)
 include_directories(src/gl)
 include_directories(src/qtools)
+include_directories(src/nav)
 include_directories(src/util)
 include_directories(src/mdl)
 include_directories(imgui)

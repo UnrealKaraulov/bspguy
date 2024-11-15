@@ -70,3 +70,5 @@ vs-project/.vs/bspguy/v17/DocumentLayout.json
 *.json
 *.command
 vs-project/bspguy/Debug/bspguy.vcxproj.FileListAbsolute.txt
+/vs-project/bspguy/Debug
+/vs-project/bspguy/Release
