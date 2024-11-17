@@ -8,7 +8,7 @@ class PolygonOctree;
 // generates a navigation mesh for a BSP
 class NavMeshGenerator {
 public:
-	NavMeshGenerator() {}
+	NavMeshGenerator() = default;
 
 	// generate a nav mesh from the bsp
 	// returns polygons used to construct the mesh

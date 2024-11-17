@@ -6,7 +6,7 @@ struct Line2D {
 	vec2 end;
 	vec2 dir;
 
-	Line2D() {}
+	Line2D() = default;
 
 	Line2D(vec2 start, vec2 end);
 

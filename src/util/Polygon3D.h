@@ -39,7 +39,7 @@ public:
 
 	int idx = -1; // for octree lookup
 
-	Polygon3D() {}
+	Polygon3D() = default;
 
 	Polygon3D(const std::vector<vec3>& verts);
 	

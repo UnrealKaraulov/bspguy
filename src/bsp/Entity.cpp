@@ -69,7 +69,7 @@ void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value)
 	addKeyvalue(key, value);
 }
 
-void Entity::removeKeyvalue(const std::string key)
+void Entity::removeKeyvalue(const std::string& key)
 {
 	if (!key.size())
 		return;

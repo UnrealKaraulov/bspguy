@@ -80,7 +80,7 @@ void LeafNavMesh::clear() {
 LeafNavMesh::LeafNavMesh(std::vector<LeafNode> inleaves, LeafOctree* octree) {
 	clear();
 
-	this->nodes = inleaves;
+	this->nodes = std::move(inleaves);
 	this->octree = octree;
 }
 
@@ -174,7 +174,7 @@ int LeafNavMesh::getNodeIdx(Bsp* map, Entity* ent) {
 		for (int k = 0; k < mesh.leafFaces.size(); k++) {
 			Polygon3D& leafFace = mesh.leafFaces[k];
 
-			for (int n = 0; n < 6; k++) {
+			for (int n = 0; n < 6; n++) {
 				if (leafFace.intersects(boxPolys[n])) {
 					return i;
 				}

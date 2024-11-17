@@ -156,11 +156,11 @@ void AppSettings::reset()
 	loadDefault();
 
 	fgdPaths.clear();
-	fgdPaths.push_back({ "/moddir/GameDefinitionFile.fgd",true });
+	fgdPaths.emplace_back("/moddir/GameDefinitionFile.fgd",true);
 
 	resPaths.clear();
-	resPaths.push_back({ "/moddir/",true });
-	resPaths.push_back({ "/moddir_addon/",true });
+	resPaths.emplace_back("/moddir/",true);
+	resPaths.emplace_back("/moddir_addon/",true);
 
 	conditionalPointEntTriggers.clear();
 	conditionalPointEntTriggers.emplace_back("trigger_once");
@@ -515,26 +515,26 @@ void AppSettings::load()
 		else if (key == "fgd")
 		{
 			if (val.find('?') == std::string::npos)
-				fgdPaths.push_back({ val,true });
+				fgdPaths.emplace_back(val,true);
 			else
 			{
 				auto vals = splitString(val, "?");
 				if (vals.size() == 2)
 				{
-					fgdPaths.push_back({ vals[1],vals[0] == "enabled" });
+					fgdPaths.emplace_back(vals[1],vals[0] == "enabled");
 				}
 			}
 		}
 		else if (key == "res")
 		{
 			if (val.find('?') == std::string::npos)
-				resPaths.push_back({ val,true });
+				resPaths.emplace_back(val,true);
 			else
 			{
 				auto vals = splitString(val, "?");
 				if (vals.size() == 2)
 				{
-					resPaths.push_back({ vals[1],vals[0] == "enabled" });
+					resPaths.emplace_back(vals[1],vals[0] == "enabled");
 				}
 			}
 		}
@@ -707,13 +707,13 @@ void AppSettings::load()
 
 	if (defaultIsEmpty && fgdPaths.empty())
 	{
-		fgdPaths.push_back({ "/moddir/GameDefinitionFile.fgd",true });
+		fgdPaths.emplace_back("/moddir/GameDefinitionFile.fgd",true);
 	}
 
 	if (defaultIsEmpty && resPaths.empty())
 	{
-		resPaths.push_back({ "/moddir/",true });
-		resPaths.push_back({ "/moddir_addon/",true });
+		resPaths.emplace_back("/moddir/",true);
+		resPaths.emplace_back("/moddir_addon/",true);
 	}
 
 	if (entListReload || defaultIsEmpty)

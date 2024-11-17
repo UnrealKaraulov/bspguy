@@ -8,7 +8,7 @@ class LeafOctree;
 // generates a navigation mesh for a BSP
 class LeafNavMeshGenerator {
 public:
-	LeafNavMeshGenerator() {}
+	LeafNavMeshGenerator() = default;
 
 	// generate a nav mesh from the bsp
 	// returns polygons used to construct the mesh

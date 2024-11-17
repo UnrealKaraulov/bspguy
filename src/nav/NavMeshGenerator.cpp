@@ -42,7 +42,7 @@ std::vector<Polygon3D*> NavMeshGenerator::getHullFaces(Bsp* map, int hull) {
 
 	std::vector<CMesh> solidMeshes;
 	for (int k = 0; k < solidNodes.size(); k++) {
-		solidMeshes.push_back(clipper.clip(solidNodes[k].cuts));
+		solidMeshes.emplace_back(clipper.clip(solidNodes[k].cuts));
 	}
 
 	// GET FACES FROM MESHES
@@ -310,7 +310,7 @@ void NavMeshGenerator::mergeFaces(Bsp* map, std::vector<Polygon3D>& faces) {
 			break;
 		}
 		else {
-			mergedFaces = newMergedFaces;
+			mergedFaces = std::move(newMergedFaces);
 		}
 	}
 

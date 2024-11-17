@@ -7,11 +7,11 @@
 class VertexBuffer
 {
 public:
+	ShaderProgram* shaderProgram; // for getting handles to vertex attributes
+
 	int numVerts;
 	int primitive;
 	int frameId;
-
-	ShaderProgram* shaderProgram; // for getting handles to vertex attributes
 
 	// Specify which common attributes to use. They will be located in the
 	// shader program. If passing data, note that data is not copied, but referenced

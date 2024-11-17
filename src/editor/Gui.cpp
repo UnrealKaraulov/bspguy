@@ -1855,8 +1855,7 @@ void Gui::drawMenuBar()
 	ImGuiContext& g = *GImGui;
 	static bool ditheringEnabled = false;
 	Bsp* map = app->getSelectedMap();
-	BspRenderer* rend = map ?
-		rend = map->getBspRender() : NULL;
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
 
 	if (ImGui::BeginMainMenuBar())
 	{
@@ -4400,7 +4399,7 @@ void Gui::drawMenuBar()
 					};
 
 					for (int i = 0; i < 10; i++) {
-						if (ImGui::MenuItem(optionNames[i], 0, false, !app->isLoading && app->getSelectedMap())) {
+						if (ImGui::MenuItem(optionNames[i], 0, false, !app->isLoading && app->getSelectedMap() && app)) {
 							if (map->ents[0]->hasKey("origin")) {
 								vec3 ori = map->ents[0]->origin;
 								print_log("Moved worldspawn origin by {} {} {}\n", ori.x, ori.y, ori.z);
@@ -4420,7 +4419,7 @@ void Gui::drawMenuBar()
 
 					ImGui::EndMenu();
 				}
-				if (ImGui::MenuItem("Delete Boxed Data", 0, false, !app->isLoading && app->getSelectedMap())) {
+				if (ImGui::MenuItem("Delete Boxed Data", 0, false, !app->isLoading && app->getSelectedMap() && rend)) {
 					if (!g_app->hasCullbox) {
 						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
 					}
@@ -4444,15 +4443,12 @@ void Gui::drawMenuBar()
 				IMGUI_TOOLTIP(g, "Scans for duplicated BSP models and updates entity model keys to reference only one model in set of duplicated models. "
 					"This lowers the model count and allows more game models to be precached.\n\n"
 					"This does not delete BSP data structures unless you run the Clean command afterward.");
-				if (ImGui::MenuItem("Downscale Invalid Textures", "(WIP)", false, !app->isLoading && app->getSelectedMap())) {
+				if (ImGui::MenuItem("Downscale Invalid Textures", "(WIP)", false, !app->isLoading && app->getSelectedMap() && rend)) {
 					map->downscale_invalid_textures();
 
-					if (rend)
-					{
-						rend->preRenderFaces();
-						g_app->gui->refresh();
-						reloadLimits();
-					}
+					rend->preRenderFaces();
+					g_app->gui->refresh();
+					reloadLimits();
 				}
 				IMGUI_TOOLTIP(g, "Shrinks textures that exceed the max texture size and adjusts texture coordinates accordingly. Does not work with WAD textures yet.\n");
 				if (ImGui::BeginMenu("Fix Bad Surface Extents", !app->isLoading && app->getSelectedMap()))
@@ -4560,35 +4556,36 @@ void Gui::drawMenuBar()
 
 					for (size_t i = 0; i < map->ents.size(); i++)
 					{
-						if (!map->ents[i]->origin.IsZero())
+						Entity* mapEnt = map->ents[i];
+						if (!mapEnt->origin.IsZero())
 						{
-							std::swap(map->ents[i]->origin.x, map->ents[i]->origin.y);
-							map->ents[i]->setOrAddKeyvalue("origin", map->ents[i]->origin.toKeyvalueString());
+							std::swap(mapEnt->origin.x, mapEnt->origin.y);
+							mapEnt->setOrAddKeyvalue("origin", mapEnt->origin.toKeyvalueString());
 						}
 
-						if (map->ents[i]->isBspModel())
+						if (mapEnt->isBspModel())
 						{
 							continue;
 						}
 
-						if (map->ents[i]->hasKey("angle"))
+						if (mapEnt->hasKey("angle"))
 						{
-							float angle = str_to_float(map->ents[i]->keyvalues["angle"]);
+							float angle = str_to_float(mapEnt->keyvalues["angle"]);
 							angle = 90.0f - angle;
-							map->ents[i]->setOrAddKeyvalue("angle", std::to_string(fullnormalizeangle(angle)));
+							mapEnt->setOrAddKeyvalue("angle", std::to_string(fullnormalizeangle(angle)));
 						}
 
-						if (map->ents[i]->hasKey("angles"))
+						if (mapEnt->hasKey("angles"))
 						{
-							vec3 angles = parseVector(map->ents[i]->keyvalues["angles"]);
+							vec3 angles = parseVector(mapEnt->keyvalues["angles"]);
 							angles[1] = 90.0f - angles[1];
-							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
+							mapEnt->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
-						else if (!map->ents[i]->hasKey("angle"))
+						else if (!mapEnt->hasKey("angle"))
 						{
 							vec3 angles = vec3();
 							angles[1] = 90.0f - angles[1];
-							map->ents[i]->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
+							mapEnt->setOrAddKeyvalue("angles", angles.normalize_angles().toKeyvalueString());
 						}
 					}
 
@@ -7534,6 +7531,172 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 	ImGui::EndChild();
 }
 
+struct InputData
+{
+	int idx;
+};
+
+struct TextChangeCallback
+{
+	static int keyNameChanged(ImGuiInputTextCallbackData* data)
+	{
+		InputData* inputData = (InputData*)data->UserData;
+
+		Bsp* map = g_app->getSelectedMap();
+		if (map)
+		{
+			BspRenderer* render = map->getBspRender();
+			if (render)
+			{
+				if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
+				{
+					std::string key = map->ents[g_app->pickInfo.selectedEnts[0]]->keyOrder[inputData->idx];
+					if (key != data->Buf)
+					{
+						for (auto entId : g_app->pickInfo.selectedEnts)
+						{
+							Entity* selent = map->ents[entId];
+							if (selent->renameKey(key, data->Buf))
+							{
+								render->refreshEnt((int)entId);
+								if (key == "model" || std::string(data->Buf) == "model")
+								{
+									g_app->reloadBspModels();
+								}
+
+								g_app->updateEntConnections();
+								map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue", (int)entId, selent);
+							}
+						}
+					}
+				}
+			}
+		}
+		return 1;
+	}
+
+	static int keyValueChanged(ImGuiInputTextCallbackData* data)
+	{
+		InputData* inputData = (InputData*)data->UserData;
+
+		Bsp* map2 = g_app->getSelectedMap();
+		if (map2)
+		{
+			BspRenderer* render = map2->getBspRender();
+			if (render)
+			{
+				if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
+				{
+					bool needreloadmodels = false;
+					std::string key = map2->ents[g_app->pickInfo.selectedEnts[0]]->keyOrder[inputData->idx];
+					int part_vec = -1;
+
+					for (auto entId : g_app->pickInfo.selectedEnts)
+					{
+						Entity* selent = map2->ents[entId];
+						if (selent->keyvalues[key] != data->Buf)
+						{
+							if (part_vec == -1 && g_app->pickInfo.selectedEnts.size() > 1)
+							{
+								if (key == "origin")
+								{
+									vec3 newOrigin = parseVector(data->Buf);
+									vec3 oldOrigin = parseVector(selent->keyvalues[key]);
+									vec3 testOrigin = newOrigin - oldOrigin;
+									if (std::abs(testOrigin.x) > EPSILON2)
+									{
+										part_vec = 0;
+									}
+									else if (std::abs(testOrigin.y) > EPSILON2)
+									{
+										part_vec = 1;
+									}
+									else
+									{
+										part_vec = 2;
+									}
+								}
+							}
+
+							bool needrefreshmodel = false;
+							if (key == "model")
+							{
+								if (selent->hasKey("model") && selent->keyvalues["model"] != data->Buf)
+								{
+									selent->setOrAddKeyvalue(key, data->Buf);
+									render->refreshEnt((int)entId);
+									needreloadmodels = true;
+								}
+							}
+							if (key == "renderamt")
+							{
+								if (selent->hasKey("renderamt") && selent->keyvalues["renderamt"] != data->Buf)
+								{
+									needrefreshmodel = true;
+								}
+							}
+							if (key == "rendermode")
+							{
+								if (selent->hasKey("rendermode") && selent->keyvalues["rendermode"] != data->Buf)
+								{
+									needrefreshmodel = true;
+								}
+							}
+							if (key == "renderfx")
+							{
+								if (selent->hasKey("renderfx") && selent->keyvalues["renderfx"] != data->Buf)
+								{
+									needrefreshmodel = true;
+								}
+							}
+							if (key == "rendercolor")
+							{
+								if (selent->hasKey("rendercolor") && selent->keyvalues["rendercolor"] != data->Buf)
+								{
+									needrefreshmodel = true;
+								}
+							}
+							if (key == "origin" && part_vec != -1)
+							{
+								vec3 newOrigin = parseVector(data->Buf);
+								vec3 oldOrigin = parseVector(selent->keyvalues[key]);
+								oldOrigin[part_vec] = newOrigin[part_vec];
+								selent->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
+							}
+							else
+							{
+								selent->setOrAddKeyvalue(key, data->Buf);
+							}
+							render->refreshEnt((int)entId);
+							pickCount++;
+							vertPickCount++;
+							g_app->updateEntConnections();
+							if (needrefreshmodel)
+							{
+								if (map2 && selent->getBspModelIdx() > 0)
+								{
+									map2->getBspRender()->refreshModel(selent->getBspModelIdx());
+									g_app->updateEntConnections();
+								}
+							}
+							map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue RAW", (int)entId, selent);
+						}
+					}
+
+					if (needreloadmodels)
+					{
+						pickCount++;
+						vertPickCount++;
+						g_app->updateEntConnections();
+						g_app->reloadBspModels();
+					}
+				}
+			}
+		}
+
+		return 1;
+	}
+};
 void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 {
 	Bsp* map = app->getSelectedMap();
@@ -7576,172 +7739,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	float paddingx = style.WindowPadding.x + style.FramePadding.x;
 	float inputWidth = (ImGui::GetWindowWidth() - paddingx * 2) * 0.5f;
 
-	struct InputData
-	{
-		int idx;
-	};
-
-	struct TextChangeCallback
-	{
-		static int keyNameChanged(ImGuiInputTextCallbackData* data)
-		{
-			InputData* inputData = (InputData*)data->UserData;
-
-			Bsp* map = g_app->getSelectedMap();
-			if (map)
-			{
-				BspRenderer* render = map->getBspRender();
-				if (render)
-				{
-					if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
-					{
-						std::string key = map->ents[g_app->pickInfo.selectedEnts[0]]->keyOrder[inputData->idx];
-						if (key != data->Buf)
-						{
-							for (auto entId : g_app->pickInfo.selectedEnts)
-							{
-								Entity* selent = map->ents[entId];
-								if (selent->renameKey(key, data->Buf))
-								{
-									render->refreshEnt((int)entId);
-									if (key == "model" || std::string(data->Buf) == "model")
-									{
-										g_app->reloadBspModels();
-									}
-
-									g_app->updateEntConnections();
-									map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue", (int)entId, selent);
-								}
-							}
-						}
-					}
-				}
-			}
-			return 1;
-		}
-
-		static int keyValueChanged(ImGuiInputTextCallbackData* data)
-		{
-			InputData* inputData = (InputData*)data->UserData;
-
-			Bsp* map2 = g_app->getSelectedMap();
-			if (map2)
-			{
-				BspRenderer* render = map2->getBspRender();
-				if (render)
-				{
-					if (g_app->pickInfo.selectedEnts.size() && g_app->pickInfo.selectedEnts[0] >= 0)
-					{
-						bool needreloadmodels = false;
-						std::string key = map2->ents[g_app->pickInfo.selectedEnts[0]]->keyOrder[inputData->idx];
-						int part_vec = -1;
-
-						for (auto entId : g_app->pickInfo.selectedEnts)
-						{
-							Entity* selent = map2->ents[entId];
-							if (selent->keyvalues[key] != data->Buf)
-							{
-								if (part_vec == -1 && g_app->pickInfo.selectedEnts.size() > 1)
-								{
-									if (key == "origin")
-									{
-										vec3 newOrigin = parseVector(data->Buf);
-										vec3 oldOrigin = parseVector(selent->keyvalues[key]);
-										vec3 testOrigin = newOrigin - oldOrigin;
-										if (std::abs(testOrigin.x) > EPSILON2)
-										{
-											part_vec = 0;
-										}
-										else if (std::abs(testOrigin.y) > EPSILON2)
-										{
-											part_vec = 1;
-										}
-										else
-										{
-											part_vec = 2;
-										}
-									}
-								}
-
-								bool needrefreshmodel = false;
-								if (key == "model")
-								{
-									if (selent->hasKey("model") && selent->keyvalues["model"] != data->Buf)
-									{
-										selent->setOrAddKeyvalue(key, data->Buf);
-										render->refreshEnt((int)entId);
-										needreloadmodels = true;
-									}
-								}
-								if (key == "renderamt")
-								{
-									if (selent->hasKey("renderamt") && selent->keyvalues["renderamt"] != data->Buf)
-									{
-										needrefreshmodel = true;
-									}
-								}
-								if (key == "rendermode")
-								{
-									if (selent->hasKey("rendermode") && selent->keyvalues["rendermode"] != data->Buf)
-									{
-										needrefreshmodel = true;
-									}
-								}
-								if (key == "renderfx")
-								{
-									if (selent->hasKey("renderfx") && selent->keyvalues["renderfx"] != data->Buf)
-									{
-										needrefreshmodel = true;
-									}
-								}
-								if (key == "rendercolor")
-								{
-									if (selent->hasKey("rendercolor") && selent->keyvalues["rendercolor"] != data->Buf)
-									{
-										needrefreshmodel = true;
-									}
-								}
-								if (key == "origin" && part_vec != -1)
-								{
-									vec3 newOrigin = parseVector(data->Buf);
-									vec3 oldOrigin = parseVector(selent->keyvalues[key]);
-									oldOrigin[part_vec] = newOrigin[part_vec];
-									selent->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
-								}
-								else
-								{
-									selent->setOrAddKeyvalue(key, data->Buf);
-								}
-								render->refreshEnt((int)entId);
-								pickCount++;
-								vertPickCount++;
-								g_app->updateEntConnections();
-								if (needrefreshmodel)
-								{
-									if (map2 && selent->getBspModelIdx() > 0)
-									{
-										map2->getBspRender()->refreshModel(selent->getBspModelIdx());
-										g_app->updateEntConnections();
-									}
-								}
-								map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue RAW", (int)entId, selent);
-							}
-						}
-
-						if (needreloadmodels)
-						{
-							pickCount++;
-							vertPickCount++;
-							g_app->updateEntConnections();
-							g_app->reloadBspModels();
-						}
-					}
-				}
-			}
-
-			return 1;
-		}
-	};
 
 	static InputData keyIds[MAX_KEYS_PER_ENT];
 	static InputData valueIds[MAX_KEYS_PER_ENT];
@@ -8459,7 +8456,7 @@ void Gui::drawTransformWidget()
 
 			ImGui::Text(fmt::format("Entity origin: {:.2f} {:.2f} {:.2f}", ent->origin.x, ent->origin.y, ent->origin.z).c_str());
 
-			if (modelIdx >= 0)
+			if (modelIdx >= 0 && map)
 			{
 				ImGui::Text(fmt::format("Model origin: {:.2f} {:.2f} {:.2f}", map->models[modelIdx].vOrigin.x, map->models[modelIdx].vOrigin.y, map->models[modelIdx].vOrigin.z).c_str());
 				vec3 modelCenter = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
@@ -9031,7 +9028,7 @@ void Gui::drawSettings()
 
 			if (ImGui::Button(get_localized_string(LANG_0741).c_str()))
 			{
-				g_settings.fgdPaths.push_back({ std::string(),true });
+				g_settings.fgdPaths.emplace_back(std::string(),true);
 			}
 		}
 		else if (settingsTab == 2)
@@ -9078,7 +9075,7 @@ void Gui::drawSettings()
 
 			if (ImGui::Button(get_localized_string(LANG_0742).c_str()))
 			{
-				g_settings.resPaths.push_back({ std::string(), true });
+				g_settings.resPaths.emplace_back(std::string(), true);
 			}
 		}
 		else if (settingsTab == 3)
@@ -9690,7 +9687,7 @@ void Gui::drawMergeWindow()
 
 	if (inPaths.size() < 1)
 	{
-		inPaths.push_back(std::string(""));
+		inPaths.emplace_back("");
 	}
 
 	if (ImGui::Begin(fmt::format("{}###MERGE_WIDGET", get_localized_string(LANG_0825)).c_str(), &showMergeMapWidget))
@@ -12497,10 +12494,12 @@ void Gui::drawFaceEditorWidget()
 			ImGui::TextUnformatted(fmt::format("Leaf list. Leaf:{}", last_leaf).c_str());
 			ImGui::TextUnformatted(fmt::format("Leaf model id:{}", last_leaf_mdl).c_str());
 
-			float flContents = map->leaves[last_leaf].nContents * 1.0f;
+			float flContents = 0.0f;
 
 			if (last_leaf >= 0 && last_leaf < map->leafCount)
 			{
+				flContents = map->leaves[last_leaf].nContents * 1.0f;
+
 				ImGui::TextUnformatted(fmt::format("Vis offset:{}", map->leaves[last_leaf].nVisOffset).c_str());
 				ImGui::TextUnformatted("Contents:");
 				ImGui::SameLine();

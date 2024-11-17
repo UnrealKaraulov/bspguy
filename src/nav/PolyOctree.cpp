@@ -4,8 +4,8 @@
 #include <algorithm>
 
 PolyOctant::PolyOctant(vec3 min, vec3 max) {
-    this->min = min;
-    this->max = max;
+    this->mins = min;
+    this->maxs = max;
     memset(children, NULL, sizeof(PolyOctant*) * 8);
 }
 
@@ -37,8 +37,8 @@ void PolygonOctree::buildOctree(PolyOctant* node, int currentDepth) {
     if (currentDepth >= maxDepth) {
         return;
     }
-    const vec3& min = node->min;
-    const vec3& max = node->max;
+    const vec3& min = node->mins;
+    const vec3& max = node->maxs;
     vec3 mid((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
 
     // Define eight child octants using the min and max values
@@ -77,7 +77,7 @@ void PolygonOctree::removePolygon(Polygon3D* polygon) {
 }
 
 bool PolygonOctree::isPolygonInOctant(Polygon3D* polygon, PolyOctant* node) {
-    return boxesIntersect(polygon->worldMins, polygon->worldMaxs, node->min, node->max);
+    return boxesIntersect(polygon->worldMins, polygon->worldMaxs, node->mins, node->maxs);
 }
 
 void PolygonOctree::getPolysInRegion(Polygon3D* poly, std::vector<bool>& regionPolys) {

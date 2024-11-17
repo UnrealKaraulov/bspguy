@@ -28,7 +28,7 @@ protected:
 	Node* m_pTree;
 	unsigned int m_nLeafCount;
 	Node* m_pReducibleNodes[256];
-	unsigned int m_nMaxColors;
+	size_t m_nMaxColors;
 	unsigned char m_nColorBits;
 	unsigned int m_lastIndex;
 	COLOR3* m_pPalette;

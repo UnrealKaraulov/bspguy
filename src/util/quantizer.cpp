@@ -75,7 +75,7 @@ void Quantizer::ProcessImage(COLOR3* image, unsigned int size)
 	m_nLeafCount = 0;
 	m_lastIndex = 0;
 
-	for (unsigned int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		AddColor(&m_pTree, image[i], 0, &m_nLeafCount, m_pReducibleNodes);
 
@@ -123,7 +123,8 @@ unsigned int Quantizer::GetNearestIndex(COLOR3 c, COLOR3* pal)
 	if (ColorsAreEqual(c, pal[m_lastIndex]))
 		return m_lastIndex;
 	unsigned int cur = 0;
-	for (unsigned int i = 0, k = 0, distance = 2147483647; i < m_nLeafCount; i++)
+	unsigned distance = INT_MAX;
+	for (unsigned int i = 0, k = 0; i < m_nLeafCount; i++)
 	{
 		k = (unsigned int)((pal[i].r - c.r) * (pal[i].r - c.r) + (pal[i].g - c.g) * (pal[i].g - c.g) + (pal[i].b - c.b) * (pal[i].b - c.b));
 		if (k <= 0)
@@ -518,8 +519,8 @@ void Quantizer::GenColorTable()
 		unsigned int j, k, nr, ng, nb, ns, a, b;
 		for (j = 0; j < m_nMaxColors; j++)
 		{
-			a = (j * m_nLeafCount) / m_nMaxColors;
-			b = ((j + 1) * m_nLeafCount) / m_nMaxColors;
+			a = (j * m_nLeafCount) / (unsigned int)m_nMaxColors;
+			b = ((j + 1) * m_nLeafCount) / (unsigned int)m_nMaxColors;
 			nr = ng = nb = ns = 0;
 			for (k = a; k < b; k++)
 			{

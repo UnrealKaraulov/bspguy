@@ -267,28 +267,23 @@ void StudioModel::SlerpBones(vec4 q1[], vec3 pos1[], vec4 q2[], vec3 pos2[], flo
 }
 
 
-void StudioModel::AdvanceFrame(float dt)
+void StudioModel::AdvanceFrame(float dt) 
 {
-	if (!m_pstudiohdr)
-		return;
-	mstudioseqdesc_t* pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex) + m_sequence;
+	if (!m_pstudiohdr) return;
 
+	auto* pseqdesc = reinterpret_cast<mstudioseqdesc_t*>(
+		reinterpret_cast<unsigned char*>(m_pstudiohdr) + m_pstudiohdr->seqindex) + m_sequence;
 
 	m_frame += dt * pseqdesc->fps;
 
-	if (pseqdesc->numframes <= 1)
-	{
-		m_frame = 0.0f;
-	}
-	else
-	{
-		m_frame += (int)(m_frame / (pseqdesc->numframes - 1)) * (pseqdesc->numframes - 1);
+	if (pseqdesc->numframes > 1) {
+		m_frame = std::fmod(m_frame, pseqdesc->numframes - 1);
 	}
 
-	if (m_frame >= pseqdesc->numframes)
+	if (m_frame >= pseqdesc->numframes) {
 		m_frame = 0;
+	}
 }
-
 void StudioModel::SetUpBones(void)
 {
 	// valve

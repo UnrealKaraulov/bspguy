@@ -103,15 +103,16 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 
 			for (size_t i = 0; i < mapB->ents.size(); i++)
 			{
-				if (mapB->ents[i]->keyvalues["classname"].find("light") != std::string::npos)
+				Entity* mapent = mapB->ents[i];
+				if (mapent->keyvalues["classname"].find("light") != std::string::npos)
 				{
-					if (mapB->ents[i]->hasKey("style"))
+					if (mapent->hasKey("style"))
 					{
-						int style = str_to_int(mapB->ents[i]->keyvalues["style"]);
+						int style = str_to_int(mapent->keyvalues["style"]);
 						if (style < 255 && style >= start_toggle_lightstyle && remap_light_styles.find((unsigned char)style) != remap_light_styles.end())
 						{
 							remapped_lightents++;
-							mapB->ents[i]->setOrAddKeyvalue("style", std::to_string(remap_light_styles[(unsigned char)style]));
+							mapent->setOrAddKeyvalue("style", std::to_string(remap_light_styles[(unsigned char)style]));
 						}
 					}
 				}

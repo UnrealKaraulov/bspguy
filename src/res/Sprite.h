@@ -68,7 +68,7 @@ struct SpriteGroup
 
 class Sprite {
 public:
-	Sprite(const std::string& filename);
+	Sprite(const std::string& filename, const vec3 & mins = vec3(), const vec3 & maxs = vec3(), float scale = 1.0f, bool useOwnSettigns = false);
 	~Sprite();
 	std::string name;
 	SPRITE_HEADER header;
@@ -90,3 +90,4 @@ void TestSprite();
 
 extern std::map<unsigned int, Sprite*> spr_models;
 Sprite* AddNewSpriteToRender(const std::string & path, unsigned int sum = 0);
+Sprite* AddNewSpriteToRender(const std::string& path, vec3 mins, vec3 maxs, float scale);

@@ -31,13 +31,15 @@ LeafNavMesh* LeafNavMeshGenerator::generate(Bsp* map) {
 
 	size_t totalSz = 0;
 	for (int i = 0; i < navmesh->nodes.size(); i++) {
-		totalSz += sizeof(LeafNode) + (sizeof(LeafLink) * navmesh->nodes[i].links.size());
+		auto & navnode = navmesh->nodes[i];
 
-		for (int k = 0; k < navmesh->nodes[i].links.size(); k++) {
-			totalSz += navmesh->nodes[i].links[k].linkArea.sizeBytes() - sizeof(Polygon3D);
+		totalSz += sizeof(LeafNode) + (sizeof(LeafLink) * navnode.links.size());
+
+		for (int k = 0; k < navnode.links.size(); k++) {
+			totalSz += navnode.links[k].linkArea.sizeBytes() - sizeof(Polygon3D);
 		}
-		for (int k = 0; k < navmesh->nodes[i].leafFaces.size(); k++) {
-			totalSz += navmesh->nodes[i].leafFaces[k].sizeBytes();
+		for (int k = 0; k < navnode.leafFaces.size(); k++) {
+			totalSz += navnode.leafFaces[k].sizeBytes();
 		}
 	}
 
@@ -60,7 +62,7 @@ std::vector<LeafNode> LeafNavMeshGenerator::getHullLeaves(Bsp* map, int modelIdx
 
 	std::vector<CMesh> emptyMeshes;
 	for (int k = 0; k < emptyNodes.size(); k++) {
-		emptyMeshes.push_back(clipper.clip(emptyNodes[k].cuts));
+		emptyMeshes.emplace_back(clipper.clip(emptyNodes[k].cuts));
 	}
 
 	// GET FACES FROM MESHES
@@ -176,7 +178,7 @@ void LeafNavMeshGenerator::setLeafOrigins(Bsp* map, LeafNavMesh* mesh) {
 		vec3 testBottom = node.center - vec3(0, 0, 4096);
 		node.origin = node.center;
 		int bottomFaceIdx = -1;
-		for (int n = 0; n < node.leafFaces.size(); i++) {
+		for (int n = 0; n < node.leafFaces.size(); n++) {
 			Polygon3D& face = node.leafFaces[n];
 			if (face.intersect(node.center, testBottom, node.origin)) {
 				bottomFaceIdx = n;

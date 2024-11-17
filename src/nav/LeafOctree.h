@@ -4,8 +4,8 @@
 #include "LeafNavMesh.h"
 
 struct LeafOctant {
-    vec3 min;
-    vec3 max;
+    vec3 mins;
+    vec3 maxs;
     std::vector<LeafNode*> leaves;
     LeafOctant* children[8]; // Eight children octants
 

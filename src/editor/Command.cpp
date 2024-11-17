@@ -213,8 +213,9 @@ size_t CreateEntityCommand::memoryUsage()
 // Create Entities From Text
 //
 CreateEntityFromTextCommand::CreateEntityFromTextCommand(std::string desc, int mapIdx, std::string textData) : Command(desc, mapIdx) {
-	this->textData = textData;
+	this->textData = std::move(textData);
 	this->allowedDuringLoad = true;
+	createdEnts = 0;
 }
 
 CreateEntityFromTextCommand::~CreateEntityFromTextCommand() {
@@ -267,7 +268,7 @@ void CreateEntityFromTextCommand::execute() {
 			ent = NULL;
 
 			// you can end/start an ent on the same line, you know
-			if (line.find("{") != std::string::npos)
+			if (line.find('{') != std::string::npos)
 			{
 				ent = new Entity();
 				lastBracket = 0;

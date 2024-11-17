@@ -448,7 +448,7 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 
 		std::vector<CMesh> solidMeshes;
 		for (int k = 0; k < solidNodes.size(); k++) {
-			solidMeshes.push_back(clipper.clip(solidNodes[k].cuts));
+			solidMeshes.emplace_back(clipper.clip(solidNodes[k].cuts));
 		}
 
 		for (int m = 0; m < solidMeshes.size(); m++) {
@@ -459,8 +459,6 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 				if (!mesh.faces[i].visible) {
 					continue;
 				}
-
-				std::set<int> uniqueFaceVerts;
 
 				for (int k = 0; k < mesh.faces[i].edges.size(); k++) {
 					for (int v = 0; v < 2; v++) {
@@ -870,33 +868,34 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, const std::vector<TransformVert
 		return false;
 
 	std::set<int> affectedPlanes;
-
 	std::map<int, std::vector<vec3>> planeVerts;
 	std::vector<vec3> allVertPos;
 
-	for (size_t i = 0; i < hullVerts.size(); i++)
+	for (const auto& vert : hullVerts)
 	{
-		for (size_t k = 0; k < hullVerts[i].iPlanes.size(); k++) {
-			int iPlane = hullVerts[i].iPlanes[k];
-			affectedPlanes.insert(hullVerts[i].iPlanes[k]);
-			planeVerts[iPlane].push_back(hullVerts[i].pos);
+		for (int iPlane : vert.iPlanes)
+		{
+			affectedPlanes.insert(iPlane);
+			planeVerts[iPlane].push_back(vert.pos);
 		}
-		allVertPos.push_back(hullVerts[i].pos);
+		allVertPos.push_back(vert.pos);
 	}
 
 	int planeUpdates = 0;
 	std::map<int, BSPPLANE> newPlanes;
 	std::map<int, bool> shouldFlipChildren;
-	for (auto it = planeVerts.begin(); it != planeVerts.end(); ++it)
+	for (const auto& [iPlane, tverts] : planeVerts)
 	{
-		int iPlane = it->first;
-
-		std::vector<vec3>& tverts = it->second;
-
 		if (tverts.size() < 3)
 		{
 			if (g_settings.verboseLogs)
 				print_log(get_localized_string(LANG_0045));
+			return false; // invalid solid
+		}
+
+		if (iPlane >= planeCount)
+		{
+			print_log("Fatal error sync plane bad {} of {}\n", iPlane, planeCount);
 			return false; // invalid solid
 		}
 
@@ -935,11 +934,8 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, const std::vector<TransformVert
 	if (convexCheckOnly)
 		return planeVerts.size();
 
-	for (auto it = newPlanes.begin(); it != newPlanes.end(); ++it)
+	for (const auto& [iPlane, newPlane] : newPlanes)
 	{
-		auto iPlane = it->first;
-		BSPPLANE& newPlane = it->second;
-
 		planes[iPlane] = newPlane;
 		planeUpdates++;
 
@@ -958,15 +954,13 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, const std::vector<TransformVert
 				BSPNODE32& node = nodes[i];
 				if (node.iPlane == iPlane)
 				{
-					int temp = node.iChildren[0];
-					node.iChildren[0] = node.iChildren[1];
-					node.iChildren[1] = temp;
+					std::swap(node.iChildren[0], node.iChildren[1]);
 				}
 			}
 		}
 	}
 
-	//print_log(get_localized_string(LANG_0047),planeUpdates);
+	//print_log(get_localized_string(LANG_0047), planeUpdates);
 	return true;
 }
 
@@ -1481,7 +1475,7 @@ void Bsp::split_shared_model_structures(int modelIdx)
 	replace_lump(LUMP_TEXINFO, newTexinfos, newTexinfoCount * sizeof(BSPTEXTUREINFO));
 
 	std::vector<bool> newVisitedClipnodes(newClipnodeCount, false);
-	remappedStuff.visitedClipnodes = newVisitedClipnodes;
+	remappedStuff.visitedClipnodes = std::move(newVisitedClipnodes);
 
 	remap_model_structures(modelIdx, &remappedStuff);
 
@@ -2936,7 +2930,7 @@ void Bsp::delete_oob_data(int clipFlags) {
 	int deletedEnts = (int)ents.size() - (int)newEnts.size();
 	if (deletedEnts)
 		print_log("    Deleted {} entities\n", deletedEnts);
-	ents = newEnts;
+	ents = std::move(newEnts);
 
 	unsigned char* oobFaces = new unsigned char[faceCount];
 	memset(oobFaces, 0, faceCount * sizeof(bool));
@@ -3034,6 +3028,7 @@ void Bsp::delete_oob_data(int clipFlags) {
 			leaf.iFirstMarkSurface = 0;
 
 			if (oobCount != leaf.nMarkSurfaces) {
+				// always true
 				//print_log("leaf {} partially OOB\n", i);
 			}
 		}
@@ -3262,7 +3257,7 @@ void Bsp::delete_box_data(vec3 clipMins, vec3 clipMaxs) {
 	int deletedEnts = (int)ents.size() - (int)newEnts.size();
 	if (deletedEnts)
 		print_log("    Deleted {} entities\n", deletedEnts);
-	ents = newEnts;
+	ents = std::move(newEnts);
 
 	unsigned char* oobFaces = new unsigned char[faceCount];
 	memset(oobFaces, 0, faceCount * sizeof(bool));
@@ -3353,6 +3348,7 @@ void Bsp::delete_box_data(vec3 clipMins, vec3 clipMaxs) {
 			leaf.iFirstMarkSurface = 0;
 
 			if (oobCount != leaf.nMarkSurfaces) {
+				// always true
 				//print_log("leaf {} partially OOB\n", i);
 			}
 		}
@@ -8716,12 +8712,12 @@ int Bsp::create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetMod
 	std::vector<BSPPLANE> addPlanes;
 	std::vector<BSPNODE32> addNodes;
 
-	addPlanes.push_back({ vec3(1.0f, 0.0f, 0.0f), min.x, PLANE_X }); // left
-	addPlanes.push_back({ vec3(1.0f, 0.0f, 0.0f), max.x, PLANE_X }); // right
-	addPlanes.push_back({ vec3(0.0f, 1.0f, 0.0f), min.y, PLANE_Y }); // front
-	addPlanes.push_back({ vec3(0.0f, 1.0f, 0.0f), max.y, PLANE_Y }); // back
-	addPlanes.push_back({ vec3(0.0f, 0.0f, 1.0f), min.z, PLANE_Z }); // bottom
-	addPlanes.push_back({ vec3(0.0f, 0.0f, 1.0f), max.z, PLANE_Z }); // top
+	addPlanes.emplace_back(vec3(1.0f, 0.0f, 0.0f), min.x, PLANE_X); // left
+	addPlanes.emplace_back(vec3(1.0f, 0.0f, 0.0f), max.x, PLANE_X); // right
+	addPlanes.emplace_back(vec3(0.0f, 1.0f, 0.0f), min.y, PLANE_Y); // front
+	addPlanes.emplace_back(vec3(0.0f, 1.0f, 0.0f), max.y, PLANE_Y); // back
+	addPlanes.emplace_back(vec3(0.0f, 0.0f, 1.0f), min.z, PLANE_Z); // bottom
+	addPlanes.emplace_back(vec3(0.0f, 0.0f, 1.0f), max.z, PLANE_Z); // top
 
 	int solidNodeIdx = 0;
 
@@ -8792,12 +8788,12 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 		int clipnodeIdx = clipnodeCount + (int)addNodes.size();
 		int planeIdx = planeCount + (int)addPlanes.size();
 
-		addPlanes.push_back({ vec3(1.0f, 0.0f, 0.0f), min.x, PLANE_X }); // left
-		addPlanes.push_back({ vec3(1.0f, 0.0f, 0.0f), max.x, PLANE_X }); // right
-		addPlanes.push_back({ vec3(0.0f, 1.0f, 0.0f), min.y, PLANE_Y }); // front
-		addPlanes.push_back({ vec3(0.0f, 1.0f, 0.0f), max.y, PLANE_Y }); // back
-		addPlanes.push_back({ vec3(0.0f, 0.0f, 1.0f), min.z, PLANE_Z }); // bottom
-		addPlanes.push_back({ vec3(0.0f, 0.0f, 1.0f), max.z, PLANE_Z }); // top
+		addPlanes.emplace_back(vec3(1.0f, 0.0f, 0.0f), min.x, PLANE_X); // left
+		addPlanes.emplace_back(vec3(1.0f, 0.0f, 0.0f), max.x, PLANE_X); // right
+		addPlanes.emplace_back(vec3(0.0f, 1.0f, 0.0f), min.y, PLANE_Y); // front
+		addPlanes.emplace_back(vec3(0.0f, 1.0f, 0.0f), max.y, PLANE_Y); // back
+		addPlanes.emplace_back(vec3(0.0f, 0.0f, 1.0f), min.z, PLANE_Z); // bottom
+		addPlanes.emplace_back(vec3(0.0f, 0.0f, 1.0f), max.z, PLANE_Z); // top
 
 		targetModel->iHeadnodes[i] = clipnodeCount + (int)addNodes.size();
 
@@ -8902,7 +8898,7 @@ int Bsp::create_clipnode(bool force_reversed, int reversed_id)
 	for (int i = 0; i < clipnodeCount; i++)
 	{
 		if (i == reversed_id)
-			newNodes.push_back(BSPCLIPNODE32());
+			newNodes.emplace_back(BSPCLIPNODE32());
 		newNodes.push_back(clipnodes[i]);
 	}
 
@@ -8950,7 +8946,7 @@ int Bsp::create_node(bool force_reversed, int reversed_id)
 	for (int i = 0; i < nodeCount; i++)
 	{
 		if (i == reversed_id)
-			newNodes.push_back(BSPNODE32());
+			newNodes.emplace_back(BSPNODE32());
 		newNodes.push_back(nodes[i]);
 	}
 
@@ -11257,7 +11253,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 				}
 			}
 			if (!found)
-				total_verts.push_back({ t.verts[v],bones_to[t.boneid] });
+				total_verts.emplace_back(t.verts[v],bones_to[t.boneid]);
 		}
 
 		bool found = false;
@@ -11845,7 +11841,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 					rndColor.b = 50 + rand() % 206;
 					rndColor.a = 255;
 
-					csm_export->vertices.push_back({ org_pos,org_norm,rndColor });
+					csm_export->vertices.emplace_back(org_pos,org_norm,rndColor);
 
 					int cur_faceIdx = (int)(csm_export->faces.size()) - 1;
 					if (cur_faceIdx >= 0)

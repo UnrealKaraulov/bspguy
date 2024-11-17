@@ -409,7 +409,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			std::string mdlpath = getValueInParens(typeParts[i]);
 			if (mdlpath.size())
 			{
-				fgdClass.model = mdlpath;
+				fgdClass.model = std::move(mdlpath);
 				fixupPath(fgdClass.model, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 			}
 			fgdClass.isModel = true;

@@ -29,6 +29,7 @@ Sprite::~Sprite()
 void Sprite::DrawSprite()
 {
 	animate_frame();
+
 	sprite_groups[current_group].sprites
 		[sprite_groups[current_group].current_spr].texture->bind(0);
 	sprite_groups[current_group].sprites
@@ -102,7 +103,7 @@ void Sprite::set_missing_sprite()
 	tmpSpriteImage.texture->upload(Texture::TEXTURE_TYPE::TYPE_DECAL);
 }
 
-Sprite::Sprite(const std::string& filename)
+Sprite::Sprite(const std::string& filename, const vec3& mins , const vec3& maxs , float scale, bool useOwnSettigns)
 {
 	current_group = 0;
 	colors = 0;
@@ -215,10 +216,21 @@ Sprite::Sprite(const std::string& filename)
 			}
 
 			tmpSpriteImage.spriteCube = new EntCube();
-			tmpSpriteImage.spriteCube->mins = { -5.0f, 0.0f, 0.0f };
-			tmpSpriteImage.spriteCube->maxs = { 5.0f, tmpSpriteImage.frameinfo.width * 1.0f, tmpSpriteImage.frameinfo.height * 1.0f };
-			tmpSpriteImage.spriteCube->mins += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
-			tmpSpriteImage.spriteCube->maxs += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
+
+			if (!useOwnSettigns)
+			{
+				tmpSpriteImage.spriteCube->mins = { -5.0f, 0.0f, 0.0f };
+				tmpSpriteImage.spriteCube->maxs = { 5.0f, tmpSpriteImage.frameinfo.width * 1.0f, tmpSpriteImage.frameinfo.height * 1.0f };
+
+				tmpSpriteImage.spriteCube->mins += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
+				tmpSpriteImage.spriteCube->maxs += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
+			}
+			else
+			{
+				tmpSpriteImage.spriteCube->mins = (mins * scale);
+				tmpSpriteImage.spriteCube->maxs = (maxs * scale);
+			}
+
 			tmpSpriteImage.spriteCube->Textured = true;
 
 			g_app->pointEntRenderer->genCubeBuffers(tmpSpriteImage.spriteCube);
@@ -243,7 +255,7 @@ std::map<unsigned int, Sprite*> spr_models;
 
 Sprite* AddNewSpriteToRender(const std::string& path, unsigned int sum)
 {
-	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int) path.size(), sum);
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int)path.size(), sum);
 
 	if (spr_models.find(crc32) != spr_models.end())
 	{
@@ -258,6 +270,24 @@ Sprite* AddNewSpriteToRender(const std::string& path, unsigned int sum)
 }
 
 
+Sprite* AddNewSpriteToRender(const std::string& path, vec3 mins, vec3 maxs, float scale)
+{
+	auto sum = (mins + maxs * scale).toString();
+
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int)path.size(), 
+		GetCrc32InMemory((unsigned char*)sum.data(), (unsigned int)sum.size(), 0));
+
+	if (spr_models.find(crc32) != spr_models.end())
+	{
+		return spr_models[crc32];
+	}
+	else
+	{
+		Sprite* newModel = new Sprite(path, mins, maxs, scale, true);
+		spr_models[crc32] = newModel;
+		return newModel;
+	}
+}
 
 void TestSprite()
 {

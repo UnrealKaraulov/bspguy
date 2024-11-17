@@ -219,6 +219,7 @@ Renderer::Renderer()
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
 	glHint(GL_TEXTURE_COMPRESSION_HINT, GL_FASTEST);
 
+
 	unsigned char* img_dat = NULL;
 	unsigned int w, h;
 
@@ -543,7 +544,7 @@ void Renderer::renderLoop()
 
 			if (SelectedMap && (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount || transformTarget != tmpTransformTarget || tmpModelIdx != modelIdx))
 			{
-				if ((!modelVerts.size() && !modelFaceVerts.size()) || tmpModelIdx != modelIdx || tmpPickIdx != pickCount)
+				if ((modelVerts.empty() && modelFaceVerts.empty()) || tmpModelIdx != modelIdx || tmpPickIdx != pickCount)
 				{
 					updateModelVerts();
 				}
@@ -553,11 +554,11 @@ void Renderer::renderLoop()
 					pickInfo.selectedEnts.clear();
 					for (auto& f : pickInfo.selectedFaces)
 					{
-						int mdl = SelectedMap->get_model_from_face((int)f);
+						int mdl = SelectedMap->get_model_from_face(static_cast<int>(f));
 						if (mdl > 0 && mdl < SelectedMap->modelCount)
 						{
 							int mdl_ent = SelectedMap->get_ent_from_model(mdl);
-							if (mdl_ent >= 0 && mdl_ent < (int)SelectedMap->ents.size())
+							if (mdl_ent >= 0 && mdl_ent < static_cast<int>(SelectedMap->ents.size()))
 							{
 								pickInfo.AddSelectedEnt(mdl_ent);
 							}
@@ -566,11 +567,11 @@ void Renderer::renderLoop()
 				}
 
 				updatePickCount = true;
-				isTransformableSolid = modelIdx > 0 || (entIdx.size() && SelectedMap->ents[entIdx[0]]->getBspModelIdx() < 0);
+				isTransformableSolid = modelIdx > 0 || (!entIdx.empty() && SelectedMap->ents[entIdx[0]]->getBspModelIdx() < 0);
 
-				if (!isTransformableSolid && pickInfo.selectedEnts.size())
+				if (!isTransformableSolid && !pickInfo.selectedEnts.empty())
 				{
-					if (SelectedMap && ent && ent->hasKey("classname") &&
+					if (ent && ent->hasKey("classname") &&
 						ent->keyvalues["classname"] == "worldspawn")
 					{
 						isTransformableSolid = true;
@@ -583,7 +584,7 @@ void Renderer::renderLoop()
 				isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN && modelIdx >= 0;
 				isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
 					|| (isTransformableSolid && isScalingObject);
-				isTransformingWorld = modelIdx == 0 || ent && ent->isWorldSpawn();
+				isTransformingWorld = modelIdx == 0 || (ent && ent->isWorldSpawn());
 
 				invalidSolid = false;
 
@@ -827,17 +828,20 @@ void Renderer::renderLoop()
 			}
 
 			{
-				colorShader->bind();
 				matmodel.loadIdentity();
 				colorShader->updateMatrixes();
+				GLfloat currentLineWidth;
+				glGetFloatv(GL_LINE_WIDTH, &currentLineWidth);
 				glDisable(GL_CULL_FACE);
+				if (debugTraceStart != vec3())
+				{
+					glLineWidth(128.0f);
+					drawLine(debugLine0, debugLine1, { 255, 0, 0, 255 });
+					drawLine(debugTraceStart, debugTrace.vecEndPos, COLOR4(255, 0, 0, 255));
+				}
 
-				glLineWidth(128.0f);
-				drawLine(debugLine0, debugLine1, { 255, 0, 0, 255 });
-
-				drawLine(debugTraceStart, debugTrace.vecEndPos, COLOR4(255, 0, 0, 255));
-
-				if (debugNavMesh && debugNavPoly != -1) {
+				if (debugNavMesh && debugNavPoly != -1)
+				{
 					glLineWidth(1);
 					NavNode& node = debugNavMesh->nodes[debugNavPoly];
 					Polygon3D& poly = debugNavMesh->polys[debugNavPoly];
@@ -885,7 +889,7 @@ void Renderer::renderLoop()
 							vec3 inwardDir = crossProduct(poly.plane_z, delta1.normalize());
 							vec3 testOffset = (isBelow ? inwardDir : inwardDir * -1) + vec3(0, 0, 1.0f);
 
-							float flatLen = (vec2(e2.x,e2.y) - vec2(e1.x,e1.y)).length();
+							float flatLen = (vec2(e2.x, e2.y) - vec2(e1.x, e1.y)).length();
 							float stepUnits = 1.0f;
 							float step = stepUnits / flatLen;
 							TraceResult tr;
@@ -1066,8 +1070,12 @@ void Renderer::renderLoop()
 					colorShader->popMatrix(MAT_VIEW);
 					*/
 				}
+				if (debugTraceStart != vec3())
+				{
+					glLineWidth(currentLineWidth);
+				}
 
-				glLineWidth(1);
+				glEnable(GL_CULL_FACE);
 			}
 
 
@@ -1437,26 +1445,23 @@ void Renderer::drawModelOrigin(int modelIdx)
 
 void Renderer::drawTransformAxes()
 {
-	if (showDragAxes && SelectedMap && pickInfo.selectedEnts.size() == 1 && transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT && !modelUsesSharedStructures && !invalidSolid)
+	if (showDragAxes && transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT)
 	{
-		if (SelectedMap->ents[pickInfo.selectedEnts[0]]->getBspModelIdx() > 0)
-		{
-			matmodel.loadIdentity();
-			glDepthMask(GL_FALSE);
-			glDepthFunc(GL_ALWAYS);
-			updateDragAxes();
-			vec3 ori = scaleAxes.origin;
-			matmodel.translate(ori.x, ori.z, -ori.y);
-			colorShader->updateMatrixes();
-			glDisable(GL_CULL_FACE);
-			scaleAxes.buffer->drawFull();
-			glEnable(GL_CULL_FACE);
-			glDepthMask(GL_TRUE);
-			glDepthFunc(GL_LESS);
-			drawingScaleAxes = true;
-		}
+		matmodel.loadIdentity();
+		glDepthMask(GL_FALSE);
+		glDepthFunc(GL_ALWAYS);
+		updateDragAxes();
+		vec3 ori = scaleAxes.origin;
+		matmodel.translate(ori.x, ori.z, -ori.y);
+		colorShader->updateMatrixes();
+		glDisable(GL_CULL_FACE);
+		scaleAxes.buffer->drawFull();
+		glEnable(GL_CULL_FACE);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS);
+		drawingScaleAxes = true;
 	}
-	if (showDragAxes && SelectedMap && pickInfo.selectedEnts.size() > 0 && (transformMode == TRANSFORM_MODE_MOVE || (transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_VERTEX)))
+	else if (showDragAxes)
 	{
 		matmodel.loadIdentity();
 		glDepthMask(GL_FALSE);
@@ -1596,12 +1601,14 @@ void Renderer::cameraPickingControls()
 
 	if (!pickClickHeld)
 	{
-		if ((curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS) &&
+		bool canTransform = (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS) &&
 			pickMode == pick_modes::PICK_OBJECT &&
 			!movingEnt &&
 			!isTransformingWorld &&
 			!entIdx.empty() &&
-			(isTransformingValid || isMovingOrigin))
+			(isTransformingValid || isMovingOrigin);
+
+		if (canTransform)
 		{
 			transforming = transformAxisControls();
 		}
@@ -1614,6 +1621,7 @@ void Renderer::cameraPickingControls()
 	if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS && !pickClickHeld)
 	{
 		bool anyHover = (hoverVert != -1) || (hoverEdge != -1);
+
 		if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid && anyHover)
 		{
 			if (!anyCtrlPressed)
@@ -1628,11 +1636,11 @@ void Renderer::cameraPickingControls()
 				}
 			}
 
-			if (hoverVert != -1 && hoverVert < (int)modelVerts.size())
+			if (hoverVert != -1 && hoverVert < static_cast<int>(modelVerts.size()))
 			{
 				modelVerts[hoverVert].selected = anyCtrlPressed ? !modelVerts[hoverVert].selected : true;
 			}
-			else if (hoverEdge != -1 && hoverEdge < (int)modelEdges.size())
+			else if (hoverEdge != -1 && hoverEdge < static_cast<int>(modelEdges.size()))
 			{
 				modelEdges[hoverEdge].selected = anyCtrlPressed ? !modelEdges[hoverEdge].selected : true;
 				for (int i = 0; i < 2; ++i)
@@ -1653,16 +1661,15 @@ void Renderer::cameraPickingControls()
 	}
 
 	// object picking
-	if (!transforming)
+	if (!transforming && hoverAxis == -1)
 	{
-		if (hoverAxis == -1 || (!drawingScaleAxes && !drawingMoveAxes))
+		bool shouldPickObject = ((curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE) ||
+			(pickMode != pick_modes::PICK_OBJECT && curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05));
+
+		if (shouldPickObject)
 		{
-			if ((curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE) ||
-				(pickMode != pick_modes::PICK_OBJECT && curLeftMouse == GLFW_PRESS && facePickTime > 0.0 && curTime - facePickTime > 0.05))
-			{
-				facePickTime = -1.0;
-				pickObject();
-			}
+			facePickTime = -1.0;
+			pickObject();
 		}
 	}
 
@@ -1679,22 +1686,22 @@ void Renderer::cameraPickingControls()
 
 void Renderer::revertInvalidSolid(Bsp* map, int modelIdx)
 {
-	for (size_t i = 0; i < modelVerts.size(); i++)
+	for (auto& vert : modelVerts)
 	{
-		modelVerts[i].pos = modelVerts[i].startPos = modelVerts[i].undoPos;
-		if (modelVerts[i].ptr)
-			*modelVerts[i].ptr = modelVerts[i].pos;
+		vert.pos = vert.startPos = vert.undoPos;
+		if (vert.ptr)
+			*vert.ptr = vert.pos;
 	}
-	for (size_t i = 0; i < modelFaceVerts.size(); i++)
+	for (auto& faceVert : modelFaceVerts)
 	{
-		modelFaceVerts[i].pos = modelFaceVerts[i].startPos = modelFaceVerts[i].undoPos;
-		if (modelFaceVerts[i].ptr)
-			*modelFaceVerts[i].ptr = modelFaceVerts[i].pos;
+		faceVert.pos = faceVert.startPos = faceVert.undoPos;
+		if (faceVert.ptr)
+			*faceVert.ptr = faceVert.pos;
 	}
 	if (map && modelIdx >= 0)
 	{
 		map->vertex_manipulation_sync(modelIdx, modelVerts, false);
-		BSPMODEL& model = map->models[modelIdx];
+		auto& model = map->models[modelIdx];
 		map->get_model_vertex_bounds(modelIdx, model.nMins, model.nMaxs);
 		map->getBspRender()->refreshModel(modelIdx);
 	}
@@ -2809,7 +2816,7 @@ void Renderer::drawLine(vec3& start, vec3& end, COLOR4 color)
 }
 
 void Renderer::drawLine2D(vec2 start, vec2 end, COLOR4 color) {
-	line_verts[0].pos = vec3(start.x,start.y,0.0f).flip();
+	line_verts[0].pos = vec3(start.x, start.y, 0.0f).flip();
 	line_verts[0].c = color;
 
 	line_verts[1].pos = vec3(end.x, end.y, 0.0f).flip();
@@ -2843,7 +2850,7 @@ void Renderer::drawPolygon3D(Polygon3D& poly, COLOR4 color) {
 
 	for (int i = 0; i < poly.verts.size() && i < 64; i++) {
 		vec3 pos = poly.verts[i];
-		verts[i].pos = vec3(pos.x,pos.z,-pos.y);
+		verts[i].pos = vec3(pos.x, pos.z, -pos.y);
 		verts[i].c = color;
 	}
 
@@ -3699,16 +3706,16 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 
 	bool scaleFromOrigin = std::abs(fromDir.x) < EPSILON && std::abs(fromDir.y) < EPSILON && std::abs(fromDir.z) < EPSILON;
 
-	vec3 minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	vec3 maxDist = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+	vec3 minDist(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+	vec3 maxDist(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
-	for (size_t i = 0; i < modelVerts.size(); i++)
+	for (const auto& vert : modelVerts)
 	{
-		expandBoundingBox(modelVerts[i].startPos, minDist, maxDist);
+		expandBoundingBox(vert.startPos, minDist, maxDist);
 	}
-	for (size_t i = 0; i < modelFaceVerts.size(); i++)
+	for (const auto& faceVert : modelFaceVerts)
 	{
-		expandBoundingBox(modelFaceVerts[i].startPos, minDist, maxDist);
+		expandBoundingBox(faceVert.startPos, minDist, maxDist);
 	}
 
 	vec3 distRange = maxDist - minDist;
@@ -3737,47 +3744,41 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 		}
 	}
 
-	// scale planes
-	for (size_t i = 0; i < modelVerts.size(); i++)
+	// Scale planes
+	for (auto& vert : modelVerts)
 	{
-		vec3 stretchFactor = (modelVerts[i].startPos - scaleFromDist) / distRange;
-		modelVerts[i].pos += dir * stretchFactor;
+		vec3 stretchFactor = (vert.startPos - scaleFromDist) / distRange;
+		vert.pos += dir * stretchFactor;
 		if (gridSnappingEnabled)
 		{
-			modelVerts[i].pos = snapToGrid(modelVerts[i].pos);
+			vert.pos = snapToGrid(vert.pos);
 		}
-		/*if (modelVerts[i].ptr)
-			*modelVerts[i].ptr = modelVerts[i].pos;*/
 	}
 
-	// scale visible faces
-	for (size_t i = 0; i < modelFaceVerts.size(); i++)
+	// Scale visible faces
+	for (auto& faceVert : modelFaceVerts)
 	{
-		vec3 stretchFactor = (modelFaceVerts[i].startPos - scaleFromDist) / distRange;
-		modelFaceVerts[i].pos += dir * stretchFactor;
+		vec3 stretchFactor = (faceVert.startPos - scaleFromDist) / distRange;
+		faceVert.pos += dir * stretchFactor;
 		if (gridSnappingEnabled)
 		{
-			modelFaceVerts[i].pos = snapToGrid(modelFaceVerts[i].pos);
+			faceVert.pos = snapToGrid(faceVert.pos);
 		}
-		if (modelFaceVerts[i].ptr)
-			*modelFaceVerts[i].ptr = modelFaceVerts[i].pos;
+		if (faceVert.ptr)
+			*faceVert.ptr = faceVert.pos;
 	}
 
 	map->vertex_manipulation_sync(modelTransform, modelVerts, false);
 	updateSelectionSize();
-	//
-	// TODO: I have no idea what I'm doing but this code scales axis-aligned texture coord axes correctly.
-	//       Rewrite all of this after understanding texture axes.
-	//
 
 	if (textureLock)
 	{
 		minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 		maxDist = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
-		for (size_t i = 0; i < modelFaceVerts.size(); i++)
+		for (const auto& faceVert : modelFaceVerts)
 		{
-			expandBoundingBox(modelFaceVerts[i].pos, minDist, maxDist);
+			expandBoundingBox(faceVert.pos, minDist, maxDist);
 		}
 		vec3 newDistRange = maxDist - minDist;
 		vec3 scaleFactor = distRange / newDistRange;
@@ -3786,10 +3787,9 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 		scaleMat.loadIdentity();
 		scaleMat.scale(scaleFactor.x, scaleFactor.y, scaleFactor.z);
 
-		for (size_t i = 0; i < scaleTexinfos.size(); i++)
+		for (auto& oldinfo : scaleTexinfos)
 		{
-			ScalableTexinfo& oldinfo = scaleTexinfos[i];
-			BSPTEXTUREINFO& info = map->texinfos[scaleTexinfos[i].texinfoIdx];
+			BSPTEXTUREINFO& info = map->texinfos[oldinfo.texinfoIdx];
 
 			info.vS = (scaleMat * vec4(oldinfo.oldS, 1)).xyz();
 			info.vT = (scaleMat * vec4(oldinfo.oldT, 1)).xyz();
@@ -3797,8 +3797,6 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 			float shiftS = oldinfo.oldShiftS;
 			float shiftT = oldinfo.oldShiftT;
 
-			// magic guess-and-check code that somehow works some of the time
-			// also its shit
 			for (int k = 0; k < 3; k++)
 			{
 				vec3 stretchDir;
@@ -3822,7 +3820,6 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 				float dotSm = dotProduct(texFromDir, info.vS) < 0 ? 1.0f : -1.0f;
 				float dotTm = dotProduct(texFromDir, info.vT) < 0 ? 1.0f : -1.0f;
 
-				// hurr dur oh god im fucking retarded huurr
 				if (k == 0 && dotProduct(texFromDir, fromDir) < 0 != fromDir.x < 0)
 				{
 					dotSm *= -1.0f;
@@ -4122,17 +4119,17 @@ void Renderer::scaleSelectedVerts(Bsp* map, float x, float y, float z)
 	vec3 min(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	vec3 max(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	int selectTotal = 0;
-	for (size_t i = 0; i < modelVerts.size(); i++)
+	for (const auto& vert : modelVerts)
 	{
-		if (modelVerts[i].selected)
+		if (vert.selected)
 		{
-			vec3 v = modelVerts[i].pos;
-			if (v.x < min.x) min.x = v.x;
-			if (v.y < min.y) min.y = v.y;
-			if (v.z < min.z) min.z = v.z;
-			if (v.x > max.x) max.x = v.x;
-			if (v.y > max.y) max.y = v.y;
-			if (v.z > max.z) max.z = v.z;
+			vec3 v = vert.pos;
+			min.x = std::min(min.x, v.x);
+			min.y = std::min(min.y, v.y);
+			min.z = std::min(min.z, v.z);
+			max.x = std::max(max.x, v.x);
+			max.y = std::max(max.y, v.y);
+			max.z = std::max(max.z, v.z);
 			selectTotal++;
 		}
 	}
@@ -4141,24 +4138,23 @@ void Renderer::scaleSelectedVerts(Bsp* map, float x, float y, float z)
 
 	debugVec1 = fromOrigin;
 
-	for (size_t i = 0; i < modelVerts.size(); i++)
+	for (auto& vert : modelVerts)
 	{
-		if (modelVerts[i].selected)
+		if (vert.selected)
 		{
-			vec3 delta = modelVerts[i].startPos - fromOrigin;
-			modelVerts[i].pos = fromOrigin + delta * vec3(x, y, z);
+			vec3 delta = vert.startPos - fromOrigin;
+			vert.pos = fromOrigin + delta * vec3(x, y, z);
 			if (gridSnappingEnabled)
-				modelVerts[i].pos = snapToGrid(modelVerts[i].pos);
-			if (modelVerts[i].ptr)
-				*modelVerts[i].ptr = modelVerts[i].pos;
+				vert.pos = snapToGrid(vert.pos);
+			if (vert.ptr)
+				*vert.ptr = vert.pos;
 		}
 	}
 
 	map->vertex_manipulation_sync(modelTransform, modelVerts, false);
 
-	if (entIdx.size())
+	if (!entIdx.empty())
 	{
-		//modelIdx = map->ents[entIdx]->getBspModelIdx();
 		Entity* ent = map->ents[entIdx[0]];
 		map->getBspRender()->refreshModel(ent->getBspModelIdx());
 	}
@@ -4679,7 +4675,7 @@ Texture* Renderer::giveMeTexture(const std::string& texname, const std::string& 
 	return missingTex;
 }
 
-void Renderer::merge(std::string fpath) 
+void Renderer::merge(std::string fpath)
 {
 	Bsp* thismap = SelectedMap;
 	if (!thismap)
@@ -4702,7 +4698,7 @@ void Renderer::merge(std::string fpath)
 	maps.push_back(map2);
 
 	BspMerger merger;
-	mergeResult = merger.merge(maps, vec3(), thismap->bsp_name, true, true, true,false);
+	mergeResult = merger.merge(maps, vec3(), thismap->bsp_name, true, true, true, false);
 
 	if (!mergeResult.map || !mergeResult.map->bsp_valid) {
 		delete map2;

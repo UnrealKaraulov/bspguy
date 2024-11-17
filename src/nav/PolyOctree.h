@@ -3,8 +3,8 @@
 #include <vector>
 
 struct PolyOctant {
-    vec3 min;
-    vec3 max;
+    vec3 mins;
+    vec3 maxs;
     std::vector<Polygon3D*> polygons;
     PolyOctant* children[8]; // Eight children octants
 

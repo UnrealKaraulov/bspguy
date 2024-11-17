@@ -4,8 +4,8 @@
 #include <algorithm>
 
 LeafOctant::LeafOctant(vec3 min, vec3 max) {
-    this->min = min;
-    this->max = max;
+    this->mins = min;
+    this->maxs = max;
     memset(children, NULL, sizeof(LeafOctant*) * 8);
 }
 
@@ -37,8 +37,8 @@ void LeafOctree::buildOctree(LeafOctant* node, int currentDepth) {
     if (currentDepth >= maxDepth) {
         return;
     }
-    const vec3& min = node->min;
-    const vec3& max = node->max;
+    const vec3& min = node->mins;
+    const vec3& max = node->maxs;
     vec3 mid((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
 
     // Define eight child octants using the min and max values
@@ -78,7 +78,7 @@ void LeafOctree::removeLeaf(LeafNode* leaf) {
 
 bool LeafOctree::isLeafInOctant(LeafNode* leaf, LeafOctant* node) {
     vec3 epsilon = vec3(1, 1, 1); // in case leaves are touching right on the border of an octree leaf
-    return boxesIntersect(leaf->mins - epsilon, leaf->maxs + epsilon, node->min, node->max);
+    return boxesIntersect(leaf->mins - epsilon, leaf->maxs + epsilon, node->mins, node->maxs);
 }
 
 void LeafOctree::getLeavesInRegion(LeafNode* leaf, std::vector<bool>& regionLeaves) {

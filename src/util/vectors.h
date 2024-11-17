@@ -134,7 +134,8 @@ struct vec3
 		return *this;
 	}
 
-	float operator [] (const size_t i) const
+
+	float& operator [] (ptrdiff_t i)
 	{
 		switch (i)
 		{
@@ -148,7 +149,7 @@ struct vec3
 		return z;
 	}
 
-	float& operator [] (const size_t i)
+	float operator [] (ptrdiff_t i) const
 	{
 		switch (i)
 		{
@@ -161,40 +162,11 @@ struct vec3
 		}
 		return z;
 	}
-
-	float operator [] (const int i) const
-	{
-		switch (i)
-		{
-		case 0:
-			return x;
-		case 1:
-			return y;
-		case 2:
-			return z;
-		}
-		return z;
-	}
-
-	float& operator [] (const int i)
-	{
-		switch (i)
-		{
-		case 0:
-			return x;
-		case 1:
-			return y;
-		case 2:
-			return z;
-		}
-		return z;
-	}
-
 };
 
 struct vec3Hash {
 	size_t operator()(const vec3(&v)) const {
-		size_t seed = 0;
+		size_t seed = 1;
 		std::hash<float> hasher;
 		seed ^= hasher(v[0]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		seed ^= hasher(v[1]) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -206,7 +178,7 @@ struct vec3Hash {
 struct pairHash {
 	template <typename T1, typename T2>
 	size_t operator()(const std::pair<T1, T2>& p) const {
-		size_t seed = 0;
+		size_t seed = 2;
 		vec3Hash hasher;
 		seed ^= hasher(p.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 		seed ^= hasher(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
@@ -339,7 +311,7 @@ struct vec4
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = " "
 		, const std::string& suffix_w = "");
 
-	float operator [] (const int i) const
+	float operator [] (ptrdiff_t i) const
 	{
 		switch (i)
 		{
@@ -353,7 +325,7 @@ struct vec4
 		return w;
 	}
 
-	float& operator [] (const int i)
+	float& operator [] (ptrdiff_t i)
 	{
 		switch (i)
 		{

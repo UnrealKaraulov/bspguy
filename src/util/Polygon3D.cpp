@@ -75,7 +75,7 @@ void Polygon3D::init() {
 	for (int e = 0; e < verts.size(); e++) {
 		vec2 localPoint = project(verts[e]);
 		localVerts.push_back(localPoint);
-		topdownVerts.push_back(vec2(verts[e].x, verts[e].y));
+		topdownVerts.emplace_back(vec2(verts[e].x, verts[e].y));
 		expandBoundingBox(localPoint, localMins, localMaxs);
 		expandBoundingBox(verts[e], worldMins, worldMaxs);
 		center += verts[e];
@@ -191,8 +191,8 @@ std::vector<std::vector<vec3>> Polygon3D::cut(Line2D cutLine) {
 	}
 
 
-	splitPolys.push_back(std::vector<vec3>());
-	splitPolys.push_back(std::vector<vec3>());
+	splitPolys.emplace_back(std::vector<vec3>());
+	splitPolys.emplace_back(std::vector<vec3>());
 
 
 	// get new verts with intersection points included
@@ -316,7 +316,7 @@ void Polygon3D::removeDuplicateVerts(float epsilon) {
 	}
 	if (verts.size() != newVerts.size()) {
 		//print_log("Removed {} duplicate verts\n", verts.size() - newVerts.size());
-		verts = newVerts;
+		verts = std::move(newVerts);
 		init();
 	}
 }
@@ -357,7 +357,7 @@ void Polygon3D::removeColinearVerts() {
 
 	if (verts.size() != newVerts.size()) {
 		//print_log("Removed {} colinear verts\n", verts.size() - newVerts.size());
-		verts = newVerts;
+		verts = std::move(newVerts);
 		init();
 	}
 }
@@ -520,7 +520,7 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly) {
 	// project other polys verts onto the same coordinate system as this face
 	std::vector<vec2> otherLocalVerts;
 	for (int i = 0; i < otherPoly.verts.size(); i++) {
-		otherLocalVerts.push_back(project(otherPoly.verts[i]));
+		otherLocalVerts.emplace_back(project(otherPoly.verts[i]));
 	}
 	otherPoly.localVerts = otherLocalVerts;
 
@@ -559,7 +559,7 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly) {
 	localOutVerts = GrahamScan::findConvexHull(&localOutVerts[0], (int) localOutVerts.size());
 
 	for (int i = 0; i < localOutVerts.size(); i++) {
-		outVerts.push_back(unproject(localOutVerts[i]));
+		outVerts.emplace_back(unproject(localOutVerts[i]));
 	}
 
 	return outVerts;
