@@ -71,6 +71,7 @@ struct FgdClass
 	COLOR3 color;
 	vec3 offset;
 	hashmap otherTypes; // unrecognized types
+	float scale;
 
 	// if false, then need to get props from the base class
 	bool colorSet;
@@ -93,6 +94,7 @@ struct FgdClass
 		color = { 220, 0, 220 };
 		offset = vec3();
 		modelSkin = modelBody = modelSequence = 0;
+		scale = 1.0f;
 	}
 
 	// get parent classes from youngest to oldest, in right-to-left order

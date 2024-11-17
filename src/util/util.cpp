@@ -225,6 +225,23 @@ bool isNumeric(const std::string& s)
 	return it == s.end();
 }
 
+bool isFloating(const std::string& s)
+{
+	if (s.empty())
+		return false;
+	std::string::const_iterator it = s.begin();
+	int points = 0;
+
+	while (it != s.end() && (isdigit(*it) || *it == '.'))
+	{
+		++it;
+		if (*it == '.')
+			points++;
+	}
+
+	return it == s.end() && points <= 1;
+}
+
 std::string toLowerCase(const std::string& s)
 {
 	std::string ret = s;

@@ -65,6 +65,8 @@ std::string stripExt(const std::string& filename);
 std::string stripFileName(const std::string& path);
 std::wstring stripFileName(const std::wstring& path);
 
+bool isFloating(const std::string& s);
+
 bool isNumeric(const std::string& s);
 
 bool dirExists(const std::string& dirName);

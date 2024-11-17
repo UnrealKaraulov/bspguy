@@ -90,4 +90,5 @@ void TestSprite();
 
 extern std::map<unsigned int, Sprite*> spr_models;
 Sprite* AddNewSpriteToRender(const std::string & path, unsigned int sum = 0);
+Sprite* AddNewSpriteToRender(const std::string& path, float scale);
 Sprite* AddNewSpriteToRender(const std::string& path, vec3 mins, vec3 maxs, float scale);

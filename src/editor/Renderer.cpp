@@ -922,8 +922,12 @@ void Renderer::renderLoop()
 					}
 				}
 
+				if (debugTraceStart != vec3())
+				{
+					glLineWidth(currentLineWidth);
+				}
+
 				if (debugLeafNavMesh) {
-					glLineWidth(1);
 					glDisable(GL_DEPTH_TEST);
 
 					Bsp* map = mapRenderers[0]->map;
@@ -937,7 +941,6 @@ void Renderer::renderLoop()
 					if (leafNavIdx >= 0 && leafNavIdx < debugLeafNavMesh->nodes.size()) {
 
 						if (pickInfo.selectedEnts.size()) {
-							glDisable(GL_DEPTH_TEST);
 
 							int endNode = debugLeafNavMesh->getNodeIdx(map, map->ents[pickInfo.selectedEnts[0]]);
 							//vector<int> route = debugLeafNavMesh->AStarRoute(leafNavIdx, endNode);
@@ -1069,12 +1072,8 @@ void Renderer::renderLoop()
 					colorShader->popMatrix(MAT_PROJECTION);
 					colorShader->popMatrix(MAT_VIEW);
 					*/
+					glEnable(GL_DEPTH_TEST);
 				}
-				if (debugTraceStart != vec3())
-				{
-					glLineWidth(currentLineWidth);
-				}
-
 				glEnable(GL_CULL_FACE);
 			}
 

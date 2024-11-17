@@ -7002,7 +7002,7 @@ bool Bsp::recursiveHullCheck(int hull, int num, float p1f, float p2f, vec3 p1, v
 		{
 			trace->flFraction = midf;
 			trace->vecEndPos = mid;
-			print_log("backup past 0\n");
+			//print_log("backup past 0\n");
 			return false;
 		}
 

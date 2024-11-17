@@ -4524,8 +4524,17 @@ void Gui::drawMenuBar()
 					rend->pushUndoCommand(createCommand);
 				}
 				IMGUI_TOOLTIP(g, "Create a point entity for use with the culling tool. 2 of these define the bounding box for structure culling operations.\n");
+
 				ImGui::EndMenu();
 			}
+
+			if (ImGui::MenuItem("Generate nav mesh", NULL, false, (!rend->debugNavMesh || !g_app->debugLeafNavMesh)))
+			{
+				rend->generateNavMeshBuffer();
+				rend->generateLeafNavMeshBuffer();
+			}
+			IMGUI_TOOLTIP(g, "I don't know for what it needs :) From original bspguy repository + crash fixes. \n");
+
 			if (ImGui::BeginMenu("MAP TRANSFORMATION [WIP]", map))
 			{
 				if (ImGui::MenuItem("Mirror map x/y", NULL, false, map))

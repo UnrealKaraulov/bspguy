@@ -729,7 +729,7 @@ void Fgd::processClassInheritance()
 					{
 						if (classes[i]->modelSequence <= 0)
 						{
-							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
+							if (classes[i]->keyvalues[c].iType == FGD_KEY_TYPES::FGD_KEY_INTEGER)
 							{
 								classes[i]->modelSequence = str_to_int(classes[i]->keyvalues[c].defaultValue);
 							}
@@ -739,7 +739,7 @@ void Fgd::processClassInheritance()
 					{
 						if (classes[i]->modelBody <= 0)
 						{
-							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
+							if (classes[i]->keyvalues[c].iType == FGD_KEY_TYPES::FGD_KEY_INTEGER)
 							{
 								classes[i]->modelBody = str_to_int(classes[i]->keyvalues[c].defaultValue);
 							}
@@ -749,10 +749,22 @@ void Fgd::processClassInheritance()
 					{
 						if (classes[i]->modelSkin <= 0)
 						{
-							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
+							if (classes[i]->keyvalues[c].iType == FGD_KEY_TYPES::FGD_KEY_INTEGER)
 							{
 								classes[i]->modelSkin = str_to_int(classes[i]->keyvalues[c].defaultValue);
 							}
+						}
+					}
+					else if (classes[i]->keyvalues[c].name == "scale" || 
+						classes[i]->keyvalues[c].name == "sprite_scale")
+					{
+						if (classes[i]->keyvalues[c].iType == FGD_KEY_TYPES::FGD_KEY_INTEGER)
+						{
+							classes[i]->scale = str_to_int(classes[i]->keyvalues[c].defaultValue);
+						}
+						else if (classes[i]->keyvalues[c].iType == FGD_KEY_TYPES::FGD_KEY_STRING)
+						{
+							classes[i]->scale = str_to_float(classes[i]->keyvalues[c].defaultValue);
 						}
 					}
 				}

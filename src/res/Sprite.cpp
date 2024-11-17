@@ -217,13 +217,19 @@ Sprite::Sprite(const std::string& filename, const vec3& mins , const vec3& maxs 
 
 			tmpSpriteImage.spriteCube = new EntCube();
 
-			if (!useOwnSettigns)
+			if (!useOwnSettigns || (mins == maxs && mins == vec3()))
 			{
 				tmpSpriteImage.spriteCube->mins = { -5.0f, 0.0f, 0.0f };
 				tmpSpriteImage.spriteCube->maxs = { 5.0f, tmpSpriteImage.frameinfo.width * 1.0f, tmpSpriteImage.frameinfo.height * 1.0f };
 
 				tmpSpriteImage.spriteCube->mins += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
 				tmpSpriteImage.spriteCube->maxs += vec3(0.0f, tmpSpriteImage.frameinfo.origin[0] * 1.0f, tmpSpriteImage.frameinfo.origin[1] * -1.0f);
+
+				if (useOwnSettigns)
+				{
+					tmpSpriteImage.spriteCube->mins *= scale;
+					tmpSpriteImage.spriteCube->maxs *= scale;
+				}
 			}
 			else
 			{
@@ -269,6 +275,21 @@ Sprite* AddNewSpriteToRender(const std::string& path, unsigned int sum)
 	}
 }
 
+Sprite* AddNewSpriteToRender(const std::string& path, float scale)
+{
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path.data(), (unsigned int)path.size(), *(int*)&scale);
+
+	if (spr_models.find(crc32) != spr_models.end())
+	{
+		return spr_models[crc32];
+	}
+	else
+	{
+		Sprite* newModel = new Sprite(path, vec3(),vec3(), scale, true);
+		spr_models[crc32] = newModel;
+		return newModel;
+	}
+}
 
 Sprite* AddNewSpriteToRender(const std::string& path, vec3 mins, vec3 maxs, float scale)
 {

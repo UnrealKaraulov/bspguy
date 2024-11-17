@@ -1498,7 +1498,9 @@ void BspRenderer::generateNavMeshBuffer() {
 
 	renderClip->faceMaths[hull] = std::move(navFaceMaths);
 
-	std::ofstream file(map->bsp_name + "_hull" + std::to_string(hull) + ".obj", std::ios::out | std::ios::trunc);
+	std::string navmesh_hull3_path = g_working_dir + map->bsp_name + "_hull" + std::to_string(hull) + ".obj";
+
+	std::ofstream file(navmesh_hull3_path, std::ios::out | std::ios::trunc);
 	for (int i = 0; i < allVerts.size(); i++) {
 		vec3 v = vec3(allVerts[i].pos.x, allVerts[i].pos.y, allVerts[i].pos.z);
 		file << "v " << std::fixed << std::setprecision(2) << v.x << " " << v.y << " " << v.z << std::endl;
@@ -1506,7 +1508,7 @@ void BspRenderer::generateNavMeshBuffer() {
 	for (int i = 0; i < allVerts.size(); i += 3) {
 		file << "f " << (i + 1) << " " << (i + 2) << " " << (i + 3) << std::endl;
 	}
-	print_log("Wrote {} verts\n", allVerts.size());
+	print_log("Wrote {} verts to {}\n", allVerts.size(), navmesh_hull3_path);
 	file.close();
 }
 
@@ -1923,12 +1925,6 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 	{
 		generateClipnodeBufferForHull(modelIdx, i);
 	}
-
-	if (modelIdx == 0) 
-	{
-		/*generateNavMeshBuffer();
-		generateLeafNavMeshBuffer();*/
-	}
 }
 
 void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
@@ -2047,6 +2043,7 @@ void BspRenderer::refreshEnt(int entIdx)
 	int skin = -1;
 	int sequence = -1;
 	int body = -1;
+	float scale = 1.0f;
 
 	auto& rendEntity = renderEnts[entIdx];
 
@@ -2116,6 +2113,22 @@ void BspRenderer::refreshEnt(int entIdx)
 			setAngles = true;
 			float x = str_to_float(ent->keyvalues["pitch"]);
 			rendEntity.angles.x = -x;
+		}
+	}
+
+	if (ent->hasKey("scale") || g_app->fgd)
+	{
+		if (ent->hasKey("scale") && isFloating(ent->keyvalues["scale"]))
+		{
+			scale = str_to_float(ent->keyvalues["scale"]);
+		}
+		if (scale <= 0 && g_app->fgd)
+		{
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
+			if (fgdClass)
+			{
+				scale = fgdClass->scale;
+			}
 		}
 	}
 
@@ -2214,13 +2227,13 @@ void BspRenderer::refreshEnt(int entIdx)
 					{
 						if (FindPathInAssets(map, modelpath, newModelPath))
 						{
-							if (rendEntity.pointEntCube)
+							if (rendEntity.pointEntCube && std::fabs(scale - 1.0f) < EPSILON)
 							{
 								rendEntity.spr = AddNewSpriteToRender(newModelPath, rendEntity.pointEntCube->mins, rendEntity.pointEntCube->maxs, 1.0f);
 							}
 							else
 							{
-								rendEntity.spr = AddNewSpriteToRender(newModelPath);
+								rendEntity.spr = AddNewSpriteToRender(newModelPath, scale);
 							}
 						}
 						else
@@ -2265,13 +2278,13 @@ void BspRenderer::refreshEnt(int entIdx)
 					{
 						if (FindPathInAssets(map, fgdClass->sprite, newModelPath))
 						{
-							if (rendEntity.pointEntCube)
+							if (rendEntity.pointEntCube && std::fabs(scale - 1.0f) < EPSILON)
 							{
 								rendEntity.spr = AddNewSpriteToRender(newModelPath, rendEntity.pointEntCube->mins, rendEntity.pointEntCube->maxs, 1.0f);
 							}
 							else
 							{
-								rendEntity.spr = AddNewSpriteToRender(newModelPath);
+								rendEntity.spr = AddNewSpriteToRender(newModelPath, scale);
 							}
 						}
 						else
@@ -2313,13 +2326,13 @@ void BspRenderer::refreshEnt(int entIdx)
 						{
 							if (FindPathInAssets(map, fgdClass->model, newModelPath))
 							{
-								if (rendEntity.pointEntCube)
+								if (rendEntity.pointEntCube && std::fabs(scale - 1.0f) < EPSILON)
 								{
 									rendEntity.spr = AddNewSpriteToRender(newModelPath, rendEntity.pointEntCube->mins, rendEntity.pointEntCube->maxs, 1.0f);
 								}
 								else
 								{
-									rendEntity.spr = AddNewSpriteToRender(newModelPath);
+									rendEntity.spr = AddNewSpriteToRender(newModelPath, scale);
 								}
 							}
 							else
