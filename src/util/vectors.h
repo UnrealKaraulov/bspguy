@@ -135,7 +135,7 @@ struct vec3
 	}
 
 
-	float& operator [] (ptrdiff_t i)
+	float& operator [] (size_t i)
 	{
 		switch (i)
 		{
@@ -149,7 +149,7 @@ struct vec3
 		return z;
 	}
 
-	float operator [] (ptrdiff_t i) const
+	float operator [] (size_t i) const
 	{
 		switch (i)
 		{
@@ -311,7 +311,7 @@ struct vec4
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = " "
 		, const std::string& suffix_w = "");
 
-	float operator [] (ptrdiff_t i) const
+	float operator [] (size_t i) const
 	{
 		switch (i)
 		{
@@ -325,7 +325,7 @@ struct vec4
 		return w;
 	}
 
-	float& operator [] (ptrdiff_t i)
+	float& operator [] (size_t i)
 	{
 		switch (i)
 		{
