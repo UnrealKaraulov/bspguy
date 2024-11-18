@@ -30,7 +30,7 @@ vec3 ortho_offset = {};
 float ortho_near = 1.0f;
 float ortho_far = 262144.0f;
 float ortho_fov = 45.0f;
-float ortho_custom_aspect = 1.0f;
+float ortho_custom_aspect = 0.0f;
 float ortho_custom_w = 0.0f;
 float ortho_custom_h = 0.0f;
 int ortho_tga_w = 1024;
@@ -2805,7 +2805,7 @@ void Renderer::setupFakeOrthoView(int forceW, int forceH, vec3 bboxMin, vec3 bbo
 
 	glViewport(0, 0, windowWidth, windowHeight);
 
-	float aspect = (float)windowWidth / (float)windowHeight;
+	float aspect = (float)windowHeight / (float)windowWidth;
 
 	if (std::fabs(ortho_custom_aspect) > EPSILON)
 		aspect = ortho_custom_aspect;
