@@ -2805,7 +2805,7 @@ void Renderer::setupFakeOrthoView(int forceW, int forceH, vec3 bboxMin, vec3 bbo
 
 	glViewport(0, 0, windowWidth, windowHeight);
 
-	float aspect = (float)windowHeight / (float)windowWidth;
+	float aspect = (float)windowWidth / (float)windowHeight;
 
 	if (std::fabs(ortho_custom_aspect) > EPSILON)
 		aspect = ortho_custom_aspect;
