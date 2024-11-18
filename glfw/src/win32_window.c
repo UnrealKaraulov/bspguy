@@ -406,7 +406,7 @@ static void updateFramebufferTransparency(const _GLFWwindow* window)
 
 // Retrieves and translates modifier keys
 //
-int getKeyMods(void)
+static int getKeyMods(void)
 {
     int mods = 0;
 
@@ -977,7 +977,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
         case WM_MOUSEWHEEL:
         {
-            _glfwInputScroll(window, 0.0, (SHORT) HIWORD(wParam) / (double) WHEEL_DELTA, getKeyMods());
+            _glfwInputScroll(window, 0.0, (SHORT) HIWORD(wParam) / (double) WHEEL_DELTA);
             return 0;
         }
 
@@ -985,7 +985,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         {
             // This message is only sent on Windows Vista and later
             // NOTE: The X-axis is inverted for consistency with macOS and X11
-            _glfwInputScroll(window, -((SHORT) HIWORD(wParam) / (double) WHEEL_DELTA), 0.0, getKeyMods());
+            _glfwInputScroll(window, -((SHORT) HIWORD(wParam) / (double) WHEEL_DELTA), 0.0);
             return 0;
         }
 

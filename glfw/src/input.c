@@ -330,7 +330,7 @@ void _glfwInputChar(_GLFWwindow* window, uint32_t codepoint, int mods, GLFWbool 
 
 // Notifies shared code of a scroll event
 //
-void _glfwInputScroll(_GLFWwindow* window, double xoffset, double yoffset, int mods)
+void _glfwInputScroll(_GLFWwindow* window, double xoffset, double yoffset)
 {
     assert(window != NULL);
     assert(xoffset > -FLT_MAX);
@@ -339,7 +339,7 @@ void _glfwInputScroll(_GLFWwindow* window, double xoffset, double yoffset, int m
     assert(yoffset < FLT_MAX);
 
     if (window->callbacks.scroll)
-        window->callbacks.scroll((GLFWwindow*) window, xoffset, yoffset, mods);
+        window->callbacks.scroll((GLFWwindow*) window, xoffset, yoffset);
 }
 
 // Notifies shared code of a mouse button click event
@@ -964,14 +964,6 @@ GLFWAPI GLFWkeyfun glfwSetKeyCallback(GLFWwindow* handle, GLFWkeyfun cbfun)
     return cbfun;
 }
 
-GLFWAPI GLFWkeyfun glfwGetKeyCallback(GLFWwindow* handle) {
-    _GLFWwindow* window = ((_GLFWwindow*) handle);
-    assert(window != NULL);
-
-    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
-    return ((_GLFWwindow*) handle)->callbacks.key;
-}
-
 GLFWAPI GLFWcharfun glfwSetCharCallback(GLFWwindow* handle, GLFWcharfun cbfun)
 {
     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
@@ -1006,12 +998,6 @@ GLFWAPI GLFWmousebuttonfun glfwSetMouseButtonCallback(GLFWwindow* handle,
     return cbfun;
 }
 
-GLFWAPI GLFWmousebuttonfun glfwGetMouseButtonCallback(GLFWwindow* handle) {
-    assert(handle);
-    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
-    return ((_GLFWwindow*) handle)->callbacks.mouseButton;
-}
-
 GLFWAPI GLFWcursorposfun glfwSetCursorPosCallback(GLFWwindow* handle,
                                                   GLFWcursorposfun cbfun)
 {
@@ -1022,13 +1008,6 @@ GLFWAPI GLFWcursorposfun glfwSetCursorPosCallback(GLFWwindow* handle,
 
     _GLFW_SWAP(GLFWcursorposfun, window->callbacks.cursorPos, cbfun);
     return cbfun;
-}
-
-GLFWAPI GLFWcursorposfun glfwGetCursorPosCallback(GLFWwindow* handle) {
-    assert(handle);
-
-    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
-    return ((_GLFWwindow*) handle)->callbacks.cursorPos;
 }
 
 GLFWAPI GLFWcursorenterfun glfwSetCursorEnterCallback(GLFWwindow* handle,
@@ -1055,10 +1034,6 @@ GLFWAPI GLFWscrollfun glfwSetScrollCallback(GLFWwindow* handle,
     return cbfun;
 }
 
-GLFWAPI GLFWscrollfun glfwGetScrollCallback(GLFWwindow* handle) {
-    _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
-    return ((_GLFWwindow*) handle)->callbacks.scroll;
-}
 GLFWAPI GLFWdropfun glfwSetDropCallback(GLFWwindow* handle, GLFWdropfun cbfun)
 {
     _GLFW_REQUIRE_INIT_OR_RETURN(NULL);
