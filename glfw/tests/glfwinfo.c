@@ -23,13 +23,9 @@
 //
 //========================================================================
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
-#endif
 #include <glad/gl.h>
-#ifndef BUILD_MONOLITHIC
 #define GLAD_VULKAN_IMPLEMENTATION
-#endif
 #include <glad/vulkan.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -352,12 +348,7 @@ static void print_platform(void)
     }
 }
 
-
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_glfwinfo_test_main
-#endif
-
-int main(int argc, const char** argv)
+int main(int argc, char** argv)
 {
     int ch;
     bool list_extensions = false, list_layers = false;
@@ -458,7 +449,7 @@ int main(int argc, const char** argv)
                 else
                 {
                     usage();
-                    return EXIT_FAILURE;
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case 'a':
@@ -470,7 +461,7 @@ int main(int argc, const char** argv)
                 else
                 {
                     usage();
-                    return EXIT_FAILURE;
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case 'b':
@@ -482,7 +473,7 @@ int main(int argc, const char** argv)
                 else
                 {
                     usage();
-					return EXIT_FAILURE;
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case 'c':
@@ -496,7 +487,7 @@ int main(int argc, const char** argv)
                 else
                 {
                     usage();
-					return EXIT_FAILURE;
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case 'd':
@@ -510,7 +501,7 @@ int main(int argc, const char** argv)
             case 'h':
             case HELP:
                 usage();
-				return EXIT_SUCCESS;
+                exit(EXIT_SUCCESS);
             case 'l':
             case EXTENSIONS:
                 list_extensions = true;
@@ -535,7 +526,7 @@ int main(int argc, const char** argv)
                 else
                 {
                     usage();
-					return EXIT_FAILURE;
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case 's':
@@ -547,13 +538,13 @@ int main(int argc, const char** argv)
                 else
                 {
                     usage();
-					return EXIT_FAILURE;
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case 'v':
             case VERSION:
                 print_version();
-				return EXIT_SUCCESS;
+                exit(EXIT_SUCCESS);
             case REDBITS:
                 if (strcmp(optarg, "-") == 0)
                     fb_red_bits = GLFW_DONT_CARE;
@@ -654,7 +645,7 @@ int main(int argc, const char** argv)
                 else
                 {
                     usage();
-					return EXIT_FAILURE;
+                    exit(EXIT_FAILURE);
                 }
                 break;
             case GRAPHICS_SWITCHING:
@@ -665,14 +656,14 @@ int main(int argc, const char** argv)
                 break;
             default:
                 usage();
-                return EXIT_FAILURE;
+                exit(EXIT_FAILURE);
         }
     }
 
     // Initialize GLFW and create window
 
     if (!valid_version())
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
 
     glfwSetErrorCallback(error_callback);
 
@@ -684,7 +675,7 @@ int main(int argc, const char** argv)
     glfwInitHint(GLFW_X11_XCB_VULKAN_SURFACE, !disable_xcb_surface);
 
     if (!glfwInit())
-		return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
 
     print_version();
     print_platform();
@@ -758,33 +749,26 @@ int main(int argc, const char** argv)
                 printf("%s context flags (0x%08x):", get_api_name(client), flags);
 
                 if (flags & GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT)
-                    printf(" forward-compatible"), flags &= ~GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT;
+                    printf(" forward-compatible");
                 if (flags & 2/*GL_CONTEXT_FLAG_DEBUG_BIT*/)
-                    printf(" debug"), flags &= ~2;
+                    printf(" debug");
                 if (flags & GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT_ARB)
-                    printf(" robustness"), flags &= ~GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT_ARB;
+                    printf(" robustness");
                 if (flags & 8/*GL_CONTEXT_FLAG_NO_ERROR_BIT_KHR*/)
-                    printf(" no-error"), flags &= ~8;
-				if (flags == 0)
-					printf(" none");
-				else
-					printf(" (0x%08x)", flags);
-				putchar('\n');
+                    printf(" no-error");
+                putchar('\n');
 
                 printf("%s context flags parsed by GLFW:", get_api_name(client));
 
-				int any = 0;
                 if (glfwGetWindowAttrib(window, GLFW_OPENGL_FORWARD_COMPAT))
-                    printf(" forward-compatible"), any = 1;
+                    printf(" forward-compatible");
                 if (glfwGetWindowAttrib(window, GLFW_CONTEXT_DEBUG))
-                    printf(" debug"), any = 1;
+                    printf(" debug");
                 if (glfwGetWindowAttrib(window, GLFW_CONTEXT_ROBUSTNESS) == GLFW_LOSE_CONTEXT_ON_RESET)
-                    printf(" robustness"), any = 1;
+                    printf(" robustness");
                 if (glfwGetWindowAttrib(window, GLFW_CONTEXT_NO_ERROR))
-                    printf(" no-error"), any = 1;
-				if (!any)
-					printf(" none");
-				putchar('\n');
+                    printf(" no-error");
+                putchar('\n');
             }
 
             if (major >= 4 || (major == 3 && minor >= 2))
@@ -915,7 +899,7 @@ int main(int argc, const char** argv)
     if (!window)
     {
         glfwTerminate();
-		return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
     printf("Vulkan loader: %s\n",
@@ -1011,7 +995,7 @@ int main(int argc, const char** argv)
         if (vkCreateInstance(&ici, NULL, &instance) != VK_SUCCESS)
         {
             glfwTerminate();
-			return EXIT_FAILURE;
+            exit(EXIT_FAILURE);
         }
 
         free((void*) re);
@@ -1111,6 +1095,6 @@ int main(int argc, const char** argv)
     glfwDestroyWindow(window);
 
     glfwTerminate();
-    return EXIT_SUCCESS;
+    exit(EXIT_SUCCESS);
 }
 

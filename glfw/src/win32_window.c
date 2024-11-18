@@ -406,7 +406,7 @@ static void updateFramebufferTransparency(const _GLFWwindow* window)
 
 // Retrieves and translates modifier keys
 //
-static int getKeyMods(void)
+int getKeyMods(void)
 {
     int mods = 0;
 
@@ -714,11 +714,11 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
             const int mods = getKeyMods();
 
             scancode = (HIWORD(lParam) & (KF_EXTENDED | 0xff));
-            if (scancode == 0x100)
+            if (!scancode)
             {
-                // NOTE: Some synthetic key messages have a scancode of extended zero
+                // NOTE: Some synthetic key messages have a scancode of zero
                 // HACK: Map the virtual key back to a usable scancode
-                scancode = KF_EXTENDED | MapVirtualKeyW((UINT) wParam, MAPVK_VK_TO_VSC);
+                scancode = MapVirtualKeyW((UINT) wParam, MAPVK_VK_TO_VSC);
             }
 
             // HACK: Alt+PrtSc has a different scancode than just PrtSc
@@ -977,7 +977,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 
         case WM_MOUSEWHEEL:
         {
-            _glfwInputScroll(window, 0.0, (SHORT) HIWORD(wParam) / (double) WHEEL_DELTA);
+            _glfwInputScroll(window, 0.0, (SHORT) HIWORD(wParam) / (double) WHEEL_DELTA, getKeyMods());
             return 0;
         }
 
@@ -985,7 +985,7 @@ static LRESULT CALLBACK windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
         {
             // This message is only sent on Windows Vista and later
             // NOTE: The X-axis is inverted for consistency with macOS and X11
-            _glfwInputScroll(window, -((SHORT) HIWORD(wParam) / (double) WHEEL_DELTA), 0.0);
+            _glfwInputScroll(window, -((SHORT) HIWORD(wParam) / (double) WHEEL_DELTA), 0.0, getKeyMods());
             return 0;
         }
 

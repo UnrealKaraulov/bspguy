@@ -30,9 +30,7 @@
 
 #include "tinycthread.h"
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
-#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -81,11 +79,6 @@ static int thread_main(void* data)
     glfwMakeContextCurrent(NULL);
     return 0;
 }
-
-
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_threads_test_main
-#endif
 
 int main(void)
 {

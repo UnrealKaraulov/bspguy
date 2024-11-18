@@ -41,9 +41,7 @@
 #include <windows.h>
 #endif
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_VULKAN_IMPLEMENTATION
-#endif
 #include <glad/vulkan.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -2125,12 +2123,7 @@ static void demo_resize(struct demo *demo) {
     demo_prepare(demo);
 }
 
-
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_triangle_vulkan_example_main
-#endif
-
-int main(const int argc, const char **argv) {
+int main(const int argc, const char *argv[]) {
     struct demo demo;
 
     demo_init(&demo, argc, argv);

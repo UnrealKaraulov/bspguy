@@ -2235,7 +2235,8 @@ void _glfwSetWindowTitleWayland(_GLFWwindow* window, const char* title)
 void _glfwSetWindowIconWayland(_GLFWwindow* window,
                                int count, const GLFWimage* images)
 {
-    fprintf(stderr, "!!! Ignoring Error: Wayland: Setting window icon not supported\n");
+    _glfwInputError(GLFW_FEATURE_UNAVAILABLE,
+                    "Wayland: The platform does not support setting the window icon");
 }
 
 void _glfwGetWindowPosWayland(_GLFWwindow* window, int* xpos, int* ypos)

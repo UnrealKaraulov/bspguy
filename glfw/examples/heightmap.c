@@ -29,9 +29,7 @@
 #include <assert.h>
 #include <stddef.h>
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
-#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -400,12 +398,7 @@ static void error_callback(int error, const char* description)
     fprintf(stderr, "Error: %s\n", description);
 }
 
-
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_heightmap_example_main
-#endif
-
-int main(int argc, const char** argv)
+int main(int argc, char** argv)
 {
     GLFWwindow* window;
     int iter;

@@ -29,9 +29,7 @@
 
 #include "tinycthread.h"
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
-#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -73,11 +71,6 @@ static float nrand(void)
 {
     return (float) rand() / (float) RAND_MAX;
 }
-
-
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_empty_test_main
-#endif
 
 int main(void)
 {

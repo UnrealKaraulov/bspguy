@@ -28,18 +28,12 @@
 //
 //========================================================================
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
-#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
-#ifdef BUILD_MONOLITHIC
-#define NK_LIB
-#else 
 #define NK_IMPLEMENTATION
-#endif
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_FONT_BAKING
 #define NK_INCLUDE_DEFAULT_FONT
@@ -48,9 +42,7 @@
 #define NK_INCLUDE_STANDARD_VARARGS
 #include <nuklear.h>
 
-#ifndef BUILD_MONOLITHIC
 #define NK_GLFW_GL2_IMPLEMENTATION
-#endif
 #include <nuklear_glfw_gl2.h>
 
 #include <stdio.h>
@@ -59,7 +51,7 @@
 
 #include "getopt.h"
 
-static void usage(void)
+void usage(void)
 {
     printf("Usage: inputlag [-h] [-f]\n");
     printf("Options:\n");
@@ -67,10 +59,10 @@ static void usage(void)
     printf("  -h show this help\n");
 }
 
-static struct nk_vec2 cursor_new, cursor_pos, cursor_vel;
-static enum { cursor_sync_query, cursor_input_message } cursor_method = cursor_sync_query;
+struct nk_vec2 cursor_new, cursor_pos, cursor_vel;
+enum { cursor_sync_query, cursor_input_message } cursor_method = cursor_sync_query;
 
-static void sample_input(GLFWwindow* window)
+void sample_input(GLFWwindow* window)
 {
     float a = .25; // exponential smoothing factor
 
@@ -86,26 +78,26 @@ static void sample_input(GLFWwindow* window)
     cursor_pos = cursor_new;
 }
 
-static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos)
+void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos)
 {
     cursor_new.x = (float) xpos;
     cursor_new.y = (float) ypos;
 }
 
-static int enable_vsync = nk_true;
+int enable_vsync = nk_true;
 
-static void update_vsync(void)
+void update_vsync()
 {
     glfwSwapInterval(enable_vsync == nk_true ? 1 : 0);
 }
 
-static int swap_clear = nk_false;
-static int swap_finish = nk_true;
-static int swap_occlusion_query = nk_false;
-static int swap_read_pixels = nk_false;
-static GLuint occlusion_query;
+int swap_clear = nk_false;
+int swap_finish = nk_true;
+int swap_occlusion_query = nk_false;
+int swap_read_pixels = nk_false;
+GLuint occlusion_query;
 
-static void swap_buffers(GLFWwindow* window)
+void swap_buffers(GLFWwindow* window)
 {
     glfwSwapBuffers(window);
 
@@ -133,12 +125,12 @@ static void swap_buffers(GLFWwindow* window)
     }
 }
 
-static void error_callback(int error, const char* description)
+void error_callback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
 }
 
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (action != GLFW_PRESS)
         return;
@@ -151,19 +143,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
 }
 
-static void draw_marker(struct nk_command_buffer* canvas, int lead, struct nk_vec2 pos)
+void draw_marker(struct nk_command_buffer* canvas, int lead, struct nk_vec2 pos)
 {
     struct nk_color colors[4] = { nk_rgb(255,0,0), nk_rgb(255,255,0), nk_rgb(0,255,0), nk_rgb(0,96,255) };
     struct nk_rect rect = { -5 + pos.x, -5 + pos.y, 10, 10 };
     nk_fill_circle(canvas, rect, colors[lead]);
 }
 
-
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_inputlag_test_main
-#endif
-
-int main(int argc, const char** argv)
+int main(int argc, char** argv)
 {
     int ch, width, height;
     unsigned long frame_count = 0;

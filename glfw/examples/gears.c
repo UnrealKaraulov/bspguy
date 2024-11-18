@@ -23,9 +23,7 @@
 
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
-#if !defined(_USE_MATH_DEFINES)
-#define _USE_MATH_DEFINES
-#endif
+ #define _USE_MATH_DEFINES
 #endif
 
 #include <math.h>
@@ -33,9 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
-#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -167,6 +163,7 @@ gear(GLfloat inner_radius, GLfloat outer_radius, GLfloat width,
     glVertex3f(r0 * (float) cos(angle), r0 * (float) sin(angle), width * 0.5f);
   }
   glEnd();
+
 }
 
 
@@ -215,7 +212,7 @@ static void animate(void)
 
 
 /* change view angle, exit upon ESC */
-static void key( GLFWwindow* window, int k, int s, int action, int mods )
+void key( GLFWwindow* window, int k, int s, int action, int mods )
 {
   if( action != GLFW_PRESS ) return;
 
@@ -248,7 +245,7 @@ static void key( GLFWwindow* window, int k, int s, int action, int mods )
 
 
 /* new window size */
-static void reshape( GLFWwindow* window, int width, int height )
+void reshape( GLFWwindow* window, int width, int height )
 {
   GLfloat h = (GLfloat) height / (GLfloat) width;
   GLfloat xmax, znear, zfar;
@@ -304,12 +301,8 @@ static void init(void)
 }
 
 
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_gears_example_main
-#endif
-
 /* program entry */
-int main(int argc, const char **argv)
+int main(int argc, char *argv[])
 {
     GLFWwindow* window;
     int width, height;

@@ -56,12 +56,11 @@ static const struct
 #if defined(_GLFW_X11)
     { GLFW_PLATFORM_X11, _glfwConnectX11 },
 #endif
-    {0}		// sentinel
 };
 
 GLFWbool _glfwSelectPlatform(int desiredID, _GLFWplatform* platform)
 {
-    const size_t count = sizeof(supportedPlatforms) / sizeof(supportedPlatforms[0]) - 1 /* discount sentinel */;
+    const size_t count = sizeof(supportedPlatforms) / sizeof(supportedPlatforms[0]);
     size_t i;
 
     if (desiredID != GLFW_ANY_PLATFORM &&
@@ -141,7 +140,7 @@ GLFWAPI int glfwGetPlatform(void)
 
 GLFWAPI int glfwPlatformSupported(int platformID)
 {
-    const size_t count = sizeof(supportedPlatforms) / sizeof(supportedPlatforms[0]) - 1 /* discount sentinel */;
+    const size_t count = sizeof(supportedPlatforms) / sizeof(supportedPlatforms[0]);
     size_t i;
 
     if (platformID != GLFW_PLATFORM_WIN32 &&

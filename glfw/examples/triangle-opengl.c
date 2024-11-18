@@ -24,9 +24,7 @@
 //========================================================================
 //! [code]
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
-#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -81,11 +79,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
-
-
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_triangle_opengl_example_main
-#endif
 
 int main(void)
 {

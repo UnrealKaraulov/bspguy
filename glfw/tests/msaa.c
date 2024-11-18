@@ -29,18 +29,14 @@
 //
 //========================================================================
 
-#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
-#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
-#if !defined(_USE_MATH_DEFINES)
-#define _USE_MATH_DEFINES
-#endif
+ #define _USE_MATH_DEFINES
 #endif
 
 #include "linmath.h"
@@ -100,12 +96,7 @@ static void usage(void)
     printf("Usage: msaa [-h] [-s SAMPLES]\n");
 }
 
-
-#ifdef BUILD_MONOLITHIC
-#define main    glfw_msaa_test_main
-#endif
-
-int main(int argc, const char** argv)
+int main(int argc, char** argv)
 {
     int ch, samples = 4;
     GLFWwindow* window;
