@@ -23,7 +23,9 @@
 //
 //========================================================================
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -100,6 +102,11 @@ static void* reallocate(void* block, size_t size, void* user)
     *real_block = size;
     return real_block + 1;
 }
+
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_allocator_test_main
+#endif
 
 int main(void)
 {

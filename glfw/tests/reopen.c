@@ -33,7 +33,9 @@
 //
 //========================================================================
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -99,7 +101,12 @@ static void close_window(GLFWwindow* window)
     printf("Closing window took %0.3f seconds\n", glfwGetTime() - base);
 }
 
-int main(int argc, char** argv)
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_reopen_test_main
+#endif
+
+int main(int argc, const char** argv)
 {
     int count = 0;
     double base;

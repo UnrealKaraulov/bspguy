@@ -29,14 +29,18 @@
 
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
- #define _USE_MATH_DEFINES
+#if !defined(_USE_MATH_DEFINES)
+#define _USE_MATH_DEFINES
+#endif
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -49,16 +53,16 @@
  *****************************************************************************/
 
 /* Prototypes */
-void init( void );
-void display( void );
-void reshape( GLFWwindow* window, int w, int h );
-void key_callback( GLFWwindow* window, int key, int scancode, int action, int mods );
-void mouse_button_callback( GLFWwindow* window, int button, int action, int mods );
-void cursor_position_callback( GLFWwindow* window, double x, double y );
-void DrawBoingBall( void );
-void BounceBall( double dt );
-void DrawBoingBallBand( GLfloat long_lo, GLfloat long_hi );
-void DrawGrid( void );
+static void init( void );
+static void display( void );
+static void reshape( GLFWwindow* window, int w, int h );
+static void key_callback( GLFWwindow* window, int key, int scancode, int action, int mods );
+static void mouse_button_callback( GLFWwindow* window, int button, int action, int mods );
+static void cursor_position_callback( GLFWwindow* window, double x, double y );
+static void DrawBoingBall( void );
+static void BounceBall( double dt );
+static void DrawBoingBallBand( GLfloat long_lo, GLfloat long_hi );
+static void DrawGrid( void );
 
 #define RADIUS           70.f
 #define STEP_LONGITUDE   22.5f                   /* 22.5 makes 8 bands like original Boing */
@@ -91,21 +95,21 @@ typedef enum { DRAW_BALL, DRAW_BALL_SHADOW } DRAW_BALL_ENUM;
 typedef struct {float x; float y; float z;} vertex_t;
 
 /* Global vars */
-int windowed_xpos, windowed_ypos, windowed_width, windowed_height;
-int width, height;
-GLfloat deg_rot_y       = 0.f;
-GLfloat deg_rot_y_inc   = 2.f;
-int override_pos        = GLFW_FALSE;
-GLfloat cursor_x        = 0.f;
-GLfloat cursor_y        = 0.f;
-GLfloat ball_x          = -RADIUS;
-GLfloat ball_y          = -RADIUS;
-GLfloat ball_x_inc      = 1.f;
-GLfloat ball_y_inc      = 2.f;
-DRAW_BALL_ENUM drawBallHow;
-double  t;
-double  t_old = 0.f;
-double  dt;
+static int windowed_xpos, windowed_ypos, windowed_width, windowed_height;
+static int width, height;
+static GLfloat deg_rot_y       = 0.f;
+static GLfloat deg_rot_y_inc   = 2.f;
+static int override_pos        = GLFW_FALSE;
+static GLfloat cursor_x        = 0.f;
+static GLfloat cursor_y        = 0.f;
+static GLfloat ball_x          = -RADIUS;
+static GLfloat ball_y          = -RADIUS;
+static GLfloat ball_x_inc      = 1.f;
+static GLfloat ball_y_inc      = 2.f;
+static DRAW_BALL_ENUM drawBallHow;
+static double  t;
+static double  t_old = 0.f;
+static double  dt;
 
 /* Random number generator */
 #ifndef RAND_MAX
@@ -116,7 +120,7 @@ double  dt;
 /*****************************************************************************
  * Truncate a degree.
  *****************************************************************************/
-GLfloat TruncateDeg( GLfloat deg )
+static GLfloat TruncateDeg( GLfloat deg )
 {
    if ( deg >= 360.f )
       return (deg - 360.f);
@@ -128,7 +132,7 @@ GLfloat TruncateDeg( GLfloat deg )
  * Convert a degree (360-based) into a radian.
  * 360' = 2 * PI
  *****************************************************************************/
-double deg2rad( double deg )
+static double deg2rad( double deg )
 {
    return deg / 360 * (2 * M_PI);
 }
@@ -136,7 +140,7 @@ double deg2rad( double deg )
 /*****************************************************************************
  * 360' sin().
  *****************************************************************************/
-double sin_deg( double deg )
+static double sin_deg( double deg )
 {
    return sin( deg2rad( deg ) );
 }
@@ -144,7 +148,7 @@ double sin_deg( double deg )
 /*****************************************************************************
  * 360' cos().
  *****************************************************************************/
-double cos_deg( double deg )
+static double cos_deg( double deg )
 {
    return cos( deg2rad( deg ) );
 }
@@ -154,7 +158,7 @@ double cos_deg( double deg )
  *
  * c = a x b
  *****************************************************************************/
-void CrossProduct( vertex_t a, vertex_t b, vertex_t c, vertex_t *n )
+static void CrossProduct( vertex_t a, vertex_t b, vertex_t c, vertex_t *n )
 {
    GLfloat u1, u2, u3;
    GLfloat v1, v2, v3;
@@ -179,7 +183,7 @@ void CrossProduct( vertex_t a, vertex_t b, vertex_t c, vertex_t *n )
 /*****************************************************************************
  * init()
  *****************************************************************************/
-void init( void )
+static void init( void )
 {
    /*
     * Clear background.
@@ -193,7 +197,7 @@ void init( void )
 /*****************************************************************************
  * display()
  *****************************************************************************/
-void display(void)
+static void display(void)
 {
    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
    glPushMatrix();
@@ -214,7 +218,7 @@ void display(void)
 /*****************************************************************************
  * reshape()
  *****************************************************************************/
-void reshape( GLFWwindow* window, int w, int h )
+static void reshape( GLFWwindow* window, int w, int h )
 {
    mat4x4 projection, view;
 
@@ -237,7 +241,7 @@ void reshape( GLFWwindow* window, int w, int h )
    glLoadMatrixf((const GLfloat*) view);
 }
 
-void key_callback( GLFWwindow* window, int key, int scancode, int action, int mods )
+static void key_callback( GLFWwindow* window, int key, int scancode, int action, int mods )
 {
     if (action != GLFW_PRESS)
         return;
@@ -273,7 +277,7 @@ static void set_ball_pos ( GLfloat x, GLfloat y )
    ball_y = y - (height / 2);
 }
 
-void mouse_button_callback( GLFWwindow* window, int button, int action, int mods )
+static void mouse_button_callback( GLFWwindow* window, int button, int action, int mods )
 {
    if (button != GLFW_MOUSE_BUTTON_LEFT)
       return;
@@ -289,7 +293,7 @@ void mouse_button_callback( GLFWwindow* window, int button, int action, int mods
    }
 }
 
-void cursor_position_callback( GLFWwindow* window, double x, double y )
+static void cursor_position_callback( GLFWwindow* window, double x, double y )
 {
    cursor_x = (float) x;
    cursor_y = (float) y;
@@ -306,7 +310,7 @@ void cursor_position_callback( GLFWwindow* window, double x, double y )
  * The ball is built by stacking latitudinal circles.  Each circle is composed
  * of a widely-separated set of points, so that each facet is noticeably large.
  *****************************************************************************/
-void DrawBoingBall( void )
+static void DrawBoingBall( void )
 {
    GLfloat lon_deg;     /* degree of longitude */
    double dt_total, dt2;
@@ -383,7 +387,7 @@ void DrawBoingBall( void )
 /*****************************************************************************
  * Bounce the ball.
  *****************************************************************************/
-void BounceBall( double delta_t )
+static void BounceBall( double delta_t )
 {
    GLfloat sign;
    GLfloat deg;
@@ -436,7 +440,7 @@ void BounceBall( double delta_t )
  * Parms:   long_lo, long_hi
  *          Low and high longitudes of slice, resp.
  *****************************************************************************/
-void DrawBoingBallBand( GLfloat long_lo,
+static void DrawBoingBallBand( GLfloat long_lo,
                         GLfloat long_hi )
 {
    vertex_t vert_ne;            /* "ne" means south-east, so on */
@@ -540,7 +544,7 @@ void DrawBoingBallBand( GLfloat long_lo,
  * Draw the purple grid of lines, behind the Boing ball.
  * When the Workbench is dropped to the bottom, Boing shows 12 rows.
  *****************************************************************************/
-void DrawGrid( void )
+static void DrawGrid( void )
 {
    int              row, col;
    const int        rowTotal    = 12;                   /* must be divisible by 2 */
@@ -620,6 +624,11 @@ void DrawGrid( void )
 /*======================================================================*
  * main()
  *======================================================================*/
+
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_boing_example_main
+#endif
 
 int main( void )
 {

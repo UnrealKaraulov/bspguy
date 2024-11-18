@@ -28,12 +28,18 @@
 //
 //========================================================================
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
+#ifdef BUILD_MONOLITHIC
+#define NK_LIB
+#else 
 #define NK_IMPLEMENTATION
+#endif
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_FONT_BAKING
 #define NK_INCLUDE_DEFAULT_FONT
@@ -43,7 +49,9 @@
 #define NK_BUTTON_TRIGGER_ON_RELEASE
 #include <nuklear.h>
 
+#ifndef BUILD_MONOLITHIC
 #define NK_GLFW_GL2_IMPLEMENTATION
+#endif
 #include <nuklear_glfw_gl2.h>
 
 #include <stdio.h>
@@ -168,6 +176,11 @@ static void hat_widget(struct nk_context* nk, unsigned char state)
                          nk_rgb(175, 175, 175));
     }
 }
+
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_joysticks_test_main
+#endif
 
 int main(void)
 {

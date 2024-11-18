@@ -306,9 +306,10 @@ static void makeContextCurrentWGL(_GLFWwindow* window)
             _glfwPlatformSetTls(&_glfw.contextSlot, window);
         else
         {
-            _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
-                                 "WGL: Failed to make context current");
-            _glfwPlatformSetTls(&_glfw.contextSlot, NULL);
+            // CAUSES A BUG ON INTEL DRIVERS
+            // _glfwInputErrorWin32(GLFW_PLATFORM_ERROR,
+            //                      "WGL: Failed to make context current");
+            // _glfwPlatformSetTls(&_glfw.contextSlot, NULL);
         }
     }
     else

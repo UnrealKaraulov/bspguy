@@ -5682,7 +5682,7 @@ template<typename T> struct nk_alignof{struct Big {T x; char c;}; enum {
 
 #endif /* NK_NUKLEAR_H_ */
 
-#ifdef NK_IMPLEMENTATION
+//#ifdef NK_IMPLEMENTATION
 
 #ifndef NK_INTERNAL_H
 #define NK_INTERNAL_H
@@ -6018,7 +6018,7 @@ NK_LIB void nk_property(struct nk_context *ctx, const char *name, struct nk_prop
 
 
 
-
+#ifdef NK_IMPLEMENTATION
 
 /* ===============================================================
  *

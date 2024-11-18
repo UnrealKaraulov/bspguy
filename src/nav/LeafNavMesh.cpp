@@ -1,6 +1,5 @@
 #include "Renderer.h"
 #include "LeafNavMesh.h"
-#include "GLFW/glfw3.h"
 #include "PolyOctree.h"
 #include "Clipper.h"
 #include "log.h"
@@ -13,6 +12,7 @@
 #include <queue>
 #include <algorithm>
 #include <limits.h>
+#include "GLFW/glfw3.h"
 
 LeafNode::LeafNode() {
 	id = -1;

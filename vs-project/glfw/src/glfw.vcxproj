@@ -182,7 +182,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;OEMRESOURCE</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <OmitFramePointers>false</OmitFramePointers>
       <OpenMPSupport>true</OpenMPSupport>
@@ -325,7 +325,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;OEMRESOURCE</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -417,7 +417,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;OEMRESOURCE</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>

@@ -27,6 +27,12 @@
 #ifndef INCLUDED_GETOPT_PORT_H
 #define INCLUDED_GETOPT_PORT_H
 
+
+#ifdef BUILD_MONOLITHIC
+#error "Error: make sure to point an include search path to the libgetopt library BEFORE including the glfw/deps/ search path, for otherwise you'll include the DISABLED alternative getopt implementation in glfw/depts/ !"
+#endif
+
+
 #if defined(__cplusplus)
 extern "C" {
 #endif

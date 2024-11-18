@@ -6999,8 +6999,8 @@ void Gui::drawOverviewWidget()
 				ortho_custom_h = 256.0f;
 		}
 
-		ImGui::End();
 	}
+	ImGui::End();
 }
 
 

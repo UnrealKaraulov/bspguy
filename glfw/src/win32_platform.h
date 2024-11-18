@@ -30,18 +30,22 @@
  #define NOMINMAX
 #endif
 
-#ifndef VC_EXTRALEAN
- #define VC_EXTRALEAN
-#endif
+//#ifndef VC_EXTRALEAN
+// #define VC_EXTRALEAN
+//#endif
 
-#ifndef WIN32_LEAN_AND_MEAN
- #define WIN32_LEAN_AND_MEAN
-#endif
+//#ifndef WIN32_LEAN_AND_MEAN
+// #define WIN32_LEAN_AND_MEAN
+//#endif
+
+#ifndef _WINDOWS_		// set when windows.h has already been included before.
 
 // This is a workaround for the fact that glfw3.h needs to export APIENTRY (for
 // example to allow applications to correctly declare a GL_KHR_debug callback)
 // but windows.h assumes no one will define APIENTRY before it does
 #undef APIENTRY
+
+#endif      // _WINDOWS_
 
 // GLFW on Windows is Unicode only and does not work in MBCS mode
 #ifndef UNICODE
@@ -59,10 +63,14 @@
 #endif
 
 // GLFW uses DirectInput8 interfaces
-#define DIRECTINPUT_VERSION 0x0800
+#ifndef DIRECTINPUT_VERSION
+#define DIRECTINPUT_VERSION	0x0800
+#endif
 
 // GLFW uses OEM cursor resources
+#ifndef OEMRESOURCE
 #define OEMRESOURCE
+#endif
 
 #include <wctype.h>
 #include <windows.h>
@@ -354,6 +362,15 @@ typedef struct VkWin32SurfaceCreateInfoKHR
     HINSTANCE                       hinstance;
     HWND                            hwnd;
 } VkWin32SurfaceCreateInfoKHR;
+
+#if !defined(APIENTRY)
+#if defined(_WIN32)
+#define APIENTRY __stdcall
+#else
+#define APIENTRY
+#endif
+#define GLFW_APIENTRY_DEFINED
+#endif /* APIENTRY */
 
 typedef VkResult (APIENTRY *PFN_vkCreateWin32SurfaceKHR)(VkInstance,const VkWin32SurfaceCreateInfoKHR*,const VkAllocationCallbacks*,VkSurfaceKHR*);
 typedef VkBool32 (APIENTRY *PFN_vkGetPhysicalDeviceWin32PresentationSupportKHR)(VkPhysicalDevice,uint32_t);

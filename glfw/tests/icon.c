@@ -27,7 +27,9 @@
 //
 //========================================================================
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -37,7 +39,7 @@
 #include <string.h>
 
 // a simple glfw logo
-const char* const logo[] =
+static const char* const logo[] =
 {
     "................",
     "................",
@@ -57,7 +59,7 @@ const char* const logo[] =
     "................"
 };
 
-const unsigned char icon_colors[5][4] =
+static const unsigned char icon_colors[5][4] =
 {
     {   0,   0,   0, 255 }, // black
     { 255,   0,   0, 255 }, // red
@@ -111,7 +113,12 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     }
 }
 
-int main(int argc, char** argv)
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_icon_test_main
+#endif
+
+int main(int argc, const char** argv)
 {
     GLFWwindow* window;
 

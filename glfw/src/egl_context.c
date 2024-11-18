@@ -197,6 +197,14 @@ static GLFWbool chooseEGLConfig(const _GLFWctxconfig* ctxconfig,
         u->samples = getEGLConfigAttrib(n, EGL_SAMPLES);
         u->doublebuffer = fbconfig->doublebuffer;
 
+#if defined(_GLFW_WAYLAND)
+        // Avoid using transparent buffer on Wayland if transparency is not requested.
+        // Otherwise mutter will fail to properly screenshot OpenGL content.
+        if (u->alphaBits > 0 && !fbconfig->transparent) {
+            continue;
+        }
+#endif // _GLFW_WAYLAND
+
         u->handle = (uintptr_t) n;
         usableCount++;
     }
@@ -751,10 +759,45 @@ GLFWbool _glfwCreateContextEGL(_GLFWwindow* window,
 
     if (window->context.egl.surface == EGL_NO_SURFACE)
     {
-        _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "EGL: Failed to create window surface: %s",
-                        getEGLErrorString(eglGetError()));
-        return GLFW_FALSE;
+        // nvidia x11 GPU driver issue
+
+        // Set up attributes for surface creation
+        index = 0;
+
+        if (fbconfig->sRGB)
+        {
+            if (_glfw.egl.KHR_gl_colorspace)
+                SET_ATTRIB(EGL_GL_COLORSPACE_KHR, EGL_GL_COLORSPACE_SRGB_KHR);
+        }
+
+        if (!fbconfig->doublebuffer)
+            SET_ATTRIB(EGL_RENDER_BUFFER, EGL_SINGLE_BUFFER);
+
+        SET_ATTRIB(EGL_NONE, EGL_NONE);
+
+        native = _glfw.platform.getEGLNativeWindow(window);
+        // HACK: ANGLE does not implement eglCreatePlatformWindowSurfaceEXT
+        //       despite reporting EGL_EXT_platform_base
+        if (_glfw.egl.platform && _glfw.egl.platform != EGL_PLATFORM_ANGLE_ANGLE)
+        {
+            window->context.egl.surface =
+                eglCreatePlatformWindowSurfaceEXT(_glfw.egl.display, config, native, attribs);
+        }
+        else
+        {
+            window->context.egl.surface =
+                eglCreateWindowSurface(_glfw.egl.display, config, native, attribs);
+        }
+
+        // nvidia x11 GPU driver issue end
+
+        if (window->context.egl.surface == EGL_NO_SURFACE)
+        {
+            _glfwInputError(GLFW_PLATFORM_ERROR,
+                            "EGL: Failed to create window surface: %s",
+                            getEGLErrorString(eglGetError()));
+            return GLFW_FALSE;
+        }
     }
 
     window->context.egl.config = config;

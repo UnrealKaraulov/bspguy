@@ -23,7 +23,9 @@
 //
 //========================================================================
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -31,7 +33,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(int argc, char** argv)
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_windows_example_main
+#endif
+
+int main(int argc, const char** argv)
 {
     int xpos, ypos, height;
     const char* description;

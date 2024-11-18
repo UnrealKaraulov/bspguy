@@ -26,7 +26,9 @@
 
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
- #define _USE_MATH_DEFINES
+#if !defined(_USE_MATH_DEFINES)
+#define _USE_MATH_DEFINES
+#endif
 #endif
 
 #include <stdlib.h>
@@ -39,7 +41,9 @@
 #include <getopt.h>
 #include <linmath.h>
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -81,13 +85,13 @@ typedef struct
 //========================================================================
 
 // Window dimensions
-float aspect_ratio;
+static float aspect_ratio;
 
 // "wireframe" flag (true if we use wireframe view)
-int wireframe;
+static int wireframe;
 
 // Thread synchronization
-struct {
+static struct {
     double    t;         // Time (s)
     float     dt;        // Time since last frame (s)
     int       p_frame;   // Particle physics frame number
@@ -109,10 +113,10 @@ struct {
 #define F_TEX_HEIGHT 16
 
 // Texture object IDs
-GLuint particle_tex_id, floor_tex_id;
+static GLuint particle_tex_id, floor_tex_id;
 
 // Particle texture (a simple spot)
-const unsigned char particle_texture[ P_TEX_WIDTH * P_TEX_HEIGHT ] = {
+static const unsigned char particle_texture[ P_TEX_WIDTH * P_TEX_HEIGHT ] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x11, 0x22, 0x22, 0x11, 0x00, 0x00,
     0x00, 0x11, 0x33, 0x88, 0x77, 0x33, 0x11, 0x00,
@@ -124,7 +128,7 @@ const unsigned char particle_texture[ P_TEX_WIDTH * P_TEX_HEIGHT ] = {
 };
 
 // Floor texture (your basic checkered floor)
-const unsigned char floor_texture[ F_TEX_WIDTH * F_TEX_HEIGHT ] = {
+static const unsigned char floor_texture[ F_TEX_WIDTH * F_TEX_HEIGHT ] = {
     0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0xf0, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
     0xff, 0xf0, 0xcc, 0xf0, 0xf0, 0xf0, 0xff, 0xf0, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30,
     0xf0, 0xcc, 0xee, 0xff, 0xf0, 0xf0, 0xf0, 0xf0, 0x30, 0x66, 0x30, 0x30, 0x30, 0x20, 0x30, 0x30,
@@ -211,13 +215,13 @@ static float glow_pos[4];
 // Object material and fog configuration constants
 //========================================================================
 
-const GLfloat fountain_diffuse[4]  = { 0.7f, 1.f,  1.f,  1.f };
-const GLfloat fountain_specular[4] = {  1.f, 1.f,  1.f,  1.f };
-const GLfloat fountain_shininess   = 12.f;
-const GLfloat floor_diffuse[4]     = { 1.f,  0.6f, 0.6f, 1.f };
-const GLfloat floor_specular[4]    = { 0.6f, 0.6f, 0.6f, 1.f };
-const GLfloat floor_shininess      = 18.f;
-const GLfloat fog_color[4]         = { 0.1f, 0.1f, 0.1f, 1.f };
+static const GLfloat fountain_diffuse[4]  = { 0.7f, 1.f,  1.f,  1.f };
+static const GLfloat fountain_specular[4] = {  1.f, 1.f,  1.f,  1.f };
+static const GLfloat fountain_shininess   = 12.f;
+static const GLfloat floor_diffuse[4]     = { 1.f,  0.6f, 0.6f, 1.f };
+static const GLfloat floor_specular[4]    = { 0.6f, 0.6f, 0.6f, 1.f };
+static const GLfloat floor_shininess      = 18.f;
+static const GLfloat fog_color[4]         = { 0.1f, 0.1f, 0.1f, 1.f };
 
 
 //========================================================================
@@ -940,7 +944,12 @@ static int physics_thread_main(void* arg)
 // main
 //========================================================================
 
-int main(int argc, char** argv)
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_particles_example_main
+#endif
+
+int main(int argc, const char** argv)
 {
     int ch, width, height;
     thrd_t physics_thread = 0;

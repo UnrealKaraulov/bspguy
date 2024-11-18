@@ -23,7 +23,9 @@
 //
 //========================================================================
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -73,7 +75,12 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-int main(int argc, char** argv)
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_sharing_example_main
+#endif
+
+int main(int argc, const char** argv)
 {
     GLFWwindow* windows[2];
     GLuint texture, program, vertex_buffer;

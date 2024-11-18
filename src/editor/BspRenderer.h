@@ -1,8 +1,6 @@
 #pragma once
 #pragma once
 #include "Bsp.h"
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include "Texture.h"
 #include "ShaderProgram.h"
 #include "LightmapNode.h"
@@ -15,6 +13,8 @@
 #include <future>
 #include "mdl_studio.h"
 #include "Sprite.h"
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 class Command;
 

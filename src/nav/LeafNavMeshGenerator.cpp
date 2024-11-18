@@ -1,6 +1,5 @@
 #include "Renderer.h"
 #include "LeafNavMeshGenerator.h"
-#include "GLFW/glfw3.h"
 #include "PolyOctree.h"
 #include "Clipper.h"
 #include "Bsp.h"
@@ -12,6 +11,7 @@
 #include <algorithm>
 #include <float.h>
 #include "Entity.h"
+#include "GLFW/glfw3.h"
 
 
 LeafNavMesh* LeafNavMeshGenerator::generate(Bsp* map) {

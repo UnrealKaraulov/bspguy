@@ -23,8 +23,12 @@
 //
 //========================================================================
 
+#ifdef BUILD_MONOLITHIC
+#include <glad/gl.h>
+#else
 #define GLAD_GLES2_IMPLEMENTATION
 #include <glad/gles2.h>
+#endif
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
@@ -80,6 +84,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_triangle_opengles_example_main
+#endif
+
 int main(void)
 {
     glfwSetErrorCallback(error_callback);
@@ -107,8 +116,12 @@ int main(void)
     glfwSetKeyCallback(window, key_callback);
 
     glfwMakeContextCurrent(window);
-    gladLoadGLES2(glfwGetProcAddress);
-    glfwSwapInterval(1);
+#ifdef BUILD_MONOLITHIC
+	gladLoadGL(glfwGetProcAddress);
+#else
+	gladLoadGLES2(glfwGetProcAddress);
+#endif
+	glfwSwapInterval(1);
 
     GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);

@@ -10,14 +10,18 @@
 
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
- #define _USE_MATH_DEFINES
+#if !defined(_USE_MATH_DEFINES)
+#define _USE_MATH_DEFINES
+#endif
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -30,11 +34,11 @@
 // Animation speed (10.0 looks good)
 #define ANIMATION_SPEED 10.0
 
-GLfloat alpha = 210.f, beta = -70.f;
-GLfloat zoom = 2.f;
+static GLfloat alpha = 210.f, beta = -70.f;
+static GLfloat zoom = 2.f;
 
-double cursorX;
-double cursorY;
+static double cursorX;
+static double cursorY;
 
 struct Vertex
 {
@@ -50,8 +54,8 @@ struct Vertex
 #define QUADH (GRIDH - 1)
 #define QUADNUM (QUADW*QUADH)
 
-GLuint quad[4 * QUADNUM];
-struct Vertex vertex[VERTEXNUM];
+static GLuint quad[4 * QUADNUM];
+static struct Vertex vertex[VERTEXNUM];
 
 /* The grid will look like this:
  *
@@ -68,7 +72,7 @@ struct Vertex vertex[VERTEXNUM];
 // Initialize grid geometry
 //========================================================================
 
-void init_vertices(void)
+static void init_vertices(void)
 {
     int x, y, p;
 
@@ -107,16 +111,16 @@ void init_vertices(void)
     }
 }
 
-double dt;
-double p[GRIDW][GRIDH];
-double vx[GRIDW][GRIDH], vy[GRIDW][GRIDH];
-double ax[GRIDW][GRIDH], ay[GRIDW][GRIDH];
+static double dt;
+static double p[GRIDW][GRIDH];
+static double vx[GRIDW][GRIDH], vy[GRIDW][GRIDH];
+static double ax[GRIDW][GRIDH], ay[GRIDW][GRIDH];
 
 //========================================================================
 // Initialize grid
 //========================================================================
 
-void init_grid(void)
+static void init_grid(void)
 {
     int x, y;
     double dx, dy, d;
@@ -147,7 +151,7 @@ void init_grid(void)
 // Draw scene
 //========================================================================
 
-void draw_scene(GLFWwindow* window)
+static void draw_scene(GLFWwindow* window)
 {
     // Clear the color and depth buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -172,7 +176,7 @@ void draw_scene(GLFWwindow* window)
 // Initialize Miscellaneous OpenGL state
 //========================================================================
 
-void init_opengl(void)
+static void init_opengl(void)
 {
     // Use Gouraud (smooth) shading
     glShadeModel(GL_SMOOTH);
@@ -196,7 +200,7 @@ void init_opengl(void)
 // Modify the height of each vertex according to the pressure
 //========================================================================
 
-void adjust_grid(void)
+static void adjust_grid(void)
 {
     int pos;
     int x, y;
@@ -216,7 +220,7 @@ void adjust_grid(void)
 // Calculate wave propagation
 //========================================================================
 
-void calc_grid(void)
+static void calc_grid(void)
 {
     int x, y, x2, y2;
     double time_step = dt * ANIMATION_SPEED;
@@ -273,7 +277,7 @@ static void error_callback(int error, const char* description)
 // Handle key strokes
 //========================================================================
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (action != GLFW_PRESS)
         return;
@@ -316,7 +320,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 // Callback function for mouse button events
 //========================================================================
 
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button != GLFW_MOUSE_BUTTON_LEFT)
         return;
@@ -335,7 +339,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 // Callback function for cursor motion events
 //========================================================================
 
-void cursor_position_callback(GLFWwindow* window, double x, double y)
+static void cursor_position_callback(GLFWwindow* window, double x, double y)
 {
     if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
     {
@@ -352,7 +356,7 @@ void cursor_position_callback(GLFWwindow* window, double x, double y)
 // Callback function for scroll events
 //========================================================================
 
-void scroll_callback(GLFWwindow* window, double x, double y)
+static void scroll_callback(GLFWwindow* window, double x, double y)
 {
     zoom += (float) y / 4.f;
     if (zoom < 0)
@@ -364,7 +368,7 @@ void scroll_callback(GLFWwindow* window, double x, double y)
 // Callback function for framebuffer resize events
 //========================================================================
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     float ratio = 1.f;
     mat4x4 projection;
@@ -389,7 +393,12 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 // main
 //========================================================================
 
-int main(int argc, char* argv[])
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_wave_example_main
+#endif
+
+int main(int argc, const char** argv)
 {
     GLFWwindow* window;
     double t, dt_total, t_old;

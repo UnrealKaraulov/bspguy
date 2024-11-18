@@ -24,6 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef BUILD_MONOLITHIC
+
 #include "getopt.h"
 
 #include <stddef.h>
@@ -228,3 +230,5 @@ int getopt_long(int argc, char* const argv[], const char* optstring,
   ++optind;
   return retval;
 }
+
+#endif   // BUILD_MONOLITHIC

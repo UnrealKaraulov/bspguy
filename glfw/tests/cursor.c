@@ -30,14 +30,18 @@
 //
 //========================================================================
 
+#ifndef BUILD_MONOLITHIC
 #define GLAD_GL_IMPLEMENTATION
+#endif
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #if defined(_MSC_VER)
  // Make MS math.h define M_PI
- #define _USE_MATH_DEFINES
+#if !defined(_USE_MATH_DEFINES)
+#define _USE_MATH_DEFINES
+#endif
 #endif
 
 #include <math.h>
@@ -323,6 +327,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         }
     }
 }
+
+
+#ifdef BUILD_MONOLITHIC
+#define main    glfw_cursor_test_main
+#endif
 
 int main(void)
 {

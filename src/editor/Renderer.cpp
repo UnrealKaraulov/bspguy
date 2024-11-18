@@ -547,7 +547,7 @@ void Renderer::renderLoop()
 
 			mousePos = vec2((float)xpos, (float)ypos);
 
-			GLuint fbo, texture, rbo;
+			GLuint fbo = NULL, texture, rbo;
 
 			if (ortho_save_tga || ortho_save_bmp)
 			{
@@ -1165,7 +1165,7 @@ void Renderer::renderLoop()
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
 
-			if (ortho_save_tga || ortho_save_bmp)
+			if (fbo && (ortho_save_tga || ortho_save_bmp))
 			{
 				std::vector<uint8_t> pixels(3 * ortho_tga_w * ortho_tga_h);
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
