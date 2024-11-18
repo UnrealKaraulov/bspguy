@@ -279,7 +279,7 @@ Bsp::Bsp(std::string fpath)
 				lastModel.iHeadnodes[2] == 0 &&
 				lastModel.iHeadnodes[3] == 0 &&
 				lastModel.iFirstFace == 0 &&
-				std::abs(lastModel.vOrigin.z - 9999.0) < 0.01 &&
+				std::fabs(lastModel.vOrigin.z - 9999.0) < 0.01 &&
 				lastModel.nFaces == 0)
 			{
 				print_log(get_localized_string(LANG_0040), modelCount - 1);
@@ -422,15 +422,54 @@ void Bsp::get_bounding_box(vec3& mins, vec3& maxs)
 	}
 }
 
-void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
+void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs, bool skipSpecial)
 {
 	mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	BSPMODEL& model = models[modelIdx];
 
-	for (int i = 0; i < model.nFaces; i++) {
+	for (int i = 0; i < model.nFaces; i++) 
+	{
 		BSPFACE32& face = faces[model.iFirstFace + i];
+
+		if (skipSpecial)
+		{
+			if (!face.iTextureInfo || (face.nStyles[0] == 0xFF && face.nStyles[1] == 0xFF && face.nStyles[2] == 0xFF && face.nStyles[3] == 0xFF))
+				continue;
+
+			BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
+
+			if (texinfo.nFlags & TEX_SPECIAL)
+			{
+				continue;
+			}
+
+			int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
+			if (texOffset < 0)
+			{
+				continue;
+			}
+			else
+			{
+				BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + texOffset));
+				if (toLowerCase(tex->szName) == "aaatrigger" ||
+					toLowerCase(tex->szName) == "null" ||
+					starts_with(toLowerCase(tex->szName), "sky") ||
+					toLowerCase(tex->szName) == "noclip" ||
+					toLowerCase(tex->szName) == "clip" ||
+					toLowerCase(tex->szName) == "origin" ||
+					toLowerCase(tex->szName) == "bevel" ||
+					toLowerCase(tex->szName) == "hint" ||
+					toLowerCase(tex->szName) == "skip"
+					)
+				{
+					continue;
+				}
+
+				
+			}
+		}
 
 		for (int e = 0; e < face.nEdges; e++) {
 			int edgeIdx = surfedges[face.iFirstEdge + e];
@@ -441,7 +480,7 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 		}
 	}
 
-	if (!model.nFaces) {
+	if (!model.nFaces && !skipSpecial) {
 		// use the clipping hull "faces" instead
 		Clipper clipper;
 		std::vector<NodeVolumeCuts> solidNodes = get_model_leaf_volume_cuts(modelIdx, 0, CONTENTS_SOLID);
@@ -582,7 +621,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 			if (i == k)
 				continue;
 
-			if (nodePlanes[i].vNormal.equal(nodePlanes[k].vNormal, EPSILON) && std::abs(nodePlanes[i].fDist - nodePlanes[k].fDist) < ON_EPSILON)
+			if (nodePlanes[i].vNormal.equal(nodePlanes[k].vNormal, EPSILON) && std::fabs(nodePlanes[i].fDist - nodePlanes[k].fDist) < ON_EPSILON)
 			{
 				return false;
 			}
@@ -610,7 +649,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 		for (size_t i = 0; i < nodePlanes.size(); i++)
 		{
 			BSPPLANE& p = nodePlanes[i];
-			if (std::abs(dotProduct(v, p.vNormal) - p.fDist) < ON_EPSILON)
+			if (std::fabs(dotProduct(v, p.vNormal) - p.fDist) < ON_EPSILON)
 			{
 				hullVert.iPlanes.push_back(nodePlaneIndexes[i]);
 			}
@@ -1008,7 +1047,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 				vec3 spawnori = parseVector(ents[i]->keyvalues["spawnorigin"]);
 
 				// entity not moved if destination is 0,0,0
-				if (std::abs(spawnori.x) >= EPSILON || std::abs(spawnori.y) >= EPSILON || std::abs(spawnori.z) >= EPSILON)
+				if (std::fabs(spawnori.x) >= EPSILON || std::fabs(spawnori.y) >= EPSILON || std::fabs(spawnori.z) >= EPSILON)
 				{
 					ents[i]->setOrAddKeyvalue("spawnorigin", (spawnori + offset).toKeyvalueString());
 				}
@@ -1022,12 +1061,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 	target.nMins += offset;
 	target.nMaxs += offset;
-	if (std::abs(target.nMins.x) > FLT_MAX_COORD ||
-		std::abs(target.nMins.y) > FLT_MAX_COORD ||
-		std::abs(target.nMins.z) > FLT_MAX_COORD ||
-		std::abs(target.nMaxs.x) > FLT_MAX_COORD ||
-		std::abs(target.nMaxs.y) > FLT_MAX_COORD ||
-		std::abs(target.nMaxs.z) > FLT_MAX_COORD)
+	if (std::fabs(target.nMins.x) > FLT_MAX_COORD ||
+		std::fabs(target.nMins.y) > FLT_MAX_COORD ||
+		std::fabs(target.nMins.z) > FLT_MAX_COORD ||
+		std::fabs(target.nMaxs.x) > FLT_MAX_COORD ||
+		std::fabs(target.nMaxs.y) > FLT_MAX_COORD ||
+		std::fabs(target.nMaxs.z) > FLT_MAX_COORD)
 	{
 		print_log(get_localized_string(LANG_0049));
 	}
@@ -1044,12 +1083,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 		BSPNODE32& node = nodes[i];
 
-		if (std::abs((float)node.nMins[0] + offset.x) > FLT_MAX_COORD ||
-			std::abs((float)node.nMaxs[0] + offset.x) > FLT_MAX_COORD ||
-			std::abs((float)node.nMins[1] + offset.y) > FLT_MAX_COORD ||
-			std::abs((float)node.nMaxs[1] + offset.y) > FLT_MAX_COORD ||
-			std::abs((float)node.nMins[2] + offset.z) > FLT_MAX_COORD ||
-			std::abs((float)node.nMaxs[2] + offset.z) > FLT_MAX_COORD)
+		if (std::fabs((float)node.nMins[0] + offset.x) > FLT_MAX_COORD ||
+			std::fabs((float)node.nMaxs[0] + offset.x) > FLT_MAX_COORD ||
+			std::fabs((float)node.nMins[1] + offset.y) > FLT_MAX_COORD ||
+			std::fabs((float)node.nMaxs[1] + offset.y) > FLT_MAX_COORD ||
+			std::fabs((float)node.nMins[2] + offset.z) > FLT_MAX_COORD ||
+			std::fabs((float)node.nMaxs[2] + offset.z) > FLT_MAX_COORD)
 		{
 			print_log(get_localized_string(LANG_0050));
 		}
@@ -1070,12 +1109,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 		BSPLEAF32& leaf = leaves[i];
 
-		if (std::abs((float)leaf.nMins[0] + offset.x) > FLT_MAX_COORD ||
-			std::abs((float)leaf.nMaxs[0] + offset.x) > FLT_MAX_COORD ||
-			std::abs((float)leaf.nMins[1] + offset.y) > FLT_MAX_COORD ||
-			std::abs((float)leaf.nMaxs[1] + offset.y) > FLT_MAX_COORD ||
-			std::abs((float)leaf.nMins[2] + offset.z) > FLT_MAX_COORD ||
-			std::abs((float)leaf.nMaxs[2] + offset.z) > FLT_MAX_COORD)
+		if (std::fabs((float)leaf.nMins[0] + offset.x) > FLT_MAX_COORD ||
+			std::fabs((float)leaf.nMaxs[0] + offset.x) > FLT_MAX_COORD ||
+			std::fabs((float)leaf.nMins[1] + offset.y) > FLT_MAX_COORD ||
+			std::fabs((float)leaf.nMaxs[1] + offset.y) > FLT_MAX_COORD ||
+			std::fabs((float)leaf.nMins[2] + offset.z) > FLT_MAX_COORD ||
+			std::fabs((float)leaf.nMaxs[2] + offset.z) > FLT_MAX_COORD)
 		{
 			print_log(get_localized_string(LANG_0051));
 		}
@@ -1098,9 +1137,9 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 		vert += offset;
 
-		if (std::abs(vert.x) > FLT_MAX_COORD ||
-			std::abs(vert.y) > FLT_MAX_COORD ||
-			std::abs(vert.z) > FLT_MAX_COORD)
+		if (std::fabs(vert.x) > FLT_MAX_COORD ||
+			std::fabs(vert.y) > FLT_MAX_COORD ||
+			std::fabs(vert.z) > FLT_MAX_COORD)
 		{
 			print_log(get_localized_string(LANG_0052));
 		}
@@ -1116,8 +1155,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 		BSPPLANE& plane = planes[i];
 		vec3 newPlaneOri = offset + (plane.vNormal * plane.fDist);
 
-		if (std::abs(newPlaneOri.x) > FLT_MAX_COORD || std::abs(newPlaneOri.y) > FLT_MAX_COORD ||
-			std::abs(newPlaneOri.z) > FLT_MAX_COORD)
+		if (std::fabs(newPlaneOri.x) > FLT_MAX_COORD || std::fabs(newPlaneOri.y) > FLT_MAX_COORD ||
+			std::fabs(newPlaneOri.z) > FLT_MAX_COORD)
 		{
 			print_log(get_localized_string(LANG_0053));
 		}
@@ -1949,14 +1988,14 @@ bool operator == (BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2)
 {
 	return struct1.iMiptex == struct2.iMiptex &&
 		struct1.nFlags == struct2.nFlags &&
-		std::abs(struct1.shiftS - struct2.shiftS) < 0.01f &&
-		std::abs(struct1.shiftT - struct2.shiftT) < 0.01f &&
+		std::fabs(struct1.shiftS - struct2.shiftS) < 0.01f &&
+		std::fabs(struct1.shiftT - struct2.shiftT) < 0.01f &&
 		struct1.vS.equal(struct2.vS, 0.001f) && struct1.vT.equal(struct2.vT, 0.001f);
 }
 
 bool operator == (BSPPLANE& struct1, BSPPLANE& struct2)
 {
-	return struct1.vNormal.equal(struct2.vNormal, 0.001f) && std::abs(struct1.fDist - struct2.fDist) < 0.01f;
+	return struct1.vNormal.equal(struct2.vNormal, 0.001f) && std::fabs(struct1.fDist - struct2.fDist) < 0.01f;
 }
 
 bool operator !=(BSPTEXTUREINFO& struct1, BSPTEXTUREINFO& struct2)
@@ -2479,8 +2518,8 @@ bool Bsp::has_hull2_ents()
 					return true;
 				}
 			}
-			else if (std::abs(minhull.x) > MAX_HULL1_EXTENT_MONSTER || std::abs(maxhull.x) > MAX_HULL1_EXTENT_MONSTER
-				|| std::abs(minhull.y) > MAX_HULL1_EXTENT_MONSTER || std::abs(maxhull.y) > MAX_HULL1_EXTENT_MONSTER)
+			else if (std::fabs(minhull.x) > MAX_HULL1_EXTENT_MONSTER || std::fabs(maxhull.x) > MAX_HULL1_EXTENT_MONSTER
+				|| std::fabs(minhull.y) > MAX_HULL1_EXTENT_MONSTER || std::fabs(maxhull.y) > MAX_HULL1_EXTENT_MONSTER)
 			{
 				return true;
 			}
@@ -3400,11 +3439,19 @@ void Bsp::count_leaves(int iNode, int& count) {
 struct CompareVert {
 	vec3 pos;
 	float u, v;
+	CompareVert()
+	{
+		u = v = 0.0f;
+	}
 };
 
 struct ModelIdxRemap {
 	int newIdx;
 	vec3 offset;
+	ModelIdxRemap()
+	{
+		newIdx = 0;
+	}
 };
 
 void Bsp::deduplicate_models() {
@@ -9966,8 +10013,8 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 		BSPPLANE& plane = planes[i];
 		vec3 newPlaneOri = ent_offset + (plane.vNormal * plane.fDist);
 
-		if (std::abs(newPlaneOri.x) > FLT_MAX_COORD || std::abs(newPlaneOri.y) > FLT_MAX_COORD ||
-			std::abs(newPlaneOri.z) > FLT_MAX_COORD)
+		if (std::fabs(newPlaneOri.x) > FLT_MAX_COORD || std::fabs(newPlaneOri.y) > FLT_MAX_COORD ||
+			std::fabs(newPlaneOri.z) > FLT_MAX_COORD)
 		{
 			print_log(get_localized_string(LANG_0053));
 		}
@@ -10206,8 +10253,8 @@ int Bsp::merge_two_models_ents(int src_ent, int dst_ent, int& tryanotherway)
 		BSPPLANE& plane = planes[i];
 		vec3 newPlaneOri = ent_offset + (plane.vNormal * plane.fDist);
 
-		if (std::abs(newPlaneOri.x) > FLT_MAX_COORD || std::abs(newPlaneOri.y) > FLT_MAX_COORD ||
-			std::abs(newPlaneOri.z) > FLT_MAX_COORD)
+		if (std::fabs(newPlaneOri.x) > FLT_MAX_COORD || std::fabs(newPlaneOri.y) > FLT_MAX_COORD ||
+			std::fabs(newPlaneOri.z) > FLT_MAX_COORD)
 		{
 			print_log(get_localized_string(LANG_0053));
 		}
@@ -11429,7 +11476,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	if (iscale == 1)
 		scale = 1.0f;
 
-	scale = std::abs(scale);
+	scale = std::fabs(scale);
 
 	print_log(get_localized_string(LANG_0194), bsp_name + ".obj", path);
 	print_log(get_localized_string(LANG_0195), iscale == 1 ? "scale" : iscale < 0 ? "downscale" : "upscale", abs(iscale));
@@ -11969,7 +12016,7 @@ void placePointsToPlane(std::vector<vec3>& points, const BSPPLANE& plane)
 	for (auto& point : points)
 	{
 		double distance = (point.x * plane.vNormal.x + point.y * plane.vNormal.y + point.z * plane.vNormal.z - plane.fDist);
-		if (std::abs(distance) > EPSILON2)
+		if (std::fabs(distance) > EPSILON2)
 		{
 			point.x -= (float)(distance * plane.vNormal.x);
 			point.y -= (float)(distance * plane.vNormal.y);
@@ -11984,7 +12031,7 @@ bool isPointsToPlane(const std::vector<vec3>& points, const BSPPLANE& plane)
 	for (auto& point : points)
 	{
 		double distance = (point.x * plane.vNormal.x + point.y * plane.vNormal.y + point.z * plane.vNormal.z - plane.fDist);
-		if (std::abs(distance) > mON_EPSILON)
+		if (std::fabs(distance) > mON_EPSILON)
 		{
 			return false;
 		}

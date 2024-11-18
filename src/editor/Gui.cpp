@@ -176,6 +176,10 @@ void Gui::draw()
 	{
 		drawTextureBrowser();
 	}
+	if (showOverviewWidget)
+	{
+		drawOverviewWidget();
+	}
 	if (showTransformWidget)
 	{
 		drawTransformWidget();
@@ -3471,7 +3475,7 @@ void Gui::drawMenuBar()
 															auto& faceMath = rend->faceMaths[faceIndices[f]];
 
 															float distanceToPlane = dotProduct(faceMath.normal, pos) - faceMath.fdist;
-															float dot = std::abs(distanceToPlane);
+															float dot = std::fabs(distanceToPlane);
 
 															if (dot > minDist)
 															{
@@ -4887,7 +4891,7 @@ void Gui::drawMenuBar()
 
 					for (float scale_val = 0.25f; scale_val <= 2.0f; scale_val += 0.25f)
 					{
-						if (std::abs(scale_val - 1.0f) > EPSILON && ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
+						if (std::fabs(scale_val - 1.0f) > EPSILON && ImGui::MenuItem(fmt::format("Scale {:2}X", scale_val).c_str()))
 						{
 							if (ScaleOnlySelected)
 							{
@@ -4935,7 +4939,7 @@ void Gui::drawMenuBar()
 									if (app->pickInfo.IsSelectedEnt(i))
 									{
 										vec3 neworigin = map->ents[i]->origin * scale_val;
-										neworigin.z += std::abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
+										neworigin.z += std::fabs(neworigin.z - map->ents[i]->origin.z) * scale_val;
 										map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
 									}
 								}
@@ -4985,7 +4989,7 @@ void Gui::drawMenuBar()
 								for (size_t i = 0; i < map->ents.size(); i++)
 								{
 									vec3 neworigin = map->ents[i]->origin * scale_val;
-									neworigin.z += std::abs(neworigin.z - map->ents[i]->origin.z) * scale_val;
+									neworigin.z += std::fabs(neworigin.z - map->ents[i]->origin.z) * scale_val;
 									map->ents[i]->setOrAddKeyvalue("origin", neworigin.toKeyvalueString());
 								}
 								for (int i = 0; i < map->nodeCount; i++)
@@ -5602,6 +5606,7 @@ void Gui::drawMenuBar()
 								map->ents.erase(map->ents.begin() + i);
 							}
 						}
+						//todo....
 					}
 					ImGui::EndMenu();
 				}
@@ -5654,6 +5659,10 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem(get_localized_string(LANG_0600).c_str(), "", showMergeMapWidget))
 				{
 					showMergeMapWidget = !showMergeMapWidget;
+				}
+				if (ImGui::MenuItem("Map Overview", "", showOverviewWidget))
+				{
+					showOverviewWidget = !showOverviewWidget;
 				}
 				if (ImGui::MenuItem(get_localized_string(LANG_1096).c_str(), "", showLogWidget))
 				{
@@ -6767,7 +6776,7 @@ void Gui::drawDebugWidget()
 					vec3 normal = faceMath.normal.normalize();
 
 					float distanceToPlane = dotProduct(normal, cameraOrigin) - faceMath.fdist;
-					float dot = std::abs(distanceToPlane);
+					float dot = std::fabs(distanceToPlane);
 
 					if (dot > minDist)
 					{
@@ -6885,6 +6894,115 @@ void Gui::drawDebugWidget()
 	}
 	ImGui::End();
 }
+
+void Gui::drawOverviewWidget()
+{
+	static Bsp* lastMap = NULL;
+	static bool orthoMode = true;
+	static bool updateFarNear = false;
+
+	if (updateFarNear)
+	{
+		updateFarNear = false;
+		ortho_near = (ortho_maxs.z - ortho_mins.z) + cameraOrigin.z;
+		ortho_far = (ortho_maxs.z - ortho_mins.z) * 2 + cameraOrigin.z;
+	}
+
+	ortho_overview = orthoMode;
+
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* mapRender = map ? map->getBspRender() : NULL;
+
+	if (ImGui::Begin("Overview Widget###OVERVIEW_MAKER", &showOverviewWidget, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		if (lastMap != map)
+		{
+			lastMap = map;
+			map->get_model_vertex_bounds(0, ortho_mins, ortho_maxs);
+		}
+
+		if (!map)
+		{
+			ImGui::Text("No selected map");
+			ImGui::End();
+			return;
+		}
+
+		ImGui::SeparatorText("Custom Window Size");
+		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.3f);
+		ImGui::DragFloat("Width", &ortho_custom_w, 1.0f, 256.0f, 2048.0f, "%.0f");
+		ImGui::SameLine();
+		ImGui::DragFloat("Height", &ortho_custom_h, 1.0f, 256.0f, 2048.0f, "%.0f");
+		ImGui::PopItemWidth();
+
+		ImGui::SeparatorText("Overview Settings");
+		ImGui::Checkbox("Show Overview", &orthoMode);
+		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.3f);
+		ImGui::DragFloat("Aspect Ratio", &ortho_custom_aspect, 0.01f, 0.5f, 2.0f, "%.2f");
+		ImGui::DragFloat("Ortho FOV", &ortho_fov, 0.1f, 10.0f, 100.0f, "%.2f");
+		ImGui::DragFloat("Ortho Near", &ortho_near, 1.0f, -1.0f, 8192.0f, "%.2f");
+		ImGui::DragFloat("Ortho Far", &ortho_far, 1.0f, -1.0f, FLT_MAX_COORD, "%.2f");
+		ImGui::PopItemWidth();
+
+		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.7f);
+		ImGui::DragFloat3("Mins", &ortho_mins.x, 1.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f");
+		ImGui::DragFloat3("Maxs", &ortho_maxs.x, 1.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f");
+		ImGui::DragFloat3("Offset", &ortho_offset.x, 1.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f");
+		ImGui::PopItemWidth();
+
+		ImGui::SeparatorText("Fill Overview Mins/Maxs");
+		if (ImGui::Button("Fill from Model[0]")) {
+			map->get_bounding_box(ortho_mins, ortho_maxs);
+		}
+		if (ImGui::Button("Fill from Verts")) {
+			map->get_model_vertex_bounds(0, ortho_mins, ortho_maxs,true);
+		}
+		if (ImGui::Button("Fill from Leaves")) {
+			ortho_mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+			ortho_maxs = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+			for (int i = 1; i < map->leafCount; i++)
+			{
+				if (map->leaves[i].nContents == CONTENTS_EMPTY || map->leaves[i].nContents == CONTENTS_WATER)
+				{
+					expandBoundingBox(map->leaves[i].nMins, ortho_mins, ortho_maxs);
+					expandBoundingBox(map->leaves[i].nMaxs, ortho_mins, ortho_maxs);
+				}
+			}
+		}
+
+		if (ImGui::Button("Calculate Far/Near")) {
+			updateFarNear = true;
+		}
+
+		ImGui::SeparatorText("Save to TGA");
+		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.3f);
+		ImGui::DragInt("Width###2", &ortho_tga_w, 1.0f, 256, 2048);
+		ImGui::SameLine();
+		ImGui::DragInt("Height###3", &ortho_tga_h, 1.0f, 256, 2048);
+		ImGui::PopItemWidth();
+
+		if (ImGui::Button("Save .tga")) {
+			ortho_save_tga = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Save .bmp"))
+		{
+			ortho_save_bmp = true;
+		}
+
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+		{
+			if (std::fabs(ortho_custom_w) > EPSILON && ortho_custom_w < 256.0f)
+				ortho_custom_w = 256.0f;
+
+			if (std::fabs(ortho_custom_h) > EPSILON && ortho_custom_h < 256.0f)
+				ortho_custom_h = 256.0f;
+		}
+
+		ImGui::End();
+	}
+}
+
 
 void Gui::drawTextureBrowser()
 {
@@ -7612,11 +7730,11 @@ struct TextChangeCallback
 									vec3 newOrigin = parseVector(data->Buf);
 									vec3 oldOrigin = parseVector(selent->keyvalues[key]);
 									vec3 testOrigin = newOrigin - oldOrigin;
-									if (std::abs(testOrigin.x) > EPSILON2)
+									if (std::fabs(testOrigin.x) > EPSILON2)
 									{
 										part_vec = 0;
 									}
-									else if (std::abs(testOrigin.y) > EPSILON2)
+									else if (std::fabs(testOrigin.y) > EPSILON2)
 									{
 										part_vec = 1;
 									}
@@ -8612,7 +8730,7 @@ void Gui::drawLog()
 	{
 		log_buffer_copy = g_log_buffer;
 		color_buffer_copy = g_color_buffer;
-		scroll_to_bottom = true; 
+		scroll_to_bottom = true;
 	}
 	g_mutex_list[0].unlock();
 
@@ -8634,7 +8752,7 @@ void Gui::drawLog()
 		}
 		if (ImGui::MenuItem(get_localized_string(LANG_0708).c_str(), NULL, &AutoScroll))
 		{
-			
+
 		}
 		ImGui::EndPopup();
 	}
@@ -9037,7 +9155,7 @@ void Gui::drawSettings()
 
 			if (ImGui::Button(get_localized_string(LANG_0741).c_str()))
 			{
-				g_settings.fgdPaths.emplace_back(std::string(),true);
+				g_settings.fgdPaths.emplace_back(std::string(), true);
 			}
 		}
 		else if (settingsTab == 2)
@@ -9443,7 +9561,7 @@ void Gui::drawSettings()
 			{
 				g_render_flags ^= RENDER_MAP_BOUNDARY;
 			}
-			
+
 			ImGui::Columns(1);
 
 			ImGui::Separator();

@@ -48,10 +48,11 @@ void mat4x4::perspective(float fov, float aspect, float near, float far)
 	glhFrustumf2(m, -xmax, xmax, -ymax, ymax, near, far);
 }
 
-// Set up an orthographic projection matrix
-// http://en.wikipedia.org/wiki/Orthographic_projection_(geometry)
+
 void mat4x4::ortho(float left, float right, float bottom, float top, float near, float far)
 {
+	// Set up an orthographic projection matrix
+	// http://en.wikipedia.org/wiki/Orthographic_projection_(geometry)
 	loadIdentity();
 	float w = right - left;
 	float h = top - bottom;
@@ -400,7 +401,7 @@ mat4x4 mat4x4::invert(bool* result)
 
 	float det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
 
-	if (std::abs(det) < EPSILON)
+	if (std::fabs(det) < EPSILON)
 	{
 		if (result)
 			*result = false;

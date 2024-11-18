@@ -1,5 +1,6 @@
 #include "bsptypes.h"
 #include <cstring>
+#include <cmath>
 
 BSPEDGE16::BSPEDGE16()
 {
@@ -31,9 +32,9 @@ BSPEDGE32::BSPEDGE32(unsigned int v1, unsigned int v2)
 
 bool BSPPLANE::update_plane(vec3 newNormal, float fdist, bool flip)
 {
-	float fx = std::abs(newNormal.x);
-	float fy = std::abs(newNormal.y);
-	float fz = std::abs(newNormal.z);
+	float fx = std::fabs(newNormal.x);
+	float fy = std::fabs(newNormal.y);
+	float fz = std::fabs(newNormal.z);
 	int planeType = PLANE_ANYZ;
 	bool shouldFlip = false;
 	if (fx > 1.0f - EPSILON && fy < EPSILON && fz < EPSILON)

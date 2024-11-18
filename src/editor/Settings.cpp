@@ -626,7 +626,7 @@ void AppSettings::load()
 		else if (key == "MAX_MAP_BOUNDARY")
 		{
 			MAX_MAP_BOUNDARY = str_to_float(val);
-			if (std::abs(MAX_MAP_BOUNDARY) < 512.0f)
+			if (std::fabs(MAX_MAP_BOUNDARY) < 512.0f)
 				MAX_MAP_BOUNDARY = 4096;
 		}
 		else if (key == "TEXTURE_STEP")

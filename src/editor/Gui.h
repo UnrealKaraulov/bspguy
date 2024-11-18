@@ -82,6 +82,7 @@ public:
 	bool showGOTOWidget_update = true;
 	bool showGOTOWidget = false;
 	bool showTextureBrowser = false;
+	bool showOverviewWidget = false;
 	bool reloadSettings = true;
 	bool openSavedTabs = false;
 
@@ -127,6 +128,7 @@ private:
 	void drawStatusMessage();
 	void drawDebugWidget();
 	void drawTextureBrowser();
+	void drawOverviewWidget();
 	void drawKeyvalueEditor();
 	void drawKeyvalueEditor_SmartEditTab(int entIdx);
 	void drawKeyvalueEditor_FlagsTab(int entIdx);

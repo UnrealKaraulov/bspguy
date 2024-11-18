@@ -177,7 +177,7 @@ public:
 	void get_bounding_box(vec3& mins, vec3& maxs);
 
 	// get the bounding box for all vertexes in a BSP tree
-	void get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs);
+	void get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs, bool skipSpecial = false);
 
 	// face has duplicate verts, this is bad?
 	bool is_face_duplicate_edges(int faceIdx);

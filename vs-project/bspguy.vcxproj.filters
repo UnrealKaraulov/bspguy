@@ -282,9 +282,6 @@
     <ClInclude Include=".\..\src\util\lodepng.h">
       <Filter>Header Files\util\lib</Filter>
     </ClInclude>
-    <ClInclude Include=".\..\src\filedialog\stb_image.h">
-      <Filter>Header Files\filedialog</Filter>
-    </ClInclude>
     <ClInclude Include=".\..\src\filedialog\ImFileDialog.h">
       <Filter>Header Files\filedialog</Filter>
     </ClInclude>
@@ -326,6 +323,12 @@
     </ClInclude>
     <ClInclude Include=".\..\src\util\Line2D.h">
       <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\filedialog\stb_image.h">
+      <Filter>Header Files\util\lib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\filedialog\stb_image_write.h">
+      <Filter>Header Files\util\lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

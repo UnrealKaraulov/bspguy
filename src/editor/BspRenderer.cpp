@@ -1107,7 +1107,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			verts[e].r = 0.0f;
 			if (ent && ent->rendermode > 0)
 			{
-				verts[e].g = 1.001f + std::abs((float)ent->rendermode);
+				verts[e].g = 1.001f + std::fabs((float)ent->rendermode);
 			}
 			else
 			{
@@ -1985,7 +1985,7 @@ bool BspRenderer::setRenderAngles(const std::string& classname, mat4x4& outmat, 
 		}
 		else if (classname == "env_sprite")
 		{
-			if (std::abs(outangles.y) >= EPSILON && std::abs(outangles.z) < EPSILON)
+			if (std::fabs(outangles.y) >= EPSILON && std::fabs(outangles.z) < EPSILON)
 			{
 				outangles.z = 0.0f;
 				outmat.rotateY(0.0);
@@ -2944,7 +2944,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 
 
-	if (g_app->pickMode == PICK_FACE_LEAF)
+	if (g_app->pickMode == PICK_FACE_LEAF && !ortho_overview)
 	{
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
@@ -2976,7 +2976,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 		hullIdx = getBestClipnodeHull(modelIdx);
 	}
 
-	if (hullIdx <= -1 || hullIdx > 3)
+	if (hullIdx <= -1 || hullIdx > 3 || ortho_overview)
 	{
 		return; // nothing can be drawn
 	}
@@ -3052,7 +3052,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 	if (pass == REND_PASS_COLORSHADER)
 	{
 		RenderModel* rend_mdl = renderModels[modelIdx];
-		if (rend_mdl->wireframeBuffer)
+		if (rend_mdl->wireframeBuffer && !ortho_overview)
 		{
 			if (ent && ent->isDuplicateModel)
 				rend_mdl->wireframeBuffer->frameId--;
@@ -3137,6 +3137,9 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 	{
 		if (rgroup.special)
 		{
+			if (ortho_overview)
+				continue;
+
 			if (modelIdx == 0 && !(g_render_flags & RENDER_SPECIAL))
 			{
 				continue;
@@ -3220,7 +3223,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 				}
 
 
-				if (g_app->pickMode != PICK_OBJECT && highlight)
+				if (g_app->pickMode != PICK_OBJECT && highlight && !ortho_overview)
 				{
 					if (ent)
 					{
@@ -3232,7 +3235,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 				}
 				else
 				{
-					if (highlight)
+					if (highlight && !ortho_overview)
 					{
 						if (ent)
 						{
@@ -3268,10 +3271,22 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 	{
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
-		if (map->ents[i]->hide)
+
+		Entity* mapEnt = map->ents[i];
+
+		if (mapEnt->hide)
 			continue;
 
-		if (g_app->pickInfo.IsSelectedEnt(i))
+		if (ortho_overview)
+		{
+			if (!starts_with(mapEnt->classname, "cycler_") && 
+				!starts_with(mapEnt->classname, "func_"))
+			{
+				continue;
+			}
+		}
+
+		if (g_app->pickInfo.IsSelectedEnt(i) && !ortho_overview)
 		{
 			if (g_render_flags & RENDER_SELECTED_AT_TOP)
 				glDepthFunc(GL_ALWAYS);
@@ -3287,12 +3302,12 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 					{
 						renderEnts[i].mdl->DrawMDL();
 					}
-					else if (renderEnts[i].spr)
+					else if (renderEnts[i].spr && !ortho_overview)
 					{
 						renderEnts[i].spr->DrawSprite();
 					}
 				}
-				else if (pass == REND_PASS_COLORSHADER)
+				else if (pass == REND_PASS_COLORSHADER && !ortho_overview)
 				{
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
@@ -3313,7 +3328,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 			}
 			else
 			{
-				if (pass == REND_PASS_COLORSHADER)
+				if (pass == REND_PASS_COLORSHADER && !ortho_overview)
 				{
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
@@ -3348,7 +3363,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 					{
 						renderEnts[i].mdl->DrawMDL();
 					}
-					else if (renderEnts[i].spr)
+					else if (renderEnts[i].spr && !ortho_overview)
 					{
 						renderEnts[i].spr->DrawSprite();
 					}
@@ -3367,7 +3382,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 			}
 			else
 			{
-				if (pass == REND_PASS_COLORSHADER)
+				if (pass == REND_PASS_COLORSHADER && !ortho_overview)
 				{
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();

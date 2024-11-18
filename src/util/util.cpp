@@ -406,7 +406,7 @@ bool pickAABB(const vec3& start, const vec3& rayDir, const vec3& mins, const vec
 
 	for (int i = 0; i < 3; ++i)
 	{
-		if (quadrant[i] != 2 && std::abs(rayDir[i]) >= EPSILON)
+		if (quadrant[i] != 2 && std::fabs(rayDir[i]) >= EPSILON)
 			maxT[i] = (candidatePlane[i] - start[i]) / rayDir[i];
 	}
 
@@ -446,7 +446,7 @@ bool rayPlaneIntersect(const vec3& start, const vec3& dir, const vec3& normal, f
 {
 	float dot = normal.dot(dir);
 
-	if (std::abs(dot) < EPSILON) return false;
+	if (std::fabs(dot) < EPSILON) return false;
 
 	intersectDist = normal.dot((normal * fdist) - start) / dot;
 	return intersectDist >= 0.0f;
@@ -477,7 +477,7 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 		{
 			outNormal = normal;
 		}
-		else if (std::abs(outNormal.dot(normal)) < 1.0f - tolerance)
+		else if (std::fabs(outNormal.dot(normal)) < 1.0f - tolerance)
 		{
 			return false;
 		}
@@ -705,7 +705,7 @@ std::vector<vec3> getPlaneIntersectVerts(const std::vector<BSPPLANE>& planes) {
 					n0.y * (n1.z * n2.x - n1.x * n2.z) +
 					n0.z * (n1.x * n2.y - n1.y * n2.x);
 
-				if (std::abs(t) < EPSILON) {
+				if (std::fabs(t) < EPSILON) {
 					continue;
 				}
 
@@ -797,7 +797,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 		{
 			vec3 ab = (verts[i1] - verts[i0]).normalize();
 			vec3 ac = (verts[i] - verts[i0]).normalize();
-			if (std::abs(dotProduct(ab, ac) - 1.0) < EPSILON)
+			if (std::fabs(dotProduct(ab, ac) - 1.0) < EPSILON)
 			{
 				continue;
 			}
@@ -952,7 +952,7 @@ bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 		vec2& v1 = poly[i];
 		vec2& v2 = poly[(i + 1) % poly.size()];
 
-		if (std::abs(v1.x - p.x) < EPSILON && std::abs(v1.y - p.y) < EPSILON)
+		if (std::fabs(v1.x - p.x) < EPSILON && std::fabs(v1.y - p.y) < EPSILON)
 		{
 			break; // on edge = inside
 		}
@@ -2355,11 +2355,11 @@ std::vector<float> solve_uv_matrix_svd(const std::vector<std::vector<float>>& ma
 	for (int i = 0; i < 3; ++i) {
 		// Find the row with the largest pivot element
 		int maxRow = i;
-		float maxPivot = std::abs(augmentedMatrix[i][i]);
+		float maxPivot = std::fabs(augmentedMatrix[i][i]);
 		for (int j = i + 1; j < 3; ++j) {
-			if (std::abs(augmentedMatrix[j][i]) > maxPivot) {
+			if (std::fabs(augmentedMatrix[j][i]) > maxPivot) {
 				maxRow = j;
-				maxPivot = std::abs(augmentedMatrix[j][i]);
+				maxPivot = std::fabs(augmentedMatrix[j][i]);
 			}
 		}
 
@@ -2556,7 +2556,7 @@ bool rayIntersectsTriangle(const vec3& origin, const vec3& direction, const vec3
 	vec3 h = crossProduct(direction, edge2);
 	float a = dotProduct(edge1, h);
 
-	if (std::abs(a) < EPSILON) {
+	if (std::fabs(a) < EPSILON) {
 		return false; // Ray is parallel to the triangle
 	}
 

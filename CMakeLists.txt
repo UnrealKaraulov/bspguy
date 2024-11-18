@@ -83,7 +83,7 @@ set(SOURCE_FILES
 	src/mdl/mdl_studio.h			src/mdl/mdl_studio.cpp
 
 	# OPENFILEDIALOG
-	src/filedialog/stb_image.h
+	src/filedialog/stb_image.h		src/filedialog/stb_image_write.h
 	src/filedialog/ImFileDialog.h	src/filedialog/ImFileDialog.cpp
 	
 	src/res/Wad.h					src/res/Wad.cpp

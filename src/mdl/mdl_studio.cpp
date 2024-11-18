@@ -277,7 +277,7 @@ void StudioModel::AdvanceFrame(float dt)
 	m_frame += dt * pseqdesc->fps;
 
 	if (pseqdesc->numframes > 1) {
-		m_frame = std::fmod(m_frame, pseqdesc->numframes - 1);
+		m_frame = (float)std::fmod(m_frame, pseqdesc->numframes - 1);
 	}
 
 	if (m_frame >= pseqdesc->numframes) {
@@ -799,9 +799,9 @@ void StudioModel::RefreshMeshList(int body)
 
 	if (needForceUpdate)
 	{
-		if (std::abs(mins.x - maxs.x) > 512.f &&
-			std::abs(mins.y - maxs.y) > 512.f &&
-			std::abs(mins.z - maxs.z) > 512.f)
+		if (std::fabs(mins.x - maxs.x) > 512.f &&
+			std::fabs(mins.y - maxs.y) > 512.f &&
+			std::fabs(mins.z - maxs.z) > 512.f)
 			ExtractBBox(mins, maxs);
 
 		if (mdl_cube != NULL)
@@ -918,7 +918,7 @@ void StudioModel::DrawMDL(int meshnum)
 	if (frametime < 0.0f)
 		frametime = g_app->curTime;
 
-	if (needForceUpdate || (g_app->curTime - frametime > (1.0f / fps) && (g_render_flags & RENDER_MODELS_ANIMATED)))
+	if (needForceUpdate || (g_app->curTime - frametime > (1.0f / fps) && !ortho_overview && (g_render_flags & RENDER_MODELS_ANIMATED)))
 	{
 		if (needForceUpdate)
 		{

@@ -814,6 +814,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include=".\..\src\main.cpp" />
+    <ClInclude Include="..\src\filedialog\stb_image_write.h" />
     <ClInclude Include=".\..\src\res\Wad.h" />
     <ClCompile Include=".\..\src\res\Wad.cpp" />
     <ClCompile Include=".\..\src\res\Sprite.cpp" />

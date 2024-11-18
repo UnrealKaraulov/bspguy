@@ -16,10 +16,27 @@
 #include "LeafNavMesh.h"
 #include "Settings.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 Renderer* g_app = NULL;
 std::vector<BspRenderer*> mapRenderers{};
 
 int current_fps = 0;
+int ortho_overview = 0;
+
+vec3 ortho_mins(-FLT_MAX_COORD,-FLT_MAX_COORD, -FLT_MAX_COORD), ortho_maxs(FLT_MAX_COORD,FLT_MAX_COORD,FLT_MAX_COORD);
+vec3 ortho_offset = {};
+float ortho_near = 1.0f;
+float ortho_far = 262144.0f;
+float ortho_fov = 45.0f;
+float ortho_custom_aspect = 1.0f;
+float ortho_custom_w = 0.0f;
+float ortho_custom_h = 0.0f;
+int ortho_tga_w = 1024;
+int ortho_tga_h = 768;
+bool ortho_save_tga = false;
+bool ortho_save_bmp = false;
 
 vec2 mousePos;
 vec3 cameraOrigin;
@@ -480,17 +497,40 @@ void Renderer::renderLoop()
 
 	double xpos = 0.0, ypos = 0.0;
 
-	if (SelectedMap && SelectedMap->is_mdl_model)
-		glClearColor(0.25, 0.25, 0.25, 1.0);
-	else
-		glClearColor(0.0, 0.0, 0.0, 1.0);
-
+	int clearcolor = 0;
 
 	while (!glfwWindowShouldClose(window))
 	{
+
+		//ortho_overview = DebugKeyPressed;
+
 		curTime = glfwGetTime();
 		if (g_rend_vsync != 0 || std::abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
 		{
+			if (SelectedMap && SelectedMap->is_mdl_model)
+			{
+				if (clearcolor != 1)
+				{
+					glClearColor(0.25, 0.25, 0.25, 1.0);
+					clearcolor = 1;
+				}
+			}
+			else if (!ortho_overview)
+			{
+				if (clearcolor != 2)
+				{
+					glClearColor(0.0, 0.0, 0.0, 1.0);
+					clearcolor = 2;
+				}
+			}
+			else
+			{
+				if (clearcolor != 3)
+				{
+					glClearColor(0.0, 1.0, 0.0, 1.0);
+					clearcolor = 3;
+				}
+			}
 
 			if (std::abs(curTime - fpsTime) >= 0.5)
 			{
@@ -506,6 +546,33 @@ void Renderer::renderLoop()
 			}
 
 			mousePos = vec2((float)xpos, (float)ypos);
+
+			GLuint fbo, texture, rbo;
+
+			if (ortho_save_tga || ortho_save_bmp)
+			{
+				glGenFramebuffers(1, &fbo);
+				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+				glGenTextures(1, &texture);
+				glBindTexture(GL_TEXTURE_2D, texture);
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, ortho_tga_w, ortho_tga_h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glBindTexture(GL_TEXTURE_2D, 0);
+				glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+				glGenRenderbuffers(1, &rbo);
+				glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+				glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, ortho_tga_w, ortho_tga_h);
+				glBindRenderbuffer(GL_RENDERBUFFER, 0);
+				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+				if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+					std::cerr << "Framebuffer not complete!" << std::endl;
+
+				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+			}
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -606,7 +673,23 @@ void Renderer::renderLoop()
 				gui->shouldUpdateUi = true;
 			}
 
-			setupView();
+			if (getSelectedMap() && ortho_overview)
+			{
+				/*static vec3 bmins = vec3(), bmaxs = vec3();
+
+				if (bmins == vec3() && bmaxs == vec3())
+				{
+					for (int v = 0; v < getSelectedMap()->vertCount; v++)
+					{
+						expandBoundingBox(getSelectedMap()->verts[v], bmins, bmaxs);
+					}
+				}*/
+				setupFakeOrthoView(0, 0, ortho_mins, ortho_maxs);
+			}
+			else
+			{
+				setupView();
+			}
 
 			drawEntConnections();
 
@@ -635,14 +718,14 @@ void Renderer::renderLoop()
 					matmodel.loadIdentity();
 					modelShader->bind();
 					modelShader->updateMatrixes();
-					if (anyCtrlPressed)
+					if (anyCtrlPressed && !ortho_overview)
 					{
 						if (SelectedMap->map_mdl->mdl_cube && SelectedMap->map_mdl->mdl_cube->axesBuffer)
 						{
 							SelectedMap->map_mdl->mdl_cube->axesBuffer->drawFull();
 						}
 					}
-					if (anyAltPressed)
+					if (anyAltPressed && !ortho_overview)
 					{
 						if (SelectedMap->map_mdl->mdl_cube && SelectedMap->map_mdl->mdl_cube->cubeBuffer)
 						{
@@ -724,7 +807,7 @@ void Renderer::renderLoop()
 				}
 			}
 
-			if (SelectedMap)
+			if (SelectedMap && !ortho_overview)
 			{
 				if (debugClipnodes && modelIdx > 0)
 				{
@@ -787,7 +870,7 @@ void Renderer::renderLoop()
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_ALWAYS);
 
-			if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS))
+			if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS) && !ortho_overview)
 			{
 				matmodel.loadIdentity();
 				colorShader->updateMatrixes();
@@ -805,7 +888,7 @@ void Renderer::renderLoop()
 			drawingMoveAxes = false;
 			drawingScaleAxes = false;
 
-			if (showDragAxes && pickMode == pick_modes::PICK_OBJECT)
+			if (showDragAxes && !ortho_overview && pickMode == pick_modes::PICK_OBJECT)
 			{
 				if (!movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin))
 				{
@@ -813,7 +896,7 @@ void Renderer::renderLoop()
 				}
 			}
 
-			if (modelIdx > 0 && pickMode == PICK_OBJECT)
+			if (modelIdx > 0 && !ortho_overview && pickMode == PICK_OBJECT)
 			{
 				if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid)
 				{
@@ -827,6 +910,7 @@ void Renderer::renderLoop()
 				}
 			}
 
+			if (!ortho_overview)
 			{
 				matmodel.loadIdentity();
 				colorShader->updateMatrixes();
@@ -1080,6 +1164,40 @@ void Renderer::renderLoop()
 
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
+
+			if (ortho_save_tga || ortho_save_bmp)
+			{
+				std::vector<uint8_t> pixels(3 * ortho_tga_w * ortho_tga_h);
+				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+				glReadPixels(0, 0, ortho_tga_w, ortho_tga_h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+				for (int line = 0; line != ortho_tga_h / 2; ++line) {
+					std::swap_ranges(pixels.begin() + 3 * ortho_tga_w * line,
+						pixels.begin() + 3 * ortho_tga_w * (line + 1),
+						pixels.begin() + 3 * ortho_tga_w * (ortho_tga_h - line - 1));
+				}
+
+				if (ortho_save_tga)
+				{
+					stbi_write_tga((g_working_dir + "overview.tga").c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+					print_log("Saved to {} file!\n", (g_working_dir + "overview.tga").c_str());
+				}
+				else
+				{
+					stbi_write_bmp((g_working_dir + "overview.bmp").c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+					print_log("Saved to {} file!\n", (g_working_dir + "overview.bmp").c_str());
+				}
+
+
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				glDeleteFramebuffers(1, &fbo);
+				glDeleteTextures(1, &texture);
+				glDeleteRenderbuffers(1, &rbo);
+				ortho_save_tga = false;
+				ortho_save_bmp = false;
+			}
+
 			vec3 forward, right, up;
 			makeVectors(cameraAngles, forward, right, up);
 			if (!hideGui)
@@ -1523,19 +1641,37 @@ void Renderer::controls()
 
 		cameraOrigin += getMoveDir() * (float)(curTime - oldTime) * moveSpeed;
 
-		moveGrabbedEnt();
+		if (!ortho_overview)
+		{
+			moveGrabbedEnt();
 
-		vertexEditControls();
+			vertexEditControls();
+		}
+		else
+		{
+			ungrabEnt();
+			hoverVert = hoverAxis = hoverEdge = -1;
+			showDragAxes = false;
+		}
 
 		cameraContextMenus();
 
-		cameraRotationControls();
+		if (!ortho_overview)
+		{
+			cameraRotationControls();
+		}
 
 		makeVectors(cameraAngles, cameraForward, cameraRight, cameraUp);
 
-		cameraObjectHovering();
+		if (!ortho_overview)
+		{
+			cameraObjectHovering();
+		}
 
-		cameraPickingControls();
+		if (!ortho_overview)
+		{
+			cameraPickingControls();
+		}
 
 		if (!gui->imgui_io->WantCaptureKeyboard)
 		{
@@ -1795,7 +1931,7 @@ void Renderer::cameraRotationControls()
 			cameraAngles.z += drag.x * rotationSpeed * 0.1f;
 			cameraAngles.x += drag.y * rotationSpeed * 0.1f;
 
-			totalMouseDrag += vec2(std::abs(drag.x), std::abs(drag.y));
+			totalMouseDrag += vec2(std::fabs(drag.x), std::fabs(drag.y));
 
 			cameraAngles.x = clamp(cameraAngles.x, -90.0f, 90.0f);
 
@@ -2096,7 +2232,7 @@ void Renderer::pickObject()
 {
 	Bsp* map = SelectedMap;
 	auto entIdx = pickInfo.selectedEnts;
-	if (!map)
+	if (!map/* || ortho_overview*/)
 		return;
 	bool pointEntWasSelected = entIdx.size();
 
@@ -2110,7 +2246,7 @@ void Renderer::pickObject()
 	vec3 pickStart, pickDir;
 	getPickRay(pickStart, pickDir);
 
-	if (DebugKeyPressed)
+	/*if (DebugKeyPressed)
 	{
 		TraceResult& tr = debugTrace;
 		mapRenderers[0]->map->traceHull(pickStart, pickStart + pickDir * 512, 1, &tr);
@@ -2124,7 +2260,7 @@ void Renderer::pickObject()
 	else
 	{
 
-	}
+	}*/
 
 
 	Bsp* oldmap = map;
@@ -2657,6 +2793,62 @@ BspRenderer* Renderer::getMapContainingCamera()
 	return NULL;
 }
 
+void Renderer::setupFakeOrthoView(int forceW, int forceH, vec3 bboxMin, vec3 bboxMax)
+{
+	if (forceW == 0 || forceH == 0)
+		glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+	else
+	{
+		windowWidth = forceW;
+		windowHeight = forceH;
+	}
+
+	glViewport(0, 0, windowWidth, windowHeight);
+
+	float aspect = (float)windowWidth / (float)windowHeight;
+
+	if (std::fabs(ortho_custom_aspect) > EPSILON)
+		aspect = ortho_custom_aspect;
+
+	float bboxWidth = bboxMax.x - bboxMin.x;
+	float bboxHeight = bboxMax.y - bboxMin.y;
+
+	projection.perspective(ortho_fov, aspect, std::fabs(ortho_near) > EPSILON ? ortho_near : zNear,
+		std::fabs(ortho_far) > EPSILON ? ortho_far : zFar);
+
+	vec3 center = getCenter(bboxMin, bboxMax) + ortho_offset;
+
+	float distanceX = bboxWidth / (2.0f * tan(ortho_fov * HL_PI / 360.0f));
+	float distanceY = bboxHeight / (2.0f * tan(ortho_fov * HL_PI / 360.0f));
+	float distance = std::max(distanceX, distanceY);
+
+	matview.loadIdentity();
+	matview.rotateX(90.0f * HL_PI / 180.0f);
+
+	if (bboxWidth < bboxHeight)
+	{
+		matview.rotateY(90.0f * HL_PI / 180.0f);
+	}
+
+	matview.translate(-center.x, -distance, center.y);
+
+	cameraAngles.x = 90.0f;
+	cameraAngles.y = cameraAngles.z = 0.0f;
+
+	if (bboxWidth < bboxHeight)
+	{
+		cameraAngles.z = 90.0f;
+	}
+
+	cameraOrigin.x = center.x;
+	cameraOrigin.y = center.y;
+
+	distance = std::max(bboxWidth, bboxHeight) / (2.0f * tan(this->fov * HL_PI / 360.0f));
+
+	cameraOrigin.z = distance;
+}
+
+
 void Renderer::setupView(int forceW, int forceH)
 {
 	if (forceW == 0 || forceH == 0)
@@ -2895,7 +3087,7 @@ void Renderer::drawBox2D(vec2 center, float width, COLOR4 color) {
 void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 {
 	vec3 ori = plane.vNormal * plane.fDist;
-	vec3 crossDir = std::abs(plane.vNormal.z) > 0.9f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
+	vec3 crossDir = std::fabs(plane.vNormal.z) > 0.9f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
 	vec3 right = crossProduct(plane.vNormal, crossDir);
 	vec3 up = crossProduct(right, plane.vNormal);
 
@@ -3234,7 +3426,7 @@ vec3 Renderer::getAxisDragPoint(vec3 origin)
 	float dots[3]{};
 	for (int i = 0; i < 3; i++)
 	{
-		dots[i] = std::abs(dotProduct(cameraForward, axisNormals[i]));
+		dots[i] = std::fabs(dotProduct(cameraForward, axisNormals[i]));
 	}
 
 	// best movement planee is most perpindicular to the camera direction
@@ -3649,7 +3841,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 				int iPlane2 = it2->first;
 				BSPPLANE& p = map->planes[iPlane2];
 				float dist = dotProduct(midPoint, p.vNormal) - p.fDist;
-				if (std::abs(dist) < ON_EPSILON)
+				if (std::fabs(dist) < ON_EPSILON)
 				{
 					edge.planes[planeCount % 2] = iPlane2;
 					planeCount++;
@@ -3703,7 +3895,7 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 	if (entIdx.empty() || !SelectedMap)
 		return;
 
-	bool scaleFromOrigin = std::abs(fromDir.x) < EPSILON && std::abs(fromDir.y) < EPSILON && std::abs(fromDir.z) < EPSILON;
+	bool scaleFromOrigin = std::fabs(fromDir.x) < EPSILON && std::fabs(fromDir.y) < EPSILON && std::fabs(fromDir.z) < EPSILON;
 
 	vec3 minDist(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	vec3 maxDist(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
@@ -3838,8 +4030,8 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 				float vsdiff = info.vS.length() - oldinfo.oldS.length();
 				float vtdiff = info.vT.length() - oldinfo.oldT.length();
 
-				shiftS += (refDist * vsdiff * std::abs(dotS)) * dotSm;
-				shiftT += (refDist * vtdiff * std::abs(dotT)) * dotTm;
+				shiftS += (refDist * vsdiff * std::fabs(dotS)) * dotSm;
+				shiftT += (refDist * vtdiff * std::fabs(dotT)) * dotTm;
 			}
 
 			info.shiftS = shiftS;
@@ -4572,9 +4764,11 @@ void Renderer::goToEnt(Bsp* map, int entIdx)
 
 void Renderer::ungrabEnt()
 {
+	if (!movingEnt)
+		return;
 	Bsp* map = SelectedMap;
 	auto pickEnts = pickInfo.selectedEnts;
-	if (!movingEnt || !map || pickEnts.empty())
+	if (!map || pickEnts.empty())
 	{
 		return;
 	}

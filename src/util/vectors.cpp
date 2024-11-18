@@ -5,11 +5,11 @@
 bool operator==(const vec3& v1, const vec3& v2)
 {
 	vec3 v = v1 - v2;
-	if (std::abs(v.x) >= EPSILON)
+	if (std::fabs(v.x) >= EPSILON)
 		return false;
-	if (std::abs(v.y) >= EPSILON)
+	if (std::fabs(v.y) >= EPSILON)
 		return false;
-	if (std::abs(v.z) >= EPSILON)
+	if (std::fabs(v.z) >= EPSILON)
 		return false;
 	return true;
 }
@@ -17,11 +17,11 @@ bool operator==(const vec3& v1, const vec3& v2)
 bool operator!=(const vec3& v1, const vec3& v2)
 {
 	vec3 v = v1 - v2;
-	if (std::abs(v.x) >= EPSILON)
+	if (std::fabs(v.x) >= EPSILON)
 		return true;
-	if (std::abs(v.y) >= EPSILON)
+	if (std::fabs(v.y) >= EPSILON)
 		return true;
-	if (std::abs(v.z) >= EPSILON)
+	if (std::fabs(v.z) >= EPSILON)
 		return true;
 	return false;
 }
@@ -145,11 +145,11 @@ void vec3::operator/=(float f)
 	y /= f;
 	z /= f;
 }
-vec3 crossProduct( vec3 v1, vec3 v2 )
+vec3 crossProduct(vec3 v1, vec3 v2)
 {
-	float x = v1.y*v2.z - v2.y*v1.z; 
-	float y = v2.x*v1.z - v1.x*v2.z; 
-	float z = v1.x*v2.y - v1.y*v2.x;
+	float x = v1.y * v2.z - v2.y * v1.z;
+	float y = v2.x * v1.z - v1.x * v2.z;
+	float z = v1.x * v2.y - v1.y * v2.x;
 	return vec3(x, y, z);
 }
 
@@ -176,10 +176,10 @@ float dotProduct(vec2 v1, vec2 v2) {
 }
 
 float distanceToPlane(const vec3& point, const vec3& planeNormal, float planeDist) {
-	return std::abs(planeNormal.dot(point) - planeDist);
+	return std::fabs(planeNormal.dot(point) - planeDist);
 }
 
-bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices) 
+bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices)
 {
 	vec3 v0 = faceVertices[1] - faceVertices[0];
 	vec3 v1 = faceVertices[2] - faceVertices[0];
@@ -217,7 +217,7 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 
 vec3 vec3::normalize(float length) const
 {
-	if (std::abs(x) < EPSILON2 && std::abs(y) < EPSILON2 && std::abs(z) < EPSILON2)
+	if (std::fabs(x) < EPSILON2 && std::fabs(y) < EPSILON2 && std::fabs(z) < EPSILON2)
 		return vec3();
 	float d = length / sqrt((x * x) + (y * y) + (z * z));
 
@@ -226,11 +226,11 @@ vec3 vec3::normalize(float length) const
 
 bool vec3::equal(vec3 to, float epsilon) const
 {
-	if (std::abs(x - to.x) >= epsilon)
+	if (std::fabs(x - to.x) >= epsilon)
 		return false;
-	if (std::abs(y - to.y) >= epsilon)
+	if (std::fabs(y - to.y) >= epsilon)
 		return false;
-	if (std::abs(z - to.z) >= epsilon)
+	if (std::fabs(z - to.z) >= epsilon)
 		return false;
 	return true;
 }
@@ -272,12 +272,12 @@ vec3 vec3::swap_xz()
 
 vec3 vec3::abs()
 {
-	return vec3(std::abs(x), std::abs(y), std::abs(z));
+	return vec3(std::fabs(x), std::fabs(y), std::fabs(z));
 }
 
 vec3 vec3::invert()
 {
-	return vec3( -x , -y, -z );
+	return vec3(-x, -y, -z);
 }
 
 float vec3::length() const
@@ -292,7 +292,7 @@ float vec3::lengthSquared() const
 
 bool vec3::IsZero() const
 {
-	return (std::abs(x) + std::abs(y) + std::abs(z)) < EPSILON;
+	return (std::fabs(x) + std::fabs(y) + std::fabs(z)) < EPSILON;
 }
 
 std::string vec3::toString()
@@ -302,7 +302,7 @@ std::string vec3::toString()
 
 std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, const std::string& suffix_y, const std::string& suffix_z)
 {
-	std::string parts[3] = {std::to_string(x) ,std::to_string(y), std::to_string(z)};
+	std::string parts[3] = { std::to_string(x) ,std::to_string(y), std::to_string(z) };
 
 	// remove trailing zeros to save some space
 	for (int i = 0; i < 3; i++)
@@ -367,16 +367,16 @@ float vec3::dist(vec3 to) const
 bool operator==(const vec2& v1, const vec2& v2)
 {
 	vec2 v = v1 - v2;
-	if (std::abs(v.x) >= EPSILON)
+	if (std::fabs(v.x) >= EPSILON)
 		return false;
-	if (std::abs(v.y) >= EPSILON)
+	if (std::fabs(v.y) >= EPSILON)
 		return false;
 	return true;
 }
 
 bool operator!=(const vec2& v1, const vec2& v2)
 {
-	return std::abs(v1.x - v2.x) >= EPSILON || std::abs(v1.y - v2.y) >= EPSILON;
+	return std::fabs(v1.x - v2.x) >= EPSILON || std::fabs(v1.y - v2.y) >= EPSILON;
 }
 
 vec2 operator-(vec2 v1, const vec2& v2)
@@ -490,7 +490,7 @@ float vec2::length()
 
 vec2 vec2::normalize(float length)
 {
-	if (std::abs(x) < EPSILON2 && std::abs(y) < EPSILON2)
+	if (std::fabs(x) < EPSILON2 && std::fabs(y) < EPSILON2)
 		return vec2();
 	float d = length / sqrt((x * x) + (y * y));
 	return vec2(x * d, y * d);
@@ -506,7 +506,7 @@ vec2 vec2::swap()
 bool operator==(const vec4& v1, const vec4& v2)
 {
 	vec4 v = v1 - v2;
-	return std::abs(v.x) < EPSILON && std::abs(v.y) < EPSILON && std::abs(v.z) < EPSILON && std::abs(v.w) < EPSILON;
+	return std::fabs(v.x) < EPSILON && std::fabs(v.y) < EPSILON && std::fabs(v.z) < EPSILON && std::fabs(v.w) < EPSILON;
 }
 
 
@@ -638,7 +638,7 @@ bool VectorCompare(const vec3& v1, const vec3& v2, float epsilon)
 	int		i;
 
 	for (i = 0; i < 3; i++)
-		if (std::abs(v1[i] - v2[i]) > epsilon)
+		if (std::fabs(v1[i] - v2[i]) > epsilon)
 			return false;
 
 	return true;
@@ -785,14 +785,14 @@ float VectorNormalize(vec3& v)
 	int		i;
 	float	length;
 
-	if (std::abs(v[1] - 0.000215956f) < 0.0001f)
+	if (std::fabs(v[1] - 0.000215956f) < 0.0001f)
 		i = 1;
 
 	length = +0.0f;
 	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
 	length = sqrt(length);
-	if (std::abs(length) < EPSILON)
+	if (std::fabs(length) < EPSILON)
 		return 0.0f;
 
 	for (i = 0; i < 3; i++)

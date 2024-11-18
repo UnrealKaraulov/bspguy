@@ -760,7 +760,7 @@ void Fgd::processClassInheritance()
 					{
 						if (classes[i]->keyvalues[c].iType == FGD_KEY_TYPES::FGD_KEY_INTEGER)
 						{
-							classes[i]->scale = str_to_int(classes[i]->keyvalues[c].defaultValue);
+							classes[i]->scale = str_to_int(classes[i]->keyvalues[c].defaultValue) * 1.0f;
 						}
 						else if (classes[i]->keyvalues[c].iType == FGD_KEY_TYPES::FGD_KEY_STRING)
 						{

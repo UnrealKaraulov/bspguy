@@ -51,6 +51,19 @@ struct TransformAxes
 };
 
 extern int current_fps;
+extern int ortho_overview;
+extern vec3 ortho_mins, ortho_maxs;
+extern vec3 ortho_offset;
+extern float ortho_near;
+extern float ortho_far;
+extern float ortho_fov;
+extern float ortho_custom_aspect;
+extern float ortho_custom_w;
+extern float ortho_custom_h;
+extern int ortho_tga_w;
+extern int ortho_tga_h;
+extern bool ortho_save_tga;
+extern bool ortho_save_bmp;
 
 extern vec2 mousePos;
 extern vec3 cameraOrigin;
@@ -313,6 +326,7 @@ public:
 	bool transformAxisControls(); // true if grabbing axes
 	void applyTransform(Bsp* map, bool forceUpdate = false);
 	void setupView(int forceW = 0, int forceH = 0);
+	void setupFakeOrthoView(int forceW, int forceH, vec3 bboxMin, vec3 bboxMax);
 	void getPickRay(vec3& start, vec3& pickDir);
 	void revertInvalidSolid(Bsp* map, int modelIdx);
 
