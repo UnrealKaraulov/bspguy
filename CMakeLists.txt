@@ -119,11 +119,11 @@ set(SOURCE_FILES
 	
 	ascript/add_on/scriptarray/scriptarray.h
 	ascript/add_on/scriptarray/scriptarray.cpp
-	ascript/add_on/scriptarray/scriptbuilder.h
-	ascript/add_on/scriptarray/scriptbuilder.cpp
-	ascript/add_on/scriptarray/scriptstdstring.h
-	ascript/add_on/scriptarray/scriptstdstring.cpp
-	ascript/add_on/scriptarray/scriptstdstring_utils.cpp
+	ascript/add_on/scriptbuilder/scriptbuilder.h
+	ascript/add_on/scriptbuilder/scriptbuilder.cpp
+	ascript/add_on/scriptstdstring/scriptstdstring.h
+	ascript/add_on/scriptstdstring/scriptstdstring.cpp
+	ascript/add_on/scriptstdstring/scriptstdstring_utils.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
