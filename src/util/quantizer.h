@@ -41,6 +41,7 @@ public:
 	void ApplyColorTableDither(COLOR3* image, int width, int height);
 	void FloydSteinbergDither(COLOR3* image, int width, int height, unsigned int* target);
 	void FloydSteinbergDither256(COLOR3* image, int width, int height, unsigned char* target);
+	void JJNDither(COLOR3* image, int width, int height, unsigned char* target);
 	unsigned int GetColorCount();
 	void GetColorTable(COLOR3* pal);
 	void SetColorTable(COLOR3* pal, unsigned int colors);

@@ -19,6 +19,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#include "quantizer.h"
+
 Renderer* g_app = NULL;
 std::vector<BspRenderer*> mapRenderers{};
 
@@ -29,7 +31,7 @@ vec3 ortho_mins(-FLT_MAX_COORD,-FLT_MAX_COORD, -FLT_MAX_COORD), ortho_maxs(FLT_M
 vec3 ortho_offset = {};
 float ortho_near = 1.0f;
 float ortho_far = 262144.0f;
-float ortho_fov = 45.0f;
+float ortho_fov = 10.0f;
 float ortho_custom_aspect = 0.0f;
 float ortho_custom_w = 0.0f;
 float ortho_custom_h = 0.0f;
@@ -549,6 +551,24 @@ void Renderer::renderLoop()
 
 			GLuint fbo = NULL, texture, rbo;
 
+
+			if (ortho_overview)
+			{
+				if (ortho_save_tga || ortho_save_bmp)
+				{
+					setupFakeOrthoView(ortho_tga_w, ortho_tga_h, ortho_mins, ortho_maxs);
+				}
+				else
+				{
+					setupFakeOrthoView(0, 0, ortho_mins, ortho_maxs);
+				}
+			}
+			else
+			{
+				setupView();
+			}
+
+
 			if (ortho_save_tga || ortho_save_bmp)
 			{
 				glGenFramebuffers(1, &fbo);
@@ -671,24 +691,6 @@ void Renderer::renderLoop()
 				}
 
 				gui->shouldUpdateUi = true;
-			}
-
-			if (getSelectedMap() && ortho_overview)
-			{
-				/*static vec3 bmins = vec3(), bmaxs = vec3();
-
-				if (bmins == vec3() && bmaxs == vec3())
-				{
-					for (int v = 0; v < getSelectedMap()->vertCount; v++)
-					{
-						expandBoundingBox(getSelectedMap()->verts[v], bmins, bmaxs);
-					}
-				}*/
-				setupFakeOrthoView(0, 0, ortho_mins, ortho_maxs);
-			}
-			else
-			{
-				setupView();
 			}
 
 			drawEntConnections();
@@ -1180,12 +1182,55 @@ void Renderer::renderLoop()
 
 				if (ortho_save_tga)
 				{
-					stbi_write_tga((g_working_dir + "overview.tga").c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+					stbi_write_tga((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga")).c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
 					print_log("Saved to {} file!\n", (g_working_dir + "overview.tga").c_str());
 				}
 				else
 				{
-					stbi_write_bmp((g_working_dir + "overview.bmp").c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+					Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+					tmpCQuantizer->ApplyColorTable((COLOR3*)pixels.data(), ortho_tga_w * ortho_tga_h);
+					delete tmpCQuantizer;
+
+					int colors = 0;
+					COLOR3 palette[256];
+					std::vector<unsigned char> indexedPixels(ortho_tga_w* ortho_tga_h);
+
+					for (int y = 0; y < ortho_tga_h; y++)
+					{
+						for (int x = 0; x < ortho_tga_w; x++)
+						{
+							int paletteIdx = -1;
+							for (int k = 0; k < colors; k++)
+							{
+								if (pixels[(y * ortho_tga_w + x) * 3] == palette[k].r &&
+									pixels[(y * ortho_tga_w + x) * 3 + 1] == palette[k].g &&
+									pixels[(y * ortho_tga_w + x) * 3 + 2] == palette[k].b)
+								{
+									paletteIdx = k;
+									break;
+								}
+							}
+							if (paletteIdx == -1)
+							{
+								if (colors >= 256)
+								{
+									print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0167));
+									delete tmpCQuantizer;
+									return;
+								}
+								palette[colors].r = pixels[(y * ortho_tga_w + x) * 3];
+								palette[colors].g = pixels[(y * ortho_tga_w + x) * 3 + 1];
+								palette[colors].b = pixels[(y * ortho_tga_w + x) * 3 + 2];
+								paletteIdx = colors;
+								colors++;
+							}
+							indexedPixels[y * ortho_tga_w + x] = (unsigned char)paletteIdx;
+						}
+					}
+
+
+					WriteBMP_PAL((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp")).c_str(), indexedPixels.data(), ortho_tga_w, ortho_tga_h, palette);
+
 					print_log("Saved to {} file!\n", (g_working_dir + "overview.bmp").c_str());
 				}
 
@@ -2813,8 +2858,10 @@ void Renderer::setupFakeOrthoView(int forceW, int forceH, vec3 bboxMin, vec3 bbo
 	float bboxWidth = bboxMax.x - bboxMin.x;
 	float bboxHeight = bboxMax.y - bboxMin.y;
 
-	projection.perspective(ortho_fov, aspect, std::fabs(ortho_near) > EPSILON ? ortho_near : zNear,
-		std::fabs(ortho_far) > EPSILON ? ortho_far : zFar);
+	float newZNear = ortho_near / (2.0f * tan(ortho_fov * HL_PI / 360.0f));
+	float newZFar = ortho_far / (2.0f * tan(ortho_fov * HL_PI / 360.0f));
+
+	projection.perspective(ortho_fov, aspect, newZNear, newZFar);
 
 	vec3 center = getCenter(bboxMin, bboxMax) + ortho_offset;
 

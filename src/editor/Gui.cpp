@@ -6900,7 +6900,7 @@ void Gui::drawOverviewWidget()
 	static Bsp* lastMap = NULL;
 	static bool orthoMode = true;
 	static bool updateFarNear = false;
-
+	static std::string imgFormat = ".tga";
 	if (updateFarNear)
 	{
 		updateFarNear = false;
@@ -6928,20 +6928,20 @@ void Gui::drawOverviewWidget()
 			return;
 		}
 
-		ImGui::SeparatorText("Custom Window Size");
-		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.3f);
-		ImGui::DragFloat("Width", &ortho_custom_w, 1.0f, 256.0f, 2048.0f, "%.0f");
-		ImGui::SameLine();
-		ImGui::DragFloat("Height", &ortho_custom_h, 1.0f, 256.0f, 2048.0f, "%.0f");
-		ImGui::PopItemWidth();
-
+		/*		ImGui::SeparatorText("Custom Window Size");
+				ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.3f);
+				ImGui::DragFloat("Width", &ortho_custom_w, 1.0f, 256.0f, 2048.0f, "%.0f");
+				ImGui::SameLine();
+				ImGui::DragFloat("Height", &ortho_custom_h, 1.0f, 256.0f, 2048.0f, "%.0f");
+				ImGui::PopItemWidth();
+				*/
 		ImGui::SeparatorText("Overview Settings");
 		ImGui::Checkbox("Show Overview", &orthoMode);
 		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.3f);
 		ImGui::DragFloat("Aspect Ratio", &ortho_custom_aspect, 0.01f, 0.5f, 2.0f, "%.2f");
-		ImGui::DragFloat("Ortho FOV", &ortho_fov, 0.1f, 10.0f, 100.0f, "%.2f");
+		ImGui::DragFloat("Ortho FOV", &ortho_fov, 0.1f, 0.01f, 200.0f, "%.2f");
 		ImGui::DragFloat("Ortho Near", &ortho_near, 1.0f, -1.0f, 8192.0f, "%.2f");
-		ImGui::DragFloat("Ortho Far", &ortho_far, 1.0f, -1.0f, FLT_MAX_COORD, "%.2f");
+		ImGui::DragFloat("Ortho Far", &ortho_far, 1.0f, -1.0f, FLT_MAX, "%.2f");
 		ImGui::PopItemWidth();
 
 		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.7f);
@@ -6955,7 +6955,7 @@ void Gui::drawOverviewWidget()
 			map->get_bounding_box(ortho_mins, ortho_maxs);
 		}
 		if (ImGui::Button("Fill from Verts")) {
-			map->get_model_vertex_bounds(0, ortho_mins, ortho_maxs,true);
+			map->get_model_vertex_bounds(0, ortho_mins, ortho_maxs, true);
 		}
 		if (ImGui::Button("Fill from Leaves")) {
 			ortho_mins = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
@@ -6976,21 +6976,81 @@ void Gui::drawOverviewWidget()
 
 		ImGui::SeparatorText("Save to TGA");
 		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.3f);
-		ImGui::DragInt("Width###2", &ortho_tga_w, 1.0f, 256, 2048);
+		ImGui::DragInt("Width###2", &ortho_tga_w, 1.0f, 256, 4096);
 		ImGui::SameLine();
-		ImGui::DragInt("Height###3", &ortho_tga_h, 1.0f, 256, 2048);
+		ImGui::DragInt("Height###3", &ortho_tga_h, 1.0f, 256, 4096);
 		ImGui::PopItemWidth();
 
 		if (ImGui::Button("Save .tga")) {
 			ortho_save_tga = true;
+			imgFormat = ".tga";
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Save .bmp"))
 		{
 			ortho_save_bmp = true;
+			imgFormat = ".bmp";
+		}
+		ImGui::SameLine();
+
+
+		float x_size = ortho_maxs.x - ortho_mins.x;
+		float y_size = ortho_maxs.y - ortho_mins.y;
+		float zoomFriction = ((float)ortho_tga_w / (float)ortho_tga_h);
+		float xScale, yScale;
+		bool rotated = false;
+
+		if (x_size < y_size) {
+			xScale = 8192.0f / (x_size * zoomFriction);
+			yScale = 8192.0f / y_size;
+		}
+		else {
+			rotated = true;
+			xScale = 8192.0f / x_size;
+			yScale = 8192.0f / (y_size * zoomFriction);
 		}
 
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+		float zoom = (xScale < yScale) ? xScale : yScale;
+
+		vec3 origin = vec3((ortho_mins.x + ortho_maxs.x) / 2.0f + ortho_offset.x,
+			(ortho_mins.y + ortho_maxs.y) / 2.0f + ortho_offset.y,
+			(ortho_mins.z + ortho_maxs.z) / 2.0f + ortho_offset.z);
+
+		if (ImGui::Button("Save .txt"))
+		{
+			FILE* overfile = NULL;
+			fopen_s(&overfile, (g_working_dir + map->bsp_name + ".txt").c_str(), "wb");
+			if (overfile)
+			{
+				fprintf(overfile, "// overview description file for %s\n\n", map->bsp_name.c_str());
+				fprintf(overfile, "global \n{\n");
+				fprintf(overfile, "\tZOOM\t%.2f\n", zoom);
+				fprintf(overfile, "\tORIGIN\t%.2f\t%.2f\t%.2f\n", origin.x, origin.y, origin.z);
+				fprintf(overfile, "\tROTATED\t%i\n}\n\n", rotated ? 1 : 0);
+				fprintf(overfile, "layer \n{\n");
+				fprintf(overfile, "\tIMAGE\t\"overviews/%s%s\"\n", map->bsp_name.c_str(),imgFormat.c_str());
+				fprintf(overfile, "\tHEIGHT\t%.2f\n}\n", origin.z);
+				fclose(overfile);
+				print_log("Saved to {}\n", g_working_dir + map->bsp_name + ".txt");
+			}
+		}
+		ImGui::SeparatorText("DEV INFO");
+
+
+		ImGui::Text("Overview: Zoom %.2f", zoom);
+
+		ImGui::Text("Map Origin: (%.2f, %.2f, %.2f)",
+			(ortho_mins.x + ortho_maxs.x) / 2.0f + ortho_offset.x,
+			(ortho_mins.y + ortho_maxs.y) / 2.0f + ortho_offset.y,
+			(ortho_mins.z + ortho_maxs.z) / 2.0f + ortho_offset.z);
+
+		ImGui::Text("Z Min: %.2f, Z Max: %.2f", ortho_near, ortho_far);
+
+		ImGui::Text("Rotated: %s", rotated ? "true" : "false");
+
+		ImGui::Text("X Scale: %.2f, Y Scale: %.2f", xScale, yScale);
+
+		/*if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 		{
 			if (std::fabs(ortho_custom_w) > EPSILON && ortho_custom_w < 256.0f)
 				ortho_custom_w = 256.0f;
@@ -6998,7 +7058,7 @@ void Gui::drawOverviewWidget()
 			if (std::fabs(ortho_custom_h) > EPSILON && ortho_custom_h < 256.0f)
 				ortho_custom_h = 256.0f;
 		}
-
+		*/
 	}
 	ImGui::End();
 }

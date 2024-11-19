@@ -1,7 +1,7 @@
 #include "bsplimits.h"
 
 
-float FLT_MAX_COORD = 32767.f;
+float FLT_MAX_COORD = 8192.f;
 int LIGHTMAP_ATLAS_SIZE = 512;
 
 

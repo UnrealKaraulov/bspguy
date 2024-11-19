@@ -24,6 +24,17 @@ struct COLOR3
 	COLOR3() : r(0), g(0), b(0) {};
 	COLOR3(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b)
 	{}
+	bool operator==(const COLOR3& other) const {
+		return r == other.r && g == other.g && b == other.b;
+	}
+
+	COLOR3 operator*(float scale)
+	{
+		r = (unsigned char)(r * scale);
+		g = (unsigned char)(g * scale);
+		b = (unsigned char)(b * scale);
+		return *this;
+	}
 };
 
 struct COLOR4

@@ -348,18 +348,6 @@ bool IsEntNotSupportAngles(const std::string& entname)
 	return false;
 }
 
-COLOR3 operator*(COLOR3 c, float scale)
-{
-	c.r = (unsigned char)(c.r * scale);
-	c.g = (unsigned char)(c.g * scale);
-	c.b = (unsigned char)(c.b * scale);
-	return c;
-}
-
-bool operator==(COLOR3 c1, COLOR3 c2)
-{
-	return c1.r == c2.r && c1.g == c2.g && c1.b == c2.b;
-}
 
 COLOR4 operator*(COLOR4 c, float scale)
 {

@@ -64,6 +64,50 @@ Quantizer::~Quantizer()
 	m_pPalette = NULL;
 }
 
+void Quantizer::JJNDither(COLOR3* image, int width, int height, unsigned char* target)
+{
+	const int JJNMatrix[3][5] = {
+		{ 0, 0, 0, 7, 5 },
+		{ 3, 5, 7, 5, 3 },
+		{ 1, 3, 5, 3, 1 }
+	};
+	const int divisor = 48;
+
+	for (int y = 0; y < height; ++y)
+	{
+		for (int x = 0; x < width; ++x)
+		{
+			int index = y * width + x;
+			unsigned char k = FixBounds(GetNearestIndexFast(image[index], m_pPalette));
+			target[index] = k;
+
+			int diff[3] = {
+				image[index].r - m_pPalette[k].r,
+				image[index].g - m_pPalette[k].g,
+				image[index].b - m_pPalette[k].b
+			};
+
+			for (int row = 0; row < 3; ++row)
+			{
+				for (int col = -2; col <= 2; ++col)
+				{
+					int newX = x + col;
+					int newY = y + row;
+
+					if (newX >= 0 && newX < width && newY < height)
+					{
+						int newIndex = newY * width + newX;
+						image[newIndex].r = FixBounds(image[newIndex].r + (diff[0] * JJNMatrix[row][col + 2]) / divisor);
+						image[newIndex].g = FixBounds(image[newIndex].g + (diff[1] * JJNMatrix[row][col + 2]) / divisor);
+						image[newIndex].b = FixBounds(image[newIndex].b + (diff[2] * JJNMatrix[row][col + 2]) / divisor);
+					}
+				}
+			}
+		}
+	}
+}
+
+
 void Quantizer::ProcessImage(COLOR3* image, unsigned int size)
 {
 	if (m_pTree)
@@ -337,6 +381,7 @@ void Quantizer::AddColor(Node** ppNode, COLOR3 c, int nLevel, unsigned int* pLea
 {
 	if (!(*ppNode))
 		*ppNode = (Node*)CreateNode(nLevel, pLeafCount, pReducibleNodes);
+
 	if ((*ppNode)->bIsLeaf)
 	{
 		(*ppNode)->nPixelCount++;
@@ -346,9 +391,12 @@ void Quantizer::AddColor(Node** ppNode, COLOR3 c, int nLevel, unsigned int* pLea
 	}
 	else
 	{
-		static unsigned char mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-		int	shift = 7 - (int)nLevel;
-		int	nIndex = (((c.r & mask[nLevel]) >> shift) << 2) | (((c.g & mask[nLevel]) >> shift) << 1) | ((c.b & mask[nLevel]) >> shift);
+		static const unsigned char mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+		int shift = 7 - nLevel;
+		int nIndex = (((c.r & mask[nLevel]) >> shift) << 2) |
+			(((c.g & mask[nLevel]) >> shift) << 1) |
+			((c.b & mask[nLevel]) >> shift);
+
 		AddColor(&((*ppNode)->pChild[nIndex]), c, nLevel + 1, pLeafCount, pReducibleNodes);
 	}
 }
@@ -372,12 +420,14 @@ void Quantizer::ReduceTree(unsigned int* pLeafCount, Node** pReducibleNodes)
 	unsigned char i = m_nColorBits - 1;
 	for (; (i > 0) && (!pReducibleNodes[i]); i--);
 	if (!pReducibleNodes[i]) return;
+
 	Node* pNode = pReducibleNodes[i];
 	pReducibleNodes[i] = pNode->pNext;
 
 	unsigned int nRedSum = 0;
 	unsigned int nGreenSum = 0;
 	unsigned int nBlueSum = 0;
+	unsigned int nPixelCount = 0;
 	unsigned int nChildren = 0;
 
 	for (i = 0; i < 8; i++)
@@ -387,7 +437,7 @@ void Quantizer::ReduceTree(unsigned int* pLeafCount, Node** pReducibleNodes)
 			nRedSum += pNode->pChild[i]->nRedSum;
 			nGreenSum += pNode->pChild[i]->nGreenSum;
 			nBlueSum += pNode->pChild[i]->nBlueSum;
-			pNode->nPixelCount += pNode->pChild[i]->nPixelCount;
+			nPixelCount += pNode->pChild[i]->nPixelCount;
 			delete(pNode->pChild[i]);
 			pNode->pChild[i] = 0;
 			nChildren++;
@@ -398,8 +448,10 @@ void Quantizer::ReduceTree(unsigned int* pLeafCount, Node** pReducibleNodes)
 	pNode->nRedSum = nRedSum;
 	pNode->nGreenSum = nGreenSum;
 	pNode->nBlueSum = nBlueSum;
+	pNode->nPixelCount = nPixelCount;
 	*pLeafCount -= nChildren - 1;
 }
+
 
 void Quantizer::DeleteTree(Node** ppNode)
 {
@@ -511,36 +563,40 @@ void Quantizer::GenColorTable()
 {
 	if (!m_pPalette)
 		return;
+
 	unsigned int nIndex = 0;
-	if (m_nMaxColors<16 && m_nLeafCount>m_nMaxColors)
+	if (m_nMaxColors < 16 && m_nLeafCount > m_nMaxColors)
 	{
-		unsigned int nSum[16];
-		COLOR3 tmppal[16];
-		GetPaletteColors(m_pTree, tmppal, &nIndex, nSum);
-		unsigned int j, k, nr, ng, nb, ns, a, b;
-		for (j = 0; j < m_nMaxColors; j++)
+		std::vector<unsigned int> nSum(m_nMaxColors);
+		std::vector<COLOR3> tmppal(m_nMaxColors);
+
+		GetPaletteColors(m_pTree, tmppal.data(), &nIndex, nSum.data());
+
+		for (unsigned int j = 0; j < m_nMaxColors; j++)
 		{
-			a = (j * m_nLeafCount) / (unsigned int)m_nMaxColors;
-			b = ((j + 1) * m_nLeafCount) / (unsigned int)m_nMaxColors;
-			nr = ng = nb = ns = 0;
-			for (k = a; k < b; k++)
+			size_t a = (j * m_nLeafCount) / m_nMaxColors;
+			size_t b = ((j + 1) * m_nLeafCount) / m_nMaxColors;
+			unsigned int nr = 0, ng = 0, nb = 0, ns = 0;
+
+			for (size_t k = a; k < b; k++)
 			{
 				nr += tmppal[k].r * nSum[k];
 				ng += tmppal[k].g * nSum[k];
 				nb += tmppal[k].b * nSum[k];
 				ns += nSum[k];
 			}
+
 			if (ns != 0)
 			{
-				m_pPalette[j].r = FixBounds((int)(nr / ns));
-				m_pPalette[j].g = FixBounds((int)(ng / ns));
-				m_pPalette[j].b = FixBounds((int)(nb / ns));
+				m_pPalette[j].r = FixBounds(static_cast<int>(nr / ns));
+				m_pPalette[j].g = FixBounds(static_cast<int>(ng / ns));
+				m_pPalette[j].b = FixBounds(static_cast<int>(nb / ns));
 			}
 		}
 	}
 	else
 	{
-		GetPaletteColors(m_pTree, m_pPalette, &nIndex, 0);
+		GetPaletteColors(m_pTree, m_pPalette, &nIndex, nullptr);
 	}
 }
 
@@ -563,6 +619,7 @@ void Quantizer::ApplyColorTableDither(COLOR3* image, int width, int height)
 	{
 		image[i] = m_pPalette[GetNearestIndexDither(image[i], m_pPalette)];
 	}
+
 	/*unsigned int* tmpcolorarray = new unsigned int[width * height];
 	FloydSteinbergDither((COLOR3*)image, width, height, tmpcolorarray);
 	for (int i = 0; i < width * height; i++)

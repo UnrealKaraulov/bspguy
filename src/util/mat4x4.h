@@ -11,6 +11,9 @@ struct mat4x4
 
 	void perspective(float fov, float aspect, float near, float far);
 
+	void perspective(float left, float right, float bottom, float top,
+		float znear, float zfar);
+
 	// Set up an orthographic projection matrix
 	void ortho(float left, float right, float bottom, float top, float near, float far);
 

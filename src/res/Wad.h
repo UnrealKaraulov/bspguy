@@ -7,9 +7,6 @@ int calcMipsSize(int w, int h);
 
 #pragma pack(push, 1)
 
-COLOR3 operator*(COLOR3 v, float f);
-bool operator==(COLOR3 c1, COLOR3 c2);
-
 COLOR4 operator*(COLOR4 v, float f);
 bool operator==(COLOR4 c1, COLOR4 c2);
 

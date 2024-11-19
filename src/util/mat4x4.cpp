@@ -48,6 +48,13 @@ void mat4x4::perspective(float fov, float aspect, float near, float far)
 	glhFrustumf2(m, -xmax, xmax, -ymax, ymax, near, far);
 }
 
+void mat4x4::perspective(float left, float right, float bottom, float top,
+	float znear, float zfar)
+{
+	loadIdentity();
+	glhFrustumf2(m, left, right, bottom, top, znear, zfar);
+}
+
 
 void mat4x4::ortho(float left, float right, float bottom, float top, float near, float far)
 {
