@@ -1045,8 +1045,22 @@ void StudioModel::Init(const std::string& modelname)
 	}
 }
 
-
-////////////////////////////////////////////////////////////////////////
+int StudioModel::SetBody(int iBody)
+{
+	m_body = iBody;
+	auto* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex);
+	for (int bg = 0; bg < m_pstudiohdr->numbodyparts; bg++)
+	{
+		SetBodygroup(bg, iBody % pbodypart->nummodels);
+		iBody /= pbodypart->nummodels;
+		pbodypart++;
+	}
+	return m_body;
+}
+int StudioModel::GetBody()
+{
+	return m_body;
+}
 
 int StudioModel::GetSequence()
 {
@@ -1273,6 +1287,10 @@ int StudioModel::SetBodygroup(int iGroup, int iValue)
 	return iValue;
 }
 
+int StudioModel::GetSkin()
+{
+	return m_skinnum;
+}
 
 int StudioModel::SetSkin(int iValue)
 {

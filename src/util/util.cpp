@@ -2581,7 +2581,7 @@ bool isPointInsideMesh(const vec3& point, const std::vector<vec3>& glTriangles)
 	int intersectCount = 0;
 	vec3 rayDirection = { 0, 0, 1 }; // ray direction UPWARDS
 
-	for (int i = 0; i < glTriangles.size(); i += 3) {
+	for (size_t i = 0; i < glTriangles.size(); i += 3) {
 		const vec3& v0 = glTriangles[i];
 		const vec3& v1 = glTriangles[i + 1];
 		const vec3& v2 = glTriangles[i + 2];

@@ -3433,7 +3433,7 @@ void Gui::drawMenuBar()
 												int leafIdx = 0;
 												int planeIdx = -1;
 
-												for (int off = 0; off < offsets.size(); off++)
+												for (size_t off = 0; off < offsets.size(); off++)
 												{
 													int content = map->pointLeaf(headNode, pos + offsets[off], hull, leafIdx, planeIdx);
 													if (CONTENTS_SOLID == content || (modelIdx > 0 && content == CONTENTS_WATER))

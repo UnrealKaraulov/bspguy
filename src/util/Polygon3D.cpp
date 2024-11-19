@@ -72,7 +72,7 @@ void Polygon3D::init() {
 		return;
 	}
 
-	for (int e = 0; e < verts.size(); e++) {
+	for (size_t e = 0; e < verts.size(); e++) {
 		vec2 localPoint = project(verts[e]);
 		localVerts.push_back(localPoint);
 		topdownVerts.emplace_back(vec2(verts[e].x, verts[e].y));
@@ -81,7 +81,7 @@ void Polygon3D::init() {
 		center += verts[e];
 	}
 
-	for (int i = 0; i < localVerts.size(); i++) {
+	for (size_t i = 0; i < localVerts.size(); i++) {
 		area += crossProduct(localVerts[i], localVerts[(i+1) % localVerts.size()]);
 	}
 	area = fabs(area) * 0.5f;
@@ -123,7 +123,7 @@ float isLeft(const vec2& p1, const vec2& p2, const vec2& point) {
 bool Polygon3D::isInside(vec2 p, bool includeEdge) {
 	int windingNumber = 0;
 
-	for (int i = 0; i < localVerts.size(); i++) {
+	for (size_t i = 0; i < localVerts.size(); i++) {
 		const vec2& p1 = localVerts[i];
 		const vec2& p2 = localVerts[(i + 1) % localVerts.size()];
 
@@ -156,7 +156,7 @@ std::vector<std::vector<vec3>> Polygon3D::cut(Line2D cutLine) {
 	}
 
 	if (!intersectsAnyEdge) {
-		for (int i = 0; i < localVerts.size(); i++) {
+		for (size_t i = 0; i < localVerts.size(); i++) {
 			vec2 e1 = localVerts[i];
 			vec2 e2 = localVerts[(i + 1) % localVerts.size()];
 			Line2D edge(e1, e2);
@@ -177,7 +177,7 @@ std::vector<std::vector<vec3>> Polygon3D::cut(Line2D cutLine) {
 	cutLine.start = cutLine.start - cutLine.dir * FLT_MAX_COORD;
 	cutLine.end = cutLine.end + cutLine.dir * FLT_MAX_COORD;
 
-	for (int i = 0; i < localVerts.size(); i++) {
+	for (size_t i = 0; i < localVerts.size(); i++) {
 		vec2 e1 = localVerts[i];
 		vec2 e2 = localVerts[(i + 1) % localVerts.size()];
 
@@ -199,7 +199,7 @@ std::vector<std::vector<vec3>> Polygon3D::cut(Line2D cutLine) {
 	std::vector<vec3> newVerts;
 	std::vector<vec2> newLocalVerts;
 
-	for (int i = 0; i < localVerts.size(); i++) {
+	for (size_t i = 0; i < localVerts.size(); i++) {
 		int next = (i + 1) % localVerts.size();
 		vec2 e1 = localVerts[i];
 		vec2 e2 = localVerts[next];
@@ -220,7 +220,7 @@ std::vector<std::vector<vec3>> Polygon3D::cut(Line2D cutLine) {
 	}
 
 	// define new polys (separate by left/right of line
-	for (int i = 0; i < newLocalVerts.size(); i++) {
+	for (size_t i = 0; i < newLocalVerts.size(); i++) {
 		float dist = cutLine.distanceAxis(newLocalVerts[i]);
 
 		if (dist < -SAME_VERT_EPSILON) {
@@ -250,7 +250,7 @@ std::vector<std::vector<vec3>> Polygon3D::split(const Polygon3D& cutPoly) {
 		return std::vector<std::vector<vec3>>();
 	}
 
-	for (int i = 0; i < cutPoly.verts.size(); i++) {
+	for (size_t i = 0; i < cutPoly.verts.size(); i++) {
 		const vec3& e1 = cutPoly.verts[i];
 		const vec3& e2 = cutPoly.verts[(i + 1) % cutPoly.verts.size()];
 
@@ -273,7 +273,7 @@ bool Polygon3D::isConvex() {
 
 	int sign = 0;  // Initialize the sign of the cross product
 
-	for (int i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		const vec2& A = localVerts[i];
 		const vec2& B = localVerts[(i + 1) % n];  // Next vertex
 		const vec2& C = localVerts[(i + 2) % n];  // Vertex after the next
@@ -307,7 +307,7 @@ void Polygon3D::removeDuplicateVerts(float epsilon) {
 	size_t sz = verts.size();
 	if (sz > 1)
 	{
-		for (int i = 0; i < sz; i++) {
+		for (size_t i = 0; i < sz; i++) {
 			size_t last = (i + (sz - 1)) % sz;
 
 			if (!vec3Equal(verts[i], verts[last], epsilon))
@@ -322,7 +322,7 @@ void Polygon3D::removeDuplicateVerts(float epsilon) {
 }
 
 void Polygon3D::extendAlongAxis(float amt) {
-	for (int i = 0; i < verts.size(); i++) {
+	for (size_t i = 0; i < verts.size(); i++) {
 		verts[i] += plane_z * amt;
 	}
 
@@ -340,7 +340,7 @@ void Polygon3D::removeColinearVerts() {
 	size_t sz = localVerts.size();
 	if (sz > 1)
 	{
-		for (int i = 0; i < sz; i++) {
+		for (size_t i = 0; i < sz; i++) {
 			const vec2& A = localVerts[(i + (sz - 1)) % sz];
 			const vec2& B = localVerts[i];
 			const vec2& C = localVerts[(i + 1) % sz];
@@ -373,11 +373,11 @@ Polygon3D Polygon3D::merge(const Polygon3D& mergePoly) {
 	int sharedEdges = 0;
 	int commonEdgeStart1 = -1, commonEdgeEnd1 = -1;
 	int commonEdgeStart2 = -1, commonEdgeEnd2 = -1;
-	for (int i = 0; i < verts.size(); i++) {
+	for (size_t i = 0; i < verts.size(); i++) {
 		const vec3& e1 = verts[i];
 		const vec3& e2 = verts[(i + 1) % verts.size()];
 
-		for (int k = 0; k < mergePoly.verts.size(); k++) {
+		for (size_t k = 0; k < mergePoly.verts.size(); k++) {
 			const vec3& other1 = mergePoly.verts[k];
 			const vec3& other2 = mergePoly.verts[(k + 1) % mergePoly.verts.size()];
 
@@ -418,7 +418,7 @@ Polygon3D Polygon3D::merge(const Polygon3D& mergePoly) {
 }
 
 void push_unique_vert(std::vector<vec2>& verts, vec2 vert) {
-	for (int k = 0; k < verts.size(); k++) {
+	for (size_t k = 0; k < verts.size(); k++) {
 		if ((verts[k] - vert).length() < 0.125f) {
 			return;
 		}
@@ -519,7 +519,7 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly) {
 
 	// project other polys verts onto the same coordinate system as this face
 	std::vector<vec2> otherLocalVerts;
-	for (int i = 0; i < otherPoly.verts.size(); i++) {
+	for (size_t i = 0; i < otherPoly.verts.size(); i++) {
 		otherLocalVerts.emplace_back(project(otherPoly.verts[i]));
 	}
 	otherPoly.localVerts = otherLocalVerts;
@@ -527,7 +527,7 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly) {
 	std::vector<vec2> localOutVerts;
 
 	// find intersection points
-	for (int i = 0; i < localVerts.size(); i++) {
+	for (size_t i = 0; i < localVerts.size(); i++) {
 		vec2& va1 = localVerts[i];
 		vec2& va2 = localVerts[(i + 1) % localVerts.size()];
 		Line2D edgeA(va1, va2);
@@ -537,7 +537,7 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly) {
 			push_unique_vert(localOutVerts, va1);
 		}
 
-		for (int k = 0; k < otherLocalVerts.size(); k++) {
+		for (size_t k = 0; k < otherLocalVerts.size(); k++) {
 			vec2& vb1 = otherLocalVerts[k];
 			vec2& vb2 = otherLocalVerts[(k + 1) % otherLocalVerts.size()];
 			Line2D edgeB(vb1, vb2);
@@ -558,7 +558,7 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly) {
 
 	localOutVerts = GrahamScan::findConvexHull(&localOutVerts[0], (int) localOutVerts.size());
 
-	for (int i = 0; i < localOutVerts.size(); i++) {
+	for (size_t i = 0; i < localOutVerts.size(); i++) {
 		outVerts.emplace_back(unproject(localOutVerts[i]));
 	}
 
@@ -600,7 +600,7 @@ bool Polygon3D::intersect2D(vec3 p1, vec3 p2, vec3& ipos) {
 		return false;
 	}
 
-	for (int i = 0; i < localVerts.size(); i++) {
+	for (size_t i = 0; i < localVerts.size(); i++) {
 		vec2 e1 = localVerts[i];
 		vec2 e2 = localVerts[(i + 1) % localVerts.size()];
 		Line2D edge(e1, e2);

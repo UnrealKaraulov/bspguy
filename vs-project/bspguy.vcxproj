@@ -172,7 +172,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -217,7 +217,7 @@
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -252,7 +252,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -297,7 +297,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -332,7 +332,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -375,7 +375,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -401,7 +401,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugGithub|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -444,7 +444,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -470,7 +470,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -519,7 +519,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -553,7 +553,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -603,7 +603,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -637,7 +637,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -689,7 +689,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;..\ascript\angelscript\lib\angelscript64.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x86</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -726,7 +726,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -778,7 +778,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\ReleaseXPx86\glfw3.lib;fmt\fmt\ReleaseXPx86\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\ReleaseXPx86\glfw3.lib;fmt\fmt\ReleaseXPx86\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions) /machine:x86</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -813,7 +813,14 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\ascript\add_on\scriptarray\scriptarray.cpp" />
+    <ClCompile Include="..\ascript\add_on\scriptbuilder\scriptbuilder.cpp" />
+    <ClCompile Include="..\ascript\add_on\scriptstdstring\scriptstdstring.cpp" />
+    <ClCompile Include="..\ascript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
     <ClCompile Include=".\..\src\main.cpp" />
+    <ClInclude Include="..\ascript\add_on\scriptarray\scriptarray.h" />
+    <ClInclude Include="..\ascript\add_on\scriptbuilder\scriptbuilder.h" />
+    <ClInclude Include="..\ascript\add_on\scriptstdstring\scriptstdstring.h" />
     <ClInclude Include="..\src\filedialog\stb_image_write.h" />
     <ClInclude Include=".\..\src\res\Wad.h" />
     <ClCompile Include=".\..\src\res\Wad.cpp" />
@@ -927,6 +934,10 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <ProjectReference Include=".\..\vs-project\glfw\src\glfw.vcxproj">
       <Project>{94C10DCA-6ED7-3AC5-87DF-14B22017E799}</Project>
       <Name>glfw</Name>
+    </ProjectReference>
+    <ProjectReference Include=".\..\vs-project\ascript\angelscript\projects\msvc2022\angelscript.vcxproj">
+      <Project>{39E6AF97-6BA3-4A72-8C61-BCEBF214EBFD}</Project>
+      <Name>ascript</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

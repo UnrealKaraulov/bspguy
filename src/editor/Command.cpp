@@ -299,7 +299,7 @@ void CreateEntityFromTextCommand::undo() {
 
 	g_app->deselectObject();
 
-	for (int i = 0; i < createdEnts; i++) {
+	for (size_t i = 0; i < createdEnts; i++) {
 		delete map->ents[map->ents.size() - 1];
 		map->ents.pop_back();
 	}

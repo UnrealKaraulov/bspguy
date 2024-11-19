@@ -355,6 +355,7 @@ public:
 	double frametime;        //for small fps render
 	float m_frame;			// frame
 	int m_sequence;			// sequence index
+	int m_body;
 	int m_bodynum;			// bodypart selection	
 	int m_skinnum;			// skin group selection
 	int m_iGroup;
@@ -409,13 +410,14 @@ public:
 		mins = maxs = vec3();
 		fps = 30.0;
 		m_bodynum = 0;
+		m_body = 0;
 		needForceUpdate = true;
 		frametime = 999999.0;
 		g_vright = vec3();
 		g_lambert = 1.0f;
 		mdl_textures = std::vector<Texture*>();
 		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
-		m_sequence = m_bodynum = m_skinnum = 0;
+		m_sequence = m_skinnum = 0;
 		m_frame = 0.0f;
 		m_mouth = 0;
 		m_pstudiohdr = NULL;
@@ -524,7 +526,10 @@ public:
 	float SetBlending(int iBlender, float flValue);
 	int SetBodygroup(int iGroup, int iValue);
 	int SetSkin(int iValue);
+	int GetSkin();
 	int SetSequence(int iSequence);
+	int SetBody(int iBody);
+	int GetBody();
 	int GetSequence(void);
 	studiohdr_t* LoadModel(const std::string& modelname, bool IsTexture = false);
 	studioseqhdr_t* LoadDemandSequences(const std::string& modelname, int seqid);

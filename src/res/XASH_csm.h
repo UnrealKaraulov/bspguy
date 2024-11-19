@@ -63,6 +63,17 @@ struct csm_vertex
 	vec3 point;
 	vec3 normal;
 	COLOR4 color;
+	csm_vertex(vec3 p, vec3 n, COLOR4 c)
+	{
+		color = c;
+		point = p;
+		normal = n;
+	}
+	csm_vertex()
+	{
+		point = normal = vec3();
+		color = COLOR4();
+	}
 };
 
 struct csm_uv_t

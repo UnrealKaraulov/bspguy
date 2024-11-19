@@ -306,6 +306,11 @@ public:
 		std::string description;
 		int entIdx;
 		Entity* ent;
+		DelayEntUndo(std::string desc, int entId, Entity* entity) : description(std::move(desc))
+		{
+			entIdx = entId;
+			ent = ent;
+		}
 	};
 
 	std::vector<DelayEntUndo> delayEntUndoList;

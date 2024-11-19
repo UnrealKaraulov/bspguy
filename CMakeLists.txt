@@ -6,6 +6,32 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)
 project(bspguy LANGUAGES C CXX)
 
+include_directories(src)
+include_directories(src/bsp)
+include_directories(src/res)
+include_directories(src/cli)
+include_directories(src/data)
+include_directories(src/editor)
+include_directories(src/filedialog)
+include_directories(src/gl)
+include_directories(src/qtools)
+include_directories(src/nav)
+include_directories(src/util)
+include_directories(src/mdl)
+include_directories(imgui)
+include_directories(imgui/examples)
+include_directories(imgui/misc/cpp)
+include_directories(imgui/backends)
+include_directories(glew/include)
+include_directories(ascript/angelscript)
+include_directories(ascript/angelscript/include)
+
+add_subdirectory(fmt)
+add_subdirectory(glfw)
+add_subdirectory(ascript/angelscript/projects/cmake)
+
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 set(SOURCE_FILES
 	src/main.cpp
 
@@ -51,15 +77,6 @@ set(SOURCE_FILES
 	src/qtools/rad.h				src/qtools/rad.cpp
 	src/qtools/vis.h				src/qtools/vis.cpp
 	src/qtools/winding.h			src/qtools/winding.cpp
-
-	# library files
-	imgui/imgui.cpp
-	imgui/imgui_tables.cpp
-	imgui/imgui_widgets.cpp
-	imgui/imgui_draw.cpp
-	imgui/backends/imgui_impl_glfw.cpp
-	imgui/backends/imgui_impl_opengl3.cpp
-	imgui/misc/cpp/imgui_stdlib.cpp
 	
 	# utils
 	src/util/lodepng.h				src/util/lodepng.cpp
@@ -90,40 +107,34 @@ set(SOURCE_FILES
 	src/res/Sprite.h				src/res/Sprite.cpp
 	src/res/XASH_csm.h				src/res/XASH_csm.cpp
 	src/res/JACK_jmf.h
+	
+	# library files
+	imgui/imgui.cpp
+	imgui/imgui_tables.cpp
+	imgui/imgui_widgets.cpp
+	imgui/imgui_draw.cpp
+	imgui/backends/imgui_impl_glfw.cpp
+	imgui/backends/imgui_impl_opengl3.cpp
+	imgui/misc/cpp/imgui_stdlib.cpp
+	
+	ascript/add_on/scriptarray/scriptarray.h
+	ascript/add_on/scriptarray/scriptarray.cpp
+	ascript/add_on/scriptarray/scriptbuilder.h
+	ascript/add_on/scriptarray/scriptbuilder.cpp
+	ascript/add_on/scriptarray/scriptstdstring.h
+	ascript/add_on/scriptarray/scriptstdstring.cpp
+	ascript/add_on/scriptarray/scriptstdstring_utils.cpp
 )
 
-include_directories(src)
-include_directories(src/bsp)
-include_directories(src/res)
-include_directories(src/cli)
-include_directories(src/data)
-include_directories(src/editor)
-include_directories(src/filedialog)
-include_directories(src/gl)
-include_directories(src/qtools)
-include_directories(src/nav)
-include_directories(src/util)
-include_directories(src/mdl)
-include_directories(imgui)
-include_directories(imgui/examples)
-include_directories(imgui/misc/cpp)
-include_directories(imgui/backends)
-include_directories(glew/include)
-
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-
-add_subdirectory(fmt)
-add_subdirectory(glfw)
-
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(NOT MSVC)
 	add_definitions(-DNDEBUG)
 	if(WIN32)
 		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-			target_link_libraries(${PROJECT_NAME} fmt::fmt glfw ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/x64/glew32.lib opengl32)
+			target_link_libraries(${PROJECT_NAME} fmt::fmt glfw angelscript ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/x64/glew32.lib opengl32)
 		elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-			target_link_libraries(${PROJECT_NAME} fmt::fmt glfw ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/Win32/glew32.lib opengl32)
+			target_link_libraries(${PROJECT_NAME} fmt::fmt glfw angelscript ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/Win32/glew32.lib opengl32)
 		endif()
 		add_definitions(-DWIN32)
 		add_definitions(-DMINGW)

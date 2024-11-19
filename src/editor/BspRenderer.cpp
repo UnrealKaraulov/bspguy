@@ -1398,7 +1398,7 @@ void BspRenderer::generateNavMeshBuffer() {
 	std::vector<cVert> wireframeVerts;
 	std::vector<FaceMath> navFaceMaths;
 
-	for (int m = 0; m < navPolys.size(); m++) {
+	for (size_t m = 0; m < navPolys.size(); m++) {
 		Polygon3D& poly = navPolys[m];
 
 		vec3 normal = poly.plane_z;
@@ -1417,12 +1417,12 @@ void BspRenderer::generateNavMeshBuffer() {
 		{
 			std::vector<vec3> renderVerts;
 			renderVerts.resize(poly.verts.size());
-			for (int i = 0; i < poly.verts.size(); i++) {
+			for (size_t i = 0; i < poly.verts.size(); i++) {
 				renderVerts[i] = poly.verts[i].flip();
 			}
 
 			COLOR4 wireframeColor = { 0, 0, 0, 255 };
-			for (int k = 0; k < renderVerts.size(); k++) {
+			for (size_t k = 0; k < renderVerts.size(); k++) {
 				wireframeVerts.emplace_back(cVert(renderVerts[k], wireframeColor));
 				wireframeVerts.emplace_back(cVert(renderVerts[(k + 1) % renderVerts.size()], wireframeColor));
 			}
@@ -1464,7 +1464,7 @@ void BspRenderer::generateNavMeshBuffer() {
 			COLOR4 faceColor = color * (dot);
 
 			// convert from TRIANGLE_FAN style verts to TRIANGLES
-			for (int k = 2; k < renderVerts.size(); k++) {
+			for (size_t k = 2; k < renderVerts.size(); k++) {
 				allVerts.emplace_back(cVert(renderVerts[0], faceColor));
 				allVerts.emplace_back(cVert(renderVerts[k - 1], faceColor));
 				allVerts.emplace_back(cVert(renderVerts[k], faceColor));
@@ -1473,12 +1473,12 @@ void BspRenderer::generateNavMeshBuffer() {
 	}
 
 	cVert* output = new cVert[allVerts.size()];
-	for (int i = 0; i < allVerts.size(); i++) {
+	for (size_t i = 0; i < allVerts.size(); i++) {
 		output[i] = allVerts[i];
 	}
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
-	for (int i = 0; i < wireframeVerts.size(); i++) {
+	for (size_t i = 0; i < wireframeVerts.size(); i++) {
 		wireOutput[i] = wireframeVerts[i];
 	}
 
@@ -1501,11 +1501,11 @@ void BspRenderer::generateNavMeshBuffer() {
 	std::string navmesh_hull3_path = g_working_dir + map->bsp_name + "_hull" + std::to_string(hull) + ".obj";
 
 	std::ofstream file(navmesh_hull3_path, std::ios::out | std::ios::trunc);
-	for (int i = 0; i < allVerts.size(); i++) {
+	for (size_t i = 0; i < allVerts.size(); i++) {
 		vec3 v = vec3(allVerts[i].pos.x, allVerts[i].pos.y, allVerts[i].pos.z);
 		file << "v " << std::fixed << std::setprecision(2) << v.x << " " << v.y << " " << v.z << std::endl;
 	}
-	for (int i = 0; i < allVerts.size(); i += 3) {
+	for (size_t i = 0; i < allVerts.size(); i += 3) {
 		file << "f " << (i + 1) << " " << (i + 2) << " " << (i + 3) << std::endl;
 	}
 	print_log("Wrote {} verts to {}\n", allVerts.size(), navmesh_hull3_path);
@@ -1533,7 +1533,7 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 	std::vector<cVert> wireframeVerts;
 	std::vector<FaceMath> navFaceMaths;
 
-	for (int lf = 0; lf < navMesh->nodes.size(); lf++) {
+	for (size_t lf = 0; lf < navMesh->nodes.size(); lf++) {
 		LeafNode& mesh = navMesh->nodes[lf];
 
 		color = hullColors[hull];
@@ -1564,7 +1564,7 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 			color = COLOR4(32, 255, 128, 128);
 		}
 
-		for (int m = 0; m < mesh.leafFaces.size(); m++) {
+		for (size_t m = 0; m < mesh.leafFaces.size(); m++) {
 			Polygon3D& poly = mesh.leafFaces[m];
 
 			vec3 normal = poly.plane_z;
@@ -1583,12 +1583,12 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 			{
 				std::vector<vec3> renderVerts;
 				renderVerts.resize(poly.verts.size());
-				for (int i = 0; i < poly.verts.size(); i++) {
+				for (size_t i = 0; i < poly.verts.size(); i++) {
 					renderVerts[i] = poly.verts[i].flip();
 				}
 
 				COLOR4 wireframeColor = { 0, 0, 0, 255 };
-				for (int k = 0; k < renderVerts.size(); k++) {
+				for (size_t k = 0; k < renderVerts.size(); k++) {
 					wireframeVerts.emplace_back(cVert(renderVerts[k], wireframeColor));
 					wireframeVerts.emplace_back(cVert(renderVerts[(k + 1) % renderVerts.size()], wireframeColor));
 				}
@@ -1601,7 +1601,7 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 				COLOR4 faceColor = color * (dot);
 
 				// convert from TRIANGLE_FAN style verts to TRIANGLES
-				for (int k = 2; k < renderVerts.size(); k++) {
+				for (size_t k = 2; k < renderVerts.size(); k++) {
 					allVerts.emplace_back(cVert(renderVerts[0], faceColor));
 					allVerts.emplace_back(cVert(renderVerts[k - 1], faceColor));
 					allVerts.emplace_back(cVert(renderVerts[k], faceColor));
@@ -1611,12 +1611,12 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 	}
 
 	cVert* output = new cVert[allVerts.size()];
-	for (int i = 0; i < allVerts.size(); i++) {
+	for (size_t i = 0; i < allVerts.size(); i++) {
 		output[i] = allVerts[i];
 	}
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
-	for (int i = 0; i < wireframeVerts.size(); i++) {
+	for (size_t i = 0; i < wireframeVerts.size(); i++) {
 		wireOutput[i] = wireframeVerts[i];
 	}
 
@@ -2354,27 +2354,21 @@ void BspRenderer::refreshEnt(int entIdx)
 
 	if (skin != -1)
 	{
-		if (rendEntity.mdl)
+		if (rendEntity.mdl && rendEntity.mdl->GetSkin() != skin)
 		{
 			rendEntity.mdl->SetSkin(skin);
 		}
 	}
 	if (body != -1)
 	{
-		if (rendEntity.mdl && rendEntity.mdl->m_pstudiohdr)
+		if (rendEntity.mdl && rendEntity.mdl->GetBody() != body && rendEntity.mdl->m_pstudiohdr)
 		{
-			auto* pbodypart = (mstudiobodyparts_t*)((unsigned char*)rendEntity.mdl->m_pstudiohdr + rendEntity.mdl->m_pstudiohdr->bodypartindex);
-			for (int bg = 0; bg < rendEntity.mdl->m_pstudiohdr->numbodyparts; bg++)
-			{
-				rendEntity.mdl->SetBodygroup(bg, body % pbodypart->nummodels);
-				body /= pbodypart->nummodels;
-				pbodypart++;
-			}
+			rendEntity.mdl->SetBody(body);
 		}
 	}
 	if (sequence != -1)
 	{
-		if (rendEntity.mdl)
+		if (rendEntity.mdl && rendEntity.mdl->GetSequence() != sequence)
 		{
 			rendEntity.mdl->SetSequence(sequence);
 		}

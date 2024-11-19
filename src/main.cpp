@@ -10,6 +10,7 @@
 #include "Sprite.h"
 #include "log.h"
 
+
 // todo (newbspguy):
 // texture browser
 // ...
@@ -40,8 +41,49 @@ bool g_verbose = false;
 #include <csignal>
 #endif
 
+#include "angelscript.h"
+#include "../../add_on/scriptstdstring/scriptstdstring.h"
+#include "../../add_on/scriptbuilder/scriptbuilder.h"
+
+
+void PrintString(const std::string& str) {
+	print_log("{}\n", str);
+}
+
+void RegisterFunctions(asIScriptEngine* engine) {
+	int r = engine->RegisterGlobalFunction("void PrintString(const string &in)", asFUNCTION(PrintString), asCALL_CDECL);
+	if (r < 0) std::cerr << "Failed to register function." << std::endl;
+}
+
 bool start_viewer(const char* map)
 {
+	asIScriptEngine* engine = asCreateScriptEngine();
+	if (engine == nullptr) {
+		std::cerr << "Failed to create script engine." << std::endl;
+		return 1;
+	}
+
+	RegisterStdString(engine);
+	RegisterFunctions(engine);
+
+	const char* script = R"(
+        void main() {
+            PrintString("Hello from AngelScript!");
+        }
+    )";
+
+	CScriptBuilder builder;
+	builder.StartNewModule(engine, "MyModule");
+	builder.AddSectionFromMemory("script", script);
+	builder.BuildModule();
+
+	asIScriptContext* ctx = engine->CreateContext();
+	ctx->Prepare(engine->GetModule("MyModule")->GetFunctionByDecl("void main()"));
+	ctx->Execute();
+
+	ctx->Release();
+	engine->ShutDownAndRelease();
+
 	if (map && map[0] != '\0' && !fileExists(map))
 	{
 		return false;

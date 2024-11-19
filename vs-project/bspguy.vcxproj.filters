@@ -187,6 +187,18 @@
     <ClCompile Include=".\..\src\util\Polygon3D.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\ascript\add_on\scriptbuilder\scriptbuilder.cpp">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ascript\add_on\scriptstdstring\scriptstdstring.cpp">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ascript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ascript\add_on\scriptarray\scriptarray.cpp">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -330,6 +342,15 @@
     <ClInclude Include="..\src\filedialog\stb_image_write.h">
       <Filter>Header Files\util\lib</Filter>
     </ClInclude>
+    <ClInclude Include="..\ascript\add_on\scriptbuilder\scriptbuilder.h">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ascript\add_on\scriptstdstring\scriptstdstring.h">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ascript\add_on\scriptarray\scriptarray.h">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -406,6 +427,9 @@
     </Filter>
     <Filter Include="Source Files\nav">
       <UniqueIdentifier>{a03f7762-92c3-48be-a7ca-269eda99d76e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util\lib\as">
+      <UniqueIdentifier>{cdb7a285-d297-4dee-abe8-74a5bcfbbe55}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

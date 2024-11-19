@@ -1024,7 +1024,7 @@ void Renderer::renderLoop()
 						leafNavIdx = debugLeafNavMesh->leafMap[leafIdx];
 					}
 
-					if (leafNavIdx >= 0 && leafNavIdx < debugLeafNavMesh->nodes.size()) {
+					if (leafNavIdx >= 0 && leafNavIdx < (int)debugLeafNavMesh->nodes.size()) {
 
 						if (pickInfo.selectedEnts.size()) {
 
@@ -1038,12 +1038,12 @@ void Renderer::renderLoop()
 								vec3 lastPos = lastNode->origin;
 								drawBox(lastNode->origin, 2, COLOR4(0, 255, 255, 255));
 
-								for (int i = 1; i < route.size(); i++) {
+								for (size_t i = 1; i < route.size(); i++) {
 									LeafNode& node = debugLeafNavMesh->nodes[route[i]];
 
 									vec3 nodeCenter = node.origin;
 
-									for (int k = 0; k < lastNode->links.size(); k++) {
+									for (size_t k = 0; k < lastNode->links.size(); k++) {
 										LeafLink& link = lastNode->links[k];
 
 										if (link.node == route[i]) {
@@ -1092,7 +1092,7 @@ void Renderer::renderLoop()
 
 							std::string linkStr;
 
-							for (int i = 0; i < node.links.size(); i++) {
+							for (size_t i = 0; i < node.links.size(); i++) {
 								LeafLink& link = node.links[i];
 								if (link.node == -1) {
 									break;
@@ -1125,8 +1125,8 @@ void Renderer::renderLoop()
 									drawLine(link.pos, linkLeaf.origin, COLOR4(0, 255, 255, 255));
 								}
 
-								for (int k = 0; k < linkArea.verts.size(); k++) {
-									//drawBox(linkArea.verts[k], 1, COLOR4(255, 255, 0, 255));
+								for (size_t k = 0; k < linkArea.verts.size(); k++) {
+									drawBox(linkArea.verts[k], 1, COLOR4(255, 255, 0, 255));
 								}
 								drawBox(link.pos, 1, COLOR4(0, 255, 0, 255));
 								drawBox(linkLeaf.origin, 2, COLOR4(0, 255, 255, 255));
@@ -3086,7 +3086,7 @@ void Renderer::drawBox(vec3 mins, vec3 maxs, COLOR4 color) {
 void Renderer::drawPolygon3D(Polygon3D& poly, COLOR4 color) {
 	static cVert verts[64];
 
-	for (int i = 0; i < poly.verts.size() && i < 64; i++) {
+	for (size_t i = 0; i < poly.verts.size() && i < 64; i++) {
 		vec3 pos = poly.verts[i];
 		verts[i].pos = vec3(pos.x, pos.z, -pos.y);
 		verts[i].c = color;
@@ -3102,7 +3102,7 @@ float Renderer::drawPolygon2D(Polygon3D poly, vec2 pos, vec2 maxSz, COLOR4 color
 
 	vec2 offset = poly.localMins * -scale + pos;
 
-	for (int i = 0; i < poly.verts.size(); i++) {
+	for (size_t i = 0; i < poly.verts.size(); i++) {
 		vec2 v1 = poly.localVerts[i];
 		vec2 v2 = poly.localVerts[(i + 1) % poly.verts.size()];
 		drawLine2D(offset + v1 * scale, offset + v2 * scale, color);

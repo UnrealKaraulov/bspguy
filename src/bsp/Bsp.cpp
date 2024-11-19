@@ -486,20 +486,20 @@ void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs, bool ski
 		std::vector<NodeVolumeCuts> solidNodes = get_model_leaf_volume_cuts(modelIdx, 0, CONTENTS_SOLID);
 
 		std::vector<CMesh> solidMeshes;
-		for (int k = 0; k < solidNodes.size(); k++) {
+		for (size_t k = 0; k < solidNodes.size(); k++) {
 			solidMeshes.emplace_back(clipper.clip(solidNodes[k].cuts));
 		}
 
-		for (int m = 0; m < solidMeshes.size(); m++) {
+		for (size_t m = 0; m < solidMeshes.size(); m++) {
 			CMesh& mesh = solidMeshes[m];
 
-			for (int i = 0; i < mesh.faces.size(); i++) {
+			for (size_t i = 0; i < mesh.faces.size(); i++) {
 
 				if (!mesh.faces[i].visible) {
 					continue;
 				}
 
-				for (int k = 0; k < mesh.faces[i].edges.size(); k++) {
+				for (size_t k = 0; k < mesh.faces[i].edges.size(); k++) {
 					for (int v = 0; v < 2; v++) {
 						int vertIdx = mesh.edges[mesh.faces[i].edges[k]].verts[v];
 						if (!mesh.verts[vertIdx].visible) {
@@ -2776,7 +2776,7 @@ void Bsp::delete_oob_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 			Clipper clipper;
 			CMesh nodeVolume = clipper.clip(cuts);
 
-			for (int k = 0; k < nodeVolume.verts.size(); k++) {
+			for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
 				if (!nodeVolume.verts[k].visible)
 					continue;
 				vec3 v = nodeVolume.verts[k].pos;
@@ -2850,7 +2850,7 @@ void Bsp::delete_oob_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 			vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
 			vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-			for (int k = 0; k < nodeVolume.verts.size(); k++) {
+			for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
 				if (!nodeVolume.verts[k].visible)
 					continue;
 				vec3 v = nodeVolume.verts[k].pos;
@@ -2931,7 +2931,7 @@ void Bsp::delete_oob_data(int clipFlags) {
 	std::vector<Entity*> newEnts;
 	newEnts.push_back(ents[0]); // never remove worldspawn
 
-	for (int i = 1; i < ents.size(); i++) {
+	for (size_t i = 1; i < ents.size(); i++) {
 		vec3 v = ents[i]->origin;
 		int modelIdx = ents[i]->getBspModelIdx();
 
@@ -3136,7 +3136,7 @@ void Bsp::delete_box_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 			Clipper clipper;
 			CMesh nodeVolume = clipper.clip(cuts);
 
-			for (int k = 0; k < nodeVolume.verts.size(); k++) {
+			for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
 				if (!nodeVolume.verts[k].visible)
 					continue;
 				vec3 v = nodeVolume.verts[k].pos;
@@ -3202,7 +3202,7 @@ void Bsp::delete_box_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 			vec3 mins(FLT_MAX, FLT_MAX, FLT_MAX);
 			vec3 maxs(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-			for (int k = 0; k < nodeVolume.verts.size(); k++) {
+			for (size_t k = 0; k < nodeVolume.verts.size(); k++) {
 				if (!nodeVolume.verts[k].visible)
 					continue;
 				vec3 v = nodeVolume.verts[k].pos;
@@ -3271,7 +3271,7 @@ void Bsp::delete_box_data(vec3 clipMins, vec3 clipMaxs) {
 	std::vector<Entity*> newEnts;
 	newEnts.push_back(ents[0]); // never remove worldspawn
 
-	for (int i = 1; i < ents.size(); i++) {
+	for (size_t i = 1; i < ents.size(); i++) {
 		vec3 v = ents[i]->origin;
 		int modelIdx = ents[i]->getBspModelIdx();
 
@@ -3728,7 +3728,7 @@ bool Bsp::subdivide_face(int faceIdx) {
 	float maxU = -FLT_MAX;
 	float minV = FLT_MAX;
 	float maxV = -FLT_MAX;
-	for (int i = 0; i < faceVerts.size(); i++) {
+	for (size_t i = 0; i < faceVerts.size(); i++) {
 		vec3& pos = faceVerts[i];
 
 		float u = dotProduct(info.vS, pos);
@@ -3815,7 +3815,7 @@ bool Bsp::subdivide_face(int faceIdx) {
 		int vertOffset = (int)(vertPtr - newVerts);
 		int edgeOffset = (int)(edgePtr - newEdges);
 
-		for (int i = 0; i < cutPoly.size(); i++) {
+		for (int i = 0; i < (int)cutPoly.size(); i++) {
 			edgePtr->iVertex[0] = vertOffset + i;
 			edgePtr->iVertex[1] = vertOffset + ((i + 1) % cutPoly.size());
 			edgePtr++;
@@ -3903,7 +3903,7 @@ void Bsp::fix_bad_surface_extents_with_subdivide(int faceIdx)
 		}
 
 		// adjust face indexes if about to split a face with a lower index 
-		for (int n = 0; n < tmpfaces.size(); n++) {
+		for (int n = 0; n < (int)tmpfaces.size(); n++) {
 			if (tmpfaces[n] > n) {
 				tmpfaces[n]++;
 			}

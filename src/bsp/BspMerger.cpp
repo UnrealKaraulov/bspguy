@@ -300,8 +300,8 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	}
 
 	bool noOverlap = true;
-	for (int i = 0; i < blocks.size() && noOverlap; i++) {
-		for (int k = 0; k < blocks.size(); k++) {
+	for (size_t i = 0; i < blocks.size() && noOverlap; i++) {
+		for (size_t k = 0; k < blocks.size(); k++) {
 			if (i != k && blocks[i].intersects(blocks[k])) {
 				noOverlap = false;
 

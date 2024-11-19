@@ -74,7 +74,7 @@ void NavMesh::clear() {
 NavMesh::NavMesh(std::vector<Polygon3D> faces) {
 	clear();
 
-	for (int i = 0; i < faces.size(); i++) {
+	for (size_t i = 0; i < faces.size(); i++) {
 		polys[i] = Polygon3D(faces[i].verts);
 		if (faces[i].verts.size() > MAX_NAV_POLY_VERTS)
 			print_log("Error: Face {} has {} verts (max is {})\n", i, faces[i].verts.size(), MAX_NAV_POLY_VERTS);
@@ -106,7 +106,7 @@ bool NavMesh::addLink(int from, int to, int srcEdge, int dstEdge, int zDist, uns
 std::vector<Polygon3D> NavMesh::getPolys() {
 	std::vector<Polygon3D> ret;
 
-	for (int i = 0; i < numPolys; i++) {
+	for (size_t i = 0; i < numPolys; i++) {
 		ret.push_back(polys[i]);
 	}
 

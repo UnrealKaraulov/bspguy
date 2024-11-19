@@ -715,7 +715,7 @@ std::string Entity::serialize()
 
 	ent_data << "{\n";
 
-	for (int k = 0; k < keyOrder.size(); k++) {
+	for (size_t k = 0; k < keyOrder.size(); k++) {
 		std::string key = keyOrder[k];
 		ent_data << "\"" << key << "\" \"" << keyvalues[key] << "\"\n";
 	}

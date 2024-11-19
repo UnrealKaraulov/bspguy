@@ -21,7 +21,7 @@ LeafNode::LeafNode() {
 }
 
 bool LeafNode::isInside(vec3 p) {
-	for (int i = 0; i < leafFaces.size(); i++) {
+	for (size_t i = 0; i < leafFaces.size(); i++) {
 		if (leafFaces[i].distance(p) > 0) {
 			return false;
 		}
@@ -31,7 +31,7 @@ bool LeafNode::isInside(vec3 p) {
 }
 
 bool LeafNode::addLink(int node, Polygon3D linkArea) {	
-	for (int i = 0; i < links.size(); i++) {
+	for (size_t i = 0; i < links.size(); i++) {
 		if (links[i].node == node) {
 			return true;
 		}
@@ -54,7 +54,7 @@ bool LeafNode::addLink(int node, Polygon3D linkArea) {
 }
 
 bool LeafNode::addLink(int node, vec3 linkPos) {
-	for (int i = 0; i < links.size(); i++) {
+	for (size_t i = 0; i < links.size(); i++) {
 		if (links[i].node == node) {
 			return true;
 		}
@@ -85,7 +85,7 @@ LeafNavMesh::LeafNavMesh(std::vector<LeafNode> inleaves, LeafOctree* octree) {
 }
 
 bool LeafNavMesh::addLink(int from, int to, Polygon3D linkArea) {
-	if (from < 0 || to < 0 || from >= nodes.size() || to >= nodes.size()) {
+	if (from < 0 || to < 0 || from >= (int)nodes.size() || to >= (int)nodes.size()) {
 		print_log("Error: add link from/to invalid node {} {}\n", from, to);
 		return false;
 	}
@@ -168,10 +168,10 @@ int LeafNavMesh::getNodeIdx(Bsp* map, Entity* ent) {
 		boxPolys[i] = std::vector<vec3>{ face.v1.pos, face.v2.pos, face.v3.pos, face.v6.pos };
 	}
 
-	for (int i = 0; i < nodes.size(); i++) {
+	for (size_t i = 0; i < nodes.size(); i++) {
 		LeafNode& mesh = nodes[i];
 		
-		for (int k = 0; k < mesh.leafFaces.size(); k++) {
+		for (size_t k = 0; k < mesh.leafFaces.size(); k++) {
 			Polygon3D& leafFace = mesh.leafFaces[k];
 
 			for (int n = 0; n < 6; n++) {
@@ -191,7 +191,7 @@ float LeafNavMesh::path_cost(int a, int b) {
 	LeafNode& nodeb = nodes[b];
 	vec3 delta = nodea.origin - nodeb.origin;
 
-	for (int i = 0; i < nodea.links.size(); i++) {
+	for (size_t i = 0; i < nodea.links.size(); i++) {
 		LeafLink& link = nodea.links[i];
 		if (link.node == b) {
 			return link.baseCost + delta.length() * link.costMultiplier;
@@ -212,7 +212,7 @@ std::vector<int> LeafNavMesh::AStarRoute(int startNodeIdx, int endNodeIdx)
 	
 	std::vector<int> emptyRoute;
 
-	if (startNodeIdx < 0 || endNodeIdx < 0 || startNodeIdx > nodes.size() || endNodeIdx > nodes.size()) {
+	if (startNodeIdx < 0 || endNodeIdx < 0 || startNodeIdx > (int)nodes.size() || endNodeIdx > (int)nodes.size()) {
 		print_log("AStarRoute: invalid start/end nodes\n");
 		return emptyRoute;
 	}
@@ -277,14 +277,14 @@ std::vector<int> LeafNavMesh::AStarRoute(int startNodeIdx, int endNodeIdx)
 
 		LeafNode& currentNode = nodes[current];
 
-		for (int i = 0; i < currentNode.links.size(); i++) {
+		for (size_t i = 0; i < currentNode.links.size(); i++) {
 			LeafLink& link = currentNode.links[i];
 			if (link.node == -1) {
 				break;
 			}
 
 			int neighbor = link.node;
-			if (neighbor < 0 || neighbor >= nodes.size()) {
+			if (neighbor < 0 || neighbor >= (int)nodes.size()) {
 				continue;
 			}
 			if (closedSet.count(neighbor))
@@ -322,7 +322,7 @@ std::vector<int> LeafNavMesh::AStarRoute(int startNodeIdx, int endNodeIdx)
 std::vector<int> LeafNavMesh::dijkstraRoute(int start, int end) {
 	std::vector<int> emptyRoute;
 
-	if (start < 0 || end < 0 || start > nodes.size() || end > nodes.size()) {
+	if (start < 0 || end < 0 || start > (int)nodes.size() || end > (int)nodes.size()) {
 		print_log("dijkstraRoute: invalid start/end nodes\n");
 		return emptyRoute;
 	}
@@ -354,7 +354,7 @@ std::vector<int> LeafNavMesh::dijkstraRoute(int start, int end) {
 			break;
 
 		// Traverse all links of node u
-		for (int i = 0; i < nodes[u].links.size(); i++) {
+		for (size_t i = 0; i < nodes[u].links.size(); i++) {
 			LeafLink& link = nodes[u].links[i];
 
 			if (link.node == -1) {
@@ -388,7 +388,7 @@ std::vector<int> LeafNavMesh::dijkstraRoute(int start, int end) {
 
 	float len = 0;
 	float cost = 0;
-	for (int i = 1; i < path.size(); i++) {
+	for (size_t i = 1; i < path.size(); i++) {
 		LeafNode& mesha = nodes[path[i-1]];
 		LeafNode& meshb = nodes[path[i]];
 		len += (mesha.origin - meshb.origin).length();

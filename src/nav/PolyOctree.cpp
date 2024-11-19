@@ -27,7 +27,8 @@ PolygonOctree::~PolygonOctree() {
     delete root;
 }
 
-PolygonOctree::PolygonOctree(const vec3& min, const vec3& max, int depth) {
+PolygonOctree::PolygonOctree(const vec3& min, const vec3& max, int depth) 
+{
     root = new PolyOctant(min, max);
     maxDepth = depth;
     buildOctree(root, 0);
