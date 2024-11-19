@@ -6,6 +6,12 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)
 project(bspguy LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+add_subdirectory(fmt)
+add_subdirectory(glfw)
+add_subdirectory(ascript/angelscript/projects/cmake)
+
 include_directories(src)
 include_directories(src/bsp)
 include_directories(src/res)
@@ -26,11 +32,6 @@ include_directories(glew/include)
 include_directories(ascript/angelscript)
 include_directories(ascript/angelscript/include)
 
-add_subdirectory(fmt)
-add_subdirectory(glfw)
-add_subdirectory(ascript/angelscript/projects/cmake)
-
-set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(SOURCE_FILES
 	src/main.cpp
@@ -139,7 +140,7 @@ if(NOT MSVC)
 		add_definitions(-DWIN32)
 		add_definitions(-DMINGW)
 	else()
-		target_link_libraries(${PROJECT_NAME} GL GLU fmt::fmt glfw Xxf86vm Xrandr pthread Xi GLEW stdc++fs )
+		target_link_libraries(${PROJECT_NAME} GL GLU fmt::fmt glfw angelscript Xxf86vm Xrandr pthread Xi GLEW stdc++fs )
 	endif()
 	set(CMAKE_CXX_STANDARD 20)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
