@@ -200,7 +200,7 @@ std::vector<std::vector<vec3>> Polygon3D::cut(Line2D cutLine) {
 	std::vector<vec2> newLocalVerts;
 
 	for (size_t i = 0; i < localVerts.size(); i++) {
-		int next = (i + 1) % localVerts.size();
+		size_t next = (i + 1) % localVerts.size();
 		vec2 e1 = localVerts[i];
 		vec2 e2 = localVerts[next];
 		Line2D edge(e1, e2);
@@ -373,11 +373,11 @@ Polygon3D Polygon3D::merge(const Polygon3D& mergePoly) {
 	int sharedEdges = 0;
 	int commonEdgeStart1 = -1, commonEdgeEnd1 = -1;
 	int commonEdgeStart2 = -1, commonEdgeEnd2 = -1;
-	for (size_t i = 0; i < verts.size(); i++) {
+	for (int i = 0; i < (int)verts.size(); i++) {
 		const vec3& e1 = verts[i];
 		const vec3& e2 = verts[(i + 1) % verts.size()];
 
-		for (size_t k = 0; k < mergePoly.verts.size(); k++) {
+		for (int k = 0; k < (int)mergePoly.verts.size(); k++) {
 			const vec3& other1 = mergePoly.verts[k];
 			const vec3& other2 = mergePoly.verts[(k + 1) % mergePoly.verts.size()];
 

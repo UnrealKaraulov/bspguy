@@ -168,7 +168,7 @@ int LeafNavMesh::getNodeIdx(Bsp* map, Entity* ent) {
 		boxPolys[i] = std::vector<vec3>{ face.v1.pos, face.v2.pos, face.v3.pos, face.v6.pos };
 	}
 
-	for (size_t i = 0; i < nodes.size(); i++) {
+	for (int i = 0; i < (int)nodes.size(); i++) {
 		LeafNode& mesh = nodes[i];
 		
 		for (size_t k = 0; k < mesh.leafFaces.size(); k++) {
