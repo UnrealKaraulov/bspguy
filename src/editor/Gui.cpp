@@ -7025,11 +7025,11 @@ void Gui::drawOverviewWidget()
 				fprintf(overfile, "// overview description file for %s\n\n", map->bsp_name.c_str());
 				fprintf(overfile, "global \n{\n");
 				fprintf(overfile, "\tZOOM\t%.2f\n", zoom);
-				fprintf(overfile, "\tORIGIN\t%.2f\t%.2f\t%.2f\n", origin.x, origin.y, origin.z);
+				fprintf(overfile, "\tORIGIN\t%.2f\t%.2f\t%.2f\n", origin.x, origin.y, ortho_mins.z + ortho_offset.z);
 				fprintf(overfile, "\tROTATED\t%i\n}\n\n", rotated ? 1 : 0);
 				fprintf(overfile, "layer \n{\n");
 				fprintf(overfile, "\tIMAGE\t\"overviews/%s%s\"\n", map->bsp_name.c_str(),imgFormat.c_str());
-				fprintf(overfile, "\tHEIGHT\t%.2f\n}\n", origin.z);
+				fprintf(overfile, "\tHEIGHT\t%.2f\n}\n", ortho_mins.z + ortho_offset.z);
 				fclose(overfile);
 				print_log("Saved to {}\n", g_working_dir + map->bsp_name + ".txt");
 			}
@@ -7038,6 +7038,8 @@ void Gui::drawOverviewWidget()
 
 
 		ImGui::Text("Overview: Zoom %.2f", zoom);
+
+		ImGui::Text("Height: %2.f", ortho_mins.z + ortho_offset.z);
 
 		ImGui::Text("Map Origin: (%.2f, %.2f, %.2f)",
 			(ortho_mins.x + ortho_maxs.x) / 2.0f + ortho_offset.x,
