@@ -309,7 +309,7 @@ public:
 		DelayEntUndo(std::string desc, int entId, Entity* entity) : description(std::move(desc))
 		{
 			entIdx = entId;
-			ent = ent;
+			ent = entity;
 		}
 	};
 

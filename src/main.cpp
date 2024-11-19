@@ -41,7 +41,7 @@ bool g_verbose = false;
 #include <csignal>
 #endif
 
-#include "angelscript.h"
+	#include "angelscript.h"
 #include "../../add_on/scriptstdstring/scriptstdstring.h"
 #include "../../add_on/scriptbuilder/scriptbuilder.h"
 

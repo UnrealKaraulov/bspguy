@@ -72,3 +72,11 @@ vs-project/.vs/bspguy/v17/DocumentLayout.json
 vs-project/bspguy/Debug/bspguy.vcxproj.FileListAbsolute.txt
 /vs-project/bspguy/Debug
 /vs-project/bspguy/Release
+/ascript/angelscript/lib
+ascript/angelscript/projects/msvc2022/Debug/angelscript.vcxproj.FileListAbsolute.txt
+/vs-project/fmt/Debug
+/vs-project/glfw/src/Debug
+/vs-project/glfw/src/glfw.dir/Release
+/vs-project/glfw/src/ReleaseXPx86
+/vs-project/fmt/fmt.dir
+/vs-project/glfw/src/glfw.dir

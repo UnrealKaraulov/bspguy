@@ -219,7 +219,7 @@
     <Link>
       <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>Debug/bspguy.lib</ImportLibrary>
@@ -297,9 +297,9 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>Debug/bspguy.lib</ImportLibrary>
@@ -377,7 +377,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <Link>
       <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>Debug/bspguy.lib</ImportLibrary>
@@ -446,7 +446,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <Link>
       <AdditionalDependencies>glfw\src\Debug\glfw3.lib;fmt\fmt\Debug\fmtd.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptd.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>Debug/bspguy.lib</ImportLibrary>
@@ -521,7 +521,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <Link>
       <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>Release/bspguy.lib</ImportLibrary>
@@ -605,7 +605,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <Link>
       <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\x64\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>Release/bspguy.lib</ImportLibrary>
@@ -691,7 +691,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <Link>
       <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;..\ascript\angelscript\lib\angelscript64.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript64.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x86</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>Release/bspguy.lib</ImportLibrary>
@@ -780,7 +780,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <Link>
       <AdditionalDependencies>glfw\src\ReleaseXPx86\glfw3.lib;fmt\fmt\ReleaseXPx86\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x86</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>Release/bspguy.lib</ImportLibrary>
