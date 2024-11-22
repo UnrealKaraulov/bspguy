@@ -55,7 +55,7 @@ Requires OpenGL 3.0 or later.
 4. Click the `FGDs` tab and add the full or relative path to your mod_name.fgd. Click `Apply Changes`.
     - This will give point entities more colorful cubes, and enable the `Attributes` tab in the `Keyvalue editor`.
 
-bspguy saves configuration files to executable folder or in '%APPDATA%/bspguy` if not found.
+bspguy saves configuration files to executable folder 
 
 
 ## Command Line
