@@ -38,6 +38,7 @@ See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
 - Support J.A.C.K fgd files
 - Keyvalue editor can be used for edit all selected entities
 - Protect map (anti-decompile, WIP)
+- Overview helper widget
 ...
 
 ![image](https://user-images.githubusercontent.com/12087544/88471604-1768ac80-cec0-11ea-9ce5-13095e843ce7.png)
@@ -55,7 +56,7 @@ Requires OpenGL 3.0 or later.
 4. Click the `FGDs` tab and add the full or relative path to your mod_name.fgd. Click `Apply Changes`.
     - This will give point entities more colorful cubes, and enable the `Attributes` tab in the `Keyvalue editor`.
 
-bspguy saves configuration files to executable folder 
+newbspguy saves configuration files to executable folder 
 
 
 ## Command Line
