@@ -1,6 +1,10 @@
 #pragma once
 
 #include "bsptypes.h"
+#include <string>
+#include "ini.h"
+
+extern inih::INIReader* settings_ini;
 
 extern std::string g_settings_path;
 extern std::string g_game_dir;
@@ -34,15 +38,13 @@ enum RenderFlags
 };
 
 
-struct PathToggleStruct
+struct PathToggleStruct 
 {
 	std::string path;
 	bool enabled;
 
 	PathToggleStruct(std::string filePath, bool isEnable)
-		: path(std::move(filePath)),
-		enabled(isEnable)
-	{
+		: enabled(isEnable), path(std::move(filePath)) {
 	}
 };
 
@@ -53,7 +55,7 @@ struct PaletteData
 	unsigned char data[0x300];
 };
 
-struct AppSettings
+struct Settings
 {
 	int windowWidth;
 	int windowHeight;
@@ -102,14 +104,14 @@ struct AppSettings
 	bool merge_verts;
 	bool merge_edges;
 	bool start_at_entity;
-	bool backUpMap;
-	bool preserveCrc32;
+	bool savebackup;
+	bool save_crc;
 	bool save_cam;
-	bool autoImportEnt;
-	bool sameDirForEnt;
-	bool entListReload;
-	bool stripWad;
-	bool defaultIsEmpty;
+	bool auto_import_ent;
+	bool same_dir_for_ent;
+	bool reload_ents_list;
+	bool strip_wad_path;
+	bool default_is_empty;
 
 	std::string rad_path;
 	std::string rad_options;
@@ -127,14 +129,14 @@ struct AppSettings
 	std::vector<std::string> transparentTextures;
 	std::vector<std::string> transparentEntities;
 
-	void loadDefault();
-	void load();
-	void reset();
-	void save();
-private:
-	void save(std::string path);
+	void loadDefaultSettings();
+	void loadSettings();
+	void saveSettings();
+	void saveSettings(std::string path);
 	void fillLanguages(const std::string& folderPath);
 	void fillPalettes(const std::string& folderPath);
+
 };
 
-extern AppSettings g_settings;
+extern Settings g_settings;
+std::string ConvertFromCFGtoINI(const std::string& cfgData);

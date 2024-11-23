@@ -5,6 +5,8 @@
 typedef std::map< std::string, std::string > hashmap;
 class Bsp;
 
+extern size_t totalEntityStructs;
+
 class Entity
 {
 public:
@@ -30,6 +32,8 @@ public:
 		origin = vec3();
 		targetsCached = false;
 		hide = false;
+		totalEntityStructs++;
+		realIdx = totalEntityStructs;
 	}
 
 	Entity(const std::string& _classname)
@@ -43,6 +47,8 @@ public:
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
 		targetsCached = false;
 		setOrAddKeyvalue("classname", _classname);
+		totalEntityStructs++;
+		realIdx = totalEntityStructs;
 	}
 	void addKeyvalue(const std::string& key, const std::string& value, bool multisupport = false);
 	void removeKeyvalue(const std::string& key);
@@ -86,5 +92,7 @@ public:
 	int renderamt;
 	int renderfx;
 	vec3 rendercolor;
+
+	size_t realIdx;
 };
 

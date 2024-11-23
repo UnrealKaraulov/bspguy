@@ -187,16 +187,19 @@
     <ClCompile Include=".\..\src\util\Polygon3D.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="..\ascript\add_on\scriptbuilder\scriptbuilder.cpp">
+    <ClCompile Include=".\..\src\util\as.cpp">
       <Filter>Source Files\util\lib\as</Filter>
     </ClCompile>
-    <ClCompile Include="..\ascript\add_on\scriptstdstring\scriptstdstring.cpp">
+    <ClCompile Include=".\..\ascript\add_on\scriptarray\scriptarray.cpp">
       <Filter>Source Files\util\lib\as</Filter>
     </ClCompile>
-    <ClCompile Include="..\ascript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
+    <ClCompile Include=".\..\ascript\add_on\scriptbuilder\scriptbuilder.cpp">
       <Filter>Source Files\util\lib\as</Filter>
     </ClCompile>
-    <ClCompile Include="..\ascript\add_on\scriptarray\scriptarray.cpp">
+    <ClCompile Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring.cpp">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
       <Filter>Source Files\util\lib\as</Filter>
     </ClCompile>
   </ItemGroup>
@@ -339,17 +342,20 @@
     <ClInclude Include=".\..\src\filedialog\stb_image.h">
       <Filter>Header Files\util\lib</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\filedialog\stb_image_write.h">
-      <Filter>Header Files\util\lib</Filter>
+    <ClInclude Include=".\..\src\util\as.h">
+      <Filter>Header Files\util\lib\as</Filter>
     </ClInclude>
-    <ClInclude Include="..\ascript\add_on\scriptbuilder\scriptbuilder.h">
-      <Filter>Source Files\util\lib\as</Filter>
+    <ClInclude Include=".\..\ascript\add_on\scriptarray\scriptarray.h">
+      <Filter>Header Files\util\lib\as</Filter>
     </ClInclude>
-    <ClInclude Include="..\ascript\add_on\scriptstdstring\scriptstdstring.h">
-      <Filter>Source Files\util\lib\as</Filter>
+    <ClInclude Include=".\..\ascript\add_on\scriptbuilder\scriptbuilder.h">
+      <Filter>Header Files\util\lib\as</Filter>
     </ClInclude>
-    <ClInclude Include="..\ascript\add_on\scriptarray\scriptarray.h">
-      <Filter>Source Files\util\lib\as</Filter>
+    <ClInclude Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring.h">
+      <Filter>Header Files\util\lib\as</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\filedialog\stb_image_write.h">
+      <Filter>Header Files\util\lib\as</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -430,6 +436,9 @@
     </Filter>
     <Filter Include="Source Files\util\lib\as">
       <UniqueIdentifier>{cdb7a285-d297-4dee-abe8-74a5bcfbbe55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\util\lib\as">
+      <UniqueIdentifier>{ed5f00ca-24f0-4d90-8a13-df1712ce4394}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

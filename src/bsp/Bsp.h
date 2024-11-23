@@ -42,6 +42,8 @@ struct LeafDebug
 	}
 };
 
+extern size_t totalBspStructs;
+
 class Bsp
 {
 public:
@@ -516,6 +518,7 @@ public:
 
 	bool* pvsFaces = NULL; // flags which faces are marked for rendering in the PVS
 	int pvsFaceCount = 0;
+	size_t realIdx = 0;
 };
 
 void update_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type = 0);

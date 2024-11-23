@@ -1,8 +1,8 @@
 #pragma once
 #include <cstring>
 #include <string>
-#include "bsplimits.h"
 #include "bsptypes.h"
+
 int calcMipsSize(int w, int h);
 
 #pragma pack(push, 1)

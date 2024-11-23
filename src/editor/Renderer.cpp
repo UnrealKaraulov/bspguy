@@ -21,6 +21,8 @@
 
 #include "quantizer.h"
 
+#include "as.h"
+
 Renderer* g_app = NULL;
 std::vector<BspRenderer*> mapRenderers{};
 
@@ -162,7 +164,7 @@ void window_focus_callback(GLFWwindow* window, int focused)
 
 void window_close_callback(GLFWwindow* window)
 {
-	g_settings.save();
+	g_settings.saveSettings();
 	print_log(get_localized_string(LANG_0901));
 
 #ifdef MINGW 
@@ -378,7 +380,7 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
-	g_settings.save();
+	g_settings.saveSettings();
 	print_log(get_localized_string(LANG_0901));
 	glfwTerminate();
 #ifdef MINGW 
@@ -501,14 +503,15 @@ void Renderer::renderLoop()
 
 	int clearcolor = 0;
 
+	InitializeAngelScripts();
+
 	while (!glfwWindowShouldClose(window))
 	{
-
-		//ortho_overview = DebugKeyPressed;
-
 		curTime = glfwGetTime();
 		if (g_rend_vsync != 0 || std::abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
 		{
+			AS_OnFrameTick();
+
 			if (SelectedMap && SelectedMap->is_mdl_model)
 			{
 				if (clearcolor != 1)
@@ -2758,6 +2761,7 @@ Bsp* Renderer::getSelectedMap()
 	if (!SelectedMap && mapRenderers.size() == 1)
 	{
 		SelectedMap = mapRenderers[0]->map;
+		AS_OnMapChange();
 	}
 
 	// TEMP DEBUG FOR CRASH DETECT
@@ -2767,8 +2771,8 @@ Bsp* Renderer::getSelectedMap()
 		{
 			print_log(PRINT_RED, "CRITICAL ERROR! BAD MAP POINTER!!\n");
 		}
-
 		SelectedMap = NULL;
+		AS_OnMapChange();
 	}
 
 	return SelectedMap;
@@ -2795,23 +2799,24 @@ void Renderer::selectMapId(int id)
 		if (s->map && (int)i == id)
 		{
 			SelectedMap = s->map;
+			AS_OnMapChange();
 			return;
 		}
 	}
 	SelectedMap = NULL;
-	SelectedMapChanged = true;
+	AS_OnMapChange();
 }
 
 void Renderer::selectMap(Bsp* map)
 {
 	SelectedMap = map;
-	SelectedMapChanged = true;
+	AS_OnMapChange();
 }
 
 void Renderer::deselectMap()
 {
 	SelectedMap = NULL;
-	SelectedMapChanged = true;
+	AS_OnMapChange();
 }
 
 void Renderer::clearSelection()

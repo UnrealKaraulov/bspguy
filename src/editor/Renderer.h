@@ -182,11 +182,7 @@ public:
 	void clearSelection();
 	void updateEnts();
 	bool isEntTransparent(const char* classname);
-	bool SelectedMapChanged = false;
 	
-	//Waning: not thread safe.
-	bool MakeScreenshotMap(int mapid, bool & finish);
-
 	Bsp* SelectedMap = NULL;
 	PointEntRenderer* pointEntRenderer;
 	PointEntRenderer* swapPointEntRenderer = NULL;

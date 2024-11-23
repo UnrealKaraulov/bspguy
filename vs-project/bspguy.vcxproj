@@ -109,7 +109,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\..\vs-project\Release\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">.\..\vs-project\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bspguy.dir\Debug\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">bspguy.dir\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">bspguy.dir\DebugGit\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bspguy</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">bspguy</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">bspguy_debug</TargetName>
@@ -169,6 +169,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <OutDir>.\..\vs-project\Release\</OutDir>
+    <IntDir>bspguy.dir\Debug\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugGithub|Win32'">
+    <IntDir>bspguy.dir\Debug\</IntDir>
+    <OutDir>.\..\vs-project\Release\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IntDir>bspguy.dir\Release\</IntDir>
+    <OutDir>.\..\vs-project\Release\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -813,15 +823,17 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\ascript\add_on\scriptarray\scriptarray.cpp" />
-    <ClCompile Include="..\ascript\add_on\scriptbuilder\scriptbuilder.cpp" />
-    <ClCompile Include="..\ascript\add_on\scriptstdstring\scriptstdstring.cpp" />
-    <ClCompile Include="..\ascript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
-    <ClCompile Include=".\..\src\main.cpp" />
-    <ClInclude Include="..\ascript\add_on\scriptarray\scriptarray.h" />
-    <ClInclude Include="..\ascript\add_on\scriptbuilder\scriptbuilder.h" />
-    <ClInclude Include="..\ascript\add_on\scriptstdstring\scriptstdstring.h" />
-    <ClInclude Include="..\src\filedialog\stb_image_write.h" />
+    <ClCompile Include=".\..\ascript\add_on\scriptarray\scriptarray.cpp" />
+    <ClCompile Include=".\..\ascript\add_on\scriptbuilder\scriptbuilder.cpp" />
+    <ClCompile Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring.cpp" />
+    <ClCompile Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
+    <ClInclude Include=".\..\ascript\add_on\scriptarray\scriptarray.h" />
+    <ClInclude Include=".\..\ascript\add_on\scriptbuilder\scriptbuilder.h" />
+    <ClInclude Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring.h" />
+    <ClInclude Include=".\..\src\filedialog\stb_image_write.h" />
+    <ClInclude Include=".\..\src\filedialog\stb_image.h" />
+    <ClInclude Include=".\..\src\filedialog\ImFileDialog.h" />
+    <ClCompile Include=".\..\src\filedialog\ImFileDialog.cpp" />
     <ClInclude Include=".\..\src\res\Wad.h" />
     <ClCompile Include=".\..\src\res\Wad.cpp" />
     <ClCompile Include=".\..\src\res\Sprite.cpp" />
@@ -829,15 +841,6 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <ClCompile Include=".\..\src\res\XASH_csm.cpp" />
     <ClInclude Include=".\..\src\res\XASH_csm.h" />
     <ClInclude Include=".\..\src\res\JACK_jmf.h" />
-    <ClCompile Include=".\..\src\util\lang.cpp" />
-    <ClInclude Include=".\..\src\util\lang.h" />
-    <ClInclude Include=".\..\src\util\lang_defs.h" />
-    <ClInclude Include=".\..\src\util\ini.h" />
-    <ClInclude Include=".\..\src\util\quantizer.h" />
-    <ClCompile Include=".\..\src\util\quantizer.cpp" />
-    <ClInclude Include=".\..\src\util\log.h" />
-    <ClCompile Include=".\..\src\util\log.cpp" />
-    <ClCompile Include=".\..\src\util\lodepng.cpp" />
     <ClInclude Include=".\..\src\cli\CommandLine.h" />
     <ClCompile Include=".\..\src\cli\CommandLine.cpp" />
     <ClInclude Include=".\..\src\cli\ProgressMeter.h" />
@@ -858,16 +861,6 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <ClCompile Include=".\..\src\bsp\Keyvalue.cpp" />
     <ClInclude Include=".\..\src\bsp\remap.h" />
     <ClCompile Include=".\..\src\bsp\remap.cpp" />
-    <ClInclude Include=".\..\src\util\util.h" />
-    <ClCompile Include=".\..\src\util\util.cpp" />
-    <ClInclude Include=".\..\src\util\vectors.h" />
-    <ClCompile Include=".\..\src\util\vectors.cpp" />
-    <ClInclude Include=".\..\src\util\mat4x4.h" />
-    <ClCompile Include=".\..\src\util\mat4x4.cpp" />
-    <ClInclude Include=".\..\src\util\Line2D.h" />
-    <ClCompile Include=".\..\src\util\Line2D.cpp" />
-    <ClInclude Include=".\..\src\util\Polygon3D.h" />
-    <ClCompile Include=".\..\src\util\Polygon3D.cpp" />
     <ClCompile Include=".\..\src\nav\LeafNavMesh.h" />
     <ClCompile Include=".\..\src\nav\LeafNavMesh.cpp" />
     <ClCompile Include=".\..\src\nav\LeafNavMeshGenerator.h" />
@@ -925,10 +918,29 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <ClCompile Include=".\..\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include=".\..\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include=".\..\imgui\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include=".\..\src\util\lang.cpp" />
+    <ClInclude Include=".\..\src\util\lang.h" />
+    <ClInclude Include=".\..\src\util\lang_defs.h" />
+    <ClInclude Include=".\..\src\util\ini.h" />
+    <ClInclude Include=".\..\src\util\quantizer.h" />
+    <ClCompile Include=".\..\src\util\quantizer.cpp" />
+    <ClInclude Include=".\..\src\util\log.h" />
+    <ClCompile Include=".\..\src\util\log.cpp" />
     <ClInclude Include=".\..\src\util\lodepng.h" />
-    <ClInclude Include=".\..\src\filedialog\stb_image.h" />
-    <ClInclude Include=".\..\src\filedialog\ImFileDialog.h" />
-    <ClCompile Include=".\..\src\filedialog\ImFileDialog.cpp" />
+    <ClCompile Include=".\..\src\util\lodepng.cpp" />
+    <ClInclude Include=".\..\src\util\util.h" />
+    <ClCompile Include=".\..\src\util\util.cpp" />
+    <ClInclude Include=".\..\src\util\vectors.h" />
+    <ClCompile Include=".\..\src\util\vectors.cpp" />
+    <ClInclude Include=".\..\src\util\mat4x4.h" />
+    <ClCompile Include=".\..\src\util\mat4x4.cpp" />
+    <ClInclude Include=".\..\src\util\Line2D.h" />
+    <ClCompile Include=".\..\src\util\Line2D.cpp" />
+    <ClInclude Include=".\..\src\util\Polygon3D.h" />
+    <ClCompile Include=".\..\src\util\Polygon3D.cpp" />
+    <ClInclude Include=".\..\src\util\as.h" />
+    <ClCompile Include=".\..\src\util\as.cpp" />
+    <ClCompile Include=".\..\src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include=".\..\vs-project\glfw\src\glfw.vcxproj">

@@ -9,7 +9,7 @@
 #include "fmt/format.h"
 #include "Sprite.h"
 #include "log.h"
-
+#include "as.h"
 
 // todo (newbspguy):
 // texture browser
@@ -41,49 +41,9 @@ bool g_verbose = false;
 #include <csignal>
 #endif
 
-	#include "angelscript.h"
-#include "../../add_on/scriptstdstring/scriptstdstring.h"
-#include "../../add_on/scriptbuilder/scriptbuilder.h"
-
-
-void PrintString(const std::string& str) {
-	print_log("{}\n", str);
-}
-
-void RegisterFunctions(asIScriptEngine* engine) {
-	int r = engine->RegisterGlobalFunction("void PrintString(const string &in)", asFUNCTION(PrintString), asCALL_CDECL);
-	if (r < 0) std::cerr << "Failed to register function." << std::endl;
-}
 
 bool start_viewer(const char* map)
 {
-	asIScriptEngine* engine = asCreateScriptEngine();
-	if (engine == nullptr) {
-		std::cerr << "Failed to create script engine." << std::endl;
-		return 1;
-	}
-
-	RegisterStdString(engine);
-	RegisterFunctions(engine);
-
-	const char* script = R"(
-        void main() {
-            PrintString("Hello from AngelScript!");
-        }
-    )";
-
-	CScriptBuilder builder;
-	builder.StartNewModule(engine, "MyModule");
-	builder.AddSectionFromMemory("script", script);
-	builder.BuildModule();
-
-	asIScriptContext* ctx = engine->CreateContext();
-	ctx->Prepare(engine->GetModule("MyModule")->GetFunctionByDecl("void main()"));
-	ctx->Execute();
-
-	ctx->Release();
-	engine->ShutDownAndRelease();
-
 	if (map && map[0] != '\0' && !fileExists(map))
 	{
 		return false;
@@ -1032,8 +992,8 @@ int main(int argc, char* argv[])
 			bspguy_dir = GetExecutableDir("./");
 		}
 #endif
-
-		fs::current_path(bspguy_dir);
+		std::error_code err;
+		fs::current_path(bspguy_dir,err);
 
 		/*CSMFile tmpFile;
 		tmpFile.read("d:/SteamLibrary/steamapps/common/Half-Life/bspguy_work/de_dust2.smd/de_dust2_1.csm");
@@ -1049,7 +1009,7 @@ int main(int argc, char* argv[])
 		{
 			try
 			{
-				fs::remove("./log.txt");
+				fs::remove("./log.txt",err);
 			}
 			catch (...)
 			{
@@ -1057,10 +1017,26 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		g_settings_path = "./bspguy.cfg";
+		g_settings_path = "./bspguy.ini";
 
-		g_settings.loadDefault();
-		g_settings.load();
+		if (!fileExists("./bspguy.ini") && fileExists("./bspguy.cfg"))
+		{
+			int length;
+			char* bspguy_cfg = loadFile("./bspguy.cfg", length);
+			if (bspguy_cfg && length > 0)
+			{
+				if (bspguy_cfg[0] != '[')
+				{
+					std::string bspgu_cfgToIni = ConvertFromCFGtoINI(bspguy_cfg);
+					print_log(PRINT_GREEN, "Migrating from CFG file to INI...\n");
+					writeFile("./bspguy.ini", bspgu_cfgToIni);
+					delete[] bspguy_cfg;
+				}
+			}
+		}
+
+		g_settings.loadDefaultSettings();
+		g_settings.loadSettings();
 
 
 		CommandLine cli(argc, argv);

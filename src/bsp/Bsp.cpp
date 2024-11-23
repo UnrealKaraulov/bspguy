@@ -29,6 +29,7 @@ vec3 default_hull_extents[MAX_MAP_HULLS] = {
 };
 
 int g_sort_mode = SORT_CLIPNODES;
+size_t totalBspStructs = 0;
 
 void Bsp::init_empty_bsp()
 {
@@ -147,6 +148,8 @@ Bsp::Bsp()
 	extralumps = NULL;
 
 	bsp_header.nVersion = 30;
+	totalBspStructs++;
+	realIdx = totalBspStructs;
 }
 
 Bsp::Bsp(std::string fpath)
@@ -182,6 +185,9 @@ Bsp::Bsp(std::string fpath)
 	parentMap = NULL;
 	pvsFaces = NULL;
 	save_cam_pos = save_cam_angles = {};
+
+	totalBspStructs++;
+	realIdx = totalBspStructs;
 
 	if (fpath.empty())
 	{
@@ -250,14 +256,14 @@ Bsp::Bsp(std::string fpath)
 	print_log(get_localized_string(LANG_0038), reverse_bits(originCrc32));
 
 	std::string entFilePath;
-	if (g_settings.sameDirForEnt) {
+	if (g_settings.same_dir_for_ent) {
 		entFilePath = fpath.substr(0, fpath.size() - 4) + ".ent";
 	}
 	else {
 		entFilePath = g_working_dir + (bsp_name + ".ent");
 	}
 
-	if (g_settings.autoImportEnt && fileExists(entFilePath)) {
+	if (g_settings.auto_import_ent && fileExists(entFilePath)) {
 		print_log(get_localized_string(LANG_0039), entFilePath);
 
 		int len;
@@ -4526,7 +4532,7 @@ int Bsp::lightmap_count(int faceIdx)
 void Bsp::write(const std::string& path)
 {
 	// Make single backup
-	if (g_settings.backUpMap && fileExists(path) && !fileExists(path + ".bak"))
+	if (g_settings.savebackup && fileExists(path) && !fileExists(path + ".bak"))
 	{
 		int len;
 		char* oldfile = loadFile(path, len);
@@ -4829,7 +4835,7 @@ void Bsp::write(const std::string& path)
 		}
 	}
 
-	if (g_settings.preserveCrc32 && !force_skip_crc)
+	if (g_settings.save_crc && !force_skip_crc)
 	{
 		if (world && world->hasKey("CRC"))
 		{

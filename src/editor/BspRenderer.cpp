@@ -283,7 +283,7 @@ void BspRenderer::loadTextures()
 					foundDecalWad = true;
 			}
 
-			if (g_settings.stripWad)
+			if (g_settings.strip_wad_path)
 			{
 				std::string newWadString = "";
 

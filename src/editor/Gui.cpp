@@ -23,6 +23,7 @@
 #include <algorithm>
 #include "LeafNavMesh.h"
 
+#include "as.h"
 float g_tooltip_delay = 0.6f; // time in seconds before showing a IMGUI_TOOLTIP
 
 bool filterNeeded = true;
@@ -2838,7 +2839,7 @@ void Gui::drawMenuBar()
 				if (ImGui::MenuItem(get_localized_string(LANG_0533).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
 					std::string entFilePath;
-					if (g_settings.sameDirForEnt) {
+					if (g_settings.same_dir_for_ent) {
 						std::string bspFilePath = map->bsp_path;
 						if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
 							entFilePath = bspFilePath + ".ent";
@@ -3765,7 +3766,7 @@ void Gui::drawMenuBar()
 					if (map)
 					{
 						std::string entFilePath;
-						if (g_settings.sameDirForEnt) {
+						if (g_settings.same_dir_for_ent) {
 							std::string bspFilePath = map->bsp_path;
 							if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
 								entFilePath = bspFilePath + ".ent";
@@ -3941,10 +3942,10 @@ void Gui::drawMenuBar()
 			ImGui::Separator();
 			if (ImGui::MenuItem(get_localized_string(LANG_0555).c_str(), NULL))
 			{
-				g_settings.save();
+				g_settings.saveSettings();
 				if (fileSize(g_settings_path) == 0)
 				{
-					g_settings.save();
+					g_settings.saveSettings();
 					glfwTerminate();
 
 #ifdef MINGW 
@@ -3954,7 +3955,7 @@ void Gui::drawMenuBar()
 					std::quick_exit(0);
 #endif
 				}
-				g_settings.save();
+				g_settings.saveSettings();
 				if (fileSize(g_settings_path) == 0)
 				{
 					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0359));
@@ -5671,6 +5672,8 @@ void Gui::drawMenuBar()
 			}
 			ImGui::EndMenu();
 		}
+
+		AS_OnGuiTick();
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0601).c_str()))
 		{
@@ -9035,7 +9038,7 @@ void Gui::drawSettings()
 #endif
 			ImGui::SameLine();
 
-			ImGui::Checkbox(get_localized_string(LANG_0724).c_str(), &g_settings.backUpMap);
+			ImGui::Checkbox(get_localized_string(LANG_0724).c_str(), &g_settings.savebackup);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
@@ -9043,7 +9046,7 @@ void Gui::drawSettings()
 				ImGui::EndTooltip();
 			}
 
-			ImGui::Checkbox(get_localized_string(LANG_0726).c_str(), &g_settings.preserveCrc32);
+			ImGui::Checkbox(get_localized_string(LANG_0726).c_str(), &g_settings.save_crc);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
@@ -9053,14 +9056,14 @@ void Gui::drawSettings()
 
 			ImGui::SameLine();
 
-			ImGui::Checkbox(get_localized_string(LANG_0728).c_str(), &g_settings.autoImportEnt);
+			ImGui::Checkbox(get_localized_string(LANG_0728).c_str(), &g_settings.auto_import_ent);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0729).c_str());
 				ImGui::EndTooltip();
 			}
 
-			ImGui::Checkbox(get_localized_string(LANG_0730).c_str(), &g_settings.sameDirForEnt);
+			ImGui::Checkbox(get_localized_string(LANG_0730).c_str(), &g_settings.same_dir_for_ent);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0731).c_str());
@@ -9081,7 +9084,7 @@ void Gui::drawSettings()
 				ImGui::EndTooltip();
 			}
 
-			ImGui::Checkbox(get_localized_string(LANG_0734).c_str(), &g_settings.defaultIsEmpty);
+			ImGui::Checkbox(get_localized_string(LANG_0734).c_str(), &g_settings.default_is_empty);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0735).c_str());
@@ -9165,7 +9168,7 @@ void Gui::drawSettings()
 
 			if (ImGui::Button(get_localized_string(LANG_0739).c_str()))
 			{
-				g_settings.reset();
+				g_settings.loadDefaultSettings();
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
@@ -9270,7 +9273,7 @@ void Gui::drawSettings()
 		else if (settingsTab == 3)
 		{
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::Checkbox(get_localized_string(LANG_0743).c_str(), &g_settings.stripWad);
+			ImGui::Checkbox(get_localized_string(LANG_0743).c_str(), &g_settings.strip_wad_path);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted(get_localized_string(LANG_0744).c_str());
@@ -9500,11 +9503,11 @@ void Gui::drawSettings()
 				ImGui::SameLine();
 				if (ImGui::DragInt("FPS LIMIT", &g_settings.fpslimit, 5, 30, 1000, "%u"))
 				{
-					if (g_settings.fpslimit < 5)
-						g_settings.fpslimit = 5;
 					if (g_settings.fpslimit > 2000)
 						g_settings.fpslimit = 2000;
 				}
+				if (g_settings.fpslimit < 15)
+					g_settings.fpslimit = 15;
 			}
 			ImGui::DragFloat(get_localized_string(LANG_0776).c_str(), &app->fov, 0.1f, 1.0f, 150.0f, get_localized_string(LANG_0777).c_str());
 			ImGui::DragFloat(get_localized_string(LANG_0778).c_str(), &app->zFar, 10.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f", ImGuiSliderFlags_Logarithmic);
@@ -9721,7 +9724,7 @@ void Gui::drawSettings()
 		g_settings.selected_lang = langForSelect;
 		g_settings.palette_name = palForSelect;
 		set_localize_lang(g_settings.selected_lang);
-		g_settings.save();
+		g_settings.saveSettings();
 		if (!app->reloading)
 		{
 			app->reloading = true;

@@ -118,6 +118,7 @@ set(SOURCE_FILES
 	imgui/backends/imgui_impl_opengl3.cpp
 	imgui/misc/cpp/imgui_stdlib.cpp
 	
+	# test angelscript 
 	ascript/add_on/scriptarray/scriptarray.h
 	ascript/add_on/scriptarray/scriptarray.cpp
 	ascript/add_on/scriptbuilder/scriptbuilder.h
@@ -125,6 +126,8 @@ set(SOURCE_FILES
 	ascript/add_on/scriptstdstring/scriptstdstring.h
 	ascript/add_on/scriptstdstring/scriptstdstring.cpp
 	ascript/add_on/scriptstdstring/scriptstdstring_utils.cpp
+	
+	src/util/as.h					src/util/as.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

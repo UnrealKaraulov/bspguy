@@ -3,6 +3,8 @@
 #include "Bsp.h"
 #include <set>
 
+size_t totalEntityStructs = 0;
+
 void Entity::addKeyvalue(const std::string & key, const std::string & value, bool multisupport)
 {
 	if (!nullstrlen(key))

@@ -8,9 +8,12 @@ std::string g_game_dir = "/";
 std::string g_working_dir = "./";
 std::string g_startup_dir = "";
 
-AppSettings g_settings{};
 
-void AppSettings::loadDefault()
+inih::INIReader* settings_ini = NULL;
+
+Settings g_settings{};
+
+void Settings::loadDefaultSettings()
 {
 	settingLoaded = false;
 
@@ -59,11 +62,11 @@ void AppSettings::loadDefault()
 	merge_edges = false;
 	mark_unused_texinfos = false;
 	start_at_entity = false;
-	backUpMap = true;
-	preserveCrc32 = false;
+	savebackup = true;
+	save_crc = false;
 	save_cam = false;
-	autoImportEnt = false;
-	sameDirForEnt = false;
+	auto_import_ent = false;
+	same_dir_for_ent = false;
 
 	moveSpeed = 500.0f;
 	fov = 75.0f;
@@ -87,10 +90,10 @@ void AppSettings::loadDefault()
 	transparentTextures.clear();
 	transparentEntities.clear();
 
-	defaultIsEmpty = true;
+	default_is_empty = true;
 
-	entListReload = true;
-	stripWad = false;
+	reload_ents_list = true;
+	strip_wad_path = false;
 
 	palette_name = "quake_1";
 
@@ -149,18 +152,15 @@ void AppSettings::loadDefault()
 	memcpy(palette_default, default_data, 0x300);
 
 	ResetBspLimits();
-}
 
-void AppSettings::reset()
-{
-	loadDefault();
+
 
 	fgdPaths.clear();
-	fgdPaths.emplace_back("/moddir/GameDefinitionFile.fgd",true);
+	fgdPaths.emplace_back("/moddir/GameDefinitionFile.fgd", true);
 
 	resPaths.clear();
-	resPaths.emplace_back("/moddir/",true);
-	resPaths.emplace_back("/moddir_addon/",true);
+	resPaths.emplace_back("/moddir/", true);
+	resPaths.emplace_back("/moddir_addon/", true);
 
 	conditionalPointEntTriggers.clear();
 	conditionalPointEntTriggers.emplace_back("trigger_once");
@@ -220,15 +220,17 @@ void AppSettings::reset()
 	transparentEntities.emplace_back("func_buyzone");
 }
 
-void AppSettings::fillLanguages(const std::string& folderPath)
+void  Settings::fillLanguages(const std::string& folderPath)
 {
 	languages.clear();
 	languages.emplace_back("EN");
-	for (const auto& entry : fs::directory_iterator(folderPath))
+
+	std::error_code err;
+	for (const auto& entry : fs::directory_iterator(folderPath, err))
 	{
 		if (!entry.is_directory()) {
 			std::string filename = entry.path().filename().string();
-			if (starts_with(filename,"language_") && ends_with(filename,".ini"))
+			if (starts_with(filename, "language_") && ends_with(filename, ".ini"))
 			{
 				std::string language = filename.substr(9);
 				language.erase(language.size() - 4);
@@ -240,14 +242,16 @@ void AppSettings::fillLanguages(const std::string& folderPath)
 	}
 }
 
-void AppSettings::fillPalettes(const std::string& folderPath)
+void  Settings::fillPalettes(const std::string& folderPath)
 {
 	palettes.clear();
-	for (const auto& entry : fs::directory_iterator(folderPath))
+
+	std::error_code err;
+	for (const auto& entry : fs::directory_iterator(folderPath, err))
 	{
 		if (!entry.is_directory()) {
 			std::string filename = entry.path().filename().string();
-			if (ends_with(filename,".pal"))
+			if (ends_with(filename, ".pal"))
 			{
 				int len;
 				char* data = loadFile(entry.path().string(), len);
@@ -270,412 +274,238 @@ void AppSettings::fillPalettes(const std::string& folderPath)
 	}
 }
 
-void AppSettings::load()
+void Settings::loadSettings()
 {
 	set_localize_lang("EN");
 
-	std::ifstream file(g_settings_path);
-	if (!file.is_open() || fileSize(g_settings_path) == 0)
+	fillLanguages("./languages/");
+
+	if (fileExists(g_settings_path))
 	{
-		file.close();
-
-		bool settings_deleted = true;
-
-		if (fileExists(g_settings_path))
+		try
 		{
-			settings_deleted = removeFile(g_settings_path);
+			settings_ini = new inih::INIReader(g_settings_path);
 		}
-
-		if (settings_deleted)
+		catch (std::runtime_error& runtime)
 		{
-			if (fileExists(g_settings_path + ".bak"))
-			{
-				copyFile(g_settings_path + ".bak", g_settings_path);
-				file = std::ifstream(g_settings_path);
-			}
-
-			if (!file.is_open() || fileSize(g_settings_path) == 0)
-			{
-				print_log(PRINT_RED, get_localized_string(LANG_0926), g_settings_path);
-				reset();
-				return;
-			}
+			print_log(PRINT_RED | PRINT_INTENSITY, "Settings parse from {} fatal error: {}\n", g_settings_path, runtime.what());
+			delete settings_ini;
+			settings_ini = NULL;
+			saveSettings(g_settings_path);
 		}
-		else
+	}
+	else
+	{
+		saveSettings(g_settings_path);
+		try
 		{
-			if (fileExists(g_settings_path + ".bak"))
-			{
-				file = std::ifstream(g_settings_path + ".bak");
-			}
-
-
-			if (!file.is_open() || fileSize(g_settings_path + ".bak") == 0)
-			{
-				print_log(PRINT_RED, get_localized_string(LANG_0926), g_settings_path);
-				reset();
-				return;
-			}
-
-
-			print_log(PRINT_GREEN | PRINT_RED, "Warning! Settings restored from {} file!\n", g_settings_path + ".bak");
+			settings_ini = new inih::INIReader(g_settings_path);
+		}
+		catch (std::runtime_error& runtime)
+		{
+			print_log(PRINT_RED | PRINT_INTENSITY, "Settings parse from {} fatal error: {}\n", g_settings_path, runtime.what());
+			delete settings_ini;
+			settings_ini = NULL;
 		}
 	}
 
-
-
-	fillLanguages("./languages/");
+	if (!settings_ini)
+		return;
 
 	fillPalettes("./palettes/");
 
 	palette_name = "quake_1";
 
-	int lines_readed = 0;
-	std::string line;
-	while (getline(file, line))
-	{
-		if (line.empty())
-			continue;
+	if (settings_ini->ParseError() != 0) {
+		print_log(PRINT_RED, "Can't load {}\n", g_settings_path);
+		return;
+	}
 
-		size_t eq = line.find('=');
-		if (eq == std::string::npos)
-		{
-			continue;
-		}
-		lines_readed++;
+	g_settings.windowWidth = settings_ini->Get<int>("GENERAL", "window_width", 800);
+	g_settings.windowHeight = settings_ini->Get<int>("GENERAL", "window_height", 600);
+	g_settings.windowX = settings_ini->Get<int>("GENERAL", "window_x", 0);
+	g_settings.windowY = settings_ini->Get<int>("GENERAL", "window_y", 0);
+	g_settings.maximized = settings_ini->Get<int>("GENERAL", "window_maximized", 0);
+	g_settings.start_at_entity = settings_ini->Get<int>("GENERAL", "start_at_entity", 0) != 0;
+	g_settings.savebackup = settings_ini->Get<int>("GENERAL", "savebackup", 0) != 0;
+	g_settings.save_crc = settings_ini->Get<int>("GENERAL", "save_crc", 0) != 0;
+	g_settings.save_cam = settings_ini->Get<int>("GENERAL", "save_cam", 0) != 0;
+	g_settings.auto_import_ent = settings_ini->Get<int>("GENERAL", "auto_import_ent", 0) != 0;
+	g_settings.same_dir_for_ent = settings_ini->Get<int>("GENERAL", "same_dir_for_ent", 0) != 0;
+	g_settings.reload_ents_list = settings_ini->Get<int>("GENERAL", "reload_ents_list", 0) != 0;
+	g_settings.strip_wad_path = settings_ini->Get<int>("GENERAL", "strip_wad_path", 0) != 0;
+	g_settings.default_is_empty = settings_ini->Get<int>("GENERAL", "default_is_empty", 0) != 0;
+	g_settings.undoLevels = settings_ini->Get<int>("GENERAL", "undo_levels", 100);
 
-		std::string key = trimSpaces(line.substr(0, eq));
-		std::string val = trimSpaces(line.substr(eq + 1));
+	g_settings.save_windows = settings_ini->Get<int>("WIDGETS", "save_windows", 1) != 0;
+	g_settings.debug_open = settings_ini->Get<int>("WIDGETS", "debug_open", 0) != 0 && g_settings.save_windows;
+	g_settings.keyvalue_open = settings_ini->Get<int>("WIDGETS", "keyvalue_open", 0) != 0 && g_settings.save_windows;
+	g_settings.transform_open = settings_ini->Get<int>("WIDGETS", "transform_open", 0) != 0 && g_settings.save_windows;
+	g_settings.log_open = settings_ini->Get<int>("WIDGETS", "log_open", 0) != 0 && g_settings.save_windows;
+	g_settings.limits_open = settings_ini->Get<int>("WIDGETS", "limits_open", 0) != 0 && g_settings.save_windows;
+	g_settings.entreport_open = settings_ini->Get<int>("WIDGETS", "entreport_open", 0) != 0 && g_settings.save_windows;
+	g_settings.texbrowser_open = settings_ini->Get<int>("WIDGETS", "texbrowser_open", 0) != 0 && g_settings.save_windows;
+	g_settings.goto_open = settings_ini->Get<int>("WIDGETS", "goto_open", 0) != 0 && g_settings.save_windows;
+	g_settings.settings_tab = settings_ini->Get<int>("WIDGETS", "settings_tab", 0);
 
-		if (key == "window_width")
-		{
-			g_settings.windowWidth = str_to_int(val);
-		}
-		else if (key == "window_height")
-		{
-			g_settings.windowHeight = str_to_int(val);
-		}
-		else if (key == "window_x")
-		{
-			g_settings.windowX = str_to_int(val);
-		}
-		else if (key == "window_y")
-		{
-			g_settings.windowY = str_to_int(val);
-		}
-		else if (key == "window_maximized")
-		{
-			g_settings.maximized = str_to_int(val);
-		}
-		else if (key == "save_windows")
-		{
-			g_settings.save_windows = str_to_int(val) != 0;
-		}
-		else if (key == "debug_open")
-		{
-			g_settings.debug_open = str_to_int(val) != 0 && save_windows;
-		}
-		else if (key == "keyvalue_open")
-		{
-			g_settings.keyvalue_open = str_to_int(val) != 0 && save_windows;
-		}
-		else if (key == "transform_open")
-		{
-			g_settings.transform_open = str_to_int(val) != 0 && save_windows;
-		}
-		else if (key == "log_open")
-		{
-			g_settings.log_open = str_to_int(val) != 0 && save_windows;
-		}
-		else if (key == "limits_open")
-		{
-			g_settings.limits_open = str_to_int(val) != 0 && save_windows;
-		}
-		else if (key == "entreport_open")
-		{
-			g_settings.entreport_open = str_to_int(val) != 0 && save_windows;
-		}
-		else if (key == "texbrowser_open")
-		{
-			g_settings.texbrowser_open = str_to_int(val) != 0 && save_windows;
-		}
-		else if (key == "goto_open")
-		{
-			g_settings.goto_open = str_to_int(val) != 0 && save_windows;
-		}
-		else if (key == "settings_tab")
-		{
-			if (save_windows)
-				g_settings.settings_tab = str_to_int(val);
-		}
-		else if (key == "vsync")
-		{
-			g_settings.vsync = str_to_int(val) != 0;
-		}
-		else if (key == "mark_unused_texinfos")
-		{
-			g_settings.mark_unused_texinfos = str_to_int(val) != 0;
-		}
-		else if (key == "merge_verts")
-		{
-			g_settings.merge_verts = str_to_int(val) != 0;
-		}
-		else if (key == "merge_edges")
-		{
-			g_settings.merge_edges = str_to_int(val) != 0;
-		}
-		else if (key == "start_at_entity")
-		{
-			g_settings.start_at_entity = str_to_int(val) != 0;
-		}
-		else if (key == "verbose_logs")
-		{
-			g_settings.verboseLogs = str_to_int(val) != 0;
-#ifndef NDEBUG
-			g_settings.verboseLogs = true;
-#endif
-		}
-		else if (key == "fov")
-		{
-			g_settings.fov = str_to_float(val);
-		}
-		else if (key == "zfar")
-		{
-			g_settings.zfar = str_to_float(val);
-		}
-		else if (key == "move_speed")
-		{
-			g_settings.moveSpeed = str_to_float(val);
-			if (g_settings.moveSpeed < 100)
-			{
-				print_log(get_localized_string(LANG_0927));
-				g_settings.moveSpeed = 500;
-			}
-		}
-		else if (key == "rot_speed")
-		{
-			g_settings.rotSpeed = str_to_float(val);
-		}
-		else if (key == "renders_flags")
-		{
-			g_settings.render_flags = str_to_int(val);
-		}
-		else if (key == "font_size")
-		{
-			g_settings.fontSize = str_to_float(val);
-		}
-		else if (key == "undo_levels")
-		{
-			g_settings.undoLevels = str_to_int(val);
-		}
-		else if (key == "fpslimit")
-		{
-			g_settings.fpslimit = str_to_int(val);
-			if (g_settings.fpslimit < 30)
-				g_settings.fpslimit = 30;
-			if (g_settings.fpslimit > 1000)
-				g_settings.fpslimit = 1000;
-		}
-		else if (key == "gamedir")
-		{
-			g_settings.gamedir = val;
-		}
-		else if (key == "workingdir")
-		{
-			g_settings.workingdir = val;
-		}
-		else if (key == "lastdir")
-		{
-			g_settings.lastdir = val;
-		}
-		else if (key == "language")
-		{
-			g_settings.selected_lang = val;
-			set_localize_lang(g_settings.selected_lang);
-		}
-		else if (key == "hlrad_path")
-		{
-			g_settings.rad_path = val;
-		}
-		else if (key == "hlrad_opts")
-		{
-			g_settings.rad_options = val;
-		}
-		else if (key == "palette")
-		{
-			g_settings.palette_name = val;
-			pal_id = -1;
-			for (size_t i = 0; i < palettes.size(); i++)
-			{
-				if (toLowerCase(palettes[i].name) == toLowerCase(g_settings.palette_name))
-				{
-					pal_id = (int)i;
-				}
-			}
-		}
-		else if (key == "fgd")
-		{
-			if (val.find('?') == std::string::npos)
-				fgdPaths.emplace_back(val,true);
-			else
-			{
-				auto vals = splitString(val, "?");
-				if (vals.size() == 2)
-				{
-					fgdPaths.emplace_back(vals[1],vals[0] == "enabled");
-				}
-			}
-		}
-		else if (key == "res")
-		{
-			if (val.find('?') == std::string::npos)
-				resPaths.emplace_back(val,true);
-			else
-			{
-				auto vals = splitString(val, "?");
-				if (vals.size() == 2)
-				{
-					resPaths.emplace_back(vals[1],vals[0] == "enabled");
-				}
-			}
-		}
-		else if (key == "savebackup")
-		{
-			g_settings.backUpMap = str_to_int(val) != 0;
-		}
-		else if (key == "save_crc")
-		{
-			g_settings.preserveCrc32 = str_to_int(val) != 0;
-		}
-		else if (key == "save_cam")
-		{
-			g_settings.save_cam = str_to_int(val) != 0;
-		}
-		else if (key == "auto_import_ent")
-		{
-			g_settings.autoImportEnt = str_to_int(val) != 0;
-		}
-		else if (key == "same_dir_for_ent")
-		{
-			g_settings.sameDirForEnt = str_to_int(val) != 0;
-		}
-		else if (key == "reload_ents_list")
-		{
-			entListReload = str_to_int(val) != 0;
-		}
-		else if (key == "strip_wad_path")
-		{
-			stripWad = str_to_int(val) != 0;
-		}
-		else if (key == "default_is_empty")
-		{
-			defaultIsEmpty = str_to_int(val) != 0;
-		}
-		else if (key == "FLT_MAX_COORD")
-		{
-			FLT_MAX_COORD = str_to_float(val);
-		}
-		else if (key == "MAX_MAP_MODELS")
-		{
-			MAX_MAP_MODELS = str_to_int(val);
-		}	
-		else if (key == "MAX_SURFACE_EXTENT")
-		{
-			MAX_SURFACE_EXTENT = str_to_int(val);
-		}
-		else if (key == "MAX_MAP_NODES")
-		{
-			MAX_MAP_NODES = str_to_int(val);
-		}
-		else if (key == "MAX_MAP_CLIPNODES")
-		{
-			MAX_MAP_CLIPNODES = str_to_int(val);
-		}
-		else if (key == "MAX_MAP_LEAVES")
-		{
-			MAX_MAP_LEAVES = str_to_int(val);
-		}
-		else if (key == "MAX_MAP_VISDATA")
-		{
-			MAX_MAP_VISDATA = str_to_int(val) * (1024 * 1024);
-		}
-		else if (key == "MAX_MAP_ENTS")
-		{
-			MAX_MAP_ENTS = str_to_int(val);
-		}
-		else if (key == "MAX_MAP_SURFEDGES")
-		{
-			MAX_MAP_SURFEDGES = str_to_int(val);
-		}
-		else if (key == "MAX_MAP_EDGES")
-		{
-			MAX_MAP_EDGES = str_to_int(val);
-		}
-		else if (key == "MAX_MAP_TEXTURES")
-		{
-			MAX_MAP_TEXTURES = str_to_int(val);
-		}
-		else if (key == "MAX_MAP_LIGHTDATA")
-		{
-			MAX_MAP_LIGHTDATA = str_to_int(val) * (1024 * 1024);
-		}
-		else if (key == "MAX_TEXTURE_DIMENSION")
-		{
-			MAX_TEXTURE_DIMENSION = str_to_int(val);
-			MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
-		}
-		else if (key == "MAX_MAP_BOUNDARY")
-		{
-			MAX_MAP_BOUNDARY = str_to_float(val);
-			if (std::fabs(MAX_MAP_BOUNDARY) < 512.0f)
-				MAX_MAP_BOUNDARY = 4096;
-		}
-		else if (key == "TEXTURE_STEP")
-		{
-			TEXTURE_STEP = str_to_int(val);
-		}
-		else if (key == "optimizer_cond_ents")
-		{
-			conditionalPointEntTriggers.push_back(val);
-		}
-		else if (key == "optimizer_no_hulls_ents")
-		{
-			entsThatNeverNeedAnyHulls.push_back(val);
-		}
-		else if (key == "optimizer_no_collision_ents")
-		{
-			entsThatNeverNeedCollision.push_back(val);
-		}
-		else if (key == "optimizer_passable_ents")
-		{
-			passableEnts.push_back(val);
-		}
-		else if (key == "optimizer_player_hull_ents")
-		{
-			playerOnlyTriggers.push_back(val);
-		}
-		else if (key == "optimizer_monster_hull_ents")
-		{
-			monsterOnlyTriggers.push_back(val);
-		}
-		else if (key == "negative_pitch_ents")
-		{
-			entsNegativePitchPrefix.push_back(val);
-		}
-		else if (key == "transparent_textures")
-		{
-			transparentTextures.push_back(val);
-		}
-		else if (key == "transparent_entities")
-		{
-			transparentEntities.push_back(val);
+	g_settings.vsync = settings_ini->Get<int>("GRAPHICS", "vsync", 1) != 0;
+	g_settings.mark_unused_texinfos = settings_ini->Get<int>("GRAPHICS", "mark_unused_texinfos", 0) != 0;
+	g_settings.merge_verts = settings_ini->Get<int>("GRAPHICS", "merge_verts", 0) != 0;
+	g_settings.merge_edges = settings_ini->Get<int>("GRAPHICS", "merge_edges", 0) != 0;
+	g_settings.fov = settings_ini->Get<double>("GRAPHICS", "fov", 60.0);
+	g_settings.zfar = settings_ini->Get<double>("GRAPHICS", "zfar", 1000.0);
+	g_settings.render_flags = settings_ini->Get<int>("GRAPHICS", "renders_flags", 0);
+	g_settings.fontSize = settings_ini->Get<double>("GRAPHICS", "font_size", 14.0);
+	g_settings.fpslimit = settings_ini->Get<int>("GRAPHICS", "fpslimit", 60);
+
+	if (g_settings.fpslimit < 30) {
+		g_settings.fpslimit = 30;
+	}
+	if (g_settings.fpslimit > 1000) {
+		g_settings.fpslimit = 1000;
+	}
+
+	g_settings.moveSpeed = settings_ini->Get<double>("INPUT", "move_speed", 500.0);
+
+	if (g_settings.moveSpeed < 100) {
+		print_log(get_localized_string(LANG_0927));
+		g_settings.moveSpeed = 500;
+	}
+	g_settings.rotSpeed = settings_ini->Get<double>("INPUT", "rot_speed", 1.0);
+
+	g_settings.gamedir = settings_ini->Get<std::string>("PATHS", "gamedir", "");
+	g_settings.workingdir = settings_ini->Get<std::string>("PATHS", "workingdir", "");
+	g_settings.lastdir = settings_ini->Get<std::string>("PATHS", "lastdir", "");
+	g_settings.rad_path = settings_ini->Get<std::string>("PATHS", "hlrad_path", "");
+	g_settings.palette_name = settings_ini->Get<std::string>("PATHS", "palette", "");
+
+	int fgdCount = settings_ini->Get<int>("FGD", "count", 0);
+	if (fgdCount)
+		g_settings.fgdPaths.clear();
+
+	for (int i = 1; i <= fgdCount; ++i) {
+		std::string item = settings_ini->Get<std::string>("FGD", std::to_string(i), "");
+		if (!item.empty() && (starts_with(item, "enabled?") || starts_with(item, "disabled?"))) {
+			g_settings.fgdPaths.emplace_back(item.substr(item.find('?') + 1), starts_with(item, "enabled?"));
 		}
 	}
+
+	int resCount = settings_ini->Get<int>("RES", "count", 0);
+	if (resCount)
+		g_settings.resPaths.clear();
+
+	for (int i = 1; i <= resCount; ++i) {
+		std::string item = settings_ini->Get<std::string>("RES", std::to_string(i), "");
+		if (!item.empty() && (starts_with(item, "enabled?") || starts_with(item, "disabled?"))) {
+			g_settings.resPaths.emplace_back(item.substr(item.find('?') + 1), starts_with(item, "enabled?"));
+		}
+	}
+
+	g_settings.verboseLogs = settings_ini->Get<int>("DEBUG", "verbose_logs", 0) != 0;
+#ifndef NDEBUG
+	g_settings.verboseLogs = true;
+#endif
+
+	g_settings.savebackup = settings_ini->Get<int>("SETTINGS", "savebackup", 0) != 0;
+	g_settings.save_crc = settings_ini->Get<int>("SETTINGS", "save_crc", 0) != 0;
+	g_settings.save_cam = settings_ini->Get<int>("SETTINGS", "save_cam", 0) != 0;
+	g_settings.auto_import_ent = settings_ini->Get<int>("SETTINGS", "auto_import_ent", 0) != 0;
+	g_settings.same_dir_for_ent = settings_ini->Get<int>("SETTINGS", "same_dir_for_ent", 0) != 0;
+	reload_ents_list = settings_ini->Get<int>("SETTINGS", "reload_ents_list", 0) != 0;
+	strip_wad_path = settings_ini->Get<int>("SETTINGS", "strip_wad_path", 0) != 0;
+	default_is_empty = settings_ini->Get<int>("SETTINGS", "default_is_empty", 0) != 0;
+
+	FLT_MAX_COORD = settings_ini->Get<double>("LIMITS", "FLT_MAX_COORD", 16384.0);
+	MAX_MAP_MODELS = settings_ini->Get<int>("LIMITS", "MAX_MAP_MODELS", 1024);
+	MAX_SURFACE_EXTENT = settings_ini->Get<int>("LIMITS", "MAX_SURFACE_EXTENT", 64);
+	MAX_MAP_NODES = settings_ini->Get<int>("LIMITS", "MAX_MAP_NODES", 32767);
+	MAX_MAP_CLIPNODES = settings_ini->Get<int>("LIMITS", "MAX_MAP_CLIPNODES", 32767);
+	MAX_MAP_LEAVES = settings_ini->Get<int>("LIMITS", "MAX_MAP_LEAVES", 8192);
+	MAX_MAP_VISDATA = settings_ini->Get<int>("LIMITS", "MAX_MAP_VISDATA", 2 * 1024 * 1024) * 1024 * 1024;
+	MAX_MAP_ENTS = settings_ini->Get<int>("LIMITS", "MAX_MAP_ENTS", 1024);
+	MAX_MAP_SURFEDGES = settings_ini->Get<int>("LIMITS", "MAX_MAP_SURFEDGES", 128000);
+	MAX_MAP_EDGES = settings_ini->Get<int>("LIMITS", "MAX_MAP_EDGES", 256000);
+	MAX_MAP_TEXTURES = settings_ini->Get<int>("LIMITS", "MAX_MAP_TEXTURES", 512);
+	MAX_MAP_LIGHTDATA = settings_ini->Get<int>("LIMITS", "MAX_MAP_LIGHTDATA", 4 * 1024 * 1024) * 1024 * 1024;
+	MAX_TEXTURE_DIMENSION = settings_ini->Get<int>("LIMITS", "MAX_TEXTURE_DIMENSION", 4096);
+	MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
+	MAX_MAP_BOUNDARY = settings_ini->Get<double>("LIMITS", "MAX_MAP_BOUNDARY", 4096.0);
+	if (std::fabs(MAX_MAP_BOUNDARY) < 512.0f) {
+		MAX_MAP_BOUNDARY = 4096;
+	}
+	TEXTURE_STEP = settings_ini->Get<int>("LIMITS", "TEXTURE_STEP", 16);
+
+	conditionalPointEntTriggers.clear();
+	entsThatNeverNeedAnyHulls.clear();
+	entsThatNeverNeedCollision.clear();
+	passableEnts.clear();
+	playerOnlyTriggers.clear();
+	monsterOnlyTriggers.clear();
+	entsNegativePitchPrefix.clear();
+	transparentTextures.clear();
+	transparentEntities.clear();
+
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_COND_ENTS", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("OPTIMIZER_COND_ENTS", std::to_string(i), "");
+		if (!item.empty()) {
+			conditionalPointEntTriggers.push_back(item);
+		}
+	}
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_NO_HULLS_ENTS", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("OPTIMIZER_NO_HULLS_ENTS", std::to_string(i), "");
+		if (!item.empty()) {
+			entsThatNeverNeedAnyHulls.push_back(item);
+		}
+	}
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_NO_COLLISION_ENTS", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("OPTIMIZER_NO_COLLISION_ENTS", std::to_string(i), "");
+		if (!item.empty()) {
+			entsThatNeverNeedCollision.push_back(item);
+		}
+	}
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_PASSABLE_ENTS", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("OPTIMIZER_PASSABLE_ENTS", std::to_string(i), "");
+		if (!item.empty()) {
+			passableEnts.push_back(item);
+		}
+	}
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_PLAYER_HULL_ENTS", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("OPTIMIZER_PLAYER_HULL_ENTS", std::to_string(i), "");
+		if (!item.empty()) {
+			playerOnlyTriggers.push_back(item);
+		}
+	}
+	for (int i = 1; i <= settings_ini->Get<int>("OPTIMIZER_MONSTER_HULL_ENTS", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("OPTIMIZER_MONSTER_HULL_ENTS", std::to_string(i), "");
+		if (!item.empty()) {
+			monsterOnlyTriggers.push_back(item);
+		}
+	}
+	for (int i = 1; i <= settings_ini->Get<int>("NEGATIVE_PITCH_ENTS", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("NEGATIVE_PITCH_ENTS", std::to_string(i), "");
+		if (!item.empty()) {
+			entsNegativePitchPrefix.push_back(item);
+		}
+	}
+	for (int i = 1; i <= settings_ini->Get<int>("TRANSPARENT_TEXTURES", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("TRANSPARENT_TEXTURES", std::to_string(i), "");
+		if (!item.empty()) {
+			transparentTextures.push_back(item);
+		}
+	}
+	for (int i = 1; i <= settings_ini->Get<int>("TRANSPARENT_ENTITIES", "count", 0); ++i) {
+		std::string item = settings_ini->Get<std::string>("TRANSPARENT_ENTITIES", std::to_string(i), "");
+		if (!item.empty()) {
+			transparentEntities.push_back(item);
+		}
+	}
+
 
 	if (g_settings.windowY == -32000 &&
 		g_settings.windowX == -32000)
 	{
-		g_settings.windowY = 0;
-		g_settings.windowX = 0;
+		g_settings.windowY = 200;
+		g_settings.windowX = 200;
 	}
 
 #ifdef WIN32
@@ -684,41 +514,33 @@ void AppSettings::load()
 	{
 		g_settings.windowY = 30;
 	}
+	if (g_settings.windowX == 0 && g_settings.windowY > 0)
+	{
+		g_settings.windowX = 200;
+	}
 #endif
 
 	// Restore default window height if invalid.
-	if (windowHeight <= 0 || windowWidth <= 0)
+	if (windowHeight <= 100 || windowWidth <= 100)
 	{
 		windowHeight = 600;
 		windowWidth = 800;
 	}
 
-	if (lines_readed > 0)
+	if (default_is_empty && fgdPaths.empty())
 	{
-		g_settings.settingLoaded = true;
-
-		removeFile(g_settings_path + ".bak");
-		copyFile(g_settings_path, g_settings_path + ".bak");
-	}
-	else
-	{
-		print_log(get_localized_string(LANG_0928), g_settings_path);
+		fgdPaths.emplace_back("/moddir/GameDefinitionFile.fgd", true);
 	}
 
-	if (defaultIsEmpty && fgdPaths.empty())
+	if (default_is_empty && resPaths.empty())
 	{
-		fgdPaths.emplace_back("/moddir/GameDefinitionFile.fgd",true);
+		resPaths.emplace_back("/moddir/", true);
+		resPaths.emplace_back("/moddir_addon/", true);
 	}
 
-	if (defaultIsEmpty && resPaths.empty())
+	if (default_is_empty)
 	{
-		resPaths.emplace_back("/moddir/",true);
-		resPaths.emplace_back("/moddir_addon/",true);
-	}
-
-	if (entListReload || defaultIsEmpty)
-	{
-		if ((defaultIsEmpty && conditionalPointEntTriggers.empty()) || entListReload)
+		if (default_is_empty && conditionalPointEntTriggers.empty())
 		{
 			conditionalPointEntTriggers.clear();
 			conditionalPointEntTriggers.push_back("trigger_once");
@@ -727,7 +549,7 @@ void AppSettings::load()
 			conditionalPointEntTriggers.push_back("trigger_gravity");
 			conditionalPointEntTriggers.push_back("trigger_teleport");
 		}
-		if ((defaultIsEmpty && entsThatNeverNeedAnyHulls.empty()) || entListReload)
+		if (default_is_empty && entsThatNeverNeedAnyHulls.empty())
 		{
 			entsThatNeverNeedAnyHulls.clear();
 			entsThatNeverNeedAnyHulls.push_back("env_bubbles");
@@ -737,13 +559,13 @@ void AppSettings::load()
 			entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
 			entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
 		}
-		if ((defaultIsEmpty && entsThatNeverNeedCollision.empty()) || entListReload)
+		if (default_is_empty && entsThatNeverNeedCollision.empty())
 		{
 			entsThatNeverNeedCollision.clear();
 			entsThatNeverNeedCollision.push_back("func_illusionary");
 			entsThatNeverNeedCollision.push_back("func_mortar_field");
 		}
-		if ((defaultIsEmpty && passableEnts.empty()) || entListReload)
+		if (default_is_empty && passableEnts.empty())
 		{
 			passableEnts.clear();
 			passableEnts.push_back("func_door");
@@ -754,7 +576,7 @@ void AppSettings::load()
 			passableEnts.push_back("func_water");
 			passableEnts.push_back("momentary_door");
 		}
-		if ((defaultIsEmpty && playerOnlyTriggers.empty()) || entListReload)
+		if (default_is_empty && playerOnlyTriggers.empty())
 		{
 			playerOnlyTriggers.clear();
 			playerOnlyTriggers.push_back("func_ladder");
@@ -764,13 +586,13 @@ void AppSettings::load()
 			playerOnlyTriggers.push_back("trigger_changelevel");
 			playerOnlyTriggers.push_back("trigger_transition");
 		}
-		if ((defaultIsEmpty && monsterOnlyTriggers.empty()) || entListReload)
+		if (default_is_empty && monsterOnlyTriggers.empty())
 		{
 			monsterOnlyTriggers.clear();
 			monsterOnlyTriggers.push_back("func_monsterclip");
 			monsterOnlyTriggers.push_back("trigger_monsterjump");
 		}
-		if ((defaultIsEmpty && entsNegativePitchPrefix.empty()) || entListReload)
+		if (default_is_empty && entsNegativePitchPrefix.empty())
 		{
 			entsNegativePitchPrefix.clear();
 			entsNegativePitchPrefix.push_back("ammo_");
@@ -783,12 +605,12 @@ void AppSettings::load()
 		}
 	}
 
-	if (defaultIsEmpty && transparentTextures.empty())
+	if (default_is_empty && transparentTextures.empty())
 	{
 		transparentTextures.push_back("AAATRIGGER");
 	}
 
-	if (defaultIsEmpty && transparentEntities.empty())
+	if (default_is_empty && transparentEntities.empty())
 	{
 		transparentEntities.push_back("func_buyzone");
 	}
@@ -796,144 +618,231 @@ void AppSettings::load()
 
 	FixupAllSystemPaths();
 
-	entListReload = false;
+	reload_ents_list = false;
 }
+void Settings::saveSettings(std::string path) {
+	std::ofstream iniFile(path);
 
-void AppSettings::save(std::string path)
-{
-	std::ostringstream file;
-
-	file << "window_width=" << g_settings.windowWidth << std::endl;
-	file << "window_height=" << g_settings.windowHeight << std::endl;
-	file << "window_x=" << g_settings.windowX << std::endl;
-	file << "window_y=" << g_settings.windowY << std::endl;
-	file << "window_maximized=" << g_settings.maximized << std::endl;
-
-	file << "save_windows=" << g_settings.save_windows << std::endl;
-	file << "debug_open=" << g_settings.debug_open << std::endl;
-	file << "keyvalue_open=" << g_settings.keyvalue_open << std::endl;
-	file << "transform_open=" << g_settings.transform_open << std::endl;
-	file << "log_open=" << g_settings.log_open << std::endl;
-	file << "limits_open=" << g_settings.limits_open << std::endl;
-	file << "entreport_open=" << g_settings.entreport_open << std::endl;
-	file << "texbrowser_open=" << g_settings.texbrowser_open << std::endl;
-	file << "goto_open=" << g_settings.goto_open << std::endl;
-
-	file << "settings_tab=" << g_settings.settings_tab << std::endl;
-
-	file << "gamedir=" << g_settings.gamedir << std::endl;
-	file << "workingdir=" << g_settings.workingdir << std::endl;
-	file << "lastdir=" << g_settings.lastdir << std::endl;
-	file << "language=" << g_settings.selected_lang << std::endl;
-	file << "palette=" << g_settings.palette_name << std::endl;
-
-	file << "hlrad_path=" << g_settings.rad_path << std::endl;
-	file << "hlrad_opts=" << g_settings.rad_options << std::endl;
-
-	for (size_t i = 0; i < fgdPaths.size(); i++)
-	{
-		file << "fgd=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].path << std::endl;
+	if (!iniFile.is_open()) {
+		std::cerr << "Can't open " << path << " for writing" << std::endl;
+		return;
 	}
 
-	for (size_t i = 0; i < resPaths.size(); i++)
-	{
-		file << "res=" << (g_settings.resPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.resPaths[i].path << std::endl;
-	}
+	iniFile << "[GENERAL]\n";
+	iniFile << "window_width=" << g_settings.windowWidth << "\n";
+	iniFile << "window_height=" << g_settings.windowHeight << "\n";
+	iniFile << "window_x=" << g_settings.windowX << "\n";
+	iniFile << "window_y=" << g_settings.windowY << "\n";
+	iniFile << "window_maximized=" << g_settings.maximized << "\n";
+	iniFile << "start_at_entity=" << g_settings.start_at_entity << "\n";
+	iniFile << "savebackup=" << g_settings.savebackup << "\n";
+	iniFile << "save_crc=" << g_settings.save_crc << "\n";
+	iniFile << "save_cam=" << g_settings.save_cam << "\n";
+	iniFile << "auto_import_ent=" << g_settings.auto_import_ent << "\n";
+	iniFile << "same_dir_for_ent=" << g_settings.same_dir_for_ent << "\n";
+	iniFile << "reload_ents_list=" << g_settings.reload_ents_list << "\n";
+	iniFile << "strip_wad_path=" << g_settings.strip_wad_path << "\n";
+	iniFile << "default_is_empty=" << g_settings.default_is_empty << "\n";
+	iniFile << "undo_levels=" << g_settings.undoLevels << "\n\n";
 
-	for (size_t i = 0; i < conditionalPointEntTriggers.size(); i++)
-	{
-		file << "optimizer_cond_ents=" << conditionalPointEntTriggers[i] << std::endl;
-	}
+	iniFile << "[WIDGETS]\n";
+	iniFile << "save_windows=" << g_settings.save_windows << "\n";
+	iniFile << "debug_open=" << g_settings.debug_open << "\n";
+	iniFile << "keyvalue_open=" << g_settings.keyvalue_open << "\n";
+	iniFile << "transform_open=" << g_settings.transform_open << "\n";
+	iniFile << "log_open=" << g_settings.log_open << "\n";
+	iniFile << "limits_open=" << g_settings.limits_open << "\n";
+	iniFile << "entreport_open=" << g_settings.entreport_open << "\n";
+	iniFile << "texbrowser_open=" << g_settings.texbrowser_open << "\n";
+	iniFile << "goto_open=" << g_settings.goto_open << "\n";
+	iniFile << "settings_tab=" << g_settings.settings_tab << "\n\n";
 
-	for (size_t i = 0; i < entsThatNeverNeedAnyHulls.size(); i++)
-	{
-		file << "optimizer_no_hulls_ents=" << entsThatNeverNeedAnyHulls[i] << std::endl;
-	}
+	iniFile << "[GRAPHICS]\n";
+	iniFile << "vsync=" << g_settings.vsync << "\n";
+	iniFile << "fov=" << g_settings.fov << "\n";
+	iniFile << "zfar=" << g_settings.zfar << "\n";
+	iniFile << "renders_flags=" << g_settings.render_flags << "\n";
+	iniFile << "font_size=" << g_settings.fontSize << "\n";
+	iniFile << "fpslimit=" << g_settings.fpslimit << "\n\n";
 
-	for (size_t i = 0; i < entsThatNeverNeedCollision.size(); i++)
-	{
-		file << "optimizer_no_collision_ents=" << entsThatNeverNeedCollision[i] << std::endl;
-	}
+	iniFile << "[OPTIMIZE]\n";
+	iniFile << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << "\n";
+	iniFile << "merge_verts=" << g_settings.merge_verts << "\n";
+	iniFile << "merge_edges=" << g_settings.merge_edges << "\n\n";
 
-	for (size_t i = 0; i < passableEnts.size(); i++)
-	{
-		file << "optimizer_passable_ents=" << passableEnts[i] << std::endl;
-	}
+	iniFile << "[INPUT]\n";
+	iniFile << "move_speed=" << g_settings.moveSpeed << "\n";
+	iniFile << "rot_speed=" << g_settings.rotSpeed << "\n\n";
 
-	for (size_t i = 0; i < playerOnlyTriggers.size(); i++)
-	{
-		file << "optimizer_player_hull_ents=" << playerOnlyTriggers[i] << std::endl;
-	}
+	iniFile << "[PATHS]\n";
+	iniFile << "gamedir=" << g_settings.gamedir << "\n";
+	iniFile << "workingdir=" << g_settings.workingdir << "\n";
+	iniFile << "lastdir=" << g_settings.lastdir << "\n";
+	iniFile << "hlrad_path=" << g_settings.rad_path << "\n";
+	iniFile << "palette=" << g_settings.palette_name << "\n\n";
 
-	for (size_t i = 0; i < monsterOnlyTriggers.size(); i++)
-	{
-		file << "optimizer_monster_hull_ents=" << monsterOnlyTriggers[i] << std::endl;
+	iniFile << "[FGD]\n";
+	iniFile << "count=" << g_settings.fgdPaths.size() << "\n";
+	for (size_t i = 0; i < g_settings.fgdPaths.size(); ++i) {
+		iniFile << (i + 1) << "=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].path << "\n";
 	}
+	iniFile << "\n";
 
-	for (size_t i = 0; i < entsNegativePitchPrefix.size(); i++)
-	{
-		file << "negative_pitch_ents=" << entsNegativePitchPrefix[i] << std::endl;
+	iniFile << "[RES]\n";
+	iniFile << "count=" << g_settings.resPaths.size() << "\n";
+	for (size_t i = 0; i < g_settings.resPaths.size(); ++i) {
+		iniFile << (i + 1) << "=" << (g_settings.resPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.resPaths[i].path << "\n";
 	}
+	iniFile << "\n";
 
-	for (size_t i = 0; i < transparentTextures.size(); i++)
-	{
-		file << "transparent_textures=" << transparentTextures[i] << std::endl;
-	}
-
-	for (size_t i = 0; i < transparentEntities.size(); i++)
-	{
-		file << "transparent_entities=" << transparentEntities[i] << std::endl;
-	}
-
-	file << "vsync=" << g_settings.vsync << std::endl;
-	file << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << std::endl;
-	file << "merge_verts=" << g_settings.merge_verts << std::endl;
-	file << "merge_edges=" << g_settings.merge_edges << std::endl;
-	file << "start_at_entity=" << g_settings.start_at_entity << std::endl;
-#ifdef NDEBUG
-	file << "verbose_logs=" << g_settings.verboseLogs << std::endl;
+	iniFile << "[DEBUG]\n";
+#ifndef NDEBUG
+	iniFile << "verbose_logs=true\n";
+#else
+	iniFile << "verbose_logs=" << g_settings.verboseLogs << "\n";
 #endif
-	file << "fov=" << g_settings.fov << std::endl;
-	file << "zfar=" << g_settings.zfar << std::endl;
-	file << "move_speed=" << g_settings.moveSpeed << std::endl;
-	file << "rot_speed=" << g_settings.rotSpeed << std::endl;
-	file << "renders_flags=" << g_settings.render_flags << std::endl;
-	file << "font_size=" << g_settings.fontSize << std::endl;
-	file << "undo_levels=" << g_settings.undoLevels << std::endl;
-	file << "fpslimit=" << g_settings.fpslimit << std::endl;
-	file << "savebackup=" << g_settings.backUpMap << std::endl;
-	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
-	file << "save_cam=" << g_settings.save_cam << std::endl;
-	file << "auto_import_ent=" << g_settings.autoImportEnt << std::endl;
-	file << "same_dir_for_ent=" << g_settings.sameDirForEnt << std::endl;
-	file << "reload_ents_list=" << g_settings.entListReload << std::endl;
-	file << "strip_wad_path=" << g_settings.stripWad << std::endl;
-	file << "default_is_empty=" << g_settings.defaultIsEmpty << std::endl;
+	iniFile << "\n";
 
-	file << "FLT_MAX_COORD=" << FLT_MAX_COORD << std::endl;
-	file << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << std::endl;
-	file << "MAX_SURFACE_EXTENT=" << MAX_SURFACE_EXTENT << std::endl;
-	file << "MAX_MAP_NODES=" << MAX_MAP_NODES << std::endl;
-	file << "MAX_MAP_CLIPNODES=" << MAX_MAP_CLIPNODES << std::endl;
-	file << "MAX_MAP_LEAVES=" << MAX_MAP_LEAVES << std::endl;
-	file << "MAX_MAP_VISDATA=" << MAX_MAP_VISDATA / (1024 * 1024) << std::endl;
-	file << "MAX_MAP_ENTS=" << MAX_MAP_ENTS << std::endl;
-	file << "MAX_MAP_SURFEDGES=" << MAX_MAP_SURFEDGES << std::endl;
-	file << "MAX_MAP_EDGES=" << MAX_MAP_EDGES << std::endl;
-	file << "MAX_MAP_TEXTURES=" << MAX_MAP_TEXTURES << std::endl;
-	file << "MAX_MAP_LIGHTDATA=" << MAX_MAP_LIGHTDATA / (1024 * 1024) << std::endl;
-	file << "MAX_TEXTURE_DIMENSION=" << MAX_TEXTURE_DIMENSION << std::endl;
-	file << "MAX_MAP_BOUNDARY=" << MAX_MAP_BOUNDARY << std::endl;
-	file << "TEXTURE_STEP=" << TEXTURE_STEP << std::endl;
 
-	file.flush();
+	iniFile << "[LIMITS]\n";
+	iniFile << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << "\n";
+	iniFile << "MAX_SURFACE_EXTENT=" << MAX_SURFACE_EXTENT << "\n";
+	iniFile << "MAX_MAP_NODES=" << MAX_MAP_NODES << "\n";
+	iniFile << "MAX_MAP_CLIPNODES=" << MAX_MAP_CLIPNODES << "\n";
+	iniFile << "MAX_MAP_LEAVES=" << MAX_MAP_LEAVES << "\n";
+	iniFile << "MAX_MAP_VISDATA=" << (MAX_MAP_VISDATA / (1024 * 1024)) << "\n";
+	iniFile << "MAX_MAP_ENTS=" << MAX_MAP_ENTS << "\n";
+	iniFile << "MAX_MAP_SURFEDGES=" << MAX_MAP_SURFEDGES << "\n";
+	iniFile << "MAX_MAP_EDGES=" << MAX_MAP_EDGES << "\n";
+	iniFile << "MAX_MAP_TEXTURES=" << MAX_MAP_TEXTURES << "\n";
+	iniFile << "MAX_MAP_LIGHTDATA=" << (MAX_MAP_LIGHTDATA / (1024 * 1024)) << "\n";
+	iniFile << "MAX_TEXTURE_DIMENSION=" << MAX_TEXTURE_DIMENSION << "\n";
+	iniFile << "MAX_MAP_BOUNDARY=" << MAX_MAP_BOUNDARY << "\n";
+	iniFile << "TEXTURE_STEP=" << TEXTURE_STEP << "\n";
+	iniFile << "FLT_MAX_COORD=" << FLT_MAX_COORD << "\n";
+	iniFile << "\n";
 
-	writeFile(g_settings_path, file.str());
+	auto writeListSection = [&iniFile](const std::string& section, const std::vector<std::string>& list) {
+		iniFile << "[" << section << "]\n";
+		iniFile << "count=" << list.size() << "\n";
+		for (size_t i = 0; i < list.size(); ++i) {
+			iniFile << (i + 1) << "=" << list[i] << "\n";
+		}
+		iniFile << "\n";
+		};
+
+	writeListSection("OPTIMIZER_COND_ENTS", conditionalPointEntTriggers);
+	writeListSection("OPTIMIZER_NO_HULLS_ENTS", entsThatNeverNeedAnyHulls);
+	writeListSection("OPTIMIZER_NO_COLLISION_ENTS", entsThatNeverNeedCollision);
+	writeListSection("OPTIMIZER_PASSABLE_ENTS", passableEnts);
+	writeListSection("OPTIMIZER_PLAYER_HULL_ENTS", playerOnlyTriggers);
+	writeListSection("OPTIMIZER_MONSTER_HULL_ENTS", monsterOnlyTriggers);
+	writeListSection("NEGATIVE_PITCH_ENTS", entsNegativePitchPrefix);
+	writeListSection("TRANSPARENT_TEXTURES", transparentTextures);
+	writeListSection("TRANSPARENT_ENTITIES", transparentEntities);
+
+	iniFile.close();
 }
-
-void AppSettings::save()
+void  Settings::saveSettings()
 {
 	FixupAllSystemPaths();
 	g_app->saveSettings();
-	save(g_settings_path);
+	saveSettings(g_settings_path);
+}
+
+std::string convertToSection(const std::string& key) {
+	if (key == "window_width" || key == "window_height" || key == "window_x" ||
+		key == "window_y" || key == "window_maximized" || key == "save_windows" ||
+		key == "debug_open" || key == "keyvalue_open" || key == "transform_open" ||
+		key == "log_open" || key == "limits_open" || key == "entreport_open" ||
+		key == "texbrowser_open" || key == "goto_open" || key == "settings_tab" ||
+		key == "start_at_entity" || key == "savebackup" || key == "save_crc" ||
+		key == "save_cam" || key == "auto_import_ent" || key == "same_dir_for_ent" ||
+		key == "reload_ents_list" || key == "strip_wad_path" || key == "default_is_empty" ||
+		key == "undo_levels") {
+		return "GENERAL";
+	}
+	if (key == "vsync" || key == "fov" || key == "zfar" || key == "renders_flags" ||
+		key == "font_size" || key == "fpslimit" || key == "mark_unused_texinfos" ||
+		key == "merge_verts" || key == "merge_edges") {
+		return "GRAPHICS";
+	}
+	if (key == "move_speed" || key == "rot_speed") {
+		return "INPUT";
+	}
+	if (key == "gamedir" || key == "workingdir" || key == "lastdir" ||
+		key == "hlrad_path" || key == "palette") {
+		return "PATHS";
+	}
+	if (key == "fgd" || key == "res") {
+		return toUpperCase(key);
+	}
+	if (key == "FLT_MAX_COORD" || key == "MAX_MAP_MODELS" || key == "MAX_SURFACE_EXTENT" ||
+		key == "MAX_MAP_NODES" || key == "MAX_MAP_CLIPNODES" || key == "MAX_MAP_LEAVES" ||
+		key == "MAX_MAP_VISDATA" || key == "MAX_MAP_ENTS" || key == "MAX_MAP_SURFEDGES" ||
+		key == "MAX_MAP_EDGES" || key == "MAX_MAP_TEXTURES" || key == "MAX_MAP_LIGHTDATA" ||
+		key == "MAX_TEXTURE_DIMENSION" || key == "MAX_TEXTURE_SIZE" || key == "MAX_MAP_BOUNDARY" ||
+		key == "TEXTURE_STEP") {
+		return "LIMITS";
+	}
+	if (key == "optimizer_cond_ents" || key == "optimizer_no_hulls_ents" || key == "optimizer_no_collision_ents" ||
+		key == "optimizer_passable_ents" || key == "optimizer_player_hull_ents" || key == "optimizer_monster_hull_ents" ||
+		key == "negative_pitch_ents" || key == "transparent_textures" || key == "transparent_entities") {
+		return toUpperCase(key);
+	}
+	if (key == "verbose_logs") {
+		return "DEBUG";
+	}
+	return "GENERAL";
+}
+
+std::string ConvertFromCFGtoINI(const std::string& cfgData) {
+	std::istringstream cfgStream(cfgData);
+	std::string line;
+	std::map<std::string, std::vector<std::string>> cfgMap;
+
+	while (getline(cfgStream, line)) {
+		if (line.empty() || line.find('=') == std::string::npos) {
+			continue;
+		}
+
+		size_t eqPos = line.find('=');
+		std::string key = trimSpaces(line.substr(0, eqPos));
+		std::string value = trimSpaces(line.substr(eqPos + 1));
+
+		cfgMap[key].push_back(value);
+	}
+
+	std::ostringstream iniStream;
+	std::map<std::string, std::ostringstream> sections;
+
+	for (const auto& entry : cfgMap) {
+		std::string section = convertToSection(entry.first);
+		if (sections.find(section) == sections.end()) {
+			sections[section] << "[" << section << "]\n";
+		}
+		if (entry.second.size() > 1 || section == toUpperCase(entry.first)) {
+			sections[section] << "count = " << entry.second.size() << "\n";
+			for (size_t i = 0; i < entry.second.size(); ++i) {
+				sections[section] << (i + 1) << " = " << entry.second[i] << "\n";
+			}
+		}
+		else {
+			sections[section] << entry.first << " = " << entry.second[0] << "\n";
+		}
+	}
+
+	std::vector<std::string> order = { "GENERAL", "GRAPHICS", "INPUT", "LIMITS", "PATHS" };
+	for (const auto& section : order) {
+		if (sections.find(section) != sections.end()) {
+			iniStream << sections[section].str() << "\n";
+			sections.erase(section);
+		}
+	}
+
+	for (const auto& section : sections) {
+		iniStream << section.second.str() << "\n";
+	}
+
+	return iniStream.str();
 }

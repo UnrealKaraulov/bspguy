@@ -34,7 +34,7 @@ std::mutex g_mutex_list[10] = {};
 bool fileExists(const std::string& fileName)
 {
 	std::error_code err;
-	return fs::exists(fileName, err) && !fs::is_directory(fileName);
+	return fs::exists(fileName, err) && !fs::is_directory(fileName,err);
 }
 
 char* loadFile(const std::string& fileName, int& length)
@@ -81,7 +81,7 @@ bool writeFile(const std::string& fileName, const std::string& data)
 bool removeFile(const std::string& fileName)
 {
 	std::error_code err;
-	return fs::exists(fileName, err) && fs::remove(fileName);
+	return fs::exists(fileName, err) && fs::remove(fileName, err);
 }
 
 bool copyFile(const std::string& from, const std::string& to)
@@ -93,7 +93,9 @@ bool copyFile(const std::string& from, const std::string& to)
 		if (!removeFile(to))
 			return false;
 	}
-	return fs::copy_file(from, to);
+
+	std::error_code err;
+	return fs::copy_file(from, to, err);
 }
 
 size_t fileSize(const std::string& filePath)
@@ -1097,7 +1099,7 @@ int ArrayXYtoId(int w, int x, int y)
 bool dirExists(const std::string& dirName)
 {
 	std::error_code err;
-	return fs::exists(dirName, err) && fs::is_directory(dirName);
+	return fs::exists(dirName, err) && fs::is_directory(dirName, err);
 }
 
 #ifndef WIN32
@@ -1179,7 +1181,9 @@ bool createDir(const std::string& dirName)
 {
 	if (dirExists(dirName))
 		return true;
-	fs::create_directories(dirName);
+
+	std::error_code err;
+	fs::create_directories(dirName,err);
 	if (dirExists(dirName))
 		return true;
 	return false;
@@ -1187,8 +1191,8 @@ bool createDir(const std::string& dirName)
 
 void removeDir(const std::string& dirName)
 {
-	std::error_code e;
-	fs::remove_all(dirName, e);
+	std::error_code err;
+	fs::remove_all(dirName, err);
 }
 
 
@@ -1854,13 +1858,15 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 
 std::string GetExecutableDir(const std::string& arg_0)
 {
-	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
+	std::error_code err;
+	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path(err);
 	return GetExecutableDirInternal(retpath.string());
 }
 
 std::string GetExecutableDir(const std::wstring& arg_0)
 {
-	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path();
+	std::error_code err;
+	fs::path retpath = arg_0.size() ? fs::path(arg_0) : fs::current_path(err);
 	return GetExecutableDirInternal(retpath.string());
 }
 
