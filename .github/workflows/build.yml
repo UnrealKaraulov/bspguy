@@ -134,6 +134,10 @@ jobs:
             build/newbspguy_winxp_x86_release.zip
       - name: Set up Visual Studio shell
         uses: egor-tensin/vs-shell@v2
+      - name: Clean build directory
+        run: |
+          msbuild ${{ env.solution }} /t:Clean /p:Configuration=Debug /p:Platform=x64\
+          msbuild ${{ env.solution }} /t:Clean /p:Configuration=DebugGithub /p:Platform=x64
       - name: Build Debug
         run: |
           msbuild ${{ env.solution }} -m /p:Configuration=DebugGithub /p:Platform=x64
