@@ -69,6 +69,7 @@ struct vec3
 		y = other.y;
 		z = other.z;
 	}
+
 	vec3& operator =(const vec3& other)
 	{
 		Copy(other);
@@ -100,32 +101,6 @@ struct vec3
 			z = +0.00f;
 		}
 	}
-	vec3 normalize(float length = 1.0f)  const;
-	vec3 snap(float snapSize);
-	vec3 normalize_angles() const;
-	vec3 swap_xz();
-	bool equal(vec3 to, float epsilon = EPSILON) const;
-	float size_test();
-	float sizeXY_test();
-	vec3 abs();
-	float length() const;
-	float lengthSquared() const;
-	bool IsZero() const;
-	vec3 invert();
-	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
-	std::string toString();
-	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
-	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
-	vec3 unflip();
-	vec3 unflipUV();
-	float dist(vec3 to)  const;
-	float dot(const vec3& other) const {
-		return x * other.x + y * other.y + z * other.z;
-	}
-
-	vec3 cross(const vec3& other) const {
-		return { y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x };
-	}
 
 	void operator-=(const vec3& v);
 	void operator+=(const vec3& v);
@@ -145,6 +120,37 @@ struct vec3
 		return *this;
 	}
 
+	vec3 operator+(const vec3& v) const {
+		return vec3(x + v.x, y + v.y, z + v.z);
+	}
+
+	vec3 operator-(const vec3& v) const {
+		return vec3(x - v.x, y - v.y, z - v.z);
+	}
+
+	vec3 operator*(const vec3& v) const {
+		return vec3(x * v.x, y * v.y, z * v.z);
+	}
+
+	vec3 operator/(const vec3& v) const {
+		return vec3(x / v.x, y / v.y, z / v.z);
+	}
+
+	vec3 operator+(float f) const {
+		return vec3(x + f, y + f, z + f);
+	}
+
+	vec3 operator-(float f) const {
+		return vec3(x - f, y - f, z - f);
+	}
+
+	vec3 operator*(float f) const {
+		return vec3(x * f, y * f, z * f);
+	}
+
+	vec3 operator/(float f) const {
+		return vec3(x / f, y / f, z / f);
+	}
 
 	float& operator [] (size_t i)
 	{
@@ -173,7 +179,63 @@ struct vec3
 		}
 		return z;
 	}
+
+
+	bool operator==(const vec3& other) const
+	{
+		vec3 v = *this - other;
+		if (std::fabs(v.x) >= EPSILON)
+			return false;
+		if (std::fabs(v.y) >= EPSILON)
+			return false;
+		if (std::fabs(v.z) >= EPSILON)
+			return false;
+		return true;
+	}
+
+	bool operator!=(const vec3& other) const
+	{
+		vec3 v = *this - other;
+		if (std::fabs(v.x) >= EPSILON)
+			return true;
+		if (std::fabs(v.y) >= EPSILON)
+			return true;
+		if (std::fabs(v.z) >= EPSILON)
+			return true;
+		return false;
+	}
+
+
+	vec3 normalize(float length = 1.0f)  const;
+	vec3 snap(float snapSize);
+	vec3 normalize_angles() const;
+	vec3 swap_xz();
+	bool equal(vec3 to, float epsilon = EPSILON) const;
+	float size_test();
+	float sizeXY_test();
+	vec3 abs();
+	float length() const;
+	float lengthSquared() const;
+	bool IsZero() const;
+	vec3 invert();
+	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
+	std::string toString();
+	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
+	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
+	vec3 unflip();
+	vec3 unflipUV();
+	float dist(vec3 to)  const;
+	float dot(const vec3& other) const {
+		return x * other.x + y * other.y + z * other.z;
+	}
+
+	vec3 cross(const vec3& other) const {
+		return { y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x };
+	}
 };
+
+vec3 operator*(float lhs, const vec3& rhs);
+vec3 operator/(float lhs, const vec3& rhs);
 
 struct vec3Hash {
 	size_t operator()(const vec3(&v)) const {
@@ -197,24 +259,12 @@ struct pairHash {
 	}
 };
 
-vec3 operator-(vec3 v1, const vec3& v2);
-vec3 operator+(vec3 v1, const vec3& v2);
-vec3 operator*(vec3 v1, const vec3& v2);
-vec3 operator/(vec3 v1, const vec3& v2);
-
-vec3 operator+(vec3 v, float f);
-vec3 operator-(vec3 v, float f);
-vec3 operator*(vec3 v, float f);
-vec3 operator/(vec3 v, float f);
 
 vec3 crossProduct(const vec3& v1, const vec3& v2);
 float dotProduct(const vec3& v1, const vec3& v2);
 void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up);
 float distanceToPlane(const vec3& point, const vec3& planeNormal, float planeDist);
 bool isPointInFace(const vec3& point, const std::vector<vec3>& faceVertices);
-
-bool operator==(const vec3& v1, const vec3& v2);
-bool operator!=(const vec3& v1, const vec3& v2);
 
 struct vec2
 {

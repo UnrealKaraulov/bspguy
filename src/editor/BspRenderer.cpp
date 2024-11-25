@@ -2004,7 +2004,7 @@ bool BspRenderer::setRenderAngles(const std::string& classname, mat4x4& outmat, 
 			bool foundAngles = false;
 			for (const auto& prefix : g_settings.entsNegativePitchPrefix)
 			{
-				if (starts_with(classname,prefix))
+				if (starts_with(classname, prefix))
 				{
 					outmat.rotateY((outangles.y * (HL_PI / 180.0f)));
 					outmat.rotateZ((outangles.x * (HL_PI / 180.0f)));
@@ -2025,10 +2025,12 @@ bool BspRenderer::setRenderAngles(const std::string& classname, mat4x4& outmat, 
 	return !outangles.IsZero();
 }
 
-void BspRenderer::refreshEnt(int entIdx)
+void BspRenderer::refreshEnt(int entIdx, int refreshFlags)
 {
-	if (entIdx >= (int)map->ents.size() || !g_app->pointEntRenderer)
+	if (entIdx >= (int)map->ents.size())
 		return;
+
+	//print_log("Refresh {} ent with flags: {}\n", entIdx, refreshFlags);
 
 	while (renderEnts.size() < map->ents.size())
 	{
@@ -2048,283 +2050,210 @@ void BspRenderer::refreshEnt(int entIdx)
 	auto& rendEntity = renderEnts[entIdx];
 
 	Entity* ent = map->ents[entIdx];
-	rendEntity.modelIdx = ent->getBspModelIdx();
-	rendEntity.isDuplicateModel = false;
 
-	if (rendEntity.modelIdx >= 0)
+	if (refreshFlags & Entity_RefreshModel)
 	{
-		for (int i = 0; i < (int)map->ents.size(); i++)
+		rendEntity.modelIdx = ent->getBspModelIdx();
+		rendEntity.isDuplicateModel = false;
+
+		if (rendEntity.modelIdx >= 0)
 		{
-			if (i != entIdx)
+			for (int i = 0; i < (int)map->ents.size(); i++)
 			{
-				if (map->ents[i]->getBspModelIdx() == rendEntity.modelIdx)
+				if (i != entIdx)
 				{
-					rendEntity.isDuplicateModel = true;
-					break;
+					if (map->ents[i]->getBspModelIdx() == rendEntity.modelIdx)
+					{
+						rendEntity.isDuplicateModel = true;
+						break;
+					}
 				}
 			}
 		}
 	}
 
-	rendEntity.offset = vec3();
-	rendEntity.angles = vec3();
-	rendEntity.needAngles = false;
-	rendEntity.pointEntCube = g_app->pointEntRenderer->getEntCube(ent);
+	if (g_app->pointEntRenderer)
+		rendEntity.pointEntCube = g_app->pointEntRenderer->getEntCube(ent);
+	else
+		rendEntity.pointEntCube = NULL;
+
+	if (refreshFlags & Entity_RefreshAnglesOrigin)
+	{
+		vec3 origin = ent->origin;
+		rendEntity.modelMat4x4.loadIdentity();
+		rendEntity.modelMat4x4.translate(origin.x, origin.z, -origin.y);
+		rendEntity.modelMat4x4_angles.loadIdentity();
+		rendEntity.modelMat4x4_angles.translate(origin.x, origin.z, -origin.y);
+		rendEntity.offset = origin;
+	}
+
 	bool setAngles = false;
 
-	vec3 origin = ent->origin;
-	rendEntity.modelMat4x4.loadIdentity();
-	rendEntity.modelMat4x4.translate(origin.x, origin.z, -origin.y);
-	rendEntity.modelMat4x4_angles.loadIdentity();
-	rendEntity.modelMat4x4_angles.translate(origin.x, origin.z, -origin.y);
-	rendEntity.offset = origin;
+	if (refreshFlags & Entity_RefreshAnglesOrigin)
+	{
+		rendEntity.angles = vec3();
+		rendEntity.needAngles = false;
+	}
 
 	for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
 	{
-		if (ent->keyOrder[i] == "angles")
+		if (refreshFlags & Entity_RefreshAnglesOrigin)
 		{
-			setAngles = true;
-			rendEntity.angles = parseVector(ent->keyvalues["angles"]);
-		}
-		if (ent->keyOrder[i] == "angle")
-		{
-			setAngles = true;
-			float y = str_to_float(ent->keyvalues["angle"]);
+			if (ent->keyOrder[i] == "angles")
+			{
+				setAngles = true;
+				rendEntity.angles = parseVector(ent->keyvalues["angles"]);
+			}
+			if (ent->keyOrder[i] == "angle")
+			{
+				setAngles = true;
+				float y = str_to_float(ent->keyvalues["angle"]);
 
-			if (y >= 0.0f)
-			{
-				rendEntity.angles.y = y;
+				if (y >= 0.0f)
+				{
+					rendEntity.angles.y = y;
+				}
+				else if (y == -1.0f)
+				{
+					rendEntity.angles.x = -90.0f;
+					rendEntity.angles.y = 0.0f;
+					rendEntity.angles.z = 0.0f;
+				}
+				else if (y <= -2.0f)
+				{
+					rendEntity.angles.x = 90.0f;
+					rendEntity.angles.y = 0.0f;
+					rendEntity.angles.z = 0.0f;
+				}
 			}
-			else if (y == -1.0f)
+			if (ent->classname.size() && ent->classname.find("light") != std::string::npos && ent->keyOrder[i] == "pitch")
 			{
-				rendEntity.angles.x = -90.0f;
-				rendEntity.angles.y = 0.0f;
-				rendEntity.angles.z = 0.0f;
-			}
-			else if (y <= -2.0f)
-			{
-				rendEntity.angles.x = 90.0f;
-				rendEntity.angles.y = 0.0f;
-				rendEntity.angles.z = 0.0f;
-			}
-		}
-		if (ent->classname.size() && ent->classname.find("light") != std::string::npos && ent->keyOrder[i] == "pitch")
-		{
-			setAngles = true;
-			float x = str_to_float(ent->keyvalues["pitch"]);
-			rendEntity.angles.x = -x;
-		}
-	}
-
-	if (ent->hasKey("scale") || g_app->fgd)
-	{
-		if (ent->hasKey("scale") && isFloating(ent->keyvalues["scale"]))
-		{
-			scale = str_to_float(ent->keyvalues["scale"]);
-		}
-		if (scale <= 0 && g_app->fgd)
-		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
-			if (fgdClass)
-			{
-				scale = fgdClass->scale;
+				setAngles = true;
+				float x = str_to_float(ent->keyvalues["pitch"]);
+				rendEntity.angles.x = -x;
 			}
 		}
 	}
 
-	if (ent->hasKey("sequence") || g_app->fgd)
+	if (refreshFlags & Entity_RefreshOther)
 	{
-		if (ent->hasKey("sequence") && isNumeric(ent->keyvalues["sequence"]))
+		if (ent->hasKey("scale") || g_app->fgd)
 		{
-			sequence = str_to_int(ent->keyvalues["sequence"]);
-		}
-		if (sequence <= 0 && g_app->fgd)
-		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
-			if (fgdClass)
+			if (ent->hasKey("scale") && isFloating(ent->keyvalues["scale"]))
 			{
-				sequence = fgdClass->modelSequence;
+				scale = str_to_float(ent->keyvalues["scale"]);
 			}
-		}
-	}
-
-	if (ent->hasKey("skin") || g_app->fgd)
-	{
-		if (ent->hasKey("skin") && isNumeric(ent->keyvalues["skin"]))
-		{
-			skin = str_to_int(ent->keyvalues["skin"]);
-		}
-		if (skin <= 0 && g_app->fgd)
-		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
-			if (fgdClass)
-			{
-				skin = fgdClass->modelSkin;
-			}
-		}
-	}
-
-	if (ent->hasKey("body") || g_app->fgd)
-	{
-		if (ent->hasKey("body") && isNumeric(ent->keyvalues["body"]))
-		{
-			body = str_to_int(ent->keyvalues["body"]);
-		}
-		if (body == 0 && g_app->fgd)
-		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
-			if (fgdClass)
-			{
-				body = fgdClass->modelBody;
-			}
-		}
-	}
-
-
-
-	if (!ent->isBspModel())
-	{
-		if (ent->hasKey("model"))
-		{
-			std::string modelpath = std::string();
-
-			if (ent->hasKey("model") && ent->keyvalues["model"].size())
-			{
-				modelpath = ent->keyvalues["model"];
-			}
-
-			if (g_app->fgd && modelpath.empty())
+			if (scale <= 0 && g_app->fgd)
 			{
 				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
-				if (fgdClass && !fgdClass->model.empty())
+				if (fgdClass)
 				{
-					modelpath = fgdClass->model;
-				}
-			}
-
-			if (rendEntity.mdlFileName.size() && !modelpath.size() || rendEntity.mdlFileName != modelpath)
-			{
-				rendEntity.mdlFileName = modelpath;
-				std::string lowerpath = toLowerCase(modelpath);
-				std::string newModelPath;
-				if (ends_with(lowerpath,".mdl"))
-				{
-					if (FindPathInAssets(map, modelpath, newModelPath))
-					{
-						rendEntity.mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
-						rendEntity.mdl->UpdateModelMeshList();
-					}
-					else
-					{
-						FindPathInAssets(map, modelpath, newModelPath, true);
-						rendEntity.mdl = NULL;
-					}
-				}
-				else
-				{
-					rendEntity.mdl = NULL;
-					if (ends_with(lowerpath,".spr"))
-					{
-						if (FindPathInAssets(map, modelpath, newModelPath))
-						{
-							if (rendEntity.pointEntCube && std::fabs(scale - 1.0f) < EPSILON)
-							{
-								rendEntity.spr = AddNewSpriteToRender(newModelPath, rendEntity.pointEntCube->mins, rendEntity.pointEntCube->maxs, 1.0f);
-							}
-							else
-							{
-								rendEntity.spr = AddNewSpriteToRender(newModelPath, scale);
-							}
-						}
-						else
-						{
-							FindPathInAssets(map, modelpath, newModelPath, true);
-							rendEntity.spr = NULL;
-						}
-					}
-					else
-					{
-						rendEntity.spr = NULL;
-					}
+					scale = fgdClass->scale;
 				}
 			}
 		}
-		else if (g_app->fgd)
-		{
-			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
-			if (fgdClass && fgdClass->isSprite && fgdClass->sprite.size())
-			{
-				rendEntity.spr = NULL;
+	}
 
-				std::string lowerpath = toLowerCase(fgdClass->sprite);
-				std::string newModelPath;
-				if (ends_with(lowerpath,".mdl"))
+	if (refreshFlags & Entity_RefreshSequence)
+	{
+		if (ent->hasKey("sequence") || g_app->fgd)
+		{
+			if (ent->hasKey("sequence") && isNumeric(ent->keyvalues["sequence"]))
+			{
+				sequence = str_to_int(ent->keyvalues["sequence"]);
+			}
+			if (sequence <= 0 && g_app->fgd)
+			{
+				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
+				if (fgdClass)
 				{
-					if (FindPathInAssets(map, fgdClass->sprite, newModelPath))
-					{
-						rendEntity.mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
-						rendEntity.mdl->UpdateModelMeshList();
-					}
-					else
-					{
-						FindPathInAssets(map, fgdClass->sprite, newModelPath, true);
-						rendEntity.mdl = NULL;
-					}
-				}
-				else
-				{
-					rendEntity.mdl = NULL;
-					if (ends_with(lowerpath,".spr"))
-					{
-						if (FindPathInAssets(map, fgdClass->sprite, newModelPath))
-						{
-							if (rendEntity.pointEntCube && std::fabs(scale - 1.0f) < EPSILON)
-							{
-								rendEntity.spr = AddNewSpriteToRender(newModelPath, rendEntity.pointEntCube->mins, rendEntity.pointEntCube->maxs, 1.0f);
-							}
-							else
-							{
-								rendEntity.spr = AddNewSpriteToRender(newModelPath, scale);
-							}
-						}
-						else
-						{
-							FindPathInAssets(map, fgdClass->sprite, newModelPath, true);
-							rendEntity.spr = NULL;
-						}
-					}
-					else
-					{
-						rendEntity.spr = NULL;
-					}
+					sequence = fgdClass->modelSequence;
 				}
 			}
-			else
+		}
+	}
+
+	if (refreshFlags & Entity_RefreshBodySkin)
+	{
+		if (ent->hasKey("skin") || g_app->fgd)
+		{
+			if (ent->hasKey("skin") && isNumeric(ent->keyvalues["skin"]))
 			{
-				fgdClass = g_app->fgd->getFgdClass(ent->classname);
-				if (fgdClass && !fgdClass->model.empty())
+				skin = str_to_int(ent->keyvalues["skin"]);
+			}
+			if (skin <= 0 && g_app->fgd)
+			{
+				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
+				if (fgdClass)
 				{
-					std::string lowerpath = toLowerCase(fgdClass->model);
-					std::string newModelPath;
-					if (ends_with(lowerpath,".mdl"))
+					skin = fgdClass->modelSkin;
+				}
+			}
+		}
+
+		if (ent->hasKey("body") || g_app->fgd)
+		{
+			if (ent->hasKey("body") && isNumeric(ent->keyvalues["body"]))
+			{
+				body = str_to_int(ent->keyvalues["body"]);
+			}
+			if (body == 0 && g_app->fgd)
+			{
+				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
+				if (fgdClass)
+				{
+					body = fgdClass->modelBody;
+				}
+			}
+		}
+	}
+
+	if (refreshFlags & Entity_RefreshModel)
+	{
+		if (!ent->isBspModel())
+		{
+			if (ent->hasKey("model"))
+			{
+				std::string modelpath = std::string();
+
+				if (ent->hasKey("model") && ent->keyvalues["model"].size())
+				{
+					modelpath = ent->keyvalues["model"];
+				}
+
+				if (g_app->fgd && modelpath.empty())
+				{
+					FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
+					if (fgdClass && !fgdClass->model.empty())
 					{
-						if (FindPathInAssets(map, fgdClass->model, newModelPath))
+						modelpath = fgdClass->model;
+					}
+				}
+
+				if (rendEntity.mdlFileName.size() && !modelpath.size() || rendEntity.mdlFileName != modelpath)
+				{
+					rendEntity.mdlFileName = modelpath;
+					std::string lowerpath = toLowerCase(modelpath);
+					std::string newModelPath;
+					if (ends_with(lowerpath, ".mdl"))
+					{
+						if (FindPathInAssets(map, modelpath, newModelPath))
 						{
 							rendEntity.mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
 							rendEntity.mdl->UpdateModelMeshList();
 						}
 						else
 						{
-							FindPathInAssets(map, fgdClass->model, newModelPath, true);
+							FindPathInAssets(map, modelpath, newModelPath, true);
 							rendEntity.mdl = NULL;
 						}
 					}
 					else
 					{
 						rendEntity.mdl = NULL;
-						if (ends_with(lowerpath,".spr"))
+						if (ends_with(lowerpath, ".spr"))
 						{
-							if (FindPathInAssets(map, fgdClass->model, newModelPath))
+							if (FindPathInAssets(map, modelpath, newModelPath))
 							{
 								if (rendEntity.pointEntCube && std::fabs(scale - 1.0f) < EPSILON)
 								{
@@ -2337,7 +2266,7 @@ void BspRenderer::refreshEnt(int entIdx)
 							}
 							else
 							{
-								FindPathInAssets(map, fgdClass->model, newModelPath, true);
+								FindPathInAssets(map, modelpath, newModelPath, true);
 								rendEntity.spr = NULL;
 							}
 						}
@@ -2348,31 +2277,138 @@ void BspRenderer::refreshEnt(int entIdx)
 					}
 				}
 			}
-		}
+			else if (g_app->fgd)
+			{
+				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->classname);
+				if (fgdClass && fgdClass->isSprite && fgdClass->sprite.size())
+				{
+					rendEntity.spr = NULL;
 
+					std::string lowerpath = toLowerCase(fgdClass->sprite);
+					std::string newModelPath;
+					if (ends_with(lowerpath, ".mdl"))
+					{
+						if (FindPathInAssets(map, fgdClass->sprite, newModelPath))
+						{
+							rendEntity.mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
+							rendEntity.mdl->UpdateModelMeshList();
+						}
+						else
+						{
+							FindPathInAssets(map, fgdClass->sprite, newModelPath, true);
+							rendEntity.mdl = NULL;
+						}
+					}
+					else
+					{
+						rendEntity.mdl = NULL;
+						if (ends_with(lowerpath, ".spr"))
+						{
+							if (FindPathInAssets(map, fgdClass->sprite, newModelPath))
+							{
+								if (rendEntity.pointEntCube && std::fabs(scale - 1.0f) < EPSILON)
+								{
+									rendEntity.spr = AddNewSpriteToRender(newModelPath, rendEntity.pointEntCube->mins, rendEntity.pointEntCube->maxs, 1.0f);
+								}
+								else
+								{
+									rendEntity.spr = AddNewSpriteToRender(newModelPath, scale);
+								}
+							}
+							else
+							{
+								FindPathInAssets(map, fgdClass->sprite, newModelPath, true);
+								rendEntity.spr = NULL;
+							}
+						}
+						else
+						{
+							rendEntity.spr = NULL;
+						}
+					}
+				}
+				else
+				{
+					fgdClass = g_app->fgd->getFgdClass(ent->classname);
+					if (fgdClass && !fgdClass->model.empty())
+					{
+						std::string lowerpath = toLowerCase(fgdClass->model);
+						std::string newModelPath;
+						if (ends_with(lowerpath, ".mdl"))
+						{
+							if (FindPathInAssets(map, fgdClass->model, newModelPath))
+							{
+								rendEntity.mdl = AddNewModelToRender(newModelPath, body + sequence * 100 + skin * 1000);
+								rendEntity.mdl->UpdateModelMeshList();
+							}
+							else
+							{
+								FindPathInAssets(map, fgdClass->model, newModelPath, true);
+								rendEntity.mdl = NULL;
+							}
+						}
+						else
+						{
+							rendEntity.mdl = NULL;
+							if (ends_with(lowerpath, ".spr"))
+							{
+								if (FindPathInAssets(map, fgdClass->model, newModelPath))
+								{
+									if (rendEntity.pointEntCube && std::fabs(scale - 1.0f) < EPSILON)
+									{
+										rendEntity.spr = AddNewSpriteToRender(newModelPath, rendEntity.pointEntCube->mins, rendEntity.pointEntCube->maxs, 1.0f);
+									}
+									else
+									{
+										rendEntity.spr = AddNewSpriteToRender(newModelPath, scale);
+									}
+								}
+								else
+								{
+									FindPathInAssets(map, fgdClass->model, newModelPath, true);
+									rendEntity.spr = NULL;
+								}
+							}
+							else
+							{
+								rendEntity.spr = NULL;
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 
-	if (skin != -1)
+	if (refreshFlags & Entity_RefreshBodySkin)
 	{
-		if (rendEntity.mdl && rendEntity.mdl->GetSkin() != skin)
+		if (body != -1)
 		{
-			rendEntity.mdl->SetSkin(skin);
+			if (rendEntity.mdl && rendEntity.mdl->GetBody() != body && rendEntity.mdl->m_pstudiohdr)
+			{
+				rendEntity.mdl->SetBody(body);
+			}
+		}
+		if (skin != -1)
+		{
+			if (rendEntity.mdl && rendEntity.mdl->GetSkin() != skin)
+			{
+				rendEntity.mdl->SetSkin(skin);
+			}
 		}
 	}
-	if (body != -1)
+
+	if (refreshFlags & Entity_RefreshSequence)
 	{
-		if (rendEntity.mdl && rendEntity.mdl->GetBody() != body && rendEntity.mdl->m_pstudiohdr)
+		if (sequence != -1)
 		{
-			rendEntity.mdl->SetBody(body);
+			if (rendEntity.mdl && rendEntity.mdl->GetSequence() != sequence)
+			{
+				rendEntity.mdl->SetSequence(sequence);
+			}
 		}
 	}
-	if (sequence != -1)
-	{
-		if (rendEntity.mdl && rendEntity.mdl->GetSequence() != sequence)
-		{
-			rendEntity.mdl->SetSequence(sequence);
-		}
-	}
+
 	if (setAngles)
 	{
 		rendEntity.needAngles = setRenderAngles(ent->classname, rendEntity.modelMat4x4_angles, rendEntity.angles);
@@ -2780,7 +2816,9 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	if (need_refresh_mat)
 	{
-		for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
+		size_t ent_count = std::min(map->ents.size(), renderEnts.size());
+
+		for (size_t i = 0; i < ent_count; i++)
 		{
 			RenderEnt& ent = renderEnts[i];
 			ent.modelMat4x4_calc = ent.modelMat4x4;
@@ -2809,7 +2847,8 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			if (!map->ents[0]->hide)
 				drawModel(0, pass, false, false);
 
-			for (int i = 0, sz = (int)map->ents.size(); i < sz; i++)
+			size_t ent_count = std::min(map->ents.size(), renderEnts.size());
+			for (int i = 0; i < (int)ent_count; i++)
 			{
 				if (map->ents[i]->hide)
 					continue;
@@ -2860,7 +2899,9 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 		if (g_render_flags & RENDER_ENT_CLIPNODES)
 		{
-			for (int i = 0, sz = (int)map->ents.size(); i < sz; i++)
+			size_t entCount = std::min(map->ents.size(), renderEnts.size());
+
+			for (size_t i = 0; i < entCount; i++)
 			{
 				if (map->ents[i]->hide)
 					continue;
@@ -3261,7 +3302,9 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 	g_app->modelShader->pushMatrix();
 	g_app->colorShader->pushMatrix();
 
-	for (int i = 1, sz = (int)map->ents.size(); i < sz; i++)
+	size_t ent_count = std::min(map->ents.size(), renderEnts.size());
+
+	for (int i = 1; i < (int)ent_count; i++)
 	{
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
@@ -3273,7 +3316,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 
 		if (ortho_overview)
 		{
-			if (!starts_with(mapEnt->classname, "cycler_") && 
+			if (!starts_with(mapEnt->classname, "cycler_") &&
 				!starts_with(mapEnt->classname, "func_"))
 			{
 				continue;
@@ -3725,7 +3768,7 @@ void BspRenderer::saveLumpState()
 
 void BspRenderer::pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity* ent)
 {
-	delayEntUndoList.emplace_back(actionDesc,entIdx,ent);
+	delayEntUndoList.emplace_back(actionDesc, entIdx, ent);
 }
 
 void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)

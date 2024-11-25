@@ -2,94 +2,6 @@
 #include "mat4x4.h"
 #include "util.h"
 
-bool operator==(const vec3& v1, const vec3& v2)
-{
-	vec3 v = v1 - v2;
-	if (std::fabs(v.x) >= EPSILON)
-		return false;
-	if (std::fabs(v.y) >= EPSILON)
-		return false;
-	if (std::fabs(v.z) >= EPSILON)
-		return false;
-	return true;
-}
-
-bool operator!=(const vec3& v1, const vec3& v2)
-{
-	vec3 v = v1 - v2;
-	if (std::fabs(v.x) >= EPSILON)
-		return true;
-	if (std::fabs(v.y) >= EPSILON)
-		return true;
-	if (std::fabs(v.z) >= EPSILON)
-		return true;
-	return false;
-}
-
-vec3 operator-(vec3 v1, const vec3& v2)
-{
-	v1.x -= v2.x;
-	v1.y -= v2.y;
-	v1.z -= v2.z;
-	return v1;
-}
-
-vec3 operator+(vec3 v1, const vec3& v2)
-{
-	v1.x += v2.x;
-	v1.y += v2.y;
-	v1.z += v2.z;
-	return v1;
-}
-
-vec3 operator*(vec3 v1, const vec3& v2)
-{
-	v1.x *= v2.x;
-	v1.y *= v2.y;
-	v1.z *= v2.z;
-	return v1;
-}
-
-vec3 operator/(vec3 v1, const vec3& v2)
-{
-	v1.x /= v2.x;
-	v1.y /= v2.y;
-	v1.z /= v2.z;
-	return v1;
-}
-
-vec3 operator-(vec3 v, float f)
-{
-	v.x -= f;
-	v.y -= f;
-	v.z -= f;
-	return v;
-}
-
-vec3 operator+(vec3 v, float f)
-{
-	v.x += f;
-	v.y += f;
-	v.z += f;
-	return v;
-}
-
-vec3 operator*(vec3 v, float f)
-{
-	v.x *= f;
-	v.y *= f;
-	v.z *= f;
-	return v;
-}
-
-vec3 operator/(vec3 v, float f)
-{
-	v.x /= f;
-	v.y /= f;
-	v.z /= f;
-	return v;
-}
-
 void vec3::operator-=(const vec3& v)
 {
 	x -= v.x;
@@ -145,6 +57,15 @@ void vec3::operator/=(float f)
 	y /= f;
 	z /= f;
 }
+
+vec3 operator*(float lhs, const vec3& rhs) {
+	return vec3(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z);
+}
+
+vec3 operator/(float lhs, const vec3& rhs) {
+	return vec3(lhs / rhs.x, lhs / rhs.y, lhs / rhs.z);
+}
+
 vec3 crossProduct(vec3 v1, vec3 v2)
 {
 	float x = v1.y * v2.z - v2.y * v1.z;

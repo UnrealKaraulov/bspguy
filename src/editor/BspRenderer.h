@@ -186,6 +186,16 @@ public:
 	bool IsSelectedEnt(int entIdx);
 };
 
+enum Entity_RefreshFlags : int
+{
+	Entity_RefreshAnglesOrigin = 1 << 0,
+	Entity_RefreshModel = 1 << 1,
+	Entity_RefreshBodySkin = 1 << 2,
+	Entity_RefreshSequence = 1 << 3,
+	Entity_RefreshOther = 1 << 4,
+	Entity_RefreshAll = 0xFFFFFFF
+};
+
 class BspRenderer
 {
 public:
@@ -215,7 +225,7 @@ public:
 	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
 
 	bool setRenderAngles(const std::string& classname, mat4x4& outmat, vec3& outangles);
-	void refreshEnt(int entIdx);
+	void refreshEnt(int entIdx, int refreshFlags = Entity_RefreshAll);
 	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool triangulate = true);
 	bool refreshModelClipnodes(int modelIdx);
 	void refreshFace(int faceIdx);

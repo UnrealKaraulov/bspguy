@@ -503,14 +503,12 @@ void Renderer::renderLoop()
 
 	int clearcolor = 0;
 
-	InitializeAngelScripts();
-
 	while (!glfwWindowShouldClose(window))
 	{
 		curTime = glfwGetTime();
 		if (g_rend_vsync != 0 || std::abs(curTime - framerateTime) > 1.0f / g_settings.fpslimit)
 		{
-			AS_OnFrameTick();
+			AS_OnFrameTick(curTime - framerateTime);
 
 			if (SelectedMap && SelectedMap->is_mdl_model)
 			{
@@ -1232,7 +1230,7 @@ void Renderer::renderLoop()
 					}
 
 
-					WriteBMP_PAL((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp")).c_str(), indexedPixels.data(), ortho_tga_w, ortho_tga_h, palette);
+					WriteBMP_PAL(g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".bmp") : "overview.bmp"), indexedPixels.data(), ortho_tga_w, ortho_tga_h, palette);
 
 					print_log("Saved to {} file!\n", (g_working_dir + "overview.bmp").c_str());
 				}

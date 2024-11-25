@@ -126,6 +126,16 @@ set(SOURCE_FILES
 	ascript/add_on/scriptstdstring/scriptstdstring.h
 	ascript/add_on/scriptstdstring/scriptstdstring.cpp
 	ascript/add_on/scriptstdstring/scriptstdstring_utils.cpp
+	ascript/add_on/datetime/datetime.h
+	ascript/add_on/datetime/datetime.cpp
+	ascript/add_on/scriptmath/scriptmath.h
+	ascript/add_on/scriptmath/scriptmath.cpp
+	ascript/add_on/scriptmathcomplex/scriptmathcomplex.h
+	ascript/add_on/scriptmathcomplex/scriptmathcomplex.cpp
+	ascript/add_on/scriptfile/scriptfile.h
+	ascript/add_on/scriptfile/scriptfile.cpp
+	ascript/add_on/scriptfilesystem/scriptfilesystem.h
+	ascript/add_on/scriptfilesystem/scriptfilesystem.cpp
 	
 	src/util/as.h					src/util/as.cpp
 )

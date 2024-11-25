@@ -27,7 +27,9 @@
    Andreas Jonsson
    andreas@angelcode.com
 */
-
+#ifdef _MSC_VER
+#pragma warning(disable: 4756)
+#endif
 
 //
 // as_context.cpp

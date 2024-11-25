@@ -202,6 +202,15 @@
     <ClCompile Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
       <Filter>Source Files\util\lib\as</Filter>
     </ClCompile>
+    <ClCompile Include=".\..\ascript\add_on\datetime\datetime.cpp" />
+    <ClCompile Include=".\..\ascript\add_on\scriptmath\scriptmath.cpp" />
+    <ClCompile Include=".\..\ascript\add_on\scriptmath\scriptmathcomplex.cpp" />
+    <ClCompile Include="..\ascript\add_on\scriptfile\scriptfile.cpp">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ascript\add_on\scriptfile\scriptfilesystem.cpp">
+      <Filter>Source Files\util\lib\as</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -355,6 +364,15 @@
       <Filter>Header Files\util\lib\as</Filter>
     </ClInclude>
     <ClInclude Include=".\..\src\filedialog\stb_image_write.h">
+      <Filter>Header Files\util\lib\as</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\ascript\add_on\datetime\datetime.h" />
+    <ClInclude Include=".\..\ascript\add_on\scriptmath\scriptmath.h" />
+    <ClInclude Include=".\..\ascript\add_on\scriptmath\scriptmathcomplex.h" />
+    <ClInclude Include="..\ascript\add_on\scriptfile\scriptfile.h">
+      <Filter>Header Files\util\lib\as</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ascript\add_on\scriptfile\scriptfilesystem.h">
       <Filter>Header Files\util\lib\as</Filter>
     </ClInclude>
   </ItemGroup>

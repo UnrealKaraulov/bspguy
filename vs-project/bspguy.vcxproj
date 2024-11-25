@@ -823,10 +823,20 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\ascript\add_on\scriptfile\scriptfile.cpp" />
+    <ClCompile Include="..\ascript\add_on\scriptfile\scriptfilesystem.cpp" />
+    <ClCompile Include=".\..\ascript\add_on\datetime\datetime.cpp" />
+    <ClCompile Include=".\..\ascript\add_on\scriptmath\scriptmath.cpp" />
+    <ClCompile Include=".\..\ascript\add_on\scriptmath\scriptmathcomplex.cpp" />
     <ClCompile Include=".\..\ascript\add_on\scriptarray\scriptarray.cpp" />
     <ClCompile Include=".\..\ascript\add_on\scriptbuilder\scriptbuilder.cpp" />
     <ClCompile Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring.cpp" />
     <ClCompile Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
+    <ClInclude Include="..\ascript\add_on\scriptfile\scriptfile.h" />
+    <ClInclude Include="..\ascript\add_on\scriptfile\scriptfilesystem.h" />
+    <ClInclude Include=".\..\ascript\add_on\datetime\datetime.h" />
+    <ClInclude Include=".\..\ascript\add_on\scriptmath\scriptmath.h" />
+    <ClInclude Include=".\..\ascript\add_on\scriptmath\scriptmathcomplex.h" />
     <ClInclude Include=".\..\ascript\add_on\scriptarray\scriptarray.h" />
     <ClInclude Include=".\..\ascript\add_on\scriptbuilder\scriptbuilder.h" />
     <ClInclude Include=".\..\ascript\add_on\scriptstdstring\scriptstdstring.h" />

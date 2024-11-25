@@ -1038,6 +1038,7 @@ int main(int argc, char* argv[])
 		g_settings.loadDefaultSettings();
 		g_settings.loadSettings();
 
+		InitializeAngelScripts();
 
 		CommandLine cli(argc, argv);
 

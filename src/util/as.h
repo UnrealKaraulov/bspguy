@@ -9,4 +9,4 @@ void InitializeAngelScripts();
 void AS_OnMapChange();
 void AS_OnGuiTick();
 void AS_OnSelectEntity();
-void AS_OnFrameTick();
+void AS_OnFrameTick(double msec);

@@ -73,22 +73,9 @@ void Settings::loadDefaultSettings()
 	zfar = 262144.0f;
 	rotSpeed = 5.0f;
 
-	fgdPaths.clear();
-	resPaths.clear();
-
-
 	rad_path = "hlrad.exe";
 	rad_options = "\"{map_path}\"";
 
-	conditionalPointEntTriggers.clear();
-	entsThatNeverNeedAnyHulls.clear();
-	entsThatNeverNeedCollision.clear();
-	passableEnts.clear();
-	playerOnlyTriggers.clear();
-	monsterOnlyTriggers.clear();
-	entsNegativePitchPrefix.clear();
-	transparentTextures.clear();
-	transparentEntities.clear();
 
 	default_is_empty = true;
 
@@ -355,7 +342,7 @@ void Settings::loadSettings()
 	g_settings.fov = settings_ini->Get<double>("GRAPHICS", "fov", 60.0);
 	g_settings.zfar = settings_ini->Get<double>("GRAPHICS", "zfar", 1000.0);
 	g_settings.render_flags = settings_ini->Get<int>("GRAPHICS", "renders_flags", 0);
-	g_settings.fontSize = settings_ini->Get<double>("GRAPHICS", "font_size", 14.0);
+	g_settings.fontSize = settings_ini->Get<double>("GRAPHICS", "font_size", 22.0);
 	g_settings.fpslimit = settings_ini->Get<int>("GRAPHICS", "fpslimit", 60);
 
 	if (g_settings.fpslimit < 30) {

@@ -4374,7 +4374,7 @@ void Gui::drawMenuBar()
 
 			if (ImGui::BeginMenu("Porting tools"))
 			{
-				if (ImGui::BeginMenu("Delete OOB Data", !app->isLoading && app->getSelectedMap()))
+				if (ImGui::BeginMenu("Delete OOB Data", !app->isLoading && app->getSelectedMap() && rend))
 				{
 
 					static const char* optionNames[10] = {
@@ -6921,7 +6921,8 @@ void Gui::drawOverviewWidget()
 		if (lastMap != map)
 		{
 			lastMap = map;
-			map->get_model_vertex_bounds(0, ortho_mins, ortho_maxs);
+			if (map)
+				map->get_model_vertex_bounds(0, ortho_mins, ortho_maxs);
 		}
 
 		if (!map)
@@ -7865,7 +7866,7 @@ struct TextChangeCallback
 							g_app->updateEntConnections();
 							if (needrefreshmodel)
 							{
-								if (map2 && selent->getBspModelIdx() > 0)
+								if (selent->getBspModelIdx() > 0)
 								{
 									map2->getBspRender()->refreshModel(selent->getBspModelIdx());
 									g_app->updateEntConnections();
@@ -8773,7 +8774,7 @@ void Gui::loadFonts()
 			std::transform(extension.begin(), extension.end(), extension.begin(),
 				[](unsigned char c) { return std::tolower(c); });
 			if (extension == ".ttf" || extension == ".ttc") {
-				fontFiles.push_back(entry.path().string());
+				fontFiles.emplace_back(entry.path().string());
 			}
 		}
 	}
