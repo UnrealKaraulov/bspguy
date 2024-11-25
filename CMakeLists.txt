@@ -134,8 +134,8 @@ set(SOURCE_FILES
 	ascript/add_on/scriptmath/scriptmathcomplex.cpp
 	ascript/add_on/scriptfile/scriptfile.h
 	ascript/add_on/scriptfile/scriptfile.cpp
-	ascript/add_on/scriptfilesystem/scriptfilesystem.h
-	ascript/add_on/scriptfilesystem/scriptfilesystem.cpp
+	ascript/add_on/scriptfile/scriptfilesystem.h
+	ascript/add_on/scriptfile/scriptfilesystem.cpp
 	
 	src/util/as.h					src/util/as.cpp
 )
