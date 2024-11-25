@@ -99,7 +99,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\fmt\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">.\fmt\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">fmt.dir\Debug\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">fmt.dir\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">fmt.dir\DebugGIT\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">fmtd</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fmtd</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">fmtd</TargetName>

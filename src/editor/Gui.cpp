@@ -7031,7 +7031,7 @@ void Gui::drawOverviewWidget()
 				fprintf(overfile, "\tORIGIN\t%.2f\t%.2f\t%.2f\n", origin.x, origin.y, ortho_mins.z + ortho_offset.z);
 				fprintf(overfile, "\tROTATED\t%i\n}\n\n", rotated ? 1 : 0);
 				fprintf(overfile, "layer \n{\n");
-				fprintf(overfile, "\tIMAGE\t\"overviews/%s%s\"\n", map->bsp_name.c_str(),imgFormat.c_str());
+				fprintf(overfile, "\tIMAGE\t\"overviews/%s%s\"\n", map->bsp_name.c_str(), imgFormat.c_str());
 				fprintf(overfile, "\tHEIGHT\t%.2f\n}\n", ortho_mins.z + ortho_offset.z);
 				fclose(overfile);
 				print_log("Saved to {}\n", g_working_dir + map->bsp_name + ".txt");
@@ -8752,8 +8752,9 @@ void Gui::drawTransformWidget()
 
 void Gui::loadFonts()
 {
-	// data copied to new array so that ImGui doesn't delete static data
-
+	const std::string fontPath = "./fonts/";
+	const std::string mainFont = "calibri.ttf";
+	std::vector<std::string> fontFiles;
 	ImFontConfig config;
 	config.SizePixels = fontSize * 2.0f;
 	config.OversampleH = 3;
@@ -8761,17 +8762,76 @@ void Gui::loadFonts()
 	config.RasterizerMultiply = 1.5f;
 	config.PixelSnapH = true;
 
-	defaultFont = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config);
-	config.MergeMode = true;
-	imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config, imgui_io->Fonts->GetGlyphRangesDefault());
-	config.MergeMode = true;
-	imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config, imgui_io->Fonts->GetGlyphRangesCyrillic());
+	if (!fs::exists(fontPath) || !fs::is_directory(fontPath)) {
+		std::cerr << "Font directory does not exist or is not accessible.\n";
+		return;
+	}
+
+	for (const auto& entry : fs::directory_iterator(fontPath)) {
+		if (entry.is_regular_file()) {
+			auto extension = entry.path().extension().string();
+			std::transform(extension.begin(), extension.end(), extension.begin(),
+				[](unsigned char c) { return std::tolower(c); });
+			if (extension == ".ttf" || extension == ".ttc") {
+				fontFiles.push_back(entry.path().string());
+			}
+		}
+	}
+
+	std::sort(fontFiles.begin(), fontFiles.end(), [&](const std::string& a, const std::string& b) {
+		bool isA = a.find(mainFont) != std::string::npos;
+		bool isB = b.find(mainFont) != std::string::npos;
+		if (isA && !isB) return true;
+		if (!isA && isB) return false;
+		return a < b;
+		});
+
+	ImVector<ImWchar> glyphRanges;
+	ImFontGlyphRangesBuilder builder;
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesDefault());
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesCyrillic());
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesChineseFull());
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesChineseSimplifiedCommon());
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesGreek());
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesKorean());
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesJapanese());
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesThai());
+	builder.AddRanges(imgui_io->Fonts->GetGlyphRangesVietnamese());
+	builder.BuildRanges(&glyphRanges);
+
+	config.GlyphRanges = glyphRanges.Data;
+
+	ImFont* tmpFont = nullptr;
+
+	for (const auto& fontFile : fontFiles)
+	{
+		try
+		{
+			auto font = imgui_io->Fonts->AddFontFromFileTTF(fontFile.c_str(), fontSize, &config, glyphRanges.Data);
+			if (!font)
+			{
+				print_log(PRINT_RED, "Invalid {} font.\n", fontFile);
+			}
+			else
+			{
+				tmpFont = font;
+			}
+			if (tmpFont)
+				config.MergeMode = true;
+		}
+		catch (...)
+		{
+			print_log(PRINT_RED, "Invalid {} font.\n", fontFile);
+		}
+	}
+
 	imgui_io->Fonts->Build();
 
-	smallFont = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config);
-	largeFont = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize * 1.1f, &config);
-	consoleFont = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize, &config);
-	consoleFontLarge = imgui_io->Fonts->AddFontFromFileTTF("./fonts/calibri.ttf", fontSize * 1.1f, &config);
+	defaultFont = tmpFont;
+	smallFont = tmpFont;
+	consoleFont = tmpFont;
+	largeFont = tmpFont;
+	consoleFontLarge = tmpFont;
 }
 
 void Gui::drawLog()

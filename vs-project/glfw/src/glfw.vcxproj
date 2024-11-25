@@ -122,7 +122,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\..\..\..\vs-project\glfw\src\Release\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">.\..\..\..\vs-project\glfw\src\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glfw.dir\Debug\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">glfw.dir\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">glfw.dir\DebugGIT\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">glfw3</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glfw3</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='DebugGithub|x64'">glfw3</TargetName>
