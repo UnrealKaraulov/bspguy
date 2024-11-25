@@ -428,10 +428,7 @@ void RegisterStructs(asIScriptEngine* engine)
 	r = engine->RegisterObjectMethod("vec3", "vec3 opMul(float) const", asMETHODPR(vec3, operator*, (float) const, vec3), asCALL_THISCALL); print_assert(r >= 0);
 	r = engine->RegisterObjectMethod("vec3", "vec3 opDiv(float) const", asMETHODPR(vec3, operator/, (float) const, vec3), asCALL_THISCALL); print_assert(r >= 0);
 
-	// WHY?
-	/*r = engine->RegisterGlobalFunction("vec3 opMul(float, const vec3 &in)", asFUNCTIONPR(operator*, (float, const vec3&), vec3), asCALL_CDECL); print_assert(r >= 0);
-	r = engine->RegisterGlobalFunction("vec3 opDiv(float, const vec3 &in)", asFUNCTIONPR(operator/, (float, const vec3&), vec3), asCALL_CDECL); print_assert(r >= 0);
-	*/
+	r = engine->RegisterGlobalFunction("vec3 opMul_r(float)", asFUNCTIONPR(operator*, (float, const vec3&), vec3), asCALL_CDECL); print_assert(r >= 0);
 }
 
 void RegisterClasses(asIScriptEngine* engine)
