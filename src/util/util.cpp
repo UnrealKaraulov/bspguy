@@ -231,14 +231,15 @@ bool isFloating(const std::string& s)
 {
 	if (s.empty())
 		return false;
+
 	std::string::const_iterator it = s.begin();
 	int points = 0;
 
 	while (it != s.end() && (isdigit(*it) || *it == '.'))
 	{
-		++it;
 		if (*it == '.')
 			points++;
+		++it;
 	}
 
 	return it == s.end() && points <= 1;
