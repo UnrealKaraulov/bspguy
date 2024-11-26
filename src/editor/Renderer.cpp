@@ -4447,6 +4447,7 @@ void Renderer::cutEnt()
 
 		if (map->ents[ents[i]]->getBspModelIdx() > 0)
 		{
+			removeFile(g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp");
 			ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
 		}
 
