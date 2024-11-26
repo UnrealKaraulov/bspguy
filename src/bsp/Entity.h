@@ -38,7 +38,7 @@ public:
 
 	Entity(const std::string& _classname)
 	{
-		hide = false;
+		setOrAddKeyvalue("classname", _classname);
 		cachedModelIdx = -2;
 		targetsCached = false;
 		rendermode = kRenderNormal;
@@ -46,7 +46,8 @@ public:
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(1.0f, 1.0f, 1.0f);
 		targetsCached = false;
-		setOrAddKeyvalue("classname", _classname);
+		origin = vec3();
+		hide = false;
 		totalEntityStructs++;
 		realIdx = totalEntityStructs;
 	}

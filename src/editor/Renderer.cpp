@@ -4564,7 +4564,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 
 	for (size_t i = 0; i < copiedEnts.size(); i++)
 	{
-		vec3 baseOrigin = getEntOrigin(map, copiedEnts[0]);
+		vec3 baseOrigin = copiedEnts[0]->origin;
 
 		if (!noModifyOrigin)
 		{
