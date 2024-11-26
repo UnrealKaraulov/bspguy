@@ -28,7 +28,7 @@
 // Solve: 
 // Create empty hull 0 box ?
 
-std::string g_version_string = "NewBSPGuy v4.31";
+std::string g_version_string = "NewBSPGuy v4.32";
 
 bool g_verbose = false;
 
@@ -116,9 +116,9 @@ int test()
 	return 0;
 }
 
-int merge_maps(CommandLine& cli)
+int merge_maps()
 {
-	std::vector<std::string> input_maps = cli.getOptionList("-maps");
+	std::vector<std::string> input_maps = g_cmdLine.getOptionList("-maps");
 
 	if (input_maps.size() < 2)
 	{
@@ -153,14 +153,14 @@ int merge_maps(CommandLine& cli)
 		g_progress.clear();
 		removed.print_delete_stats(2);
 
-		if (cli.hasOption("-nohull2") || (cli.hasOption("-optimize") && !maps[i]->has_hull2_ents()))
+		if (g_cmdLine.hasOption("-nohull2") || (g_cmdLine.hasOption("-optimize") && !maps[i]->has_hull2_ents()))
 		{
 			print_log(get_localized_string(LANG_0006));
 			maps[i]->delete_hull(2, 1);
 			maps[i]->remove_unused_model_structures().print_delete_stats(2);
 		}
 
-		if (cli.hasOption("-optimize"))
+		if (g_cmdLine.hasOption("-optimize"))
 		{
 			print_log(get_localized_string(LANG_0007));
 			maps[i]->delete_unused_hulls().print_delete_stats(2);
@@ -169,12 +169,12 @@ int merge_maps(CommandLine& cli)
 		print_log("\n");
 	}
 
-	vec3 gap = cli.hasOption("-gap") ? cli.getOptionVector("-gap") : vec3();
+	vec3 gap = g_cmdLine.hasOption("-gap") ? g_cmdLine.getOptionVector("-gap") : vec3();
 
-	std::string output_name = cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile;
+	std::string output_name = g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile;
 
 	BspMerger merger;
-	MergeResult result = merger.merge(maps, gap, output_name, cli.hasOption("-noripent"), cli.hasOption("-noscript"), cli.hasOption("-nomove"), cli.hasOption("-nostyles"));
+	MergeResult result = merger.merge(maps, gap, output_name, g_cmdLine.hasOption("-noripent"), g_cmdLine.hasOption("-noscript"), g_cmdLine.hasOption("-nomove"), g_cmdLine.hasOption("-nostyles"));
 
 	print_log("\n");
 	if (result.map && result.map->validate() && result.map->isValid())
@@ -191,18 +191,18 @@ int merge_maps(CommandLine& cli)
 	return 0;
 }
 
-int print_info(CommandLine& cli)
+int print_info()
 {
-	Bsp* map = new Bsp(cli.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		bool limitMode = false;
 		int listLength = 10;
 		int sortMode = SORT_CLIPNODES;
 
-		if (cli.hasOption("-limit"))
+		if (g_cmdLine.hasOption("-limit"))
 		{
-			std::string limitName = cli.getOption("-limit");
+			std::string limitName = g_cmdLine.getOption("-limit");
 
 			limitMode = true;
 			if (limitName == "clipnodes")
@@ -228,7 +228,7 @@ int print_info(CommandLine& cli)
 				return 0;
 			}
 		}
-		if (cli.hasOption("-all"))
+		if (g_cmdLine.hasOption("-all"))
 		{
 			listLength = 32768; // should be more than enough
 		}
@@ -241,18 +241,18 @@ int print_info(CommandLine& cli)
 	return 1;
 }
 
-int noclip(CommandLine& cli)
+int noclip()
 {
-	Bsp* map = new Bsp(cli.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int model = -1;
 		int hull = -1;
 		int redirect = 0;
 
-		if (cli.hasOption("-hull"))
+		if (g_cmdLine.hasOption("-hull"))
 		{
-			hull = cli.getOptionInt("-hull");
+			hull = g_cmdLine.getOptionInt("-hull");
 
 			if (hull < 0 || hull >= MAX_MAP_HULLS)
 			{
@@ -262,15 +262,15 @@ int noclip(CommandLine& cli)
 			}
 		}
 
-		if (cli.hasOption("-redirect"))
+		if (g_cmdLine.hasOption("-redirect"))
 		{
-			if (!cli.hasOption("-hull"))
+			if (!g_cmdLine.hasOption("-hull"))
 			{
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0010));
 				delete map;
 				return 1;
 			}
-			redirect = cli.getOptionInt("-redirect");
+			redirect = g_cmdLine.getOptionInt("-redirect");
 
 			if (redirect < 1 || redirect >= MAX_MAP_HULLS)
 			{
@@ -296,9 +296,9 @@ int noclip(CommandLine& cli)
 			print_log("\n");
 		}
 
-		if (cli.hasOption("-model"))
+		if (g_cmdLine.hasOption("-model"))
 		{
-			model = cli.getOptionInt("-model");
+			model = g_cmdLine.getOptionInt("-model");
 
 			if (model < 0 || model >= map->modelCount)
 			{
@@ -361,7 +361,7 @@ int noclip(CommandLine& cli)
 		print_log("\n");
 
 		if (map->validate() && map->isValid())
-			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			map->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 		print_log("\n");
 
 		map->print_info(false, 0, 0);
@@ -372,23 +372,23 @@ int noclip(CommandLine& cli)
 	return 1;
 }
 
-int simplify(CommandLine& cli)
+int simplify()
 {
-	Bsp* map = new Bsp(cli.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int hull = 0;
 
-		if (!cli.hasOption("-model"))
+		if (!g_cmdLine.hasOption("-model"))
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0023));
 			delete map;
 			return 1;
 		}
 
-		if (cli.hasOption("-hull"))
+		if (g_cmdLine.hasOption("-hull"))
 		{
-			hull = cli.getOptionInt("-hull");
+			hull = g_cmdLine.getOptionInt("-hull");
 
 			if (hull < 1 || hull >= MAX_MAP_HULLS)
 			{
@@ -398,7 +398,7 @@ int simplify(CommandLine& cli)
 			}
 		}
 
-		int modelIdx = cli.getOptionInt("-model");
+		int modelIdx = g_cmdLine.getOptionInt("-model");
 
 		STRUCTCOUNT removed = map->remove_unused_model_structures();
 
@@ -442,7 +442,7 @@ int simplify(CommandLine& cli)
 		print_log("\n");
 
 		if (map->validate() && map->isValid())
-			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			map->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 		print_log("\n");
 
 		map->print_info(false, 0, 0);
@@ -452,9 +452,9 @@ int simplify(CommandLine& cli)
 	return 1;
 }
 
-int deleteCmd(CommandLine& cli)
+int deleteCmd()
 {
-	Bsp* map = new Bsp(cli.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		STRUCTCOUNT removed = map->remove_unused_model_structures();
@@ -467,9 +467,9 @@ int deleteCmd(CommandLine& cli)
 			print_log("\n");
 		}
 
-		if (cli.hasOption("-model"))
+		if (g_cmdLine.hasOption("-model"))
 		{
-			int modelIdx = cli.getOptionInt("-model");
+			int modelIdx = g_cmdLine.getOptionInt("-model");
 
 			print_log(get_localized_string(LANG_0027), modelIdx);
 			map->delete_model(modelIdx);
@@ -482,7 +482,7 @@ int deleteCmd(CommandLine& cli)
 		}
 
 		if (map->validate() && map->isValid())
-			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			map->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 		print_log("\n");
 
 		map->print_info(false, 0, 0);
@@ -493,16 +493,16 @@ int deleteCmd(CommandLine& cli)
 	return 1;
 }
 
-int transform(CommandLine& cli)
+int transform()
 {
-	Bsp* map = new Bsp(cli.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		vec3 move;
 
-		if (cli.hasOptionVector("-move"))
+		if (g_cmdLine.hasOptionVector("-move"))
 		{
-			move = cli.getOptionVector("-move");
+			move = g_cmdLine.getOptionVector("-move");
 
 			print_log(fmt::format(fmt::runtime(get_localized_string("APPLY_OFFSET_STR")),
 				move.x, move.y, move.z));
@@ -517,7 +517,7 @@ int transform(CommandLine& cli)
 		}
 
 		if (map->validate() && map->isValid())
-			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			map->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 		print_log("\n");
 
 		map->print_info(false, 0, 0);
@@ -528,16 +528,16 @@ int transform(CommandLine& cli)
 	return 1;
 }
 
-int unembed(CommandLine& cli)
+int unembed()
 {
-	Bsp* map = new Bsp(cli.bspfile);
+	Bsp* map = new Bsp(g_cmdLine.bspfile);
 	if (map->bsp_valid)
 	{
 		int deleted = map->delete_embedded_textures();
 		print_log(get_localized_string(LANG_0029), deleted);
 
 		if (map->validate() && map->isValid())
-			map->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			map->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 		print_log("\n");
 		delete map;
 		return 0;
@@ -1040,19 +1040,19 @@ int main(int argc, char* argv[])
 
 		InitializeAngelScripts();
 
-		CommandLine cli(argc, argv);
+		g_cmdLine = CommandLine(argc, argv);
 
-		if (cli.command == "version" || cli.command == "--version" || cli.command == "-version")
+		if (g_cmdLine.command == "version" || g_cmdLine.command == "--version" || g_cmdLine.command == "-version")
 		{
 			return 0;
 		}
 
-		if (!cli.bspfile.empty() && !fileExists(cli.bspfile))
+		if (!g_cmdLine.bspfile.empty() && !fileExists(g_cmdLine.bspfile))
 		{
-			cli.bspfile = g_startup_dir + cli.bspfile;
+			g_cmdLine.bspfile = g_startup_dir + g_cmdLine.bspfile;
 		}
 
-		if (cli.hasOption("-v") || cli.hasOption("-verbose"))
+		if (g_cmdLine.hasOption("-v") || g_cmdLine.hasOption("-verbose"))
 		{
 			g_verbose = true;
 		}
@@ -1069,160 +1069,160 @@ int main(int argc, char* argv[])
 
 		g_progress.simpleMode = false;
 
-		if (cli.command == "exportobj")
+		if (g_cmdLine.command == "exportobj")
 		{
 			int scale = 1;
-			if (cli.hasOption("-scale"))
+			if (g_cmdLine.hasOption("-scale"))
 			{
-				scale = str_to_int(getValueInQuotes(cli.getOption("-scale")));
+				scale = str_to_int(getValueInQuotes(g_cmdLine.getOption("-scale")));
 			}
-			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ExportToObjWIP(cli.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			tmpBsp->ExportToObjWIP(g_cmdLine.bspfile);
 			delete tmpBsp;
 			return 0;
 		}
-		else if (cli.command == "exportlit")
+		else if (g_cmdLine.command == "exportlit")
 		{
-			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ExportLightFile(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			tmpBsp->ExportLightFile(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
 			return 0;
 		}
-		else if (cli.command == "importlit")
+		else if (g_cmdLine.command == "importlit")
 		{
-			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ImportLightFile(cli.hasOption("-i") ? cli.getOption("-i") : cli.bspfile);
-			tmpBsp->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			tmpBsp->ImportLightFile(g_cmdLine.hasOption("-i") ? g_cmdLine.getOption("-i") : g_cmdLine.bspfile);
+			tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
 			return 0;
 		}
-		else if (cli.command == "exportrad")
+		else if (g_cmdLine.command == "exportrad")
 		{
 			std::string newpath;
-			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ExportExtFile(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile, newpath);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			tmpBsp->ExportExtFile(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile, newpath);
 			delete tmpBsp;
 			return 0;
 		}
-		else if (cli.command == "exportwad")
+		else if (g_cmdLine.command == "exportwad")
 		{
-			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ExportEmbeddedWad(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile + ".wad");
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			tmpBsp->ExportEmbeddedWad(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile + ".wad");
 			delete tmpBsp;
 			return 0;
 		}
-		else if (cli.command == "importwad")
+		else if (g_cmdLine.command == "importwad")
 		{
-			Bsp* tmpBsp = new Bsp(cli.bspfile);
-			tmpBsp->ImportWad(cli.hasOption("-i") ? cli.getOption("-i") : cli.bspfile + ".wad");
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
+			tmpBsp->ImportWad(g_cmdLine.hasOption("-i") ? g_cmdLine.getOption("-i") : g_cmdLine.bspfile + ".wad");
 			tmpBsp->validate();
-			tmpBsp->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+			tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
 			return 0;
 		}
-		else if (cli.command == "cullfaces")
+		else if (g_cmdLine.command == "cullfaces")
 		{
 			int leafIdx = 0;
-			if (cli.hasOption("-leaf"))
+			if (g_cmdLine.hasOption("-leaf"))
 			{
-				leafIdx = str_to_int(getValueInQuotes(cli.getOption("-leaf")));
+				leafIdx = str_to_int(getValueInQuotes(g_cmdLine.getOption("-leaf")));
 			}
-			Bsp* tmpBsp = new Bsp(cli.bspfile);
+			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->cull_leaf_faces(leafIdx);
 			if (tmpBsp->validate() && tmpBsp->isValid())
-				tmpBsp->write(cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile);
+				tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
 			return 0;
 		}
 
 		int retval = 0;
 
-		if (cli.command == "info")
+		if (g_cmdLine.command == "info")
 		{
-			if (!fileExists(cli.bspfile))
+			if (!fileExists(g_cmdLine.bspfile))
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), g_cmdLine.bspfile);
 				retval = 1;
 			}
 			else
-				retval = print_info(cli);
+				retval = print_info();
 		}
-		else if (cli.command == "noclip")
+		else if (g_cmdLine.command == "noclip")
 		{
-			if (!fileExists(cli.bspfile))
+			if (!fileExists(g_cmdLine.bspfile))
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), g_cmdLine.bspfile);
 				retval = 1;
 			}
 			else
-				retval = noclip(cli);
+				retval = noclip();
 		}
-		else if (cli.command == "simplify")
+		else if (g_cmdLine.command == "simplify")
 		{
-			if (!fileExists(cli.bspfile))
+			if (!fileExists(g_cmdLine.bspfile))
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), g_cmdLine.bspfile);
 				retval = 1;
 			}
 			else
-				retval = simplify(cli);
+				retval = simplify();
 		}
-		else if (cli.command == "delete")
+		else if (g_cmdLine.command == "delete")
 		{
-			if (!fileExists(cli.bspfile))
+			if (!fileExists(g_cmdLine.bspfile))
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), g_cmdLine.bspfile);
 				retval = 1;
 			}
 			else
-				retval = deleteCmd(cli);
+				retval = deleteCmd();
 		}
-		else if (cli.command == "transform")
+		else if (g_cmdLine.command == "transform")
 		{
-			if (!fileExists(cli.bspfile))
+			if (!fileExists(g_cmdLine.bspfile))
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), g_cmdLine.bspfile);
 				retval = 1;
 			}
 			else
-				retval = transform(cli);
+				retval = transform();
 		}
-		else if (cli.command == "merge")
+		else if (g_cmdLine.command == "merge")
 		{
-			retval = merge_maps(cli);
+			retval = merge_maps();
 		}
-		else if (cli.command == "unembed")
+		else if (g_cmdLine.command == "unembed")
 		{
-			if (!fileExists(cli.bspfile))
+			if (!fileExists(g_cmdLine.bspfile))
 			{
-				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), cli.bspfile);
+				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0034), g_cmdLine.bspfile);
 				retval = 1;
 			}
 			else
-				retval = unembed(cli);
+				retval = unembed();
 		}
 		else
 		{
-			if (cli.askingForHelp)
+			if (g_cmdLine.askingForHelp)
 			{
-				print_help(cli.command);
+				print_help(g_cmdLine.command);
 				return 0;
 			}
-			else if (cli.bspfile.size() == 0)
+			else if (g_cmdLine.bspfile.size() == 0)
 				print_log("{}\n", get_localized_string(LANG_0032));
 			else
-				print_log("{}\n", ("Start bspguy editor with: " + cli.bspfile));
+				print_log("{}\n", ("Start bspguy editor with: " + g_cmdLine.bspfile));
 
 			print_log(get_localized_string(LANG_0033), g_settings_path);
-			if (!start_viewer(cli.bspfile.c_str()))
+			if (!start_viewer(g_cmdLine.bspfile.c_str()))
 			{
-				print_log(get_localized_string(LANG_0034), cli.bspfile);
+				print_log(get_localized_string(LANG_0034), g_cmdLine.bspfile);
 			}
 		}
 
 		if (retval != 0)
 		{
-			print_help(cli.command);
+			print_help(g_cmdLine.command);
 			return 1;
 		}
 	}

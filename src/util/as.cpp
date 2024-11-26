@@ -13,6 +13,7 @@
 #include "Sprite.h"
 #include "mdl_studio.h"
 #include "Gui.h"
+#include "CommandLine.h"
 
 #include "angelscript.h"
 #include "../../add_on/scriptstdstring/scriptstdstring.h"
@@ -36,6 +37,7 @@ enum AS_FUNCS : int
 	AS_FUNC_ON_MAPCHANGE,
 	AS_FUNC_ON_MENUCALL,
 	AS_FUNC_ON_FRAMETICK,
+	AS_FUNC_ON_END,
 
 	AS_FUNC_COUNT
 };
@@ -47,7 +49,8 @@ const char* funcNames[AS_FUNC_COUNT] =
 	"string GetScriptDescription()",
 	"void OnMapChange()",
 	"void OnMenuCall()",
-	"void OnFrameTick()"
+	"void OnFrameTick()",
+	"void OnEnd()"
 };
 
 std::vector<std::string> funcNamesStr(std::begin(funcNames), std::end(funcNames));
@@ -311,7 +314,7 @@ void Native_RefreshEnt(int entIdx, int flags)
 	{
 		if (rend->map)
 		{
-			for (size_t i = 0; i < rend->map->ents.size(); i++)
+			for (int i = 0; i < (int)rend->map->ents.size(); i++)
 			{
 				if (rend->map->ents[i]->realIdx == entIdx)
 				{
@@ -672,7 +675,10 @@ void AS_OnGuiTick()
 		if (ImGui::MenuItem("Hot reload"))
 		{
 			for (auto& s : scriptList)
+			{
+				ExecuteFunctionNoRet(s, AS_FUNC_ON_END);
 				delete s;
+			}
 			scriptList.clear();
 			AS_LastSelectedMap = NULL;
 			InitializeAngelScripts();

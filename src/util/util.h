@@ -282,3 +282,6 @@ bool starts_with(const std::wstring& str, wchar_t prefix);
 bool ends_with(const std::string& str, char suffix);
 bool ends_with(const std::wstring& str, wchar_t suffix);
 void mapFixLightEnts(Bsp* map);
+
+void ExportModel(Bsp* src_map, const std::string & export_path, int model_id, int ExportType, bool movemodel);
+int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip);

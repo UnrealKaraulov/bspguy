@@ -265,8 +265,6 @@ public:
 	VertexBuffer* entConnections = NULL;
 	VertexBuffer* entConnectionPoints = NULL;
 
-	std::vector<Entity*> copiedEnts;
-
 	int oldLeftMouse;
 	int curLeftMouse;
 	int oldRightMouse;
@@ -379,6 +377,8 @@ public:
 	void ungrabEnt();
 	void loadFgds();
 	void merge(std::string fpath);
+
+	bool hasCopiedEnt();
 
 	std::vector<std::string> glExteralTextures_names;
 	std::vector<Texture*> glExteralTextures_textures;

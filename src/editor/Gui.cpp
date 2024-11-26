@@ -587,7 +587,7 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	return newModelIdx;
 }
 
-void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
+void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int ExportType, bool movemodel)
 {
 	Bsp* bspModel = new Bsp();
 	bspModel->setBspRender(src_map->getBspRender());
@@ -832,7 +832,7 @@ void ExportModel(Bsp* src_map, int model_id, int ExportType, bool movemodel)
 	//	}
 	//}
 
-	bspModel->bsp_path = g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp";
+	bspModel->bsp_path = export_path;
 	bspModel->write(bspModel->bsp_path);
 	removeFile(bspModel->bsp_path);
 
@@ -1396,7 +1396,7 @@ void Gui::drawBspContexMenu()
 			if (modelIdx < 0 && ent->isWorldSpawn())
 				modelIdx = 0;
 
-			if (modelIdx != 0 || !app->copiedEnts.empty())
+			if (modelIdx != 0 || app->hasCopiedEnt())
 			{
 				if (modelIdx != 0)
 				{
@@ -1410,7 +1410,7 @@ void Gui::drawBspContexMenu()
 					}
 				}
 
-				if (!app->copiedEnts.empty())
+				if (app->hasCopiedEnt())
 				{
 					if (ImGui::MenuItem(get_localized_string(LANG_0449).c_str(), get_localized_string(LANG_0441).c_str(), false))
 					{
@@ -1769,38 +1769,38 @@ void Gui::drawBspContexMenu()
 						ImGui::EndTooltip();
 					}
 				}
-				if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading))
+				if (ImGui::BeginMenu(get_localized_string(LANG_0466).c_str(), !app->isLoading && map))
 				{
 					if (ImGui::BeginMenu(get_localized_string(LANG_0467).c_str(), !app->isLoading))
 					{
 						if (ImGui::MenuItem(get_localized_string(LANG_0468).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, modelIdx, 0, false);
+							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 0, false);
 						}
 						if (ImGui::MenuItem(get_localized_string(LANG_0469).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, modelIdx, 2, false);
+							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 2, false);
 						}
 						if (ImGui::MenuItem(get_localized_string(LANG_0470).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, modelIdx, 1, false);
+							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 1, false);
 						}
 						ImGui::EndMenu();
 					}
 
-					if (ImGui::BeginMenu(get_localized_string(LANG_0471).c_str(), !app->isLoading))
+					if (ImGui::BeginMenu(get_localized_string(LANG_0471).c_str(), !app->isLoading && map))
 					{
 						if (ImGui::MenuItem(get_localized_string(LANG_1070).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, modelIdx, 0, true);
+							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 0, true);
 						}
 						if (ImGui::MenuItem(get_localized_string(LANG_1071).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, modelIdx, 2, true);
+							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 2, true);
 						}
 						if (ImGui::MenuItem(get_localized_string(LANG_1072).c_str(), 0, false, !app->isLoading))
 						{
-							ExportModel(map, modelIdx, 1, true);
+							ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(modelIdx) + ".bsp", modelIdx, 1, true);
 						}
 						ImGui::EndMenu();
 					}
@@ -1841,11 +1841,11 @@ void Gui::drawBspContexMenu()
 
 		if (ImGui::BeginPopup("empty_context"))
 		{
-			if (ImGui::MenuItem(get_localized_string(LANG_1073).c_str(), get_localized_string(LANG_1074).c_str(), false, app->copiedEnts.size()))
+			if (ImGui::MenuItem(get_localized_string(LANG_1073).c_str(), get_localized_string(LANG_1074).c_str(), false, app->hasCopiedEnt()))
 			{
 				app->pasteEnt(false);
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1075).c_str(), 0, false, app->copiedEnts.size()))
+			if (ImGui::MenuItem(get_localized_string(LANG_1075).c_str(), 0, false, app->hasCopiedEnt()))
 			{
 				app->pasteEnt(true);
 			}
@@ -3074,15 +3074,15 @@ void Gui::drawMenuBar()
 							{
 								if (ImGui::MenuItem(get_localized_string(LANG_1154).c_str(), 0, false, true))
 								{
-									ExportModel(map, i, 0, false);
+									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 0, false);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1155).c_str(), 0, false, true))
 								{
-									ExportModel(map, i, 2, false);
+									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 2, false);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1156).c_str(), 0, false, true))
 								{
-									ExportModel(map, i, 1, false);
+									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 1, false);
 								}
 								ImGui::EndMenu();
 							}
@@ -3090,15 +3090,15 @@ void Gui::drawMenuBar()
 							{
 								if (ImGui::MenuItem(get_localized_string(LANG_1173).c_str(), 0, false, true))
 								{
-									ExportModel(map, i, 0, true);
+									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 0, true);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1174).c_str(), 0, false, true))
 								{
-									ExportModel(map, i, 2, true);
+									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 2, true);
 								}
 								if (ImGui::MenuItem(get_localized_string(LANG_1175).c_str(), 0, false, true))
 								{
-									ExportModel(map, i, 1, true);
+									ExportModel(map, g_working_dir + map->bsp_name + "_model" + std::to_string(i) + ".bsp", i, 1, true);
 								}
 								ImGui::EndMenu();
 							}
@@ -4019,11 +4019,11 @@ void Gui::drawMenuBar()
 				if (app->pickInfo.selectedFaces.size())
 					copyTexture();
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1157).c_str(), get_localized_string(LANG_1158).c_str(), false, app->getSelectedMap() && app->copiedEnts.size()))
+			if (ImGui::MenuItem(get_localized_string(LANG_1157).c_str(), get_localized_string(LANG_1158).c_str(), false, app->getSelectedMap() && app->hasCopiedEnt()))
 			{
 				app->pasteEnt(false);
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1159).c_str(), 0, false, entSelected && app->copiedEnts.size()))
+			if (ImGui::MenuItem(get_localized_string(LANG_1159).c_str(), 0, false, entSelected && app->hasCopiedEnt()))
 			{
 				app->pasteEnt(true);
 			}

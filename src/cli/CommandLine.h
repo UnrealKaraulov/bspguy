@@ -23,3 +23,5 @@ public:
 private:
 	hashmap optionVals;
 };
+
+extern CommandLine g_cmdLine;

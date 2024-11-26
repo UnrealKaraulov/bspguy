@@ -4437,23 +4437,24 @@ void Renderer::cutEnt()
 	if (!map)
 		return;
 
-	if (!copiedEnts.empty())
-	{
-		for (auto& ent : copiedEnts)
-		{
-			delete ent;
-		}
-	}
-	copiedEnts.clear();
+	std::ostringstream ss;
 
 	for (size_t i = 0; i < ents.size(); i++)
 	{
 		if (ents[i] <= 0)
 			continue;
-		copiedEnts.push_back(new Entity(*map->ents[ents[i]]));
+		ss << map->ents[ents[i]]->serialize();
+
+		if (map->ents[ents[i]]->getBspModelIdx() > 0)
+		{
+			ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
+		}
+
 		DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Cut Entity", ents[i]);
 		map->getBspRender()->pushUndoCommand(deleteCommand);
 	}
+
+	ImGui::SetClipboardText(ss.str().c_str());
 }
 
 void Renderer::copyEnt()
@@ -4469,26 +4470,26 @@ void Renderer::copyEnt()
 	if (!map)
 		return;
 
-	if (!copiedEnts.empty())
-	{
-		for (auto& ent : copiedEnts)
-		{
-			delete ent;
-		}
-	}
-	copiedEnts.clear();
+	std::ostringstream ss;
 
 	for (size_t i = 0; i < ents.size(); i++)
 	{
 		if (ents[i] <= 0)
 			continue;
-		copiedEnts.push_back(new Entity(*map->ents[ents[i]]));
+		ss << map->ents[ents[i]]->serialize();
+		if (map->ents[ents[i]]->getBspModelIdx() > 0)
+		{
+			ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
+		}
 	}
+
+	ImGui::SetClipboardText(ss.str().c_str());
 }
 
 void Renderer::pasteEnt(bool noModifyOrigin)
 {
-	if (copiedEnts.empty())
+	auto clipboardText = ImGui::GetClipboardText();
+	if (!clipboardText)
 		return;
 
 	Bsp* map = SelectedMap;
@@ -4498,12 +4499,73 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 		return;
 	}
 
+	std::vector<Entity*> copiedEnts;
+	std::istringstream in(clipboardText);
+
+	int lineNum = 0;
+	int lastBracket = -1;
+	Entity* ent = NULL;
+	std::string line = "";
+
+	while (std::getline(in, line))
+	{
+		lineNum++;
+		if (line.length() < 1 || line[0] == '\n')
+			continue;
+
+		if (line[0] == '{')
+		{
+			if (lastBracket == 0)
+			{
+				print_log("clipboard ent text data (line {}): Unexpected '{'\n", lineNum);
+				continue;
+			}
+			lastBracket = 0;
+
+			if (ent != NULL)
+				delete ent;
+			ent = new Entity();
+		}
+		else if (line[0] == '}')
+		{
+			if (lastBracket == 1)
+				print_log("clipboard ent text data (line {}): Unexpected '}'\n", lineNum);
+			lastBracket = 1;
+
+			if (ent == NULL)
+				continue;
+
+			if (ent->keyvalues.count("classname"))
+				copiedEnts.push_back(ent);
+			else
+				print_log("Found unknown classname entity. Skip it.\n");
+			ent = NULL;
+
+			// you can end/start an ent on the same line, you know
+			if (line.find('{') != std::string::npos)
+			{
+				ent = new Entity();
+				lastBracket = 0;
+			}
+		}
+		else if (lastBracket == 0 && ent != NULL) // currently defining an entity
+		{
+			Keyvalues keyvals(line);
+			for (size_t k = 0; k < keyvals.keys.size(); k++)
+			{
+				if (keyvals.keys[k].length() && keyvals.values[k].length())
+					ent->addKeyvalue(keyvals.keys[k], keyvals.values[k]);
+			}
+		}
+	}
+
 	clearSelection();
 	selectMap(map);
-	vec3 baseOrigin = getEntOrigin(map, copiedEnts[0]);
 
 	for (size_t i = 0; i < copiedEnts.size(); i++)
 	{
+		vec3 baseOrigin = getEntOrigin(map, copiedEnts[0]);
+
 		if (!noModifyOrigin)
 		{
 			// can't just set camera origin directly because solid ents can have (0,0,0) origins
@@ -4521,6 +4583,15 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 
 			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
 			copiedEnts[i]->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
+		}
+
+		if (copiedEnts[i]->getBspModelIdxForce() > 0)
+		{
+			int mdlIdx = ImportModel(map, g_working_dir + "copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp");
+			if (mdlIdx > 0 )
+			{
+				copiedEnts[i]->setOrAddKeyvalue("model", "*" + std::to_string(mdlIdx));
+			}
 		}
 
 		CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), copiedEnts[i]);
@@ -4963,4 +5034,14 @@ void Renderer::merge(std::string fpath)
 	updateCullBox();
 
 	print_log("Merged maps!\n");
+}
+
+bool Renderer::hasCopiedEnt()
+{
+	auto clipText = ImGui::GetClipboardText();
+	if (clipText && clipText[0] == '{')
+	{
+		return true;
+	}
+	return false;
 }

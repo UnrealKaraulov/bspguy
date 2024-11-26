@@ -398,7 +398,7 @@ inline T INIReader::Get(const std::string& section, const std::string& name,
                         T&& default_v) const {
     try {
         return Get<T>(section, name);
-    } catch (std::runtime_error) {
+    } catch (std::runtime_error&) {
         return default_v;
     }
 }
@@ -456,7 +456,7 @@ inline std::vector<T> INIReader::GetVector(
     const std::vector<T>& default_v) const {
     try {
         return GetVector<T>(section, name);
-    } catch (std::runtime_error& e) {
+    } catch (std::runtime_error&) {
         return default_v;
     };
 }
@@ -558,15 +558,13 @@ inline T INIReader::Converter(const std::string& s) const {
         _.exceptions(std::ios::failbit);
         _ >> v;
         return v;
-    } catch (std::exception& e) {
+    } catch (std::exception&) {
         throw std::runtime_error("cannot parse value '" + s + "' to type<T>.");
     };
 }
 
 inline const bool INIReader::BoolConverter(std::string s) const {
-    std::transform(s.begin(), s.end(), s.begin(),
-        [](unsigned char c) { return (unsigned char)std::tolower(c); }
-    );
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower);
     static const std::unordered_map<std::string, bool> s2b{
         {"1", true},  {"true", true},   {"yes", true}, {"on", true},
         {"0", false}, {"false", false}, {"no", false}, {"off", false},

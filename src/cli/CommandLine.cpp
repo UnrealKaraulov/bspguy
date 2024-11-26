@@ -134,3 +134,5 @@ std::vector<std::string> CommandLine::getOptionList(const std::string& optionNam
 
 	return parts;
 }
+
+CommandLine g_cmdLine;
