@@ -4040,14 +4040,18 @@ void Gui::drawMenuBar()
 			}
 
 
-			const char* clipBoardText = ImGui::GetClipboardText();
-			if (ImGui::MenuItem("Paste entities from clipboard", 0, false, clipBoardText && clipBoardText[0] == '{')) {
-				app->pasteEntsFromText(clipBoardText);
-			}
+			//if (ImGui::MenuItem("Paste entities from clipboard", 0, false)) 
+			//{
+			//	const char* clipBoardText = ImGui::GetClipboardText();
+			//	if (clipBoardText && clipBoardText[0] == '{')
+			//	{
+			//		app->pasteEntsFromText(clipBoardText);
+			//	}
+			//}
 
-			IMGUI_TOOLTIP(g, "Creates entities from text data. You can use this to transfer entities "
-				"from one bspguy window to another, or paste from .ent file text. Copy any entity "
-				"in the viewer then paste to a text editor to see the format of the text data.");
+			//IMGUI_TOOLTIP(g, "Creates entities from text data. You can use this to transfer entities "
+			//	"from one bspguy window to another, or paste from .ent file text. Copy any entity "
+			//	"in the viewer then paste to a text editor to see the format of the text data.");
 
 
 			ImGui::Separator();
@@ -8852,7 +8856,8 @@ void Gui::drawLog()
 	static std::vector<unsigned int> color_buffer_copy;
 
 	g_mutex_list[0].lock();
-	if (log_buffer_copy.size() != g_log_buffer.size())
+	bool logUpdated = log_buffer_copy.size() != g_log_buffer.size();
+	if (logUpdated)
 	{
 		log_buffer_copy = g_log_buffer;
 		color_buffer_copy = g_color_buffer;
@@ -8889,21 +8894,25 @@ void Gui::drawLog()
 	if (copy)
 	{
 		std::string logStr;
-		for (const auto& str : log_buffer_copy) {
-			logStr += str;
+		for (const auto& str : log_buffer_copy)
+		{
+			logStr += str + "\n";
 		}
-
 		ImGui::SetClipboardText(logStr.c_str());
 	}
 
-	for (size_t i = 0; i < log_buffer_copy.size(); i++)
+	ImGuiListClipper clipper;
+	clipper.Begin(log_buffer_copy.size());
+	while (clipper.Step())
 	{
-		ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[i]));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
-		ImGui::TextWrapped(log_buffer_copy[i].c_str());
-		ImGui::PopStyleVar();
-		ImGui::PopStyleColor();
+		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, imguiColorFromConsole(color_buffer_copy[i]));
+			ImGui::TextUnformatted(log_buffer_copy[i].c_str());
+			ImGui::PopStyleColor();
+		}
 	}
+	clipper.End();
 
 	if (AutoScroll && scroll_to_bottom)
 	{

@@ -52,9 +52,16 @@ void print_log(unsigned int colors, const std::string& format, Args ...args) noe
 	if (ret)
 		line.erase(line.begin());
 
+	if (!g_log_buffer.size())
+	{
+		g_color_buffer.clear();
+		g_log_buffer.emplace_back("");
+		g_color_buffer.emplace_back(DEFAULT_CONSOLE_COLOR);
+	}
+
 	if (splitstr.size() == 1)
 	{
-		if (!newline && g_log_buffer.size())
+		if (!newline)
 		{
 			if (ret)
 			{
