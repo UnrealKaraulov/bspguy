@@ -177,6 +177,7 @@ public:
 
 	// get the bounding box for the world
 	void get_bounding_box(vec3& mins, vec3& maxs);
+	void get_bounding_box(int modelidx, vec3& mins, vec3& maxs);
 
 	// get the bounding box for all vertexes in a BSP tree
 	void get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs, bool skipSpecial = false);
@@ -356,8 +357,8 @@ public:
 
 	// for use after scaling a model. Convex only.
 	// Skips axis-aligned planes (bounding box should have been generated beforehand)
-	void regenerate_clipnodes(int modelIdx, int hullIdx);
-	int regenerate_clipnodes_from_nodes(int iNode, int hullIdx);
+	bool regenerate_clipnodes(int modelIdx, int hullIdx);
+	int regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success);
 
 	int create_node(bool force_reversed = false, int reversed_id = 0);
 	int create_clipnode(bool force_reversed = false, int reversed_id = 0);
@@ -431,9 +432,9 @@ public:
 
 	void ExportToObjWIP(const std::string& path, int iscale = 1, bool lightmap_mode = false, bool with_mdl = false, bool export_csm = false, int grouping = 0);
 
-	void ExportToMapWIP(const std::string& path, bool selected, bool merge_faces, bool use_one_back_vert);
+	void ExportToMapWIP(const std::string& path, bool selected, bool merge_faces, bool use_one_back_vert, bool create_worldbox);
 
-	int import_mdl_to_bspmodel(int ent, bool generateClipnodes);
+	int import_mdl_to_bspmodel(int ent, int generateClipnodes);
 	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes,mat4x4 angles, bool & valid_nodes);
 
 	int merge_all_planes();

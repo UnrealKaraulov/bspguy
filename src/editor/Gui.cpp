@@ -1635,6 +1635,7 @@ void Gui::drawBspContexMenu()
 							{
 								DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), (int)tmpentIdx);
 								rend->pushUndoCommand(command);
+								app->modelUsesSharedStructures = false;
 							}
 						}
 					}
@@ -1659,6 +1660,7 @@ void Gui::drawBspContexMenu()
 							if (map->ents[tmpentIdx]->isBspModel())
 							{
 								map->duplicate_model_structures(map->ents[tmpentIdx]->getBspModelIdx());
+								app->modelUsesSharedStructures = false;
 							}
 						}
 						map->update_ent_lump();
@@ -2985,27 +2987,26 @@ void Gui::drawMenuBar()
 				}
 
 				static bool merge_faces = true;
-				static bool use_one_back_vert = false;
+				static bool use_one_back_vert = true;
+				static bool inside_box = true;
 
 				if (ImGui::BeginMenu("ValveHammerEditor (.map) [WIP]", map && !map->is_mdl_model))
 				{
-					if (ImGui::MenuItem("Merge faces", NULL, &merge_faces))
-					{
-						// merge_faces = !merge_faces
-					}
+					ImGui::MenuItem("Merge faces", NULL, &merge_faces);
 
-					if (ImGui::MenuItem("One back vert", NULL, &use_one_back_vert))
-					{
-						// merge_faces = !merge_faces
-					}
+					ImGui::MenuItem("One back vert", NULL, &use_one_back_vert);
+
+					ImGui::MenuItem("Create box", NULL, &inside_box);
+
+					ImGui::Separator();
 
 					if (ImGui::MenuItem("Full .map"))
 					{
-						map->ExportToMapWIP(g_working_dir, false, merge_faces, use_one_back_vert);
+						map->ExportToMapWIP(g_working_dir, false, merge_faces, use_one_back_vert, inside_box);
 					}
 					else if (ImGui::MenuItem("Selected faces"))
 					{
-						map->ExportToMapWIP(g_working_dir, true, merge_faces, use_one_back_vert);
+						map->ExportToMapWIP(g_working_dir, true, merge_faces, use_one_back_vert, inside_box);
 					}
 					ImGui::EndMenu();
 				}
@@ -4199,15 +4200,24 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			static bool generateClipnodes = false;
+			static int generateClipnodes = 0;
 
 			if (ImGui::BeginMenu("MDL to BSP (WIP)", app->pickInfo.selectedEnts.size() == 1 &&
 				rend->renderEnts[app->pickInfo.selectedEnts[0]].mdl))
 			{
-				if (ImGui::MenuItem("Try to regenerate clipnodes", NULL, &generateClipnodes))
+				if (ImGui::MenuItem("Bruteforce clipnodes", NULL, generateClipnodes == 1))
 				{
-					//generateClipnodes = !generateClipnodes;
+					generateClipnodes = 1;
 				}
+				
+
+				if (ImGui::MenuItem("Compile clipnodes", NULL, generateClipnodes == 2, false))
+				{
+					generateClipnodes = 2;
+				}
+
+
+				ImGui::Separator();
 
 				if (ImGui::MenuItem("Convert selected to BSP"))
 				{
@@ -6918,7 +6928,6 @@ void Gui::drawOverviewWidget()
 	ortho_overview = orthoMode;
 
 	Bsp* map = app->getSelectedMap();
-	BspRenderer* mapRender = map ? map->getBspRender() : NULL;
 
 	if (ImGui::Begin("Overview Widget###OVERVIEW_MAKER", &showOverviewWidget, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -8327,8 +8336,13 @@ void Gui::drawTransformWidget()
 	ImGui::SetNextWindowSizeConstraints(ImVec2(430, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 
 
-	static float x, y, z;
-	static float sx, sy, sz;
+	static float new_x, new_y, new_z;
+	static float new_scale_x, new_scale_y, new_scale_z;
+
+	static float default_x, default_y, default_z;
+	static float default_scale_x, default_scale_y, default_scale_z;
+
+
 
 	static int lastPickCount = -1;
 	static int lastVertPickCount = -1;
@@ -8349,53 +8363,57 @@ void Gui::drawTransformWidget()
 			int currentTransformMode = app->transformMode;
 			int currentTransformTarget = app->transformTarget;
 
-			static float org_x = 0.0f, org_y = 0.0f, org_z = 0.0f;
-
-			if (shouldUpdateUi)
+			if (updateTransformWidget)
 			{
 				if (app->transformTarget == TRANSFORM_VERTEX)
 				{
-					org_x = activeAxes.origin.x;
-					org_y = activeAxes.origin.y;
-					org_z = activeAxes.origin.z;
+					new_x = activeAxes.origin.x;
+					new_y = activeAxes.origin.y;
+					new_z = activeAxes.origin.z;
 				}
 				else if (app->transformTarget == TRANSFORM_ORIGIN)
 				{
 					if (modelIdx > 0 && modelIdx < map->modelCount)
 					{
-						org_x = map->models[modelIdx].vOrigin.x;
-						org_y = map->models[modelIdx].vOrigin.y;
-						org_z = map->models[modelIdx].vOrigin.z;
+						new_x = map->models[modelIdx].vOrigin.x;
+						new_y = map->models[modelIdx].vOrigin.y;
+						new_z = map->models[modelIdx].vOrigin.z;
 					}
 				}
 				else
 				{
-					org_x = ent->origin.x;
-					org_y = ent->origin.y;
-					org_z = ent->origin.z;
+					new_x = ent->origin.x;
+					new_y = ent->origin.y;
+					new_z = ent->origin.z;
 				}
 
-				x = org_x;
-				y = org_y;
-				z = org_z;
 				if (app->transformTarget == TRANSFORM_VERTEX)
 				{
-					sx = sy = sz = 1.0f;
+					new_scale_x = new_scale_y = new_scale_z = 1.0f;
 				}
 				else
 				{
 					if (modelIdx <= 0)
 					{
-						sx = sy = sz = 0.0f;
+						new_scale_x = new_scale_y = new_scale_z = 0.0f;
 					}
 					else
 					{
-						sx = app->selectionSize.x;
-						sy = app->selectionSize.y;
-						sz = app->selectionSize.z;
+						new_scale_x = app->selectionSize.x;
+						new_scale_y = app->selectionSize.y;
+						new_scale_z = app->selectionSize.z;
 					}
 				}
-				shouldUpdateUi = false;
+
+				default_scale_x = new_scale_x;
+				default_scale_y = new_scale_y;
+				default_scale_z = new_scale_z;
+
+				default_x = new_x;
+				default_y = new_y;
+				default_z = new_z;
+
+				updateTransformWidget = false;
 			}
 
 			oldSnappingEnabled = app->gridSnappingEnabled;
@@ -8410,40 +8428,27 @@ void Gui::drawTransformWidget()
 
 			float dragPow = app->gridSnappingEnabled ? app->snapSize : 0.02f;
 
-			bool forceUpdate = false;
+			static double LastTransformUpdateTime = 0.0;
 
 			ImGui::Text(get_localized_string(LANG_0689).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			if (ImGui::DragFloat(get_localized_string(LANG_1107).c_str(), &x, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "Y: %.2f"))
-			{
-				if (app->curLeftMouse == GLFW_RELEASE)
-					forceUpdate = true;
-			}
+			ImGui::DragFloat(get_localized_string(LANG_1107).c_str(), &new_x, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "Y: %.2f");
 
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 0;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_1108).c_str(), &y, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "X: %.2f"))
-			{
-				if (app->curLeftMouse == GLFW_RELEASE)
-					forceUpdate = true;
-			}
+			ImGui::DragFloat(get_localized_string(LANG_1108).c_str(), &new_y, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "X: %.2f");
 
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 1;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_1109).c_str(), &z, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "Z: %.2f"))
-			{
-				if (app->curLeftMouse == GLFW_RELEASE)
-					forceUpdate = true;
-			}
+			ImGui::DragFloat(get_localized_string(LANG_1109).c_str(), &new_z, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "Z: %.2f");
 
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 2;
-
 
 			ImGui::PopItemWidth();
 
@@ -8452,39 +8457,31 @@ void Gui::drawTransformWidget()
 			ImGui::Text(get_localized_string(LANG_0690).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			if (!app->isTransformableSolid || app->modelUsesSharedStructures)
+			if (!app->isTransformableSolid || app->modelUsesSharedStructures || app->transformMode != TRANSFORM_MODE_SCALE)
 			{
 				ImGui::BeginDisabled();
 			}
 
-			if (ImGui::DragFloat(get_localized_string(LANG_0691).c_str(), &sx, dragPow, 0, 0, "Y: %.2f"))
-			{
-				if (app->curLeftMouse == GLFW_RELEASE)
-					forceUpdate = true;
-			}
+			ImGui::DragFloat(get_localized_string(LANG_0691).c_str(), &new_scale_x, dragPow, 0, 0, "Y: %.2f");
+
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 0;
+
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_0692).c_str(), &sy, dragPow, 0, 0, "X: %.2f"))
-			{
-				if (app->curLeftMouse == GLFW_RELEASE)
-					forceUpdate = true;
-			}
+			ImGui::DragFloat(get_localized_string(LANG_0692).c_str(), &new_scale_y, dragPow, 0, 0, "X: %.2f");
 
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 1;
+
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat(get_localized_string(LANG_0693).c_str(), &sz, dragPow, 0, 0, "Z: %.2f"))
-			{
-				if (app->curLeftMouse == GLFW_RELEASE)
-					forceUpdate = true;
-			}
+			ImGui::DragFloat(get_localized_string(LANG_0693).c_str(), &new_scale_z, dragPow, 0, 0, "Z: %.2f");
+
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 2;
 
-			if (!app->isTransformableSolid || app->modelUsesSharedStructures)
+			if (!app->isTransformableSolid || app->modelUsesSharedStructures || app->transformMode != TRANSFORM_MODE_SCALE)
 			{
 				ImGui::EndDisabled();
 			}
@@ -8667,26 +8664,38 @@ void Gui::drawTransformWidget()
 				vertPickCount++;
 			}
 
-			if (forceUpdate || (!app->canControl && app->oldLeftMouse == GLFW_PRESS && app->curLeftMouse != GLFW_PRESS && currentTransformMode == app->transformMode && currentTransformTarget == app->transformTarget))
+			bool needUpdate = new_scale_x != default_scale_x ||
+				new_scale_y != default_scale_y ||
+				new_scale_z != default_scale_z ||
+				new_x != default_x || new_y != default_y || new_z != default_z;
+
+			if (needUpdate && app->curTime - LastTransformUpdateTime < 1.0)
 			{
+				needUpdate = false;
+			}
+
+			if (needUpdate)
+			{
+				updateTransformWidget = true;
+				LastTransformUpdateTime = app->curTime;
 				if (app->transformTarget == TRANSFORM_VERTEX)
 				{
-					vec3 org1 = vec3(org_x, org_y, org_z);
-					vec3 org2 = vec3(x, y, z);
+					vec3 org1 = vec3(default_x, default_y, default_z);
+					vec3 org2 = vec3(new_x, new_y, new_z);
 					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
 					vec3 delta2 = org2 - org1;
 					if (!delta.IsZero() && !delta2.IsZero())
 					{
 						app->moveSelectedVerts(delta);
 
-						shouldUpdateUi = true;
+						updateTransformWidget = true;
 						vertPickCount++;
 					}
 				}
 				else if (app->transformTarget == TRANSFORM_OBJECT)
 				{
-					vec3 org1 = vec3(org_x, org_y, org_z);
-					vec3 org2 = vec3(x, y, z);
+					vec3 org1 = vec3(default_x, default_y, default_z);
+					vec3 org2 = vec3(new_x, new_y, new_z);
 					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
 					vec3 delta2 = org2 - org1;
 					if (!delta.IsZero() && !delta2.IsZero())
@@ -8695,14 +8704,14 @@ void Gui::drawTransformWidget()
 						map->getBspRender()->refreshEnt((int)entIdx[0]);
 						app->updateEntConnectionPositions();
 
-						shouldUpdateUi = true;
+						updateTransformWidget = true;
 						pickCount++;
 					}
 				}
 				else if (app->transformTarget == TRANSFORM_ORIGIN)
 				{
-					vec3 org1 = vec3(org_x, org_y, org_z);
-					vec3 org2 = vec3(x, y, z);
+					vec3 org1 = vec3(default_x, default_y, default_z);
+					vec3 org2 = vec3(new_x, new_y, new_z);
 					vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
 					vec3 delta2 = org2 - org1;
 					if (!delta.IsZero() && !delta2.IsZero())
@@ -8712,42 +8721,46 @@ void Gui::drawTransformWidget()
 							map->models[modelIdx].vOrigin = org2;
 						}
 
-						shouldUpdateUi = true;
+						updateTransformWidget = true;
 						pickCount++;
 					}
 				}
-				if (app->isTransformableSolid && !app->modelUsesSharedStructures)
+				if (app->isTransformableSolid && !app->modelUsesSharedStructures && modelIdx > 0)
 				{
 					if (app->transformTarget == TRANSFORM_VERTEX)
 					{
 						vec3 org1 = vec3(1.0f, 1.0f, 1.0f);
-						vec3 org2 = vec3(sx, sy, sz);
+						vec3 org2 = vec3(new_scale_x, new_scale_y, new_scale_z);
 						vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
 						vec3 delta2 = org2 - org1;
 						if (!delta.IsZero() && !delta2.IsZero())
 						{
-							app->scaleSelectedVerts(map, sx, sy, sz);
+							app->scaleSelectedVerts(map, modelIdx, new_scale_x, new_scale_y, new_scale_z);
 
-							shouldUpdateUi = true;
+							updateTransformWidget = true;
 							vertPickCount++;
 						}
 					}
-					else if (app->transformTarget == TRANSFORM_OBJECT)
+					else
 					{
-						vec3 org1 = vec3(app->selectionSize.x, app->selectionSize.y, app->selectionSize.z);
-						vec3 org2 = vec3(sx, sy, sz);
+						vec3 org1 = vec3(default_scale_x, default_scale_y, default_scale_z);
+						vec3 org2 = vec3(new_scale_x, new_scale_y, new_scale_z);
 						vec3 delta = app->gridSnappingEnabled ? app->snapToGrid(org2 - org1) : org2 - org1;
 						vec3 delta2 = org2 - org1;
 						if (!delta.IsZero() && !delta2.IsZero())
 						{
-							app->scaleSelectedObject(map, delta.x, delta.y, delta.z);
+							app->scaleSelectedObject(map, modelIdx, delta.x, delta.y, delta.z);
 							map->getBspRender()->refreshModel(modelIdx);
+							map->getBspRender()->refreshModelClipnodes(modelIdx);
+							app->applyTransform(map, true);
 
-							shouldUpdateUi = true;
+							updateTransformWidget = true;
 							vertPickCount++;
 							pickCount++;
 						}
 					}
+
+					app->updateSelectionSize(map, modelIdx);
 				}
 			}
 		}

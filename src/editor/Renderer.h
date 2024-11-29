@@ -346,7 +346,7 @@ public:
 
 	void updateDragAxes();
 	void updateModelVerts();
-	void updateSelectionSize();
+	void updateSelectionSize(Bsp * map, int modelIdx);
 	void updateEntConnections();
 	void updateEntConnectionPositions(); // only updates positions in the buffer
 	bool getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, Solid& outSolid); // calculate face vertices from plane intersections
@@ -363,9 +363,9 @@ public:
 	void pasteEntsFromText(std::string text);
 	void deleteEnt(int entIdx = 0);
 	void deleteEnts();
-	void scaleSelectedObject(Bsp* map, float x, float y, float z);
-	void scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool logging = false);
-	void scaleSelectedVerts(Bsp* map, float x, float y, float z);
+	void scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, float z);
+	void scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3& fromDir, bool logging = false);
+	void scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, float z);
 	void deselectObject(bool onlyobject = false); // keep map selected but unselect all objects
 	void selectFace(Bsp* map, int face, bool add = false);
 	void deselectFaces();

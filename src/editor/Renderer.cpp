@@ -29,7 +29,7 @@ std::vector<BspRenderer*> mapRenderers{};
 int current_fps = 0;
 int ortho_overview = 0;
 
-vec3 ortho_mins(-FLT_MAX_COORD,-FLT_MAX_COORD, -FLT_MAX_COORD), ortho_maxs(FLT_MAX_COORD,FLT_MAX_COORD,FLT_MAX_COORD);
+vec3 ortho_mins(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD), ortho_maxs(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 vec3 ortho_offset = {};
 float ortho_near = 1.0f;
 float ortho_far = 262144.0f;
@@ -666,8 +666,6 @@ void Renderer::renderLoop()
 					}
 				}
 
-				modelUsesSharedStructures = modelIdx > 0 && SelectedMap->does_model_use_shared_structures(modelIdx);
-
 				isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
 				isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN && modelIdx >= 0;
 				isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
@@ -691,7 +689,7 @@ void Renderer::renderLoop()
 					moveOrigin = true;
 				}
 
-				gui->shouldUpdateUi = true;
+				gui->updateTransformWidget = true;
 			}
 
 			drawEntConnections();
@@ -1194,7 +1192,7 @@ void Renderer::renderLoop()
 
 					int colors = 0;
 					COLOR3 palette[256];
-					std::vector<unsigned char> indexedPixels(ortho_tga_w* ortho_tga_h);
+					std::vector<unsigned char> indexedPixels(ortho_tga_w * ortho_tga_h);
 
 					for (int y = 0; y < ortho_tga_h; y++)
 					{
@@ -2440,6 +2438,9 @@ bool Renderer::transformAxisControls()
 	int modelIdx = ent->getBspModelIdx();
 	// axis handle dragging
 
+	if (modelIdx <= 0 && transformMode == TRANSFORM_MODE_SCALE)
+		transformMode = TRANSFORM_MODE_MOVE;
+
 	if (showDragAxes && !movingEnt && hoverAxis != -1 &&
 		curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE)
 	{
@@ -2456,8 +2457,6 @@ bool Renderer::transformAxisControls()
 		{
 			updateModelVerts();
 		}
-
-
 
 		activeAxes.model[hoverAxis].setColor(activeAxes.hoverColor[hoverAxis]);
 
@@ -2535,12 +2534,12 @@ bool Renderer::transformAxisControls()
 						for (size_t i = 0; i < pickInfo.selectedEnts.size(); i++)
 						{
 							Entity* tmpent = map->ents[pickInfo.selectedEnts[i]];
-							int tmpmodelidx = tmpent->getBspModelIdx();
+							int tmpmdlidx = tmpent->getBspModelIdx();
 
 							if (tmpent->getBspModelIdx() >= 0)
 							{
-								vec3 neworigin = map->models[tmpmodelidx].vOrigin + delta;
-								map->models[tmpmodelidx].vOrigin = neworigin;
+								vec3 neworigin = map->models[tmpmdlidx].vOrigin + delta;
+								map->models[tmpmdlidx].vOrigin = neworigin;
 								//map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
 								map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);
 							}
@@ -2551,7 +2550,7 @@ bool Renderer::transformAxisControls()
 				}
 				else
 				{
-					if (ent->isBspModel())
+					if (modelIdx > 0)
 					{
 						vec3 scaleDirs[6]{
 							vec3(1.0f, 0.0f, 0.0f),
@@ -2561,7 +2560,7 @@ bool Renderer::transformAxisControls()
 							vec3(0.0f, -1.0f, 0.0f),
 							vec3(0.0f, 0.0f, -1.0f),
 						};
-						scaleSelectedObject(map, delta, scaleDirs[hoverAxis]);
+						scaleSelectedObject(map, modelIdx, delta, scaleDirs[hoverAxis]);
 						map->getBspRender()->refreshModel(modelIdx);
 						vertPickCount++;
 					}
@@ -2634,12 +2633,12 @@ bool Renderer::transformAxisControls()
 					for (size_t i = 0; i < pickInfo.selectedEnts.size(); i++)
 					{
 						Entity* tmpent = map->ents[pickInfo.selectedEnts[i]];
-						int tmpmodelidx = tmpent->getBspModelIdx();
+						int tmpmdlidx = tmpent->getBspModelIdx();
 
 						if (tmpent->getBspModelIdx() >= 0)
 						{
-							vec3 neworigin = gridSnappingEnabled ? snapToGrid(map->models[tmpmodelidx].vOrigin) : map->models[tmpmodelidx].vOrigin;
-							map->models[tmpmodelidx].vOrigin = neworigin;/*
+							vec3 neworigin = gridSnappingEnabled ? snapToGrid(map->models[tmpmdlidx].vOrigin) : map->models[tmpmdlidx].vOrigin;
+							map->models[tmpmdlidx].vOrigin = neworigin;/*
 							map->getBspRender()->refreshModel(tmpent->getBspModelIdx());
 							map->getBspRender()->refreshEnt((int)pickInfo.selectedEnts[i]);*/
 							updateModels = true;
@@ -3552,13 +3551,10 @@ void Renderer::updateModelVerts()
 	if (modelIdx < 0)
 	{
 		originSelected = false;
-		updateSelectionSize();
 		return;
 	}
 
 	//map->getBspRender()->refreshModel(modelIdx);
-
-	updateSelectionSize();
 
 	if (!map->is_convex(modelIdx))
 	{
@@ -3596,47 +3592,30 @@ void Renderer::updateModelVerts()
 
 	modelVertCubes = new cCube[numCubes];
 	modelVertBuff = new VertexBuffer(colorShader, modelVertCubes, (6 * 6 * (int)numCubes), GL_TRIANGLES);
+	updateSelectionSize(map, modelIdx);
+
 	//print_log(get_localized_string(LANG_0913),modelVerts.size());
 }
 
-void Renderer::updateSelectionSize()
+void Renderer::updateSelectionSize(Bsp* map,int modelIdx)
 {
 	selectionSize = vec3();
-	Bsp* map = SelectedMap;
-
 	if (!map)
 	{
 		return;
 	}
-
-	int modelIdx = -1;
-	auto entIdx = pickInfo.selectedEnts;
-
-	if (entIdx.size())
-	{
-		modelIdx = map->ents[entIdx[0]]->getBspModelIdx();
-	}
-
-	if (!entIdx.size() || modelIdx <= 0)
+	if (modelIdx <= 0)
 	{
 		vec3 mins, maxs;
 		map->get_bounding_box(mins, maxs);
 		selectionSize = maxs - mins;
 	}
-	else if (entIdx.size())
+	else
 	{
-		Entity* ent = map->ents[entIdx[0]];
-		EntCube* cube = pointEntRenderer->getEntCube(ent);
-		if (cube)
-		{
-			selectionSize = cube->maxs - cube->mins;
-		}
-		else
-		{
-			vec3 mins, maxs;
-			map->get_model_vertex_bounds(modelIdx, mins, maxs);
-			selectionSize = maxs - mins;
-		}
+		vec3 mins, maxs;
+		//map->get_model_vertex_bounds(modelIdx, mins, maxs);
+		map->get_bounding_box(modelIdx, mins, maxs);
+		selectionSize = maxs - mins;
 	}
 }
 
@@ -3911,7 +3890,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 	return true;
 }
 
-void Renderer::scaleSelectedObject(Bsp* map, float x, float y, float z)
+void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, float z)
 {
 	/*vec3 minDist;
 	vec3 maxDist;
@@ -3936,15 +3915,11 @@ void Renderer::scaleSelectedObject(Bsp* map, float x, float y, float z)
 	dir.y = y;
 	dir.z = z;
 
-	scaleSelectedObject(map, dir, vec3());
+	scaleSelectedObject(map, modelIdx, dir, vec3());
 }
 
-void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool logging)
+void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3& fromDir, bool logging)
 {
-	auto entIdx = pickInfo.selectedEnts;
-	if (entIdx.empty() || !SelectedMap)
-		return;
-
 	bool scaleFromOrigin = std::fabs(fromDir.x) < EPSILON && std::fabs(fromDir.y) < EPSILON && std::fabs(fromDir.z) < EPSILON;
 
 	vec3 minDist(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
@@ -4010,7 +3985,6 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 	}
 
 	map->vertex_manipulation_sync(modelTransform, modelVerts, false);
-	updateSelectionSize();
 
 	if (textureLock)
 	{
@@ -4088,6 +4062,9 @@ void Renderer::scaleSelectedObject(Bsp* map, vec3 dir, const vec3& fromDir, bool
 			info.shiftT = shiftT;
 		}
 	}
+
+	updateSelectionSize(map,modelIdx);
+
 }
 
 void Renderer::moveSelectedVerts(const vec3& delta)
@@ -4346,14 +4323,14 @@ bool Renderer::splitModelFace()
 	return true;
 }
 
-void Renderer::scaleSelectedVerts(Bsp* map, float x, float y, float z)
+void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, float z)
 {
 	if (!map)
 	{
 		print_log(get_localized_string(LANG_0924));
 		return;
 	}
-	auto entIdx = pickInfo.selectedEnts;
+
 	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 	vec3 fromOrigin = activeAxes.origin;
 
@@ -4393,13 +4370,8 @@ void Renderer::scaleSelectedVerts(Bsp* map, float x, float y, float z)
 	}
 
 	map->vertex_manipulation_sync(modelTransform, modelVerts, false);
-
-	if (!entIdx.empty())
-	{
-		Entity* ent = map->ents[entIdx[0]];
-		map->getBspRender()->refreshModel(ent->getBspModelIdx());
-	}
-	updateSelectionSize();
+	map->getBspRender()->refreshModel(modelIdx);
+	updateSelectionSize(map,modelIdx);
 }
 
 vec3 Renderer::snapToGrid(vec3 pos)
@@ -4589,7 +4561,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 		if (copiedEnts[i]->getBspModelIdxForce() > 0)
 		{
 			int mdlIdx = ImportModel(map, g_working_dir + "copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp");
-			if (mdlIdx > 0 )
+			if (mdlIdx > 0)
 			{
 				copiedEnts[i]->setOrAddKeyvalue("model", "*" + std::to_string(mdlIdx));
 			}
@@ -4757,19 +4729,20 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 	}
 	else
 	{
-		add = true;
+		add = false;
 		pickInfo.selectedEnts.clear();
 	}
 
-
-
 	if (add)
 	{
+		int modelIdx = map->ents[pickInfo.selectedEnts[0]]->getBspModelIdx();
+		if (modelIdx > 0)
+		{
+			modelUsesSharedStructures = SelectedMap->does_model_use_shared_structures(modelIdx);
+			updateSelectionSize(map, modelIdx);
+		}
 		filterNeeded = true;
-
-		updateSelectionSize();
 		updateEntConnections();
-
 		map->getBspRender()->saveEntityState(entIdx);
 		pickCount++; // force transform window update
 	}

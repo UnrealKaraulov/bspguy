@@ -229,7 +229,7 @@ void  Settings::fillLanguages(const std::string& folderPath)
 	}
 }
 
-void  Settings::fillPalettes(const std::string& folderPath)
+void Settings::fillPalettes(const std::string& folderPath)
 {
 	palettes.clear();
 

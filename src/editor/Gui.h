@@ -47,7 +47,7 @@ public:
 	Renderer* app;
 
 	bool settingLoaded = false;
-	bool shouldUpdateUi = true;
+	bool updateTransformWidget = true;
 
 	Gui(Renderer* app);
 

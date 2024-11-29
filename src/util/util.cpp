@@ -2644,37 +2644,6 @@ std::vector<std::vector<BBOX>> make_collision_from_triangles(const std::vector<v
 			}
 			if (!current_boxes.empty())
 			{
-				//if (all_boxes.size())
-				//{
-				//	if (all_boxes[all_boxes.size() - 1].size() == current_boxes.size())
-				//	{
-				//		bool same = true;
-				//		for (int c1 = 0; c1 < all_boxes[all_boxes.size() - 1].size(); c1++)
-				//		{
-				//			if (all_boxes[all_boxes.size() - 1][c1].row != current_boxes[c1].row) same = false; 
-				//			if (abs(all_boxes[all_boxes.size() - 1][c1].mins.z - current_boxes[c1].mins.z) > 0.001f) same = false;
-				//			if (abs(all_boxes[all_boxes.size() - 1][c1].mins.x - current_boxes[c1].mins.x) > 0.001f) same = false;
-				//			if (abs(all_boxes[all_boxes.size() - 1][c1].mins.y - current_boxes[c1].mins.y) > 0.001f) same = false;
-				//			if (abs(all_boxes[all_boxes.size() - 1][c1].maxs.z - current_boxes[c1].maxs.z) > 0.001f) same = false;
-				//			if (abs(all_boxes[all_boxes.size() - 1][c1].maxs.x - current_boxes[c1].maxs.x) > 0.001f) same = false;
-				//			if (abs(all_boxes[all_boxes.size() - 1][c1].maxs.y - current_boxes[c1].maxs.y) > 0.001f) same = false;
-
-				//			if (same == false)
-				//				break;
-				//		}
-
-				//		if (same)
-				//		{
-				//			for (auto& cur_box : all_boxes[all_boxes.size() - 1])
-				//			{
-				//				cur_box.maxs.z += z_offset;
-				//			}
-				//			current_boxes.clear();
-				//			continue;
-				//		}
-				//	}
-				//}
-
 				all_boxes.push_back(current_boxes);
 			}
 		}
