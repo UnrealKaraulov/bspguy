@@ -4472,6 +4472,8 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 		return;
 	}
 
+	BspRenderer* rend = map->getBspRender();
+
 	std::vector<Entity*> copiedEnts;
 	std::istringstream in(clipboardText);
 
@@ -4565,6 +4567,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 			{
 				copiedEnts[i]->setOrAddKeyvalue("model", "*" + std::to_string(mdlIdx));
 			}
+			rend->refreshModelClipnodes(mdlIdx);
 		}
 
 		CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), copiedEnts[i]);
