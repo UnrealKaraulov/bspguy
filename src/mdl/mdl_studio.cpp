@@ -241,7 +241,7 @@ mstudioanim_t* StudioModel::GetAnim(mstudioseqdesc_t* pseqdesc)
 }
 
 
-void StudioModel::SlerpBones(vec4 q1[], vec3 pos1[], vec4 q2[], vec3 pos2[], float s)
+void StudioModel::SlerpBones(vec4* q1, vec3* pos1, vec4* q2, vec3* pos2, float s)
 {
 	// Valve
 	int			i;

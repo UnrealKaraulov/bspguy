@@ -339,10 +339,10 @@ void Settings::loadSettings()
 	g_settings.mark_unused_texinfos = settings_ini->Get<int>("GRAPHICS", "mark_unused_texinfos", 0) != 0;
 	g_settings.merge_verts = settings_ini->Get<int>("GRAPHICS", "merge_verts", 0) != 0;
 	g_settings.merge_edges = settings_ini->Get<int>("GRAPHICS", "merge_edges", 0) != 0;
-	g_settings.fov = settings_ini->Get<double>("GRAPHICS", "fov", 60.0);
-	g_settings.zfar = settings_ini->Get<double>("GRAPHICS", "zfar", 1000.0);
+	g_settings.fov = settings_ini->Get<float>("GRAPHICS", "fov", 60.0f);
+	g_settings.zfar = settings_ini->Get<float>("GRAPHICS", "zfar", 1000.0f);
 	g_settings.render_flags = settings_ini->Get<int>("GRAPHICS", "renders_flags", 0);
-	g_settings.fontSize = settings_ini->Get<double>("GRAPHICS", "font_size", 22.0);
+	g_settings.fontSize = settings_ini->Get<float>("GRAPHICS", "font_size", 22.0f);
 	g_settings.fpslimit = settings_ini->Get<int>("GRAPHICS", "fpslimit", 60);
 
 	if (g_settings.fpslimit < 30) {
@@ -352,13 +352,13 @@ void Settings::loadSettings()
 		g_settings.fpslimit = 1000;
 	}
 
-	g_settings.moveSpeed = settings_ini->Get<double>("INPUT", "move_speed", 500.0);
+	g_settings.moveSpeed = settings_ini->Get<float>("INPUT", "move_speed", 500.0f);
 
 	if (g_settings.moveSpeed < 100) {
 		print_log(get_localized_string(LANG_0927));
 		g_settings.moveSpeed = 500;
 	}
-	g_settings.rotSpeed = settings_ini->Get<double>("INPUT", "rot_speed", 1.0);
+	g_settings.rotSpeed = settings_ini->Get<float>("INPUT", "rot_speed", 1.0f);
 
 	g_settings.gamedir = settings_ini->Get<std::string>("PATHS", "gamedir", "");
 	g_settings.workingdir = settings_ini->Get<std::string>("PATHS", "workingdir", "");
@@ -402,7 +402,7 @@ void Settings::loadSettings()
 	strip_wad_path = settings_ini->Get<int>("SETTINGS", "strip_wad_path", 0) != 0;
 	default_is_empty = settings_ini->Get<int>("SETTINGS", "default_is_empty", 0) != 0;
 
-	FLT_MAX_COORD = settings_ini->Get<double>("LIMITS", "FLT_MAX_COORD", 16384.0);
+	FLT_MAX_COORD = settings_ini->Get<float>("LIMITS", "FLT_MAX_COORD", 16384.0f);
 	MAX_MAP_MODELS = settings_ini->Get<int>("LIMITS", "MAX_MAP_MODELS", 1024);
 	MAX_SURFACE_EXTENT = settings_ini->Get<int>("LIMITS", "MAX_SURFACE_EXTENT", 64);
 	MAX_MAP_NODES = settings_ini->Get<int>("LIMITS", "MAX_MAP_NODES", 32767);
@@ -416,7 +416,7 @@ void Settings::loadSettings()
 	MAX_MAP_LIGHTDATA = settings_ini->Get<int>("LIMITS", "MAX_MAP_LIGHTDATA", 4 * 1024 * 1024) * 1024 * 1024;
 	MAX_TEXTURE_DIMENSION = settings_ini->Get<int>("LIMITS", "MAX_TEXTURE_DIMENSION", 4096);
 	MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
-	MAX_MAP_BOUNDARY = settings_ini->Get<double>("LIMITS", "MAX_MAP_BOUNDARY", 4096.0);
+	MAX_MAP_BOUNDARY = settings_ini->Get<float>("LIMITS", "MAX_MAP_BOUNDARY", 4096.0f);
 	if (std::fabs(MAX_MAP_BOUNDARY) < 512.0f) {
 		MAX_MAP_BOUNDARY = 4096;
 	}
@@ -607,11 +607,13 @@ void Settings::loadSettings()
 
 	reload_ents_list = false;
 }
-void Settings::saveSettings(std::string path) {
+void Settings::saveSettings(std::string path) 
+{
 	std::ofstream iniFile(path);
 
-	if (!iniFile.is_open()) {
-		std::cerr << "Can't open " << path << " for writing" << std::endl;
+	if (!iniFile.is_open()) 
+	{
+		print_log(PRINT_RED, "Can't open " + path + " for writing\n");
 		return;
 	}
 

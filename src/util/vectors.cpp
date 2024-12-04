@@ -646,9 +646,6 @@ void QuaternionSlerp(const vec4& p, vec4& q, float t, vec4& qt)
 	}
 }
 
-
-
-
 void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4])
 {
 	matrix[0][0] = 1.0f - 2.0f * quaternion[1] * quaternion[1] - 2.0f * quaternion[2] * quaternion[2];
@@ -664,9 +661,7 @@ void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4])
 	matrix[2][2] = 1.0f - 2.0f * quaternion[0] * quaternion[0] - 2.0f * quaternion[1] * quaternion[1];
 }
 
-
-
-void R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[3][4])
+void R_ConcatTransforms(float in1[][4], float in2[][4], float out[][4])
 {
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
 		in1[0][2] * in2[2][0];
@@ -943,7 +938,6 @@ void VectorIRotate(const vec3& in1, const float in2[3][4], vec3& out)
 	out[1] = in1[0] * in2[0][1] + in1[1] * in2[1][1] + in1[2] * in2[2][1];
 	out[2] = in1[0] * in2[0][2] + in1[1] * in2[1][2] + in1[2] * in2[2][2];
 }
-
 
 float clamp(float val, float min, float max)
 {

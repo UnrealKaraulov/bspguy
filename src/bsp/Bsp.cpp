@@ -12639,7 +12639,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 					for (auto& p : planesForTest)
 					{
-						if (plane.vNormal.length() < ON_EPSILON || (p.vNormal.equal(plane.vNormal, ON_EPSILON) && std::fabs(p.fDist - plane.fDist) < 0.55f))
+						if (p.vNormal.equal(plane.vNormal, ON_EPSILON))
 						{
 							foundCoplanar = true;
 							break;
@@ -12677,7 +12677,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 						for (auto& p : planesForTest)
 						{
-							if (plane.vNormal.length() < ON_EPSILON || (p.vNormal.equal(plane.vNormal, ON_EPSILON) && std::fabs(p.fDist - plane.fDist) < 0.55f))
+							if (p.vNormal.equal(plane.vNormal, ON_EPSILON))
 							{
 								foundCoplanar = true;
 								break;
@@ -12701,7 +12701,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 					}
 					else if (i + 1 == 20)
 					{
-						brush.backWinds.clear();
+						/*brush.backWinds.clear();
 						brush.back_dist = 5.0f;
 						back_vert2 = centoid_real - brush.plane.vNormal.normalize() * brush.back_dist;
 						for (size_t n = 0; n < brush.wind.m_Points.size(); n++)
@@ -12715,6 +12715,73 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 							Winding tmpWind{};
 							tmpWind.m_Points = { v2_b, v1_b, v3_b };
 							tmpWind.getPlane(plane);
+
+							brush.backWinds.push_back(tmpWind);
+						}
+						break;*/
+						Winding back_wind = brush.wind;
+						back_wind.m_Points.resize(3);
+						std::reverse(back_wind.m_Points.begin(), back_wind.m_Points.end());
+
+						if (brush.plane.vNormal.x > 1.0f - EPSILON)
+						{
+							brush.plane.vNormal.x = 1.0f;
+							brush.plane.vNormal.y = brush.plane.vNormal.z = 0.0f;
+						}
+
+						if (brush.plane.vNormal.y > 1.0f - EPSILON)
+						{
+							brush.plane.vNormal.y = 1.0f;
+							brush.plane.vNormal.z = brush.plane.vNormal.x = 0.0f;
+						}
+
+						if (brush.plane.vNormal.z > 1.0f - EPSILON)
+						{
+							brush.plane.vNormal.z = 1.0f;
+							brush.plane.vNormal.x = brush.plane.vNormal.y = 0.0f;
+						}
+
+						if (brush.plane.vNormal.x < -1.0f + EPSILON)
+						{
+							brush.plane.vNormal.x = -1.0f;
+							brush.plane.vNormal.y = brush.plane.vNormal.z = 0.0f;
+						}
+
+						if (brush.plane.vNormal.y < -1.0f + EPSILON)
+						{
+							brush.plane.vNormal.y = -1.0f;
+							brush.plane.vNormal.z = brush.plane.vNormal.x = 0.0f;
+						}
+
+						if (brush.plane.vNormal.z < -1.0f + EPSILON)
+						{
+							brush.plane.vNormal.z = -1.0f;
+							brush.plane.vNormal.x = brush.plane.vNormal.y = 0.0f;
+						}
+
+						float normal_offset = 0.01f;
+						vec3 normal = brush.plane.vNormal.normalize() * normal_offset;
+
+						while (normal.length() < ON_EPSILON * 5.0f)
+						{
+							normal_offset += 0.01f;
+							normal = brush.plane.vNormal.normalize() * normal_offset;
+						}
+
+						for (auto& v : back_wind.m_Points)
+						{
+							v -= normal;
+						}
+
+						brush.backWinds.push_back(back_wind);
+
+						for (size_t n = 0; n < brush.wind.m_Points.size(); n++)
+						{
+							vec3 v1_b = brush.wind.m_Points[n];
+							vec3 v2_b = brush.wind.m_Points[(n + 1) % brush.wind.m_Points.size()];
+							vec3 v3_b = v2_b - normal;
+							Winding tmpWind{};
+							tmpWind.m_Points = { v3_b, v2_b, v1_b };
 
 							brush.backWinds.push_back(tmpWind);
 						}
@@ -12798,6 +12865,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 					if (entity->isWorldSpawn())
 					{
 						entIds.push_back((int)ent);
+						if (selected)
+							break;
 					}
 				}
 
@@ -13111,6 +13180,10 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 		auto processEntry = [&](const std::pair<Entity*, std::deque<MapBrush>>& out)
 			{
+				if (selected && !out.first->isBspModel())
+				{
+					return;
+				}
 				//classname
 				jack_file.writeLenStr(out.first->classname);
 				//origin

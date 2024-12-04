@@ -88,18 +88,7 @@ struct vec3
 
 	vec3(float x, float y, float z) : x(x), y(y), z(z)
 	{
-		if (std::fabs(x) < EPSILON2)
-		{
-			x = +0.00f;
-		}
-		if (std::fabs(y) < EPSILON2)
-		{
-			y = +0.00f;
-		}
-		if (std::fabs(z) < EPSILON2)
-		{
-			z = +0.00f;
-		}
+		
 	}
 
 	void operator-=(const vec3& v);
@@ -152,34 +141,14 @@ struct vec3
 		return vec3(x / f, y / f, z / f);
 	}
 
-	float& operator [] (size_t i)
+	float& operator [] (size_t i) 
 	{
-		switch (i)
-		{
-		case 0:
-			return x;
-		case 1:
-			return y;
-		case 2:
-			return z;
-		}
-		return z;
+		return *(&x + i);
 	}
 
-	float operator [] (size_t i) const
-	{
-		switch (i)
-		{
-		case 0:
-			return x;
-		case 1:
-			return y;
-		case 2:
-			return z;
-		}
-		return z;
+	float operator [] (size_t i) const {
+		return *(&x + i);
 	}
-
 
 	bool operator==(const vec3& other) const
 	{
@@ -436,7 +405,7 @@ void _VectorScale(const vec3& v, float scale, vec3& out);
 
 float VectorLength(const vec3& v);
 
-void mVectorMA(const vec3& va, double scale, const vec3& vb, vec3& vc);
+void mVectorMA(const vec3& va, float scale, const vec3& vb, vec3& vc);
 
 void mCrossProduct(const vec3& v1, const vec3& v2, vec3& cross);
 void VectorInverse(vec3& v);
@@ -457,7 +426,7 @@ bool VectorCompare(const vec3& v1, const vec3& v2, float epsilon = EPSILON);
 
 void QuaternionSlerp(const vec4& p, vec4& q, float t, vec4& qt);
 void AngleQuaternion(const vec3& angles, vec4& quaternion);
-void R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[3][4]);
+void R_ConcatTransforms(float in1[][4], float in2[][4], float out[][4]);
 void VectorScale(const vec3& v, float scale, vec3& out);
 float VectorNormalize(vec3& v);
 float fullnormalizeangle(float angle);

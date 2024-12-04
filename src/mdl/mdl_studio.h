@@ -538,7 +538,7 @@ public:
 	void CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec3& pos);
 	void CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, mstudioanim_t* panim, float f);
 	mstudioanim_t* GetAnim(mstudioseqdesc_t* pseqdesc);
-	void SlerpBones(vec4 q1[], vec3 pos1[], vec4 q2[], vec3 pos2[], float s);
+	void SlerpBones(vec4 * q1, vec3 * pos1, vec4 * q2, vec3 * pos2, float s);
 	void SetUpBones(void);
 	void Lighting(float* lv, int bone, int flags, const vec3& normal);
 	void Chrome(int* chrome, int bone, const vec3& normal);

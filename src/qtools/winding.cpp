@@ -144,29 +144,30 @@ void Winding::MergeVerts(Bsp* src, float epsilon)
 // Remove the colinear point of any three points that forms a triangle which is thinner than ON_EPSILON
 void Winding::RemoveColinearPoints(float epsilon)
 {
-	size_t NumPoints = m_Points.size();
+	int NumPoints = (int)m_Points.size();
 
-	for (int i = 0; i < NumPoints; i++) {
+	if (NumPoints <= 2)
+		return;
 
-		if (NumPoints <= 3) {
-			break;
-		}
-
+	for (int i = 0; i < NumPoints; i++)
+	{
 		vec3 p1 = m_Points[(i + NumPoints - 1) % NumPoints];
 		vec3 p2 = m_Points[i];
 		vec3 p3 = m_Points[(i + 1) % NumPoints];
 		vec3 v1 = p2 - p1;
 		vec3 v2 = p3 - p2;
-
-		// Normalize vectors
-		v1.normalize();
-		v2.normalize();
-
-		// Check if vectors are collinear
-		if (abs(dotProduct(v1, v2) - 1.0) < epsilon) {
-			m_Points.erase(m_Points.begin() + i);
+		// v1 or v2 might be close to 0
+		if (dotProduct(v1, v2) * dotProduct(v1, v2) >= dotProduct(v1, v1) * dotProduct(v2, v2)
+			- epsilon * epsilon * (dotProduct(v1, v1) + dotProduct(v2, v2) + epsilon * epsilon))
+			// v2 == k * v1 + v3 && abs (v3) < ON_EPSILON || v1 == k * v2 + v3 && abs (v3) < ON_EPSILON
+		{
 			NumPoints--;
-			i = -1; // Restart the loop to handle updated points list
+			for (; i < NumPoints; i++)
+			{
+				m_Points[i] = m_Points[i + 1];
+			}
+			i = -1;
+			continue;
 		}
 	}
 

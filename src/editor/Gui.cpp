@@ -8781,15 +8781,14 @@ void Gui::loadFonts()
 	config.PixelSnapH = true;
 
 	if (!fs::exists(fontPath) || !fs::is_directory(fontPath)) {
-		std::cerr << "Font directory does not exist or is not accessible.\n";
+		print_log(PRINT_RED, "Font directory does not exist or is not accessible.\n");
 		return;
 	}
 
 	for (const auto& entry : fs::directory_iterator(fontPath)) {
 		if (entry.is_regular_file()) {
 			auto extension = entry.path().extension().string();
-			std::transform(extension.begin(), extension.end(), extension.begin(),
-				[](unsigned char c) { return std::tolower(c); });
+			extension = toLowerCase(extension);
 			if (extension == ".ttf" || extension == ".ttc") {
 				fontFiles.emplace_back(entry.path().string());
 			}
@@ -8915,7 +8914,7 @@ void Gui::drawLog()
 	}
 
 	ImGuiListClipper clipper;
-	clipper.Begin(log_buffer_copy.size());
+	clipper.Begin((int)log_buffer_copy.size());
 	while (clipper.Step())
 	{
 		for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)

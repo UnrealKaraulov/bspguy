@@ -590,7 +590,7 @@ void Renderer::renderLoop()
 				glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
 				if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-					std::cerr << "Framebuffer not complete!" << std::endl;
+					print_log(PRINT_RED, "Framebuffer not complete!\n");
 
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 			}

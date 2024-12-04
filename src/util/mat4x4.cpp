@@ -266,7 +266,7 @@ mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec
 
 mat4x4 mat4x4::transpose()
 {
-	mat4x4 result;
+	static mat4x4 result;
 	result.m[0 + 0 * 4] = m[0 * 4 + 0];
 	result.m[0 + 1 * 4] = m[0 * 4 + 1];
 	result.m[0 + 2 * 4] = m[0 * 4 + 2];
@@ -448,11 +448,22 @@ void mat4x4::mult(float mat[16])
 mat4x4 operator*(const mat4x4& m1, const mat4x4& m2)
 {
 	mat4x4 result;
-	loadEmptyMat4x4(result.m);
-	for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++)
-			for (int k = 0; k < 4; k++)
-				result.m[i * 4 + j] += m1.m[i * 4 + k] * m2.m[k * 4 + j];
+	float sum;
+	for (int i = 0; i < 4; ++i) {
+		const float m1_i0 = m1.m[i * 4 + 0];
+		const float m1_i1 = m1.m[i * 4 + 1];
+		const float m1_i2 = m1.m[i * 4 + 2];
+		const float m1_i3 = m1.m[i * 4 + 3];
+
+		for (int j = 0; j < 4; ++j) {
+			sum = 0.0f;
+			sum += m1_i0 * m2.m[0 * 4 + j];
+			sum += m1_i1 * m2.m[1 * 4 + j];
+			sum += m1_i2 * m2.m[2 * 4 + j];
+			sum += m1_i3 * m2.m[3 * 4 + j];
+			result.m[i * 4 + j] = sum;
+		}
+	}
 	return result;
 }
 
