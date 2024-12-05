@@ -396,15 +396,6 @@ void Settings::loadSettings()
 	g_settings.verboseLogs = true;
 #endif
 
-	g_settings.savebackup = settings_ini->Get<int>("SETTINGS", "savebackup", 0) != 0;
-	g_settings.save_crc = settings_ini->Get<int>("SETTINGS", "save_crc", 0) != 0;
-	g_settings.save_cam = settings_ini->Get<int>("SETTINGS", "save_cam", 0) != 0;
-	g_settings.auto_import_ent = settings_ini->Get<int>("SETTINGS", "auto_import_ent", 0) != 0;
-	g_settings.same_dir_for_ent = settings_ini->Get<int>("SETTINGS", "same_dir_for_ent", 0) != 0;
-	reload_ents_list = settings_ini->Get<int>("SETTINGS", "reload_ents_list", 0) != 0;
-	strip_wad_path = settings_ini->Get<int>("SETTINGS", "strip_wad_path", 0) != 0;
-	default_is_empty = settings_ini->Get<int>("SETTINGS", "default_is_empty", 0) != 0;
-
 	FLT_MAX_COORD = settings_ini->Get<float>("LIMITS", "FLT_MAX_COORD", 16384.0f);
 	MAX_MAP_MODELS = settings_ini->Get<int>("LIMITS", "MAX_MAP_MODELS", 1024);
 	MAX_SURFACE_EXTENT = settings_ini->Get<int>("LIMITS", "MAX_SURFACE_EXTENT", 64);
