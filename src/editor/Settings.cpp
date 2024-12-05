@@ -33,7 +33,7 @@ void Settings::loadDefaultSettings()
 	lastdir = "";
 	selected_lang = "EN";
 	languages.clear();
-	languages.push_back("EN");
+	languages.push_back(selected_lang);
 
 	undoLevels = 64;
 	fpslimit = 100;
@@ -264,7 +264,6 @@ void Settings::fillPalettes(const std::string& folderPath)
 void Settings::loadSettings()
 {
 	set_localize_lang("EN");
-
 	fillLanguages("./languages/");
 
 	if (fileExists(g_settings_path))
@@ -307,6 +306,10 @@ void Settings::loadSettings()
 		print_log(PRINT_RED, "Can't load {}\n", g_settings_path);
 		return;
 	}
+
+	selected_lang = settings_ini->Get<std::string>("GENERAL", "lang", "EN");
+
+	set_localize_lang(selected_lang);
 
 	g_settings.windowWidth = settings_ini->Get<int>("GENERAL", "window_width", 800);
 	g_settings.windowHeight = settings_ini->Get<int>("GENERAL", "window_height", 600);
@@ -618,6 +621,7 @@ void Settings::saveSettings(std::string path)
 	}
 
 	iniFile << "[GENERAL]\n";
+	iniFile << "lang=" << selected_lang << "\n";
 	iniFile << "window_width=" << g_settings.windowWidth << "\n";
 	iniFile << "window_height=" << g_settings.windowHeight << "\n";
 	iniFile << "window_x=" << g_settings.windowX << "\n";
@@ -739,7 +743,7 @@ void  Settings::saveSettings()
 	saveSettings(g_settings_path);
 }
 
-std::string convertToSection(const std::string& key) {
+std::string convertToSection(std::string& key) {
 	if (key == "window_width" || key == "window_height" || key == "window_x" ||
 		key == "window_y" || key == "window_maximized" || key == "save_windows" ||
 		key == "debug_open" || key == "keyvalue_open" || key == "transform_open" ||
@@ -748,7 +752,9 @@ std::string convertToSection(const std::string& key) {
 		key == "start_at_entity" || key == "savebackup" || key == "save_crc" ||
 		key == "save_cam" || key == "auto_import_ent" || key == "same_dir_for_ent" ||
 		key == "reload_ents_list" || key == "strip_wad_path" || key == "default_is_empty" ||
-		key == "undo_levels") {
+		key == "undo_levels" || key == "language") {
+		if (key == "language")
+			key = "lang";
 		return "GENERAL";
 	}
 	if (key == "vsync" || key == "fov" || key == "zfar" || key == "renders_flags" ||
@@ -806,18 +812,19 @@ std::string ConvertFromCFGtoINI(const std::string& cfgData) {
 	std::map<std::string, std::ostringstream> sections;
 
 	for (const auto& entry : cfgMap) {
-		std::string section = convertToSection(entry.first);
+		std::string key = entry.first;
+		std::string section = convertToSection(key);
 		if (sections.find(section) == sections.end()) {
 			sections[section] << "[" << section << "]\n";
 		}
-		if (entry.second.size() > 1 || section == toUpperCase(entry.first)) {
+		if (entry.second.size() > 1 || section == toUpperCase(key)) {
 			sections[section] << "count = " << entry.second.size() << "\n";
 			for (size_t i = 0; i < entry.second.size(); ++i) {
 				sections[section] << (i + 1) << " = " << entry.second[i] << "\n";
 			}
 		}
 		else {
-			sections[section] << entry.first << " = " << entry.second[0] << "\n";
+			sections[section] << key << " = " << entry.second[0] << "\n";
 		}
 	}
 

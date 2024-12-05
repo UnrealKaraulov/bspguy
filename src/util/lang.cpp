@@ -18,12 +18,14 @@ inih::INIReader* lang_ini = NULL;
 std::map<int, std::string> lang_db;
 std::map<std::string, std::string> lang_db_str;
 
+std::string selected_lang = "EN";
+
 std::string get_localized_string(int id)
 {
 	if (lang_ini == NULL)
 	{
 		// Init language if needed
-		set_localize_lang("EN");
+		set_localize_lang(selected_lang);
 	}
 	if (lang_ini != NULL)
 	{
@@ -58,7 +60,7 @@ std::string get_localized_string(const std::string& str_id)
 	if (lang_ini == NULL)
 	{
 		// Init language if needed
-		set_localize_lang("EN");
+		set_localize_lang(selected_lang);
 	}
 	if (lang_ini != NULL)
 	{

@@ -15,7 +15,6 @@ typedef struct IUnknown IUnknown;
 extern inih::INIReader * lang_ini;
 
 extern std::map<int, std::string> lang_db;
-extern std::string lang_selected;
 
 std::string get_localized_string(int id);
 std::string get_localized_string(const std::string& str_id);
