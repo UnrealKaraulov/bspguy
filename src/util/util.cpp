@@ -33,8 +33,15 @@ std::mutex g_mutex_list[10] = {};
 
 bool fileExists(const std::string& fileName)
 {
-	std::error_code err;
-	return fs::exists(fileName, err) && !fs::is_directory(fileName,err);
+	try
+	{
+		std::error_code err;
+		return fs::exists(fileName, err) && !fs::is_directory(fileName, err);
+	}
+	catch (...)
+	{
+		return false;
+	}
 }
 
 char* loadFile(const std::string& fileName, int& length)
