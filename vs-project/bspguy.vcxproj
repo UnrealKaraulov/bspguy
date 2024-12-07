@@ -967,6 +967,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
   <ItemGroup>
     <None Include="..\resources\languages\language.ini" />
     <None Include="..\resources\languages\language_ru.ini" />
+    <None Include="..\resources\languages\language_zh.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -516,7 +516,6 @@ public:
 	void Init(const std::string& modelname);
 	void RefreshMeshList(int body);
 	void UpdateModelMeshList(void);
-	void GetModelMeshes(int& bodies, int& subbodies, int& skins, int& meshes);
 
 	void AdvanceFrame(float dt);
 	void ExtractBBox(vec3& mins, vec3& maxs);
@@ -527,10 +526,13 @@ public:
 	int SetBodygroup(int iGroup, int iValue);
 	int SetSkin(int iValue);
 	int GetSkin();
+	int GetSkinCount();
 	int SetSequence(int iSequence);
 	int SetBody(int iBody);
 	int GetBody();
+	int GetBodyCount();
 	int GetSequence(void);
+	int GetSequenceCount();
 	studiohdr_t* LoadModel(const std::string& modelname, bool IsTexture = false);
 	studioseqhdr_t* LoadDemandSequences(const std::string& modelname, int seqid);
 	void CalcBoneAdj(void);

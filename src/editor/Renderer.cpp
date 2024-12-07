@@ -3209,8 +3209,12 @@ vec3 Renderer::getEntOffset(Bsp* map, Entity* ent)
 {
 	if (ent->isBspModel())
 	{
-		BSPMODEL& tmodel = map->models[ent->getBspModelIdx()];
-		return tmodel.nMins + (tmodel.nMaxs - tmodel.nMins) * 0.5f;
+		int mdl = ent->getBspModelIdx();
+		if (mdl >= 0 && mdl < map->modelCount)
+		{
+			BSPMODEL& tmodel = map->models[ent->getBspModelIdx()];
+			return tmodel.nMins + (tmodel.nMaxs - tmodel.nMins) * 0.5f;
+		}
 	}
 	return vec3();
 }
@@ -3597,7 +3601,7 @@ void Renderer::updateModelVerts()
 	//print_log(get_localized_string(LANG_0913),modelVerts.size());
 }
 
-void Renderer::updateSelectionSize(Bsp* map,int modelIdx)
+void Renderer::updateSelectionSize(Bsp* map, int modelIdx)
 {
 	selectionSize = vec3();
 	if (!map)
@@ -4063,7 +4067,7 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 		}
 	}
 
-	updateSelectionSize(map,modelIdx);
+	updateSelectionSize(map, modelIdx);
 
 }
 
@@ -4371,7 +4375,7 @@ void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, floa
 
 	map->vertex_manipulation_sync(modelTransform, modelVerts, false);
 	map->getBspRender()->refreshModel(modelIdx);
-	updateSelectionSize(map,modelIdx);
+	updateSelectionSize(map, modelIdx);
 }
 
 vec3 Renderer::snapToGrid(vec3 pos)
@@ -4459,7 +4463,7 @@ void Renderer::copyEnt()
 	ImGui::SetClipboardText(ss.str().c_str());
 }
 
-void Renderer::pasteEnt(bool noModifyOrigin)
+void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 {
 	auto clipboardText = ImGui::GetClipboardText();
 	if (!clipboardText)
@@ -4539,28 +4543,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 
 	for (size_t i = 0; i < copiedEnts.size(); i++)
 	{
-		vec3 baseOrigin = copiedEnts[0]->origin;
-
-		if (!noModifyOrigin)
-		{
-			// can't just set camera origin directly because solid ents can have (0,0,0) origins
-			vec3 tmpOrigin = getEntOrigin(map, copiedEnts[i]);
-
-			vec3 offset = getEntOrigin(map, copiedEnts[i]) - baseOrigin;
-
-			vec3 modelOffset = getEntOffset(map, copiedEnts[i]);
-			vec3 mapOffset = map->getBspRender()->mapOffset;
-
-			vec3 moveDist = (cameraOrigin + cameraForward * 100) - tmpOrigin;
-			vec3 newOri = (tmpOrigin + moveDist) - (modelOffset + mapOffset);
-
-			newOri += offset;
-
-			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
-			copiedEnts[i]->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
-		}
-
-		if (copiedEnts[i]->getBspModelIdxForce() > 0)
+		if (copiedEnts[i]->getBspModelIdxForce() > 0 && copyModel)
 		{
 			int mdlIdx = ImportModel(map, g_working_dir + "copyModel" + std::to_string(copiedEnts[i]->getBspModelIdx()) + ".bsp");
 			if (mdlIdx > 0)
@@ -4568,6 +4551,22 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 				copiedEnts[i]->setOrAddKeyvalue("model", "*" + std::to_string(mdlIdx));
 			}
 			rend->refreshModelClipnodes(mdlIdx);
+		}
+
+		vec3 baseOrigin = copyModel ? copiedEnts[0]->origin : getEntOffset(map, copiedEnts[0]);
+
+		if (!noModifyOrigin)
+		{
+			vec3 entOrigin = copyModel ? copiedEnts[i]->origin : getEntOrigin(map, copiedEnts[i]);
+			vec3 offset = entOrigin - baseOrigin;
+			vec3 mapOffset = map->getBspRender()->mapOffset;
+			vec3 moveDist = (cameraOrigin + cameraForward * 100) - entOrigin;
+			vec3 newOri = (entOrigin + moveDist) - (entOrigin + mapOffset);
+
+			newOri += offset;
+
+			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
+			copiedEnts[i]->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
 		}
 
 		CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), copiedEnts[i]);

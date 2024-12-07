@@ -478,5 +478,8 @@
     <None Include="..\resources\languages\language.ini">
       <Filter>Langs</Filter>
     </None>
+    <None Include="..\resources\languages\language_zh.ini">
+      <Filter>Langs</Filter>
+    </None>
   </ItemGroup>
 </Project>

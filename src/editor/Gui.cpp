@@ -234,7 +234,7 @@ void Gui::draw()
 	{
 		Bsp* map = app->getSelectedMap();
 
-		if (map && map->is_mdl_model)
+		if (map && map->is_mdl_model && map->map_mdl)
 		{
 			drawMDLWidget();
 		}
@@ -1412,13 +1412,21 @@ void Gui::drawBspContexMenu()
 
 				if (app->hasCopiedEnt())
 				{
-					if (ImGui::MenuItem(get_localized_string(LANG_0449).c_str(), get_localized_string(LANG_0441).c_str(), false))
+					if (ImGui::BeginMenu((get_localized_string(LANG_0449) + "###BeginPaste").c_str()))
 					{
-						app->pasteEnt(false);
-					}
-					if (ImGui::MenuItem(get_localized_string(LANG_0450).c_str(), 0, false))
-					{
-						app->pasteEnt(true);
+						if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###BEG_PASTE1").c_str(), get_localized_string(LANG_0441).c_str(), false))
+						{
+							app->pasteEnt(false);
+						}
+						if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###BEG_OPASTE1").c_str(), 0, false))
+						{
+							app->pasteEnt(true);
+						}
+						if (ImGui::MenuItem("Paste with bspmodel###BEG_PASTE2", get_localized_string(LANG_0441).c_str(), false))
+						{
+							app->pasteEnt(false, true);
+						}
+						ImGui::EndMenu();
 					}
 				}
 
@@ -1843,13 +1851,19 @@ void Gui::drawBspContexMenu()
 
 		if (ImGui::BeginPopup("empty_context"))
 		{
-			if (ImGui::MenuItem(get_localized_string(LANG_1073).c_str(), get_localized_string(LANG_1074).c_str(), false, app->hasCopiedEnt()))
+			bool enabled = app->hasCopiedEnt();
+
+			if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###CONTENT_PASTE1").c_str(), get_localized_string(LANG_0441).c_str(), false, enabled))
 			{
 				app->pasteEnt(false);
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1075).c_str(), 0, false, app->hasCopiedEnt()))
+			if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###CONTENT_OPASTE1").c_str(), 0, false, enabled))
 			{
 				app->pasteEnt(true);
+			}
+			if (ImGui::MenuItem("Paste with bspmodel###CONTENT_PASTE2", get_localized_string(LANG_0441).c_str(), false))
+			{
+				app->pasteEnt(false, true);
 			}
 
 			ImGui::EndPopup();
@@ -4020,13 +4034,22 @@ void Gui::drawMenuBar()
 				if (app->pickInfo.selectedFaces.size())
 					copyTexture();
 			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1157).c_str(), get_localized_string(LANG_1158).c_str(), false, app->getSelectedMap() && app->hasCopiedEnt()))
+			if (ImGui::BeginMenu((get_localized_string(LANG_0449) + "###BeginPaste2").c_str()))
 			{
-				app->pasteEnt(false);
-			}
-			if (ImGui::MenuItem(get_localized_string(LANG_1159).c_str(), 0, false, entSelected && app->hasCopiedEnt()))
-			{
-				app->pasteEnt(true);
+				if (ImGui::MenuItem((get_localized_string(LANG_0449) + "###BEG2_PASTE1").c_str(), get_localized_string(LANG_0441).c_str(), false))
+				{
+					app->pasteEnt(false);
+				}
+				if (ImGui::MenuItem((get_localized_string(LANG_0450) + "###BEG2_OPASTE1").c_str(), 0, false))
+				{
+					app->pasteEnt(true);
+				}
+				if (ImGui::MenuItem("Paste with bspmodel###BEG2_PASTE2", get_localized_string(LANG_0441).c_str(), false))
+				{
+					app->pasteEnt(false, true);
+				}
+
+				ImGui::EndMenu();
 			}
 			if (ImGui::MenuItem(get_localized_string(LANG_1085).c_str(), get_localized_string(LANG_1086).c_str(), false, nonWorldspawnEntSelected))
 			{
@@ -4209,7 +4232,7 @@ void Gui::drawMenuBar()
 				{
 					generateClipnodes = 1;
 				}
-				
+
 
 				if (ImGui::MenuItem("Compile clipnodes", NULL, generateClipnodes == 2, false))
 				{
@@ -4336,7 +4359,7 @@ void Gui::drawMenuBar()
 				ImGui::TextUnformatted("Recalculate lights using rad compiler. (From settings)");
 				ImGui::EndTooltip();
 			}
-			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected))
+			if (ImGui::MenuItem("PROTECT MAP!(WIP)", NULL, false, !map->is_protected && rend))
 			{
 				map->merge_all_verts(1.f);
 
@@ -6727,27 +6750,7 @@ void Gui::drawDebugWidget()
 			{
 				if (model1 >= 0 && model2 >= 0)
 				{
-					if (model1 != model2)
-					{
-						if (model1 < map->modelCount &&
-							model2 < map->modelCount)
-						{
-							std::swap(map->models[model1], map->models[model2]);
-
-
-							for (size_t i = 0; i < map->ents.size(); i++)
-							{
-								if (map->ents[i]->getBspModelIdx() == model1)
-								{
-									map->ents[i]->setOrAddKeyvalue("model", "*" + std::to_string(model2));
-								}
-								else if (map->ents[i]->getBspModelIdx() == model2)
-								{
-									map->ents[i]->setOrAddKeyvalue("model", "*" + std::to_string(model1));
-								}
-							}
-						}
-					}
+					map->swap_two_models(model1, model2);
 				}
 			}
 
@@ -8158,10 +8161,53 @@ void Gui::drawMDLWidget()
 	Bsp* map = app->getSelectedMap();
 	ImGui::SetNextWindowSize(ImVec2(410.f, 200.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(410.f, 330.f), ImVec2(410.f, 330.f));
-	bool showMdlWidget = map && map->is_mdl_model;
-	if (ImGui::Begin(fmt::format("{}###MDL_WIDGET", get_localized_string("LANG_MDL_WIDGET")).c_str(), &showMdlWidget))
-	{
 
+	int sequenceCount = map->map_mdl->GetSequenceCount();
+	static int MDL_Sequence = map->map_mdl->GetSequence();
+	static int prev_MDL_Sequence = MDL_Sequence;
+
+
+	int bodyCount = map->map_mdl->GetBodyCount();
+	static int MDL_Body = map->map_mdl->GetBody();
+	static int prev_MDL_Body = MDL_Body;
+
+
+	int skinCount = map->map_mdl->GetSkinCount();
+	static int MDL_Skin = map->map_mdl->GetSkin();
+	static int prev_MDL_Skin = MDL_Skin;
+
+	if (ImGui::Begin(fmt::format("{}###MDL_WIDGET", get_localized_string("LANG_MDL_WIDGET")).c_str()))
+	{
+		ImGui::InputInt("Sequence", &MDL_Sequence);
+		ImGui::InputInt("Body", &MDL_Body);
+		ImGui::InputInt("Skin", &MDL_Skin);
+
+		if (MDL_Sequence < 0) MDL_Sequence = 0;
+		if (MDL_Sequence > sequenceCount) MDL_Sequence = sequenceCount;
+
+		if (MDL_Body < 0) MDL_Body = 0;
+		if (MDL_Body > bodyCount) MDL_Body = bodyCount;
+
+		if (MDL_Skin < 0) MDL_Skin = 0;
+		if (MDL_Skin > skinCount) MDL_Skin = skinCount;
+
+		if (MDL_Sequence != prev_MDL_Sequence)
+		{
+			map->map_mdl->SetSequence(MDL_Sequence);
+			prev_MDL_Sequence = MDL_Sequence;
+		}
+
+		if (MDL_Body != prev_MDL_Body)
+		{
+			map->map_mdl->SetBody(MDL_Body);
+			prev_MDL_Body = MDL_Body;
+		}
+
+		if (MDL_Skin != prev_MDL_Skin)
+		{
+			map->map_mdl->SetSkin(MDL_Skin);
+			prev_MDL_Skin = MDL_Skin;
+		}
 	}
 	ImGui::End();
 }

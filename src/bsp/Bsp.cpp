@@ -3813,7 +3813,7 @@ bool Bsp::subdivide_face(int faceIdx) {
 		}
 	}
 	int totalMarks = marksurfCount + addMarks;
-	int* newMarkSurfs = new int[totalMarks];
+	int* newMarkSurfs = new int[totalMarks + 1];
 	memcpy(newMarkSurfs, marksurfs, marksurfCount * sizeof(int));
 
 	BSPEDGE32* newEdges = new BSPEDGE32[edgeCount + addVerts];
@@ -3857,7 +3857,7 @@ bool Bsp::subdivide_face(int faceIdx) {
 		if (model.iFirstFace > faceIdx) {
 			model.iFirstFace += 1;
 		}
-		else if (model.iFirstFace <= faceIdx && model.iFirstFace + model.nFaces > faceIdx) {
+		else if (model.iFirstFace + model.nFaces > faceIdx) {
 			model.nFaces++;
 		}
 	}
@@ -3868,7 +3868,7 @@ bool Bsp::subdivide_face(int faceIdx) {
 		if (node.iFirstFace > faceIdx) {
 			node.iFirstFace += 1;
 		}
-		else if (node.iFirstFace <= faceIdx && node.iFirstFace + node.nFaces > faceIdx) {
+		else if (node.iFirstFace + node.nFaces > faceIdx) {
 			node.nFaces++;
 		}
 	}
@@ -3888,7 +3888,7 @@ bool Bsp::subdivide_face(int faceIdx) {
 				else if (leaf.iFirstMarkSurface > i) {
 					leaf.iFirstMarkSurface += 1;
 				}
-				else if (leaf.iFirstMarkSurface <= i && leaf.iFirstMarkSurface + leaf.nMarkSurfaces > i) {
+				else if (leaf.iFirstMarkSurface + leaf.nMarkSurfaces > i) {
 					//print_log("Added mark {}/{} to leaf {} ({} + {})\n", i, marksurfCount, k, leaf.iFirstMarkSurface, leaf.nMarkSurfaces);
 					leaf.nMarkSurfaces += 1;
 				}
@@ -6159,7 +6159,7 @@ bool Bsp::validate()
 			isValid = false;
 		}
 	}
-	for (int i = 0; i < faceCount; i++)
+	for (int i = faceCount - 1; i >= 0; i--)
 	{
 		if (faces[i].iPlane < 0 || faces[i].iPlane >= planeCount)
 		{
@@ -6190,20 +6190,19 @@ bool Bsp::validate()
 		int bmins[2];
 		int bmaxs[2];
 
-		if (isValid)
-			isValid = GetFaceExtents(i, bmins, bmaxs);
-
-		if (!GetFaceExtents(i, bmins, bmaxs))
+		if (isValid && !GetFaceExtents(i, bmins, bmaxs))
+		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "Bad face {} extents\n", i);
+			print_log(PRINT_GREEN | PRINT_INTENSITY, "Removing invalid (invisible) face...\n", i);
+			remove_face(i);
+		}
 
 		if (isValid)
 		{
-			isValid = !is_face_duplicate_edges(i);
-			if (!isValid && g_settings.verboseLogs)
+			if (g_settings.verboseLogs && is_face_duplicate_edges(i))
 			{
 				print_log("Warn: Face {} has duplicate verts!\n", i);
 			}
-			isValid = true;
 		}
 	}
 	for (int i = 0; i < leafCount; i++)
@@ -6389,12 +6388,12 @@ bool Bsp::validate()
 			int texlen = getBspTextureSize(i);
 			int dataOffset = (textureCount + 1) * sizeof(int);
 			BSPMIPTEX* tex = (BSPMIPTEX*)(textures + texOffset);
-			if (tex->szName[0] == '\0')
+			/*if (tex->szName[0] == '\0')
 			{
 				isValid = false;
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0133), i);
 			}
-			else if (strlen(tex->szName) >= MAXTEXTURENAME)
+			else*/ if (strlen(tex->szName) >= MAXTEXTURENAME)
 			{
 				isValid = false;
 				print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0134), i);
@@ -8508,15 +8507,17 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 	// SOLID leaf, and there should be at least one EMPTY leaf if the map isn't completely solid.
 	// So, just find an existing EMPTY leaf. Also, water brushes work just fine with SOLID nodes.
 	// The inner contents of a node is changed dynamically by entity properties.
+
 	int sharedSolidLeaf = 0;
 	int anyEmptyLeaf = create_leaf(CONTENTS_EMPTY);
+
 	for (int f = faceCount - 7; f < faceCount; f++)
 	{
 		leaf_add_face(f, anyEmptyLeaf);
 	}
 
 
-	targetModel->nVisLeafs = 1;
+	targetModel->nVisLeafs += 1;
 
 	// add new nodes
 	unsigned int startNode = nodeCount;
@@ -8692,14 +8693,11 @@ void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 			break;
 		}
 	}
+
 	if (anyEmptyLeaf == 0)
 	{
 		anyEmptyLeaf = create_leaf(CONTENTS_EMPTY);
-		targetModel->nVisLeafs = 1;
-	}
-	else
-	{
-		targetModel->nVisLeafs = 0;
+		targetModel->nVisLeafs += 1;
 	}
 
 	// add new nodes
@@ -8769,6 +8767,7 @@ int Bsp::create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetMod
 		if (anyEmptyLeaf == 0)
 		{
 			anyEmptyLeaf = create_leaf(CONTENTS_EMPTY);
+			targetModel->nVisLeafs += 1;
 		}
 	}
 
@@ -9997,6 +9996,30 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 	return leafCount - 1;
 }
 
+void Bsp::swap_two_models(int model1, int model2)
+{
+	if (model1 != model2)
+	{
+		if (model1 < modelCount &&
+			model2 < modelCount)
+		{
+			std::swap(models[model1], models[model2]);
+			for (size_t i = 0; i < ents.size(); i++)
+			{
+				if (ents[i]->getBspModelIdx() == model1)
+				{
+					ents[i]->setOrAddKeyvalue("model", "*" + std::to_string(model2));
+				}
+				else if (ents[i]->getBspModelIdx() == model2)
+				{
+					ents[i]->setOrAddKeyvalue("model", "*" + std::to_string(model1));
+				}
+			}
+			update_ent_lump();
+		}
+	}
+}
+
 int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 {
 	vec3 amin, amax, bmin, bmax;
@@ -10015,7 +10038,9 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 	if (separate_plane.nType == -1 && tryanotherway == 0)
 	{
 		tryanotherway++;
-		return merge_two_models_idx(dst_model, src_model, tryanotherway);
+		// try to swap
+		swap_two_models(dst_model, src_model);
+		return merge_two_models_idx(src_model, dst_model, tryanotherway);
 	}
 	else if (separate_plane.nType == -1 && tryanotherway == 1)
 	{
@@ -14019,6 +14044,8 @@ int Bsp::import_mdl_to_bspmodel(int ent, int generateClipnodes)
 				std::vector<BBOX> merged_cubes;
 				int errors = 0;
 
+				int defaultModels = modelCount;
+
 				// PASS #1 [MERGE X]
 				for (auto& cube_list : collision_list)
 				{
@@ -14180,34 +14207,45 @@ int Bsp::import_mdl_to_bspmodel(int ent, int generateClipnodes)
 
 				print_log(PRINT_BLUE, "Merged_cubes after finall PASS {} !\n", models_to_merge_pass3.size() + errors);
 
-				/*STRUCTUSAGE modelUsage = STRUCTUSAGE(map);
+				STRUCTUSAGE modelUsage = STRUCTUSAGE(this);
 				mark_model_structures(models_to_merge_pass3[0], &modelUsage, true);
 
 				for (int i = 0; i < planeCount; i++)
 				{
 					if (modelUsage.planes[i])
 					{
-						planes[i].fDist = std::signbit(planes[i].fDist) ? planes[i].fDist - 1.f : planes[i].fDist + 1.f;
+						planes[i].fDist = std::signbit(planes[i].fDist) ? planes[i].fDist - 0.01f : planes[i].fDist + 0.01f;
 					}
-				}*/
-
+				}
 
 				//models[newModelIdx].iHeadnodes[0] = models[models_to_merge_pass3[0]].iHeadnodes[0];
 				models[newModelIdx].iHeadnodes[1] = models[models_to_merge_pass3[0]].iHeadnodes[1];
 				models[newModelIdx].iHeadnodes[2] = models[models_to_merge_pass3[0]].iHeadnodes[2];
 				models[newModelIdx].iHeadnodes[3] = models[models_to_merge_pass3[0]].iHeadnodes[3];
-				models[newModelIdx].nVisLeafs = models[models_to_merge_pass3[0]].nVisLeafs;
+
+				for (int i = defaultModels; i < modelCount; i++)
+				{
+					models[i].iHeadnodes[0] =
+						models[i].iHeadnodes[1] =
+						models[i].iHeadnodes[2] =
+						models[i].iHeadnodes[3] = 0;
+					models[i].iFirstFace = 0;
+					models[i].nFaces = 0;
+					models[i].nVisLeafs = 0;
+				}
 
 
-				models[models_to_merge_pass3[0]].iHeadnodes[0] =
-					models[models_to_merge_pass3[0]].iHeadnodes[1] =
-					models[models_to_merge_pass3[0]].iHeadnodes[2] =
-					models[models_to_merge_pass3[0]].iHeadnodes[3] = 0;
-				models[models_to_merge_pass3[0]].iFirstFace = 0;
-				models[models_to_merge_pass3[0]].nFaces = 0;
-				models[models_to_merge_pass3[0]].nVisLeafs = 0;
+				remove_unused_model_structures(CLEAN_LEAVES);
 
-				print_log(PRINT_BLUE, "Very bad clipnodes regenerated with {} errors!\n", errors);
+				int totalLeaves = 0;
+				for (int i = 0; i < modelCount && i < defaultModels; i++)
+				{
+					totalLeaves += models[i].nVisLeafs;
+				}
+
+				models[newModelIdx].nVisLeafs = leafCount - totalLeaves;
+
+				print_log(PRINT_BLUE, "Very bad clipnodes regenerated with {} errors {} leaves!\n", errors, models[newModelIdx].nVisLeafs);
 			}
 			return newModelIdx;
 		}
@@ -14496,9 +14534,11 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 	models[newModelIdx].vOrigin = vec3();
 	models[newModelIdx].iFirstFace = modelFirstFace;
 	models[newModelIdx].nFaces = modelFaces;
-	models[newModelIdx].nVisLeafs = 1;
 
 	int empty_leaf = create_leaf(CONTENTS_EMPTY);
+
+	models[newModelIdx].nVisLeafs += 1;
+
 	leaves[empty_leaf].nMins = mins + 1.0f;
 	leaves[empty_leaf].nMaxs = maxs - 1.0f;
 	leaves[empty_leaf].nVisOffset = -1;

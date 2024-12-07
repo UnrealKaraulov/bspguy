@@ -385,7 +385,7 @@ public:
 	int clone_world_leaf(int oldleafIdx);
 	int merge_two_models_ents(int src_ent, int dst_ent, int &try_again);
 	int merge_two_models_idx(int src_model, int dst_model, int &try_again);
-
+	void swap_two_models(int mdl1, int mdl2);
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
 	BSPTEXTUREINFO* get_unique_texinfo(int faceIdx);
 

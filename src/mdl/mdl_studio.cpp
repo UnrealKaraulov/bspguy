@@ -908,11 +908,6 @@ studioseqhdr_t* StudioModel::LoadDemandSequences(const std::string& modelname, i
 	return (studioseqhdr_t*)buffer;
 }
 
-void StudioModel::GetModelMeshes(int& bodies, int& subbodies, int& skins, int& meshes)
-{
-
-}
-
 void StudioModel::DrawMDL(int meshnum)
 {
 	if (frametime < 0.0f)
@@ -1048,23 +1043,48 @@ void StudioModel::Init(const std::string& modelname)
 int StudioModel::SetBody(int iBody)
 {
 	m_body = iBody;
-	auto* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex);
-	for (int bg = 0; bg < m_pstudiohdr->numbodyparts; bg++)
+	if (m_pstudiohdr)
 	{
-		SetBodygroup(bg, iBody % pbodypart->nummodels);
-		iBody /= pbodypart->nummodels;
-		pbodypart++;
+		auto* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex);
+		for (int bg = 0; bg < m_pstudiohdr->numbodyparts; bg++)
+		{
+			SetBodygroup(bg, iBody % pbodypart->nummodels);
+			iBody /= pbodypart->nummodels;
+			pbodypart++;
+		}
 	}
 	return m_body;
 }
+
 int StudioModel::GetBody()
 {
 	return m_body;
 }
 
+int StudioModel::GetBodyCount()
+{
+	if (m_pstudiohdr)
+	{
+		int maxBodyValue = 1;
+		auto* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex);
+		for (int bg = 0; bg < m_pstudiohdr->numbodyparts; bg++)
+		{
+			maxBodyValue *= pbodypart->nummodels;
+			pbodypart++;
+		}
+		return maxBodyValue > 0 ? maxBodyValue - 1 : 0;
+	}
+	return 0;
+}
+
 int StudioModel::GetSequence()
 {
 	return m_sequence;
+}
+
+int StudioModel::GetSequenceCount()
+{
+	return m_pstudiohdr ? m_pstudiohdr->numseq > 0 ? m_pstudiohdr->numseq - 1 : 0 : 0;
 }
 
 int StudioModel::SetSequence(int iSequence)
@@ -1086,6 +1106,29 @@ int StudioModel::SetSequence(int iSequence)
 	return m_sequence;
 }
 
+int StudioModel::GetSkin()
+{
+	return m_skinnum;
+}
+
+int StudioModel::GetSkinCount()
+{
+	return m_pstudiohdr ? m_pstudiohdr->numskinfamilies > 0 ? m_pstudiohdr->numskinfamilies - 1 : 0 : 0;
+}
+
+int StudioModel::SetSkin(int iValue)
+{
+	if (!m_pstudiohdr || iValue > m_pstudiohdr->numskinfamilies)
+	{
+		return m_skinnum;
+	}
+
+	if (iValue != m_skinnum)
+		needForceUpdate = true;
+
+	m_skinnum = iValue;
+	return iValue;
+}
 
 void StudioModel::ExtractBBox(vec3& _mins, vec3& _maxs)
 {
@@ -1283,25 +1326,6 @@ int StudioModel::SetBodygroup(int iGroup, int iValue)
 	m_bodynum = (m_bodynum - (iCurrent * pbodypart->base) + (iValue * pbodypart->base));
 
 	needForceUpdate = true;
-
-	return iValue;
-}
-
-int StudioModel::GetSkin()
-{
-	return m_skinnum;
-}
-
-int StudioModel::SetSkin(int iValue)
-{
-	if (!m_pstudiohdr || iValue < m_pstudiohdr->numskinfamilies)
-	{
-		return m_skinnum;
-	}
-
-	if (iValue != m_skinnum)
-		needForceUpdate = true;
-	m_skinnum = iValue;
 
 	return iValue;
 }

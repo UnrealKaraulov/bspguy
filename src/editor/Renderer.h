@@ -359,7 +359,7 @@ public:
 	void grabEnt();
 	void cutEnt();
 	void copyEnt();
-	void pasteEnt(bool noModifyOrigin);
+	void pasteEnt(bool noModifyOrigin, bool copyModel = false);
 	void pasteEntsFromText(std::string text);
 	void deleteEnt(int entIdx = 0);
 	void deleteEnts();
