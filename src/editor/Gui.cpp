@@ -28,7 +28,7 @@ float g_tooltip_delay = 0.6f; // time in seconds before showing a IMGUI_TOOLTIP
 
 bool filterNeeded = true;
 
-std::string iniPath;
+std::string iniPath = "./imgui.ini";
 
 enum umd_flags : unsigned int {
 	UMD_TEXTURES_SKIP_OPTIMIZE = 1 << 0,
@@ -87,7 +87,6 @@ Gui::Gui(Renderer* app)
 
 void Gui::init()
 {
-	iniPath = "./imgui.ini";
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -165,78 +164,80 @@ void Gui::draw()
 	drawToolbar();
 	drawStatusMessage();
 
-	if (showDebugWidget)
-	{
-		drawDebugWidget();
-	}
-	if (showKeyvalueWidget)
-	{
-		drawKeyvalueEditor();
-	}
-	if (showTextureBrowser)
-	{
-		drawTextureBrowser();
-	}
-	if (showOverviewWidget)
-	{
-		drawOverviewWidget();
-	}
-	if (showTransformWidget)
-	{
-		drawTransformWidget();
-	}
 	if (showLogWidget)
 	{
 		drawLog();
 	}
-	if (showSettingsWidget)
-	{
-		drawSettings();
-	}
+
 	if (showHelpWidget)
 	{
 		drawHelp();
 	}
+
 	if (showAboutWidget)
 	{
 		drawAbout();
 	}
-	if (showImportMapWidget)
+
+	if (showSettingsWidget)
 	{
-		drawImportMapWidget();
-	}
-	if (showMergeMapWidget)
-	{
-		drawMergeWindow();
-	}
-	if (showLimitsWidget)
-	{
-		drawLimits();
-	}
-	if (showFaceEditWidget)
-	{
-		drawFaceEditorWidget();
-	}
-	if (showLightmapEditorWidget)
-	{
-		drawLightMapTool();
-	}
-	if (showEntityReport)
-	{
-		drawEntityReport();
-	}
-	if (showGOTOWidget)
-	{
-		drawGOTOWidget();
+		drawSettings();
 	}
 
-	if (mapRenderers.size() != 0)
+	Bsp* map = app->getSelectedMap();
+	if (map && map->is_mdl_model && map->map_mdl)
 	{
-		Bsp* map = app->getSelectedMap();
-
-		if (map && map->is_mdl_model && map->map_mdl)
+		drawMDLWidget();
+	}
+	else
+	{
+		if (showDebugWidget)
 		{
-			drawMDLWidget();
+			drawDebugWidget();
+		}
+		if (showKeyvalueWidget)
+		{
+			drawKeyvalueEditor();
+		}
+		if (showTextureBrowser)
+		{
+			drawTextureBrowser();
+		}
+		if (showOverviewWidget)
+		{
+			drawOverviewWidget();
+		}
+		if (showTransformWidget)
+		{
+			drawTransformWidget();
+		}
+		if (showImportMapWidget)
+		{
+			drawImportMapWidget();
+		}
+		if (showMergeMapWidget)
+		{
+			drawMergeWindow();
+		}
+		if (showLimitsWidget)
+		{
+			drawLimits();
+		}
+		if (showFaceEditWidget)
+		{
+			drawFaceEditorWidget();
+		}
+		if (showLightmapEditorWidget)
+		{
+			drawLightMapTool();
+		}
+		if (showEntityReport)
+		{
+			drawEntityReport();
+		}
+		if (showGOTOWidget)
+		{
+			drawGOTOWidget();
 		}
 
 		if (openEmptyContext != -2)

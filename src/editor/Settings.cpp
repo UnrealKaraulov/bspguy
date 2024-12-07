@@ -3,7 +3,7 @@
 #include "Renderer.h"
 #include "log.h"
 
-std::string g_settings_path = "";
+std::string g_settings_path = "./bspguy.ini";
 std::string g_game_dir = "/";
 std::string g_working_dir = "./";
 std::string g_startup_dir = "";
@@ -603,7 +603,7 @@ void Settings::loadSettings()
 }
 void Settings::saveSettings(std::string path) 
 {
-	std::ofstream iniFile(path);
+	std::ofstream iniFile(path, std::ios::binary);
 
 	if (!iniFile.is_open()) 
 	{
@@ -611,108 +611,109 @@ void Settings::saveSettings(std::string path)
 		return;
 	}
 
-	iniFile << "[GENERAL]\n";
-	iniFile << "lang=" << selected_lang << "\n";
-	iniFile << "window_width=" << g_settings.windowWidth << "\n";
-	iniFile << "window_height=" << g_settings.windowHeight << "\n";
-	iniFile << "window_x=" << g_settings.windowX << "\n";
-	iniFile << "window_y=" << g_settings.windowY << "\n";
-	iniFile << "window_maximized=" << g_settings.maximized << "\n";
-	iniFile << "start_at_entity=" << g_settings.start_at_entity << "\n";
-	iniFile << "savebackup=" << g_settings.savebackup << "\n";
-	iniFile << "save_crc=" << g_settings.save_crc << "\n";
-	iniFile << "save_cam=" << g_settings.save_cam << "\n";
-	iniFile << "auto_import_ent=" << g_settings.auto_import_ent << "\n";
-	iniFile << "same_dir_for_ent=" << g_settings.same_dir_for_ent << "\n";
-	iniFile << "reload_ents_list=" << g_settings.reload_ents_list << "\n";
-	iniFile << "strip_wad_path=" << g_settings.strip_wad_path << "\n";
-	iniFile << "default_is_empty=" << g_settings.default_is_empty << "\n";
-	iniFile << "undo_levels=" << g_settings.undoLevels << "\n\n";
+	std::ostringstream iniData{};
+	iniData << "[GENERAL]\n";
+	iniData << "lang=" << selected_lang << "\n";
+	iniData << "window_width=" << g_settings.windowWidth << "\n";
+	iniData << "window_height=" << g_settings.windowHeight << "\n";
+	iniData << "window_x=" << g_settings.windowX << "\n";
+	iniData << "window_y=" << g_settings.windowY << "\n";
+	iniData << "window_maximized=" << g_settings.maximized << "\n";
+	iniData << "start_at_entity=" << g_settings.start_at_entity << "\n";
+	iniData << "savebackup=" << g_settings.savebackup << "\n";
+	iniData << "save_crc=" << g_settings.save_crc << "\n";
+	iniData << "save_cam=" << g_settings.save_cam << "\n";
+	iniData << "auto_import_ent=" << g_settings.auto_import_ent << "\n";
+	iniData << "same_dir_for_ent=" << g_settings.same_dir_for_ent << "\n";
+	iniData << "reload_ents_list=" << g_settings.reload_ents_list << "\n";
+	iniData << "strip_wad_path=" << g_settings.strip_wad_path << "\n";
+	iniData << "default_is_empty=" << g_settings.default_is_empty << "\n";
+	iniData << "undo_levels=" << g_settings.undoLevels << "\n\n";
 
-	iniFile << "[WIDGETS]\n";
-	iniFile << "save_windows=" << g_settings.save_windows << "\n";
-	iniFile << "debug_open=" << g_settings.debug_open << "\n";
-	iniFile << "keyvalue_open=" << g_settings.keyvalue_open << "\n";
-	iniFile << "transform_open=" << g_settings.transform_open << "\n";
-	iniFile << "log_open=" << g_settings.log_open << "\n";
-	iniFile << "limits_open=" << g_settings.limits_open << "\n";
-	iniFile << "entreport_open=" << g_settings.entreport_open << "\n";
-	iniFile << "texbrowser_open=" << g_settings.texbrowser_open << "\n";
-	iniFile << "goto_open=" << g_settings.goto_open << "\n";
-	iniFile << "settings_tab=" << g_settings.settings_tab << "\n\n";
+	iniData << "[WIDGETS]\n";
+	iniData << "save_windows=" << g_settings.save_windows << "\n";
+	iniData << "debug_open=" << g_settings.debug_open << "\n";
+	iniData << "keyvalue_open=" << g_settings.keyvalue_open << "\n";
+	iniData << "transform_open=" << g_settings.transform_open << "\n";
+	iniData << "log_open=" << g_settings.log_open << "\n";
+	iniData << "limits_open=" << g_settings.limits_open << "\n";
+	iniData << "entreport_open=" << g_settings.entreport_open << "\n";
+	iniData << "texbrowser_open=" << g_settings.texbrowser_open << "\n";
+	iniData << "goto_open=" << g_settings.goto_open << "\n";
+	iniData << "settings_tab=" << g_settings.settings_tab << "\n\n";
 
-	iniFile << "[GRAPHICS]\n";
-	iniFile << "vsync=" << g_settings.vsync << "\n";
-	iniFile << "fov=" << g_settings.fov << "\n";
-	iniFile << "zfar=" << g_settings.zfar << "\n";
-	iniFile << "renders_flags=" << g_settings.render_flags << "\n";
-	iniFile << "font_size=" << g_settings.fontSize << "\n";
-	iniFile << "fpslimit=" << g_settings.fpslimit << "\n\n";
+	iniData << "[GRAPHICS]\n";
+	iniData << "vsync=" << g_settings.vsync << "\n";
+	iniData << "fov=" << g_settings.fov << "\n";
+	iniData << "zfar=" << g_settings.zfar << "\n";
+	iniData << "renders_flags=" << g_settings.render_flags << "\n";
+	iniData << "font_size=" << g_settings.fontSize << "\n";
+	iniData << "fpslimit=" << g_settings.fpslimit << "\n\n";
 
-	iniFile << "[OPTIMIZE]\n";
-	iniFile << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << "\n";
-	iniFile << "merge_verts=" << g_settings.merge_verts << "\n";
-	iniFile << "merge_edges=" << g_settings.merge_edges << "\n\n";
+	iniData << "[OPTIMIZE]\n";
+	iniData << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << "\n";
+	iniData << "merge_verts=" << g_settings.merge_verts << "\n";
+	iniData << "merge_edges=" << g_settings.merge_edges << "\n\n";
 
-	iniFile << "[INPUT]\n";
-	iniFile << "move_speed=" << g_settings.moveSpeed << "\n";
-	iniFile << "rot_speed=" << g_settings.rotSpeed << "\n\n";
+	iniData << "[INPUT]\n";
+	iniData << "move_speed=" << g_settings.moveSpeed << "\n";
+	iniData << "rot_speed=" << g_settings.rotSpeed << "\n\n";
 
-	iniFile << "[PATHS]\n";
-	iniFile << "gamedir=" << g_settings.gamedir << "\n";
-	iniFile << "workingdir=" << g_settings.workingdir << "\n";
-	iniFile << "lastdir=" << g_settings.lastdir << "\n";
-	iniFile << "hlrad_path=" << g_settings.rad_path << "\n";
-	iniFile << "palette=" << g_settings.palette_name << "\n\n";
+	iniData << "[PATHS]\n";
+	iniData << "gamedir=" << g_settings.gamedir << "\n";
+	iniData << "workingdir=" << g_settings.workingdir << "\n";
+	iniData << "lastdir=" << g_settings.lastdir << "\n";
+	iniData << "hlrad_path=" << g_settings.rad_path << "\n";
+	iniData << "palette=" << g_settings.palette_name << "\n\n";
 
-	iniFile << "[FGD]\n";
-	iniFile << "count=" << g_settings.fgdPaths.size() << "\n";
+	iniData << "[FGD]\n";
+	iniData << "count=" << g_settings.fgdPaths.size() << "\n";
 	for (size_t i = 0; i < g_settings.fgdPaths.size(); ++i) {
-		iniFile << (i + 1) << "=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].path << "\n";
+		iniData << (i + 1) << "=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].path << "\n";
 	}
-	iniFile << "\n";
+	iniData << "\n";
 
-	iniFile << "[RES]\n";
-	iniFile << "count=" << g_settings.resPaths.size() << "\n";
+	iniData << "[RES]\n";
+	iniData << "count=" << g_settings.resPaths.size() << "\n";
 	for (size_t i = 0; i < g_settings.resPaths.size(); ++i) {
-		iniFile << (i + 1) << "=" << (g_settings.resPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.resPaths[i].path << "\n";
+		iniData << (i + 1) << "=" << (g_settings.resPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.resPaths[i].path << "\n";
 	}
-	iniFile << "\n";
+	iniData << "\n";
 
-	iniFile << "[DEBUG]\n";
+	iniData << "[DEBUG]\n";
 #ifndef NDEBUG
-	iniFile << "verbose_logs=true\n";
+	iniData << "verbose_logs=true\n";
 #else
-	iniFile << "verbose_logs=" << g_settings.verboseLogs << "\n";
+	iniData << "verbose_logs=" << g_settings.verboseLogs << "\n";
 #endif
-	iniFile << "\n";
+	iniData << "\n";
 
 
-	iniFile << "[LIMITS]\n";
-	iniFile << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << "\n";
-	iniFile << "MAX_SURFACE_EXTENT=" << MAX_SURFACE_EXTENT << "\n";
-	iniFile << "MAX_MAP_NODES=" << MAX_MAP_NODES << "\n";
-	iniFile << "MAX_MAP_CLIPNODES=" << MAX_MAP_CLIPNODES << "\n";
-	iniFile << "MAX_MAP_LEAVES=" << MAX_MAP_LEAVES << "\n";
-	iniFile << "MAX_MAP_VISDATA=" << (MAX_MAP_VISDATA / (1024 * 1024)) << "\n";
-	iniFile << "MAX_MAP_ENTS=" << MAX_MAP_ENTS << "\n";
-	iniFile << "MAX_MAP_SURFEDGES=" << MAX_MAP_SURFEDGES << "\n";
-	iniFile << "MAX_MAP_EDGES=" << MAX_MAP_EDGES << "\n";
-	iniFile << "MAX_MAP_TEXTURES=" << MAX_MAP_TEXTURES << "\n";
-	iniFile << "MAX_MAP_LIGHTDATA=" << (MAX_MAP_LIGHTDATA / (1024 * 1024)) << "\n";
-	iniFile << "MAX_TEXTURE_DIMENSION=" << MAX_TEXTURE_DIMENSION << "\n";
-	iniFile << "MAX_MAP_BOUNDARY=" << MAX_MAP_BOUNDARY << "\n";
-	iniFile << "TEXTURE_STEP=" << TEXTURE_STEP << "\n";
-	iniFile << "FLT_MAX_COORD=" << FLT_MAX_COORD << "\n";
-	iniFile << "\n";
+	iniData << "[LIMITS]\n";
+	iniData << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << "\n";
+	iniData << "MAX_SURFACE_EXTENT=" << MAX_SURFACE_EXTENT << "\n";
+	iniData << "MAX_MAP_NODES=" << MAX_MAP_NODES << "\n";
+	iniData << "MAX_MAP_CLIPNODES=" << MAX_MAP_CLIPNODES << "\n";
+	iniData << "MAX_MAP_LEAVES=" << MAX_MAP_LEAVES << "\n";
+	iniData << "MAX_MAP_VISDATA=" << (MAX_MAP_VISDATA / (1024 * 1024)) << "\n";
+	iniData << "MAX_MAP_ENTS=" << MAX_MAP_ENTS << "\n";
+	iniData << "MAX_MAP_SURFEDGES=" << MAX_MAP_SURFEDGES << "\n";
+	iniData << "MAX_MAP_EDGES=" << MAX_MAP_EDGES << "\n";
+	iniData << "MAX_MAP_TEXTURES=" << MAX_MAP_TEXTURES << "\n";
+	iniData << "MAX_MAP_LIGHTDATA=" << (MAX_MAP_LIGHTDATA / (1024 * 1024)) << "\n";
+	iniData << "MAX_TEXTURE_DIMENSION=" << MAX_TEXTURE_DIMENSION << "\n";
+	iniData << "MAX_MAP_BOUNDARY=" << MAX_MAP_BOUNDARY << "\n";
+	iniData << "TEXTURE_STEP=" << TEXTURE_STEP << "\n";
+	iniData << "FLT_MAX_COORD=" << FLT_MAX_COORD << "\n";
+	iniData << "\n";
 
-	auto writeListSection = [&iniFile](const std::string& section, const std::vector<std::string>& list) {
-		iniFile << "[" << section << "]\n";
-		iniFile << "count=" << list.size() << "\n";
+	auto writeListSection = [&iniData](const std::string& section, const std::vector<std::string>& list) {
+		iniData << "[" << section << "]\n";
+		iniData << "count=" << list.size() << "\n";
 		for (size_t i = 0; i < list.size(); ++i) {
-			iniFile << (i + 1) << "=" << list[i] << "\n";
+			iniData << (i + 1) << "=" << list[i] << "\n";
 		}
-		iniFile << "\n";
+		iniData << "\n";
 		};
 
 	writeListSection("OPTIMIZER_COND_ENTS", conditionalPointEntTriggers);
@@ -725,6 +726,8 @@ void Settings::saveSettings(std::string path)
 	writeListSection("TRANSPARENT_TEXTURES", transparentTextures);
 	writeListSection("TRANSPARENT_ENTITIES", transparentEntities);
 
+	iniFile.write(iniData.str().c_str(), iniData.str().size());
+	iniFile.flush();
 	iniFile.close();
 }
 void  Settings::saveSettings()

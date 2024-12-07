@@ -1017,7 +1017,6 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		g_settings_path = "./bspguy.ini";
 
 		if (!fileExists("./bspguy.ini") && fileExists("./bspguy.cfg"))
 		{
