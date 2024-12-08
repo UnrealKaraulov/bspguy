@@ -536,8 +536,8 @@ void StudioModel::RefreshMeshList(int body)
 
 	if (needForceUpdate)
 	{
-		mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-		maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+		mins = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+		maxs = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 	}
 
 	pvertbone = ((unsigned char*)m_pstudiohdr + m_pmodel->vertinfoindex);

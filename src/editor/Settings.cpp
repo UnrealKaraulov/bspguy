@@ -318,7 +318,7 @@ void Settings::loadSettings()
 	g_settings.maximized = settings_ini->Get<int>("GENERAL", "window_maximized", 0);
 	g_settings.start_at_entity = settings_ini->Get<int>("GENERAL", "start_at_entity", 0) != 0;
 	g_settings.savebackup = settings_ini->Get<int>("GENERAL", "savebackup", 0) != 0;
-	g_settings.save_crc = settings_ini->Get<int>("GENERAL", "save_crc", 0) != 0;
+	g_settings.save_crc = settings_ini->Get<int>("GENERAL", "save_crc", 1) != 0;
 	g_settings.save_cam = settings_ini->Get<int>("GENERAL", "save_cam", 0) != 0;
 	g_settings.auto_import_ent = settings_ini->Get<int>("GENERAL", "auto_import_ent", 0) != 0;
 	g_settings.same_dir_for_ent = settings_ini->Get<int>("GENERAL", "same_dir_for_ent", 0) != 0;
@@ -326,6 +326,7 @@ void Settings::loadSettings()
 	g_settings.strip_wad_path = settings_ini->Get<int>("GENERAL", "strip_wad_path", 0) != 0;
 	g_settings.default_is_empty = settings_ini->Get<int>("GENERAL", "default_is_empty", 0) != 0;
 	g_settings.undoLevels = settings_ini->Get<int>("GENERAL", "undo_levels", 100);
+	g_settings.engineLimits = settings_ini->Get<std::string>("GENERAL", "engine", "SVEN");
 
 	g_settings.save_windows = settings_ini->Get<int>("WIDGETS", "save_windows", 1) != 0;
 	g_settings.debug_open = settings_ini->Get<int>("WIDGETS", "debug_open", 0) != 0 && g_settings.save_windows;
@@ -396,25 +397,47 @@ void Settings::loadSettings()
 	g_settings.verboseLogs = true;
 #endif
 
-	FLT_MAX_COORD = settings_ini->Get<float>("LIMITS", "FLT_MAX_COORD", 16384.0f);
-	MAX_MAP_MODELS = settings_ini->Get<int>("LIMITS", "MAX_MAP_MODELS", 1024);
-	MAX_SURFACE_EXTENT = settings_ini->Get<int>("LIMITS", "MAX_SURFACE_EXTENT", 64);
-	MAX_MAP_NODES = settings_ini->Get<int>("LIMITS", "MAX_MAP_NODES", 32767);
-	MAX_MAP_CLIPNODES = settings_ini->Get<int>("LIMITS", "MAX_MAP_CLIPNODES", 32767);
-	MAX_MAP_LEAVES = settings_ini->Get<int>("LIMITS", "MAX_MAP_LEAVES", 8192);
-	MAX_MAP_VISDATA = settings_ini->Get<int>("LIMITS", "MAX_MAP_VISDATA", 2 * 1024 * 1024) * 1024 * 1024;
-	MAX_MAP_ENTS = settings_ini->Get<int>("LIMITS", "MAX_MAP_ENTS", 1024);
-	MAX_MAP_SURFEDGES = settings_ini->Get<int>("LIMITS", "MAX_MAP_SURFEDGES", 128000);
-	MAX_MAP_EDGES = settings_ini->Get<int>("LIMITS", "MAX_MAP_EDGES", 256000);
-	MAX_MAP_TEXTURES = settings_ini->Get<int>("LIMITS", "MAX_MAP_TEXTURES", 512);
-	MAX_MAP_LIGHTDATA = settings_ini->Get<int>("LIMITS", "MAX_MAP_LIGHTDATA", 4 * 1024 * 1024) * 1024 * 1024;
-	MAX_TEXTURE_DIMENSION = settings_ini->Get<int>("LIMITS", "MAX_TEXTURE_DIMENSION", 4096);
-	MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
-	MAX_MAP_BOUNDARY = settings_ini->Get<float>("LIMITS", "MAX_MAP_BOUNDARY", 4096.0f);
-	if (std::fabs(MAX_MAP_BOUNDARY) < 512.0f) {
-		MAX_MAP_BOUNDARY = 4096;
+	int limitEngines = settings_ini->Get<int>("ENGINE", "count", 0);
+	if (limitEngines > 0)
+	{
+		limitsMap.clear();
+		for (int i = 0; i < limitEngines; i++)
+		{
+			std::string engineName = settings_ini->Get<std::string>("ENGINE", "name" + std::to_string(i+1), "half-life1");
+
+			limitsMap[engineName].engineName = engineName;
+			limitsMap[engineName].fltMaxCoord = settings_ini->Get<float>(engineName, "FLT_MAX_COORD", 16384.0f);
+			limitsMap[engineName].maxMapModels = settings_ini->Get<int>(engineName, "MAX_MAP_MODELS", 1024);
+			limitsMap[engineName].maxSurfaceExtent = settings_ini->Get<int>(engineName, "MAX_SURFACE_EXTENT", 64);
+			limitsMap[engineName].maxMapNodes = settings_ini->Get<int>(engineName, "MAX_MAP_NODES", 32767);
+			limitsMap[engineName].maxMapClipnodes = settings_ini->Get<int>(engineName, "MAX_MAP_CLIPNODES", 32767);
+			limitsMap[engineName].maxMapLeaves = settings_ini->Get<int>(engineName, "MAX_MAP_LEAVES", 8192);
+			limitsMap[engineName].maxMapVisdata = settings_ini->Get<int>(engineName, "MAX_MAP_VISDATA", 64) * 1024 * 1024;
+			limitsMap[engineName].maxMapEnts = settings_ini->Get<int>(engineName, "MAX_MAP_ENTS", 1024);
+			limitsMap[engineName].maxMapSurfedges = settings_ini->Get<int>(engineName, "MAX_MAP_SURFEDGES", 128000);
+			limitsMap[engineName].maxMapEdges = settings_ini->Get<int>(engineName, "MAX_MAP_EDGES", 256000);
+			limitsMap[engineName].maxMapTextures = settings_ini->Get<int>(engineName, "MAX_MAP_TEXTURES", 512);
+			limitsMap[engineName].maxMapLightdata = settings_ini->Get<int>(engineName, "MAX_MAP_LIGHTDATA", 64) * 1024 * 1024;
+			limitsMap[engineName].maxTextureDimension = settings_ini->Get<int>(engineName, "MAX_TEXTURE_DIMENSION", 4096);
+			limitsMap[engineName].maxTextureSize = ((g_limits.maxTextureDimension * g_limits.maxTextureDimension * 2 * 3) / 2);
+			limitsMap[engineName].maxMapBoundary = settings_ini->Get<float>(engineName, "MAX_MAP_BOUNDARY", 4096.0f);
+			limitsMap[engineName].textureStep = settings_ini->Get<int>(engineName, "TEXTURE_STEP", 16);
+
+		}
+
+		try
+		{
+			std::string selectedEngine = settings_ini->Get<std::string>("ENGINE", "selected", "half-life1");
+			g_limits = limitsMap[selectedEngine];
+		}
+		catch (...)
+		{
+			if (limitsMap.size())
+			{
+				g_limits = limitsMap.begin()->second;
+			}
+		}
 	}
-	TEXTURE_STEP = settings_ini->Get<int>("LIMITS", "TEXTURE_STEP", 16);
 
 	conditionalPointEntTriggers.clear();
 	entsThatNeverNeedAnyHulls.clear();
@@ -599,10 +622,16 @@ void Settings::loadSettings()
 
 	FixupAllSystemPaths();
 
+
 	reload_ents_list = false;
+
+
+	saveSettings(g_settings_path);
 }
 void Settings::saveSettings(std::string path) 
 {
+	removeFile(path);
+
 	std::ofstream iniFile(path, std::ios::binary);
 
 	if (!iniFile.is_open()) 
@@ -689,23 +718,41 @@ void Settings::saveSettings(std::string path)
 	iniData << "\n";
 
 
-	iniData << "[LIMITS]\n";
-	iniData << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << "\n";
-	iniData << "MAX_SURFACE_EXTENT=" << MAX_SURFACE_EXTENT << "\n";
-	iniData << "MAX_MAP_NODES=" << MAX_MAP_NODES << "\n";
-	iniData << "MAX_MAP_CLIPNODES=" << MAX_MAP_CLIPNODES << "\n";
-	iniData << "MAX_MAP_LEAVES=" << MAX_MAP_LEAVES << "\n";
-	iniData << "MAX_MAP_VISDATA=" << (MAX_MAP_VISDATA / (1024 * 1024)) << "\n";
-	iniData << "MAX_MAP_ENTS=" << MAX_MAP_ENTS << "\n";
-	iniData << "MAX_MAP_SURFEDGES=" << MAX_MAP_SURFEDGES << "\n";
-	iniData << "MAX_MAP_EDGES=" << MAX_MAP_EDGES << "\n";
-	iniData << "MAX_MAP_TEXTURES=" << MAX_MAP_TEXTURES << "\n";
-	iniData << "MAX_MAP_LIGHTDATA=" << (MAX_MAP_LIGHTDATA / (1024 * 1024)) << "\n";
-	iniData << "MAX_TEXTURE_DIMENSION=" << MAX_TEXTURE_DIMENSION << "\n";
-	iniData << "MAX_MAP_BOUNDARY=" << MAX_MAP_BOUNDARY << "\n";
-	iniData << "TEXTURE_STEP=" << TEXTURE_STEP << "\n";
-	iniData << "FLT_MAX_COORD=" << FLT_MAX_COORD << "\n";
-	iniData << "\n";
+	int id = 1;
+	iniData << "[ENGINE]\n";
+	iniData << "count=" << limitsMap.size() << "\n";
+
+	for (const auto& pair : limitsMap) {
+		iniData << "name" + std::to_string(id) << "=" << pair.first << "\n";
+		id++;
+	}
+
+	iniData << "selected=" << g_limits.engineName << "\n\n";
+
+	id = 1;
+	for (const auto& pair : limitsMap) {
+		const std::string engineName = pair.first;
+		const BSPLimits& limits = pair.second;
+
+		iniData << "[" << engineName << "]\n";
+		iniData << "FLT_MAX_COORD=" << limits.fltMaxCoord << "\n";
+		iniData << "MAX_MAP_MODELS=" << limits.maxMapModels << "\n";
+		iniData << "MAX_SURFACE_EXTENT=" << limits.maxSurfaceExtent << "\n";
+		iniData << "MAX_MAP_NODES=" << limits.maxMapNodes << "\n";
+		iniData << "MAX_MAP_CLIPNODES=" << limits.maxMapClipnodes << "\n";
+		iniData << "MAX_MAP_LEAVES=" << limits.maxMapLeaves << "\n";
+		iniData << "MAX_MAP_VISDATA=" << (limits.maxMapVisdata / (1024 * 1024)) << "\n";
+		iniData << "MAX_MAP_ENTS=" << limits.maxMapEnts << "\n";
+		iniData << "MAX_MAP_SURFEDGES=" << limits.maxMapSurfedges << "\n";
+		iniData << "MAX_MAP_EDGES=" << limits.maxMapEdges << "\n";
+		iniData << "MAX_MAP_TEXTURES=" << limits.maxMapTextures << "\n";
+		iniData << "MAX_MAP_LIGHTDATA=" << (limits.maxMapLightdata / (1024 * 1024)) << "\n";
+		iniData << "MAX_TEXTURE_DIMENSION=" << limits.maxTextureDimension << "\n";
+		iniData << "MAX_MAP_BOUNDARY=" << limits.maxMapBoundary << "\n";
+		iniData << "TEXTURE_STEP=" << limits.textureStep << "\n";
+		iniData << "\n";
+		id ++;
+	}
 
 	auto writeListSection = [&iniData](const std::string& section, const std::vector<std::string>& list) {
 		iniData << "[" << section << "]\n";
@@ -766,12 +813,12 @@ std::string convertToSection(std::string& key) {
 	if (key == "fgd" || key == "res") {
 		return toUpperCase(key);
 	}
-	if (key == "FLT_MAX_COORD" || key == "MAX_MAP_MODELS" || key == "MAX_SURFACE_EXTENT" ||
-		key == "MAX_MAP_NODES" || key == "MAX_MAP_CLIPNODES" || key == "MAX_MAP_LEAVES" ||
-		key == "MAX_MAP_VISDATA" || key == "MAX_MAP_ENTS" || key == "MAX_MAP_SURFEDGES" ||
-		key == "MAX_MAP_EDGES" || key == "MAX_MAP_TEXTURES" || key == "MAX_MAP_LIGHTDATA" ||
-		key == "MAX_TEXTURE_DIMENSION" || key == "MAX_TEXTURE_SIZE" || key == "MAX_MAP_BOUNDARY" ||
-		key == "TEXTURE_STEP") {
+	if (key == "g_limits.fltMaxCoord" || key == "g_limits.maxMapModels" || key == "g_limits.maxSurfaceExtent" ||
+		key == "g_limits.maxMapNodes" || key == "g_limits.maxMapClipnodes" || key == "g_limits.maxMapLeaves" ||
+		key == "g_limits.maxMapVisdata" || key == "g_limits.maxMapEnts" || key == "g_limits.maxMapSurfedges" ||
+		key == "g_limits.maxMapEdges" || key == "g_limits.maxMapTextures" || key == "g_limits.maxMapLightdata" ||
+		key == "g_limits.maxTextureDimension" || key == "g_limits.maxTextureSize" || key == "g_limits.maxMapBoundary" ||
+		key == "g_limits.textureStep") {
 		return "LIMITS";
 	}
 	if (key == "optimizer_cond_ents" || key == "optimizer_no_hulls_ents" || key == "optimizer_no_collision_ents" ||

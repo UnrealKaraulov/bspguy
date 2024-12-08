@@ -9,7 +9,7 @@
 // max pixels in a single lightmap
 #define MAX_LUXELS 1600
 
-#define MAX_SINGLEMAP ((MAX_SURFACE_EXTENT+1)*(MAX_SURFACE_EXTENT+1))
+#define MAX_SINGLEMAP ((g_limits.maxSurfaceExtent+1)*(g_limits.maxSurfaceExtent+1))
 // sky or slime or null, no lightmap or 256 subdivision
 
 #define TEX_SPECIAL				1U << ( 0 )	// sky or slime, no lightmap or 256 subdivision

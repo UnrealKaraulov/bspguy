@@ -636,11 +636,11 @@ void BspRenderer::loadLightmaps()
 {
 	std::vector<LightmapNode*> atlases;
 	std::vector<Texture*> atlasTextures;
-	atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
-	atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE,
-		new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
+	atlases.push_back(new LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
+	atlasTextures.push_back(new Texture(MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE,
+		new unsigned char[MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
-	memset(atlasTextures[atlasTextures.size() - 1]->get_data(), 255, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
+	memset(atlasTextures[atlasTextures.size() - 1]->get_data(), 255, MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 	numRenderLightmapInfos = map->faceCount;
 	if (lightmaps)
@@ -684,7 +684,7 @@ void BspRenderer::loadLightmaps()
 			map->GetFaceLightmapSize(i, size);
 			map->GetFaceExtents(i, imins, imaxs);
 
-			float texture_step = map->CalcFaceTextureStep(i) * 1.0f;
+			float textureStep = map->CalcFaceTextureStep(i) * 1.0f;
 
 			LightmapInfo& info = lightmaps[i];
 			info.w = size[0];
@@ -693,8 +693,8 @@ void BspRenderer::loadLightmaps()
 			info.midTexV = (float)(size[1]) / 2.0f;
 
 			// TODO: float mins/maxs not needed?
-			info.midPolyU = (imins[0] + imaxs[0]) * texture_step / 2.0f;
-			info.midPolyV = (imins[1] + imaxs[1]) * texture_step / 2.0f;
+			info.midPolyU = (imins[0] + imaxs[0]) * textureStep / 2.0f;
+			info.midPolyV = (imins[1] + imaxs[1]) * textureStep / 2.0f;
 
 			for (int s = 0; s < MAX_LIGHTMAPS; s++)
 			{
@@ -719,15 +719,15 @@ void BspRenderer::loadLightmaps()
 				// TODO: Try fitting in earlier atlases before using the latest one
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 				{
-					atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
-					atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, new unsigned char[LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
+					atlases.push_back(new LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
+					atlasTextures.push_back(new Texture(MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE, new unsigned char[MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
 					atlasId++;
-					memset(atlasTextures[atlasId]->get_data(), 255, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
+					memset(atlasTextures[atlasId]->get_data(), 255, MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 					{
-						print_log(get_localized_string(LANG_0275), info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
+						print_log(get_localized_string(LANG_0275), info.w, info.h, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE);
 						continue;
 					}
 				}
@@ -746,7 +746,7 @@ void BspRenderer::loadLightmaps()
 					for (int x = 0; x < info.w; x++)
 					{
 						int src = y * info.w + x;
-						int dst = (info.y[s] + y) * LIGHTMAP_ATLAS_SIZE + info.x[s] + x;
+						int dst = (info.y[s] + y) * MAX_LIGHTMAP_ATLAS_SIZE + info.x[s] + x;
 						if (face.nLightmapOffset < 0 || texinfo.nFlags & TEX_SPECIAL || offset + src * (int)sizeof(COLOR3) >= map->lightDataLength)
 						{
 							// missing lightmap default white
@@ -773,7 +773,7 @@ void BspRenderer::loadLightmaps()
 	}
 
 	numLightmapAtlases = (int)(atlasTextures.size());
-	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
+	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE);
 	print_log(get_localized_string(LANG_0276), lightmapCount, atlases.size());
 	lightmapsGenerated = true;
 }
@@ -988,7 +988,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		BSPMIPTEX* tex = NULL;
 
 
-		float texture_step = map->CalcFaceTextureStep(i) * 1.0f;
+		float textureStep = map->CalcFaceTextureStep(i) * 1.0f;
 
 
 		int texWidth, texHeight;
@@ -1027,8 +1027,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 
 		if (lmap)
 		{
-			lw = (float)lmap->w / (float)LIGHTMAP_ATLAS_SIZE;
-			lh = (float)lmap->h / (float)LIGHTMAP_ATLAS_SIZE;
+			lw = (float)lmap->w / (float)MAX_LIGHTMAP_ATLAS_SIZE;
+			lh = (float)lmap->h / (float)MAX_LIGHTMAP_ATLAS_SIZE;
 		}
 
 		bool isSpecial = texinfo.nFlags & TEX_SPECIAL;
@@ -1143,13 +1143,13 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 			// lightmap texture coords
 			if (hasLighting && lmap)
 			{
-				float fLightMapU = lmap->midTexU + (fU - lmap->midPolyU) / texture_step;
-				float fLightMapV = lmap->midTexV + (fV - lmap->midPolyV) / texture_step;
+				float fLightMapU = lmap->midTexU + (fU - lmap->midPolyU) / textureStep;
+				float fLightMapV = lmap->midTexV + (fV - lmap->midPolyV) / textureStep;
 
 				float uu = (fLightMapU / (float)lmap->w) * lw;
 				float vv = (fLightMapV / (float)lmap->h) * lh;
 
-				float pixelStep = 1.0f / (float)LIGHTMAP_ATLAS_SIZE;
+				float pixelStep = 1.0f / (float)MAX_LIGHTMAP_ATLAS_SIZE;
 
 				for (int s = 0; s < MAX_LIGHTMAPS; s++)
 				{
@@ -2899,9 +2899,9 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 		if (g_render_flags & RENDER_ENT_CLIPNODES)
 		{
-			size_t entCount = std::min(map->ents.size(), renderEnts.size());
+			int entCount = (int)std::min(map->ents.size(), renderEnts.size());
 
-			for (size_t i = 0; i < entCount; i++)
+			for (int i = 0; i < entCount; i++)
 			{
 				if (map->ents[i]->hide)
 					continue;

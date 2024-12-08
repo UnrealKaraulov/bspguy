@@ -104,8 +104,8 @@ void NavMeshGenerator::getOctreeBox(Bsp* map, vec3& min, vec3& max) {
 	vec3 mapMaxs;
 	map->get_bounding_box(mapMins, mapMaxs);
 
-	min = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-	max = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+	min = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
+	max = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 
 	while (isBoxContained(mapMins, mapMaxs, min * 0.5f, max * 0.5f)) {
 		max *= 0.5f;

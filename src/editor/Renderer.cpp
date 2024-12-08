@@ -29,7 +29,7 @@ std::vector<BspRenderer*> mapRenderers{};
 int current_fps = 0;
 int ortho_overview = 0;
 
-vec3 ortho_mins(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD), ortho_maxs(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+vec3 ortho_mins(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord), ortho_maxs(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 vec3 ortho_offset = {};
 float ortho_near = 1.0f;
 float ortho_far = 262144.0f;
@@ -198,7 +198,7 @@ Renderer::Renderer()
 
 	gui = new Gui(this);
 
-	loadSettings();
+	loadGuiSettings();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -409,7 +409,7 @@ void Renderer::updateWindowTitle(double _curTime)
 			}
 			else
 			{
-				glfwSetWindowTitle(window, fmt::format("bspguy [fps {:>4}] - {}", current_fps, std::string("bspguy - ") + smallPath).c_str());
+				glfwSetWindowTitle(window, fmt::format("bspguy [fps {:>4}] - {}", current_fps, g_limits.engineName + "-" + smallPath).c_str());
 			}
 		}
 	}
@@ -419,10 +419,10 @@ void Renderer::renderLoop()
 {
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_texture_size);
 
-	if (LIGHTMAP_ATLAS_SIZE > gl_max_texture_size)
+	if (MAX_LIGHTMAP_ATLAS_SIZE > gl_max_texture_size)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0904), gl_max_texture_size);
-		LIGHTMAP_ATLAS_SIZE = gl_max_texture_size;
+		MAX_LIGHTMAP_ATLAS_SIZE = gl_max_texture_size;
 	}
 
 	{
@@ -857,7 +857,7 @@ void Renderer::renderLoop()
 					}
 
 					if (g_render_flags & RENDER_MAP_BOUNDARY) {
-						drawBox(SelectedMap->ents[0]->origin * -1, MAX_MAP_BOUNDARY * 2, COLOR4(0, 255, 0, 64));
+						drawBox(SelectedMap->ents[0]->origin * -1, g_limits.maxMapBoundary * 2, COLOR4(0, 255, 0, 64));
 					}
 
 					if (hasCullbox) {
@@ -1385,7 +1385,7 @@ void Renderer::saveSettings()
 	g_settings.rotSpeed = rotationSpeed;
 }
 
-void Renderer::loadSettings()
+void Renderer::loadGuiSettings()
 {
 	gui->showDebugWidget = g_settings.debug_open;
 	gui->showTextureBrowser = g_settings.texbrowser_open;
@@ -2039,7 +2039,7 @@ void Renderer::cameraObjectHovering()
 		vec3 pickStart, pickDir;
 		getPickRay(pickStart, pickDir);
 		PickInfo vertPick = PickInfo();
-		vertPick.bestDist = FLT_MAX_COORD * 2.0f + 1.0f;
+		vertPick.bestDist = g_limits.fltMaxCoord * 2.0f + 1.0f;
 
 		Entity* ent = map->ents[entIdx[0]];
 		vec3 entOrigin = ent->origin;
@@ -2082,7 +2082,7 @@ void Renderer::cameraObjectHovering()
 		return;
 
 	PickInfo vertPick = PickInfo();
-	vertPick.bestDist = FLT_MAX_COORD * 2.0f + 1.0f;
+	vertPick.bestDist = g_limits.fltMaxCoord * 2.0f + 1.0f;
 
 	originHovered = false;
 
@@ -2111,7 +2111,7 @@ void Renderer::cameraObjectHovering()
 			vec3 pickStart, pickDir;
 			getPickRay(pickStart, pickDir);
 			PickInfo axisPick = PickInfo();
-			axisPick.bestDist = FLT_MAX_COORD * 2.0f + 1.0f;
+			axisPick.bestDist = g_limits.fltMaxCoord * 2.0f + 1.0f;
 
 			if (map->getBspRender())
 			{
@@ -2310,7 +2310,7 @@ void Renderer::pickObject()
 	Bsp* oldmap = map;
 
 	PickInfo tmpPickInfo = PickInfo();
-	tmpPickInfo.bestDist = FLT_MAX_COORD * 2.0f + 1.0f;
+	tmpPickInfo.bestDist = g_limits.fltMaxCoord * 2.0f + 1.0f;
 
 	map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tmpPickInfo, &map);
 
@@ -3135,7 +3135,7 @@ void Renderer::drawBox2D(vec2 center, float width, COLOR4 color) {
 
 void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 {
-	vec3 ori = plane.vNormal * plane.fDist;
+	vec3 ori = offset + plane.vNormal * plane.fDist;
 	vec3 crossDir = std::fabs(plane.vNormal.z) > 0.9f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
 	vec3 right = crossProduct(plane.vNormal, crossDir);
 	vec3 up = crossProduct(right, plane.vNormal);
@@ -3175,7 +3175,7 @@ void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activeP
 	{
 		if (node.iChildren[i] >= 0)
 		{
-			drawClipnodes(map, node.iChildren[i], currentPlane, activePlane);
+			drawClipnodes(map, node.iChildren[i], currentPlane, activePlane, offset);
 		}
 	}
 }
@@ -3194,7 +3194,7 @@ void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane
 	{
 		if (node.iChildren[i] >= 0)
 		{
-			drawNodes(map, node.iChildren[i], currentPlane, activePlane);
+			drawNodes(map, node.iChildren[i], currentPlane, activePlane, offset);
 		}
 	}
 }
@@ -3254,8 +3254,8 @@ void Renderer::updateDragAxes()
 	{
 		if (ent && modelIdx >= 0)
 		{
-			entMin = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-			entMax = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+			entMin = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+			entMax = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
 			map->get_model_vertex_bounds(modelIdx, entMin, entMax);
 
@@ -3276,8 +3276,8 @@ void Renderer::updateDragAxes()
 			{
 				if (modelIdx >= 0)
 				{
-					/*entMin = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-					entMax = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+					/*entMin = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+					entMax = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
 					if (modelVerts.size())
 					{
@@ -3315,8 +3315,8 @@ void Renderer::updateDragAxes()
 		if (transformTarget == TRANSFORM_VERTEX)
 		{
 			vec3 entOrigin = ent ? ent->origin : vec3();
-			vec3 min(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-			vec3 max(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+			vec3 min(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+			vec3 max(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 			int selectTotal = 0;
 			for (size_t i = 0; i < modelVerts.size(); i++)
 			{
@@ -3926,8 +3926,8 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 {
 	bool scaleFromOrigin = std::fabs(fromDir.x) < EPSILON && std::fabs(fromDir.y) < EPSILON && std::fabs(fromDir.z) < EPSILON;
 
-	vec3 minDist(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	vec3 maxDist(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+	vec3 minDist(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+	vec3 maxDist(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
 	for (const auto& vert : modelVerts)
 	{
@@ -3992,8 +3992,8 @@ void Renderer::scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3&
 
 	if (textureLock)
 	{
-		minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-		maxDist = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+		minDist = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+		maxDist = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
 		for (const auto& faceVert : modelFaceVerts)
 		{
@@ -4283,7 +4283,7 @@ bool Renderer::splitModelFace()
 		{
 			Face& solidFace = newSolid.faces[i];
 			BSPFACE32* bestMatch = NULL;
-			float bestdot = -FLT_MAX_COORD;
+			float bestdot = -g_limits.fltMaxCoord;
 			for (int k = 0; k < oldModel.nFaces; k++)
 			{
 				BSPFACE32& BSPFACE32 = map->faces[oldModel.iFirstFace + k];
@@ -4338,8 +4338,8 @@ void Renderer::scaleSelectedVerts(Bsp* map, int modelIdx, float x, float y, floa
 	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 	vec3 fromOrigin = activeAxes.origin;
 
-	vec3 min(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	vec3 max(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+	vec3 min(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+	vec3 max(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 	int selectTotal = 0;
 	for (const auto& vert : modelVerts)
 	{

@@ -341,9 +341,9 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 
 	maxDims += gap;
 
-	float maxMapsPerRow = (FLT_MAX_COORD * 2.0f) / maxDims.x;
-	float maxMapsPerCol = (FLT_MAX_COORD * 2.0f) / maxDims.y;
-	float maxMapsPerLayer = (FLT_MAX_COORD * 2.0f) / maxDims.z;
+	float maxMapsPerRow = (g_limits.fltMaxCoord * 2.0f) / maxDims.x;
+	float maxMapsPerCol = (g_limits.fltMaxCoord * 2.0f) / maxDims.y;
+	float maxMapsPerLayer = (g_limits.fltMaxCoord * 2.0f) / maxDims.z;
 
 	float idealMapsPerAxis = (float)floor(pow(maps.size(), 1.0f / 3.0f));
 
@@ -1985,7 +1985,7 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 	// create a single full-bright lightmap to use for all faces, if one map has lighting but the other doesn't
 	if (thisColorCount == 0 && otherColorCount != 0)
 	{
-		thisColorCount = MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT;
+		thisColorCount = g_limits.maxSurfaceExtent * g_limits.maxSurfaceExtent;
 		totalColorCount += thisColorCount;
 		int sz = thisColorCount * sizeof(COLOR3);
 		mapA.lumps[LUMP_LIGHTING] = new unsigned char[sz];
@@ -2005,7 +2005,7 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 	}
 	else if (thisColorCount != 0 && otherColorCount == 0)
 	{
-		otherColorCount = MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT;
+		otherColorCount = g_limits.maxSurfaceExtent * g_limits.maxSurfaceExtent;
 		totalColorCount += otherColorCount;
 		otherRad = new COLOR3[otherColorCount];
 		freemem = true;

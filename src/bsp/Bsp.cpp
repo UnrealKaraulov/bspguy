@@ -1085,12 +1085,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 	target.nMins += offset;
 	target.nMaxs += offset;
-	if (std::fabs(target.nMins.x) > FLT_MAX_COORD ||
-		std::fabs(target.nMins.y) > FLT_MAX_COORD ||
-		std::fabs(target.nMins.z) > FLT_MAX_COORD ||
-		std::fabs(target.nMaxs.x) > FLT_MAX_COORD ||
-		std::fabs(target.nMaxs.y) > FLT_MAX_COORD ||
-		std::fabs(target.nMaxs.z) > FLT_MAX_COORD)
+	if (std::fabs(target.nMins.x) > g_limits.fltMaxCoord ||
+		std::fabs(target.nMins.y) > g_limits.fltMaxCoord ||
+		std::fabs(target.nMins.z) > g_limits.fltMaxCoord ||
+		std::fabs(target.nMaxs.x) > g_limits.fltMaxCoord ||
+		std::fabs(target.nMaxs.y) > g_limits.fltMaxCoord ||
+		std::fabs(target.nMaxs.z) > g_limits.fltMaxCoord)
 	{
 		print_log(get_localized_string(LANG_0049));
 	}
@@ -1107,12 +1107,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 		BSPNODE32& node = nodes[i];
 
-		if (std::fabs((float)node.nMins[0] + offset.x) > FLT_MAX_COORD ||
-			std::fabs((float)node.nMaxs[0] + offset.x) > FLT_MAX_COORD ||
-			std::fabs((float)node.nMins[1] + offset.y) > FLT_MAX_COORD ||
-			std::fabs((float)node.nMaxs[1] + offset.y) > FLT_MAX_COORD ||
-			std::fabs((float)node.nMins[2] + offset.z) > FLT_MAX_COORD ||
-			std::fabs((float)node.nMaxs[2] + offset.z) > FLT_MAX_COORD)
+		if (std::fabs((float)node.nMins[0] + offset.x) > g_limits.fltMaxCoord ||
+			std::fabs((float)node.nMaxs[0] + offset.x) > g_limits.fltMaxCoord ||
+			std::fabs((float)node.nMins[1] + offset.y) > g_limits.fltMaxCoord ||
+			std::fabs((float)node.nMaxs[1] + offset.y) > g_limits.fltMaxCoord ||
+			std::fabs((float)node.nMins[2] + offset.z) > g_limits.fltMaxCoord ||
+			std::fabs((float)node.nMaxs[2] + offset.z) > g_limits.fltMaxCoord)
 		{
 			print_log(get_localized_string(LANG_0050));
 		}
@@ -1133,12 +1133,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 		BSPLEAF32& leaf = leaves[i];
 
-		if (std::fabs((float)leaf.nMins[0] + offset.x) > FLT_MAX_COORD ||
-			std::fabs((float)leaf.nMaxs[0] + offset.x) > FLT_MAX_COORD ||
-			std::fabs((float)leaf.nMins[1] + offset.y) > FLT_MAX_COORD ||
-			std::fabs((float)leaf.nMaxs[1] + offset.y) > FLT_MAX_COORD ||
-			std::fabs((float)leaf.nMins[2] + offset.z) > FLT_MAX_COORD ||
-			std::fabs((float)leaf.nMaxs[2] + offset.z) > FLT_MAX_COORD)
+		if (std::fabs((float)leaf.nMins[0] + offset.x) > g_limits.fltMaxCoord ||
+			std::fabs((float)leaf.nMaxs[0] + offset.x) > g_limits.fltMaxCoord ||
+			std::fabs((float)leaf.nMins[1] + offset.y) > g_limits.fltMaxCoord ||
+			std::fabs((float)leaf.nMaxs[1] + offset.y) > g_limits.fltMaxCoord ||
+			std::fabs((float)leaf.nMins[2] + offset.z) > g_limits.fltMaxCoord ||
+			std::fabs((float)leaf.nMaxs[2] + offset.z) > g_limits.fltMaxCoord)
 		{
 			print_log(get_localized_string(LANG_0051));
 		}
@@ -1161,9 +1161,9 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 		vert += offset;
 
-		if (std::fabs(vert.x) > FLT_MAX_COORD ||
-			std::fabs(vert.y) > FLT_MAX_COORD ||
-			std::fabs(vert.z) > FLT_MAX_COORD)
+		if (std::fabs(vert.x) > g_limits.fltMaxCoord ||
+			std::fabs(vert.y) > g_limits.fltMaxCoord ||
+			std::fabs(vert.z) > g_limits.fltMaxCoord)
 		{
 			print_log(get_localized_string(LANG_0052));
 		}
@@ -1179,8 +1179,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 		BSPPLANE& plane = planes[i];
 		vec3 newPlaneOri = offset + (plane.vNormal * plane.fDist);
 
-		if (std::fabs(newPlaneOri.x) > FLT_MAX_COORD || std::fabs(newPlaneOri.y) > FLT_MAX_COORD ||
-			std::fabs(newPlaneOri.z) > FLT_MAX_COORD)
+		if (std::fabs(newPlaneOri.x) > g_limits.fltMaxCoord || std::fabs(newPlaneOri.y) > g_limits.fltMaxCoord ||
+			std::fabs(newPlaneOri.z) > g_limits.fltMaxCoord)
 		{
 			print_log(get_localized_string(LANG_0053));
 		}
@@ -2768,7 +2768,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 void Bsp::delete_oob_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder, int oobFlags,
 	bool* oobHistory, bool isFirstPass, int& removedNodes) {
 	BSPNODE32& node = nodes[iNode];
-	float oob_coord = MAX_MAP_BOUNDARY;
+	float oob_coord = g_limits.maxMapBoundary;
 
 	if (node.iPlane < 0) {
 		return;
@@ -2839,7 +2839,7 @@ void Bsp::delete_oob_nodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& 
 void Bsp::delete_oob_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLANE>& clipOrder, int oobFlags,
 	bool* oobHistory, bool isFirstPass, int& removedNodes) {
 	BSPCLIPNODE32& node = clipnodes[iNode];
-	float oob_coord = MAX_MAP_BOUNDARY;
+	float oob_coord = g_limits.maxMapBoundary;
 
 	if (node.iPlane < 0) {
 		return;
@@ -2920,7 +2920,7 @@ void Bsp::delete_oob_clipnodes(int iNode, int* parentBranch, std::vector<BSPPLAN
 }
 
 void Bsp::delete_oob_data(int clipFlags) {
-	float oob_coord = MAX_MAP_BOUNDARY;
+	float oob_coord = g_limits.maxMapBoundary;
 	BSPMODEL& worldmodel = models[0];
 
 	// remove OOB nodes and clipnodes
@@ -4260,7 +4260,7 @@ void Bsp::downscale_invalid_textures() {
 			continue;
 		}
 
-		if ((unsigned int)tex.nWidth * tex.nHeight > MAX_TEXTURE_SIZE) {
+		if ((unsigned int)tex.nWidth * tex.nHeight > g_limits.maxTextureSize) {
 
 			int oldWidth = tex.nWidth;
 			int oldHeight = tex.nHeight;
@@ -4277,7 +4277,7 @@ void Bsp::downscale_invalid_textures() {
 					continue;
 				}
 
-				if ((unsigned int)newWidth * newHeight <= MAX_TEXTURE_SIZE) {
+				if ((unsigned int)newWidth * newHeight <= g_limits.maxTextureSize) {
 					break;
 				}
 			}
@@ -6057,11 +6057,11 @@ bool Bsp::isValid()
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0180));
 	}
-	if (leafCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES))
+	if (leafCount > (is_bsp2 ? INT_MAX : (int)g_limits.maxMapLeaves))
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0181));
 	}
-	if (modelCount > (int)MAX_MAP_MODELS)
+	if (modelCount > (int)g_limits.maxMapModels)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0182));
 	}
@@ -6069,7 +6069,7 @@ bool Bsp::isValid()
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1037));
 	}
-	if (nodeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES))
+	if (nodeCount > (is_bsp2 ? INT_MAX : (int)g_limits.maxMapNodes))
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0183));
 	}
@@ -6081,7 +6081,7 @@ bool Bsp::isValid()
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0185));
 	}
-	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES))
+	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : g_limits.maxMapClipnodes))
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0186));
 	}
@@ -6089,46 +6089,46 @@ bool Bsp::isValid()
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0187));
 	}
-	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES))
+	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)g_limits.maxMapSurfedges))
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0188));
 	}
-	if (edgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_EDGES))
+	if (edgeCount > (is_bsp2 ? INT_MAX : (int)g_limits.maxMapEdges))
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0189));
 	}
-	if (textureCount > (int)MAX_MAP_TEXTURES)
+	if (textureCount > (int)g_limits.maxMapTextures)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0190));
 	}
-	if (lightDataLength > (int)MAX_MAP_LIGHTDATA)
+	if (lightDataLength > (int)g_limits.maxMapLightdata)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0191));
 	}
-	if (visDataLength > (int)MAX_MAP_VISDATA)
+	if (visDataLength > (int)g_limits.maxMapVisdata)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0192));
 	}
-	if (ents.size() > MAX_MAP_ENTS)
+	if (ents.size() > g_limits.maxMapEnts)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, "Overflowed entities !!!\n");
 	}
 
-	return modelCount <= (int)MAX_MAP_MODELS
+	return modelCount <= (int)g_limits.maxMapModels
 		&& planeCount <= (is_bsp2 ? INT_MAX : MAX_MAP_PLANES)
 		&& vertCount <= MAX_MAP_VERTS
-		&& nodeCount <= (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES)
+		&& nodeCount <= (is_bsp2 ? INT_MAX : (int)g_limits.maxMapNodes)
 		&& texinfoCount <= (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS)
 		&& faceCount <= (is_bsp2 ? INT_MAX : MAX_MAP_FACES)
-		&& clipnodeCount <= (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES)
-		&& leafCount <= (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES)
+		&& clipnodeCount <= (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : g_limits.maxMapClipnodes)
+		&& leafCount <= (is_bsp2 ? INT_MAX : (int)g_limits.maxMapLeaves)
 		&& marksurfCount <= (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS)
-		&& surfedgeCount <= (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES)
-		&& edgeCount <= (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES)
-		&& textureCount <= (int)MAX_MAP_TEXTURES
-		&& lightDataLength <= (int)MAX_MAP_LIGHTDATA
-		&& visDataLength <= (int)MAX_MAP_VISDATA
-		&& ents.size() <= MAX_MAP_ENTS;
+		&& surfedgeCount <= (is_bsp2 ? INT_MAX : (int)g_limits.maxMapSurfedges)
+		&& edgeCount <= (is_bsp2 ? INT_MAX : (int)g_limits.maxMapSurfedges)
+		&& textureCount <= (int)g_limits.maxMapTextures
+		&& lightDataLength <= (int)g_limits.maxMapLightdata
+		&& visDataLength <= (int)g_limits.maxMapVisdata
+		&& ents.size() <= g_limits.maxMapEnts;
 }
 
 bool Bsp::validate()
@@ -6420,7 +6420,7 @@ bool Bsp::validate()
 					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0136), texlen, tex->szName[0] != '\0' ? tex->szName : "UNKNOWN_NAME", texOffset, dataOffset);
 				}
 			}
-			else if ((unsigned int)tex->nWidth * tex->nHeight > MAX_TEXTURE_SIZE) {
+			else if ((unsigned int)tex->nWidth * tex->nHeight > g_limits.maxTextureSize) {
 				print_log("Texture '{}' too large ({}x{})\n", tex->szName, tex->nWidth, tex->nHeight);
 			}
 		}
@@ -6436,12 +6436,12 @@ bool Bsp::validate()
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0180));
 	}
-	if (leafCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES))
+	if (leafCount > (is_bsp2 ? INT_MAX : (int)g_limits.maxMapLeaves))
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0181));
 	}
-	if (modelCount > (int)MAX_MAP_MODELS)
+	if (modelCount > (int)g_limits.maxMapModels)
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0182));
@@ -6451,7 +6451,7 @@ bool Bsp::validate()
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1037));
 	}
-	if (nodeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES))
+	if (nodeCount > (is_bsp2 ? INT_MAX : (int)g_limits.maxMapNodes))
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0183));
@@ -6466,7 +6466,7 @@ bool Bsp::validate()
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0185));
 	}
-	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES))
+	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : g_limits.maxMapClipnodes))
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0186));
@@ -6476,32 +6476,32 @@ bool Bsp::validate()
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0187));
 	}
-	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES))
+	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)g_limits.maxMapSurfedges))
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0188));
 	}
-	if (edgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_EDGES))
+	if (edgeCount > (is_bsp2 ? INT_MAX : (int)g_limits.maxMapEdges))
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0189));
 	}
-	if (textureCount > (int)MAX_MAP_TEXTURES)
+	if (textureCount > (int)g_limits.maxMapTextures)
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0190));
 	}
-	if (lightDataLength > (int)MAX_MAP_LIGHTDATA)
+	if (lightDataLength > (int)g_limits.maxMapLightdata)
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0191));
 	}
-	if (visDataLength > (int)MAX_MAP_VISDATA)
+	if (visDataLength > (int)g_limits.maxMapVisdata)
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0192));
 	}
-	if (ents.size() > MAX_MAP_ENTS)
+	if (ents.size() > g_limits.maxMapEnts)
 	{
 		isValid = false;
 		print_log(PRINT_RED | PRINT_INTENSITY, "Overflowed entities !!!\n");
@@ -6547,11 +6547,11 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 	{
 		g_sort_mode = sortMode;
 
-		if (planeCount >= (is_bsp2 ? INT_MAX : MAX_MAP_PLANES) || texinfoCount >= (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS) || leafCount >= (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES) ||
-			modelCount >= (int)MAX_MAP_MODELS || nodeCount >= (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES) || vertCount >= MAX_MAP_VERTS ||
-			faceCount >= (is_bsp2 ? INT_MAX : MAX_MAP_FACES) || clipnodeCount >= (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES) || marksurfCount >= (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS) ||
-			surfedgeCount >= (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES) || (is_bsp2 ? INT_MAX : edgeCount >= (int)MAX_MAP_EDGES) || textureCount >= (int)MAX_MAP_TEXTURES ||
-			lightDataLength >= (int)MAX_MAP_LIGHTDATA || visDataLength >= (int)MAX_MAP_VISDATA)
+		if (planeCount >= (is_bsp2 ? INT_MAX : MAX_MAP_PLANES) || texinfoCount >= (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS) || leafCount >= (is_bsp2 ? INT_MAX : (int)g_limits.maxMapLeaves) ||
+			modelCount >= (int)g_limits.maxMapModels || nodeCount >= (is_bsp2 ? INT_MAX : (int)g_limits.maxMapNodes) || vertCount >= MAX_MAP_VERTS ||
+			faceCount >= (is_bsp2 ? INT_MAX : MAX_MAP_FACES) || clipnodeCount >= (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : g_limits.maxMapClipnodes) || marksurfCount >= (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS) ||
+			surfedgeCount >= (is_bsp2 ? INT_MAX : (int)g_limits.maxMapSurfedges) || (is_bsp2 ? INT_MAX : edgeCount >= (int)g_limits.maxMapEdges) || textureCount >= (int)g_limits.maxMapTextures ||
+			lightDataLength >= (int)g_limits.maxMapLightdata || visDataLength >= (int)g_limits.maxMapVisdata)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0137));
 			return;
@@ -6595,21 +6595,21 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 	{
 		print_log(get_localized_string(LANG_0139));
 		print_log("------------  -------------------  --------\n");
-		print_stat("models", modelCount, MAX_MAP_MODELS, false);
+		print_stat("models", modelCount, g_limits.maxMapModels, false);
 		print_stat("planes", planeCount, (is_bsp2 ? INT_MAX : MAX_MAP_PLANES), false);
 		print_stat("vertexes", vertCount, MAX_MAP_VERTS, false);
-		print_stat("nodes", nodeCount, is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES, false);
+		print_stat("nodes", nodeCount, is_bsp2 ? INT_MAX : (int)g_limits.maxMapNodes, false);
 		print_stat("texinfos", texinfoCount, (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS), false);
 		print_stat("faces", faceCount, (is_bsp2 ? INT_MAX : MAX_MAP_FACES), false);
-		print_stat("clipnodes", clipnodeCount, (is_32bit_clipnodes ? INT_MAX : MAX_MAP_CLIPNODES), false);
-		print_stat("leaves", leafCount, (is_bsp2 ? INT_MAX : MAX_MAP_LEAVES), false);
+		print_stat("clipnodes", clipnodeCount, (is_32bit_clipnodes ? INT_MAX : g_limits.maxMapClipnodes), false);
+		print_stat("leaves", leafCount, (is_bsp2 ? INT_MAX : g_limits.maxMapLeaves), false);
 		print_stat("marksurfaces", marksurfCount, (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS), false);
-		print_stat("surfedges", surfedgeCount, (is_bsp2 ? INT_MAX : MAX_MAP_SURFEDGES), false);
-		print_stat("edges", edgeCount, (is_bsp2 ? INT_MAX : MAX_MAP_EDGES), false);
-		print_stat("textures", textureCount, MAX_MAP_TEXTURES, false);
-		print_stat("lightdata", lightDataLength, MAX_MAP_LIGHTDATA, true);
-		print_stat("visdata", visDataLength, MAX_MAP_VISDATA, true);
-		print_stat("entities", entCount, MAX_MAP_ENTS, false);
+		print_stat("surfedges", surfedgeCount, (is_bsp2 ? INT_MAX : g_limits.maxMapSurfedges), false);
+		print_stat("edges", edgeCount, (is_bsp2 ? INT_MAX : g_limits.maxMapEdges), false);
+		print_stat("textures", textureCount, g_limits.maxMapTextures, false);
+		print_stat("lightdata", lightDataLength, g_limits.maxMapLightdata, true);
+		print_stat("visdata", visDataLength, g_limits.maxMapVisdata, true);
+		print_stat("entities", entCount, g_limits.maxMapEnts, false);
 	}
 }
 
@@ -7709,7 +7709,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		return -1;
 	}
 
-	if (width > (int)MAX_TEXTURE_DIMENSION || height > (int)MAX_TEXTURE_DIMENSION)
+	if (width > (int)g_limits.maxTextureDimension || height > (int)g_limits.maxTextureDimension)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0159));
 		return -1;
@@ -8031,7 +8031,7 @@ int Bsp::add_texture(WADTEX* tex, bool embedded)
 		return -1;
 	}
 
-	if (tex->nWidth > (int)MAX_TEXTURE_DIMENSION || tex->nHeight > (int)MAX_TEXTURE_DIMENSION)
+	if (tex->nWidth > (int)g_limits.maxTextureDimension || tex->nHeight > (int)g_limits.maxTextureDimension)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1031));
 		return -1;
@@ -8276,8 +8276,8 @@ void Bsp::create_inside_box(const vec3& min, const vec3& max, BSPMODEL* targetMo
 		{
 			BSPTEXTUREINFO* texinfo = get_unique_texinfo(f);
 
-			size[0] *= TEXTURE_STEP;
-			size[1] *= TEXTURE_STEP;
+			size[0] *= g_limits.textureStep;
+			size[1] *= g_limits.textureStep;
 
 			if (texinfo->iMiptex >= 0)
 			{
@@ -8556,8 +8556,8 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 	targetModel->iFirstFace = startFace;
 	targetModel->nFaces = 6;
 
-	targetModel->nMaxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-	targetModel->nMins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+	targetModel->nMaxs = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
+	targetModel->nMins = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 	for (int i = 0; i < 8; i++)
 	{
 		vec3 v = verts[startVert + i];
@@ -8741,8 +8741,8 @@ void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 	targetModel->iFirstFace = startFace;
 	targetModel->nFaces = (int)solid.faces.size();
 
-	targetModel->nMaxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
-	targetModel->nMins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
+	targetModel->nMaxs = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
+	targetModel->nMins = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 	for (size_t i = 0; i < solid.hullVerts.size(); i++)
 	{
 		vec3 v = verts[startVert + i];
@@ -8945,8 +8945,8 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 		return;
 	}
 
-	vec3 vertMin(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	vec3 vertMax(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+	vec3 vertMin(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+	vec3 vertMax(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
 	create_clipnode_box(vertMin, vertMax, &model, hullIdx, true);
 }
@@ -9958,7 +9958,7 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 	}
 
 	unsigned char* visData = new unsigned char[newRowSize];
-	unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES / 8];
+	unsigned char* compressed = new unsigned char[g_limits.maxMapLeaves / 8];
 
 	// ADD ONE LEAF TO ALL VISIBILITY BYTES
 	for (int i = 1; i < leafCount; i++)
@@ -9968,8 +9968,8 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 			memset(visData, 0, newRowSize);
 			DecompressVis(visdata + leaves[i].nVisOffset, visData, rowSize, leafCount - 1, visDataLength - leaves[i].nVisOffset);
 
-			memset(compressed, 0, MAX_MAP_LEAVES / 8);
-			int size = CompressVis(visData, newRowSize, compressed, MAX_MAP_LEAVES / 8);
+			memset(compressed, 0, g_limits.maxMapLeaves / 8);
+			int size = CompressVis(visData, newRowSize, compressed, g_limits.maxMapLeaves / 8);
 
 			leaves[i].nVisOffset = visDataLength;
 
@@ -10062,8 +10062,8 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 		BSPPLANE& plane = planes[i];
 		vec3 newPlaneOri = ent_offset + (plane.vNormal * plane.fDist);
 
-		if (std::fabs(newPlaneOri.x) > FLT_MAX_COORD || std::fabs(newPlaneOri.y) > FLT_MAX_COORD ||
-			std::fabs(newPlaneOri.z) > FLT_MAX_COORD)
+		if (std::fabs(newPlaneOri.x) > g_limits.fltMaxCoord || std::fabs(newPlaneOri.y) > g_limits.fltMaxCoord ||
+			std::fabs(newPlaneOri.z) > g_limits.fltMaxCoord)
 		{
 			print_log(get_localized_string(LANG_0053));
 		}
@@ -10302,8 +10302,8 @@ int Bsp::merge_two_models_ents(int src_ent, int dst_ent, int& tryanotherway)
 		BSPPLANE& plane = planes[i];
 		vec3 newPlaneOri = ent_offset + (plane.vNormal * plane.fDist);
 
-		if (std::fabs(newPlaneOri.x) > FLT_MAX_COORD || std::fabs(newPlaneOri.y) > FLT_MAX_COORD ||
-			std::fabs(newPlaneOri.z) > FLT_MAX_COORD)
+		if (std::fabs(newPlaneOri.x) > g_limits.fltMaxCoord || std::fabs(newPlaneOri.y) > g_limits.fltMaxCoord ||
+			std::fabs(newPlaneOri.z) > g_limits.fltMaxCoord)
 		{
 			print_log(get_localized_string(LANG_0053));
 		}
@@ -12226,8 +12226,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 		std::map<Entity*, std::deque<MapBrush>> jack_mesh_data{};
 
-		vec3 w_mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-		vec3 w_maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+		vec3 w_mins = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+		vec3 w_maxs = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
 
 		if (!selected)
@@ -12288,8 +12288,8 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		jack_file.write(COLOR4(255, 255, 255, 255));
 		jack_file.write<unsigned char>(1);
 		// GONDON MINS/MAX
-		jack_file.write(vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD));
-		jack_file.write(vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD));
+		jack_file.write(vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord));
+		jack_file.write(vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord));
 		// CAMERAS
 		jack_file.write<int>(0);
 		// PATH OBJECTS
@@ -14271,8 +14271,8 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 	memset(testlightdata + lightDataLength, 125, tmpLightSize);
 	replace_lump(LUMP_LIGHTING, testlightdata, lightDataLength + tmpLightSize);
 
-	vec3 mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	vec3 maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
+	vec3 mins = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+	vec3 maxs = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 
 	for (auto& mesh : meshes)
 	{
@@ -14391,7 +14391,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 
 				int newWidth = mesh_texture->width;
 				int newHeight = mesh_texture->height;
-				getTrueTexSize(newWidth, newHeight, MAX_TEXTURE_DIMENSION);
+				getTrueTexSize(newWidth, newHeight, g_limits.maxTextureDimension);
 
 				COLOR3* tmpData = new COLOR3[mesh_texture->width * mesh_texture->height];
 				if (mesh_texture->format == GL_RGBA)
@@ -15011,11 +15011,11 @@ bool Bsp::GetFaceExtents(int facenum, int mins_out[2], int maxs_out[2])
 	{
 		int tmpTextureStep = CalcFaceTextureStep(facenum);
 
-		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * tmpTextureStep > (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT))
+		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * tmpTextureStep > (g_limits.maxSurfaceExtent * g_limits.maxSurfaceExtent))
 		{
 			if (retval)
 			{
-				print_log(get_localized_string("BAD_SURFACE_EXT"), facenum, (int)((maxs_out[i] - mins_out[i]) * tmpTextureStep), (MAX_SURFACE_EXTENT * MAX_SURFACE_EXTENT));
+				print_log(get_localized_string("BAD_SURFACE_EXT"), facenum, (int)((maxs_out[i] - mins_out[i]) * tmpTextureStep), (g_limits.maxSurfaceExtent * g_limits.maxSurfaceExtent));
 				print_log("TRACE: Mins {} maxs {}\n", mins_out[i], maxs_out[i]);
 			}
 			retval = false;
@@ -15124,5 +15124,5 @@ int Bsp::CalcFaceTextureStep(int facenum)
 		}
 	}
 
-	return TEXTURE_STEP;
+	return g_limits.textureStep;
 }

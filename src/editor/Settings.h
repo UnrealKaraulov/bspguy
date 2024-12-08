@@ -76,8 +76,9 @@ struct Settings
 	std::string workingdir;
 	std::string lastdir;
 
-	std::string selected_lang;
+	std::string engineLimits;
 
+	std::string selected_lang;
 	std::vector<std::string> languages;
 
 	std::vector<PaletteData> palettes;
@@ -134,7 +135,6 @@ struct Settings
 	void saveSettings(std::string path);
 	void fillLanguages(const std::string& folderPath);
 	void fillPalettes(const std::string& folderPath);
-
 };
 
 extern Settings g_settings;

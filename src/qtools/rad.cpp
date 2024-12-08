@@ -200,8 +200,8 @@ float CalculatePointVecsProduct(const volatile float* point, const volatile floa
 //
 //	for (i = 0; i < 2; i++)
 //	{
-//		mins_out[i] = (int)floor(mins[i] / TEXTURE_STEP);
-//		maxs_out[i] = (int)ceil(maxs[i] / TEXTURE_STEP);
+//		mins_out[i] = (int)floor(mins[i] / g_limits.textureStep);
+//		maxs_out[i] = (int)ceil(maxs[i] / g_limits.textureStep);
 //	}
 //	return true;
 //}

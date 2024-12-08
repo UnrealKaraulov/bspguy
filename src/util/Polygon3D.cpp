@@ -174,8 +174,8 @@ std::vector<std::vector<vec3>> Polygon3D::cut(Line2D cutLine) {
 
 	// extend to "infinity" if we know the cutting edge is touching the poly somewhere
 	// a split should happen along that edge across the entire polygon
-	cutLine.start = cutLine.start - cutLine.dir * FLT_MAX_COORD;
-	cutLine.end = cutLine.end + cutLine.dir * FLT_MAX_COORD;
+	cutLine.start = cutLine.start - cutLine.dir * g_limits.fltMaxCoord;
+	cutLine.end = cutLine.end + cutLine.dir * g_limits.fltMaxCoord;
 
 	for (size_t i = 0; i < localVerts.size(); i++) {
 		vec2 e1 = localVerts[i];

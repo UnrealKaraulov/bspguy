@@ -40,7 +40,7 @@ Winding::Winding(const BSPPLANE& plane, float epsilon)
 	org = vright = vup = vec3();
 	// find the major axis               
 
-	max = -FLT_MAX_COORD;
+	max = -g_limits.fltMaxCoord;
 	int x = -1;
 	for (i = 0; i < 3; i++)
 	{

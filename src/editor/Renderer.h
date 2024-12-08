@@ -162,7 +162,7 @@ public:
 	void reloadMaps();
 	void clearMaps();
 	void saveSettings();
-	void loadSettings();
+	void loadGuiSettings();
 
 	int gl_errors = 0;
 

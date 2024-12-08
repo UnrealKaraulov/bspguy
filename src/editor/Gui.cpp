@@ -837,8 +837,8 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	bspModel->write(bspModel->bsp_path);
 	removeFile(bspModel->bsp_path);
 
-	unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
-	memset(tmpCompressed, 0xFF, MAX_MAP_LEAVES / 8);
+	unsigned char* tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
+	memset(tmpCompressed, 0xFF, g_limits.maxMapLeaves / 8);
 
 	/* if something bad */
 	bspModel->models[newModelIdx].nVisLeafs = bspModel->leafCount - 1;
@@ -849,10 +849,10 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 		if (bspModel->leaves[i].nVisOffset < 0)
 		{
 			bspModel->leaves[i].nVisOffset = bspModel->visDataLength;
-			unsigned char* newVisLump = new unsigned char[bspModel->visDataLength + MAX_MAP_LEAVES / 8];
+			unsigned char* newVisLump = new unsigned char[bspModel->visDataLength + g_limits.maxMapLeaves / 8];
 			memcpy(newVisLump, bspModel->visdata, bspModel->visDataLength);
-			memcpy(newVisLump + bspModel->visDataLength, tmpCompressed, MAX_MAP_LEAVES / 8);
-			bspModel->replace_lump(LUMP_VISIBILITY, newVisLump, bspModel->visDataLength + MAX_MAP_LEAVES / 8);
+			memcpy(newVisLump + bspModel->visDataLength, tmpCompressed, g_limits.maxMapLeaves / 8);
+			bspModel->replace_lump(LUMP_VISIBILITY, newVisLump, bspModel->visDataLength + g_limits.maxMapLeaves / 8);
 		}
 	}
 	// recompile vis lump, remove unused textures
@@ -982,9 +982,9 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	//	{
 	//		tmpMap->leaves[i].nVisOffset = 0;
 	//	}
-	//	unsigned char* newVisLump = new unsigned char[MAX_MAP_LEAVES / 8];
-	//	memset(newVisLump, 255, MAX_MAP_LEAVES / 8);
-	//	tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, MAX_MAP_LEAVES / 8);
+	//	unsigned char* newVisLump = new unsigned char[g_limits.maxMapLeaves / 8];
+	//	memset(newVisLump, 255, g_limits.maxMapLeaves / 8);
+	//	tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, g_limits.maxMapLeaves / 8);
 	//}
 
 	//print_log(get_localized_string(LANG_0327));
@@ -995,7 +995,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	//{
 	//	int rowSize = (((tmpMap->leafCount - 1) + 63) & ~63) >> 3;
 	//	unsigned char* tmpVisData = new unsigned char[rowSize];
-	//	unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
+	//	unsigned char* tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
 
 	//	for (int i = 1; i < tmpMap->leafCount; i++)
 	//	{
@@ -1008,7 +1008,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	//			else
 	//				memset(tmpVisData, 255, rowSize);
 
-	//			int size = CompressVis(tmpVisData, rowSize, tmpCompressed, MAX_MAP_LEAVES / 8);
+	//			int size = CompressVis(tmpVisData, rowSize, tmpCompressed, g_limits.maxMapLeaves / 8);
 
 	//			tmpMap->leaves[i].nVisOffset = tmpMap->visDataLength;
 
@@ -5828,7 +5828,7 @@ void Gui::drawMenuBar()
 					map->update_lump_pointers();
 
 					vec3 org_mins = vec3(-256.0f, -256.0f, -256.0f), org_maxs = vec3(256.0f, 256.0f, 256.0f);
-					float scale_val = ((FLT_MAX_COORD - 2.0f) / 256.0f);
+					float scale_val = ((g_limits.fltMaxCoord - 2.0f) / 256.0f);
 
 					//map->get_bounding_box(mins, maxs);
 					int newModelIdx = ImportModel(map, "./primitives/skybox.bsp", true);
@@ -5842,7 +5842,7 @@ void Gui::drawMenuBar()
 					{
 						if (ent->isWorldSpawn())
 						{
-							ent->setOrAddKeyvalue("MaxRange", std::to_string((int)(FLT_MAX_COORD * 2.0f + 1.0f)));
+							ent->setOrAddKeyvalue("MaxRange", std::to_string((int)(g_limits.fltMaxCoord * 2.0f + 1.0f)));
 						}
 					}
 
@@ -6743,9 +6743,9 @@ void Gui::drawDebugWidget()
 			static int model1 = 0;
 			static int model2 = 0;
 
-			ImGui::DragInt(get_localized_string(LANG_0647).c_str(), &model1, 1, 0, MAX_MAP_MODELS);
+			ImGui::DragInt(get_localized_string(LANG_0647).c_str(), &model1, 1, 0, g_limits.maxMapModels);
 
-			ImGui::DragInt(get_localized_string(LANG_0648).c_str(), &model2, 1, 0, MAX_MAP_MODELS);
+			ImGui::DragInt(get_localized_string(LANG_0648).c_str(), &model2, 1, 0, g_limits.maxMapModels);
 
 			if (ImGui::Button(get_localized_string(LANG_0649).c_str()))
 			{
@@ -6966,9 +6966,9 @@ void Gui::drawOverviewWidget()
 		ImGui::PopItemWidth();
 
 		ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.7f);
-		ImGui::DragFloat3("Mins", &ortho_mins.x, 1.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f");
-		ImGui::DragFloat3("Maxs", &ortho_maxs.x, 1.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f");
-		ImGui::DragFloat3("Offset", &ortho_offset.x, 1.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f");
+		ImGui::DragFloat3("Mins", &ortho_mins.x, 1.0f, -g_limits.fltMaxCoord, g_limits.fltMaxCoord, "%.0f");
+		ImGui::DragFloat3("Maxs", &ortho_maxs.x, 1.0f, -g_limits.fltMaxCoord, g_limits.fltMaxCoord, "%.0f");
+		ImGui::DragFloat3("Offset", &ortho_offset.x, 1.0f, -g_limits.fltMaxCoord, g_limits.fltMaxCoord, "%.0f");
 		ImGui::PopItemWidth();
 
 		ImGui::SeparatorText("Fill Overview Mins/Maxs");
@@ -7382,10 +7382,10 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 				value = keyvalue.defaultValue;
 			}
 
-			if (niceName.size() >= MAX_KEY_LEN)
-				niceName = niceName.substr(0, MAX_KEY_LEN - 1);
-			if (value.size() >= MAX_VAL_LEN)
-				value = value.substr(0, MAX_VAL_LEN - 1);
+			if (niceName.size() >= g_limits.maxKeyLen)
+				niceName = niceName.substr(0, g_limits.maxKeyLen - 1);
+			if (value.size() >= g_limits.maxValLen)
+				value = value.substr(0, g_limits.maxValLen - 1);
 
 			inputData[i].key = key;
 			inputData[i].defaultValue = keyvalue.defaultValue;
@@ -8480,19 +8480,19 @@ void Gui::drawTransformWidget()
 			ImGui::Text(get_localized_string(LANG_0689).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			ImGui::DragFloat(get_localized_string(LANG_1107).c_str(), &new_x, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "Y: %.2f");
+			ImGui::DragFloat(get_localized_string(LANG_1107).c_str(), &new_x, dragPow, -g_limits.fltMaxCoord, g_limits.fltMaxCoord, "Y: %.2f");
 
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 0;
 			ImGui::SameLine();
 
-			ImGui::DragFloat(get_localized_string(LANG_1108).c_str(), &new_y, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "X: %.2f");
+			ImGui::DragFloat(get_localized_string(LANG_1108).c_str(), &new_y, dragPow, -g_limits.fltMaxCoord, g_limits.fltMaxCoord, "X: %.2f");
 
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 1;
 			ImGui::SameLine();
 
-			ImGui::DragFloat(get_localized_string(LANG_1109).c_str(), &new_z, dragPow, -FLT_MAX_COORD, FLT_MAX_COORD, "Z: %.2f");
+			ImGui::DragFloat(get_localized_string(LANG_1109).c_str(), &new_z, dragPow, -g_limits.fltMaxCoord, g_limits.fltMaxCoord, "Z: %.2f");
 
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 2;
@@ -8993,7 +8993,9 @@ void Gui::drawSettings()
 	bool oldShowSettings = showSettingsWidget;
 	bool apply_settings_pressed = false;
 	static std::string langForSelect = g_settings.selected_lang;
-	static std::string palForSelect = g_settings.palette_name;
+	static std::string palForSelect = toUpperCase(g_settings.palette_name);
+	static std::string engForSelect = g_limits.engineName;
+	static BSPLimits prevLimits = g_limits;
 
 	if (ImGui::Begin(fmt::format("{}###SETTING_WIDGET", get_localized_string(LANG_1114)).c_str(), &showSettingsWidget))
 	{
@@ -9582,46 +9584,89 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 4)
 		{
-			ImGui::SetNextItemWidth(pathWidth / 2);
-			static unsigned int vis_data_count = MAX_MAP_VISDATA / (1024 * 1024);
-			static unsigned int light_data_count = MAX_MAP_LIGHTDATA / (1024 * 1024);
+			if (ImGui::BeginCombo("##engines", engForSelect.c_str()))
+			{
+				for (const auto& s : limitsMap)
+				{
+					if (ImGui::Selectable(s.first.c_str(), s.first == engForSelect))
+					{
+						engForSelect = s.first;
 
-			ImGui::DragFloat(get_localized_string(LANG_0761).c_str(), &FLT_MAX_COORD, 64.f, 512.f, 2147483647.f, "%.0f");
+						try
+						{
+							g_limits = limitsMap[engForSelect];
+						}
+						catch (...)
+						{
+							engForSelect = g_limits.engineName;
+						}
+
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::Separator();
+
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0762).c_str(), (int*)&MAX_MAP_MODELS, 4, 128, 2147483647, "%u");
+			static unsigned int vis_data_count = g_limits.maxMapVisdata / (1024 * 1024);
+			static unsigned int light_data_count = g_limits.maxMapLightdata / (1024 * 1024);
+
+			ImGui::DragFloat(get_localized_string(LANG_0761).c_str(), &g_limits.fltMaxCoord, 64.f, 512.f, 2147483647.f, "%.0f");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX SURFACE EXTENTS", (int*)&MAX_SURFACE_EXTENT, 1, 4, 1024, "%i");
+			ImGui::DragInt(get_localized_string(LANG_0762).c_str(), (int*)&g_limits.maxMapModels, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0763).c_str(), (int*)&MAX_MAP_ENTS, 4, 128, 2147483647, "%u");
+			ImGui::DragInt("MAX SURFACE EXTENTS", (int*)&g_limits.maxSurfaceExtent, 1, 4, 1024, "%i");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0764).c_str(), (int*)&MAX_MAP_TEXTURES, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0765).c_str(), (int*)&g_limits.maxMapNodes, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0765).c_str(), (int*)&MAX_MAP_NODES, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0766).c_str(), (int*)&g_limits.maxMapClipnodes, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0766).c_str(), (int*)&MAX_MAP_CLIPNODES, 4, 128, 2147483647, "%u");
-			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0767).c_str(), (int*)&MAX_MAP_LEAVES, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0767).c_str(), (int*)&g_limits.maxMapLeaves, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			if (ImGui::DragInt(get_localized_string(LANG_0768).c_str(), (int*)&vis_data_count, 4, 128, 2147483647, get_localized_string(LANG_0769).c_str()))
 			{
-				MAX_MAP_VISDATA = vis_data_count * (1024 * 1024);
+				g_limits.maxMapVisdata = vis_data_count * (1024 * 1024);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0770).c_str(), (int*)&MAX_MAP_EDGES, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0763).c_str(), (int*)&g_limits.maxMapEnts, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0771).c_str(), (int*)&MAX_MAP_SURFEDGES, 4, 128, 2147483647, "%u");
+			ImGui::DragInt(get_localized_string(LANG_0771).c_str(), (int*)&g_limits.maxMapSurfedges, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt(get_localized_string(LANG_0770).c_str(), (int*)&g_limits.maxMapEdges, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt(get_localized_string(LANG_0764).c_str(), (int*)&g_limits.maxMapTextures, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
 			if (ImGui::DragInt(get_localized_string(LANG_0772).c_str(), (int*)&light_data_count, 4, 128, 2147483647, get_localized_string(LANG_0769).c_str()))
 			{
-				MAX_MAP_LIGHTDATA = light_data_count * (1024 * 1024);
+				g_limits.maxMapLightdata = light_data_count * (1024 * 1024);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			if (ImGui::DragInt(get_localized_string(LANG_0773).c_str(), (int*)&MAX_TEXTURE_DIMENSION, 4, 32, 1048576, "%u"))
+			if (ImGui::DragInt(get_localized_string(LANG_0773).c_str(), (int*)&g_limits.maxTextureDimension, 4, 32, 1048576, "%u"))
 			{
-				MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
+				g_limits.maxTextureSize = ((g_limits.maxTextureDimension * g_limits.maxTextureDimension * 2 * 3) / 2);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt(get_localized_string(LANG_0774).c_str(), (int*)&TEXTURE_STEP, 4, 4, 512, "%u");
+			ImGui::DragFloat("MAX_MAP_BOUNDARY", &g_limits.maxMapBoundary, 64.f, 512.f, 2147483647.f, "%.0f");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt(get_localized_string(LANG_0774).c_str(), (int*)&g_limits.textureStep, 4, 4, 512, "%u");
+
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			static std::string newEngine = "engine-name";
+			ImGui::InputText("", &newEngine);
+			ImGui::SameLine();
+			if (ImGui::Button("Add##NEW ENGINE"))
+			{
+				limitsMap[g_limits.engineName] = g_limits;
+				engForSelect = newEngine;
+				g_limits.engineName = newEngine;
+				limitsMap[newEngine] = g_limits;
+			}
+
+			if (prevLimits != g_limits)
+			{
+				prevLimits = g_limits;
+				limitsMap[g_limits.engineName] = g_limits;
+			}
 		}
 		else if (settingsTab == 5)
 		{
@@ -9639,7 +9684,7 @@ void Gui::drawSettings()
 					g_settings.fpslimit = 15;
 			}
 			ImGui::DragFloat(get_localized_string(LANG_0776).c_str(), &app->fov, 0.1f, 1.0f, 150.0f, get_localized_string(LANG_0777).c_str());
-			ImGui::DragFloat(get_localized_string(LANG_0778).c_str(), &app->zFar, 10.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f", ImGuiSliderFlags_Logarithmic);
+			ImGui::DragFloat(get_localized_string(LANG_0778).c_str(), &app->zFar, 10.0f, -g_limits.fltMaxCoord, g_limits.fltMaxCoord, "%.0f", ImGuiSliderFlags_Logarithmic);
 			ImGui::Separator();
 
 			bool renderTextures = g_render_flags & RENDER_TEXTURES;
@@ -10301,23 +10346,24 @@ void Gui::drawLimits()
 					if (!loadedStats)
 					{
 						stats.clear();
+
 						stats.emplace_back(calcStat("GL_TEXTURES", (unsigned int)g_all_Textures.size(), 0, false));
-						stats.emplace_back(calcStat("models", map->modelCount, MAX_MAP_MODELS, false));
-						stats.emplace_back(calcStat("planes", map->planeCount, MAX_MAP_PLANES, false));
+						stats.emplace_back(calcStat("models", map->modelCount, g_limits.maxMapModels, false));
+						stats.emplace_back(calcStat("planes", map->planeCount, map->is_bsp2 ? INT_MAX : MAX_MAP_PLANES, false));
 						stats.emplace_back(calcStat("vertexes", map->vertCount, MAX_MAP_VERTS, false));
-						stats.emplace_back(calcStat("nodes", map->nodeCount, MAX_MAP_NODES, false));
-						stats.emplace_back(calcStat("texinfos", map->texinfoCount, MAX_MAP_TEXINFOS, false));
-						stats.emplace_back(calcStat("faces", map->faceCount, MAX_MAP_FACES, false));
-						stats.emplace_back(calcStat("clipnodes", map->clipnodeCount, map->is_32bit_clipnodes ? INT_MAX : MAX_MAP_CLIPNODES, false));
-						stats.emplace_back(calcStat("leaves", map->leafCount, MAX_MAP_LEAVES, false));
-						stats.emplace_back(calcStat("marksurfaces", map->marksurfCount, MAX_MAP_MARKSURFS, false));
-						stats.emplace_back(calcStat("surfedges", map->surfedgeCount, MAX_MAP_SURFEDGES, false));
-						stats.emplace_back(calcStat("edges", map->edgeCount, MAX_MAP_EDGES, false));
-						stats.emplace_back(calcStat("textures", map->textureCount, MAX_MAP_TEXTURES, false));
+						stats.emplace_back(calcStat("nodes", map->nodeCount, map->is_bsp2 ? INT_MAX : (int)g_limits.maxMapNodes, false));
+						stats.emplace_back(calcStat("texinfos", map->texinfoCount, map->is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS, false));
+						stats.emplace_back(calcStat("faces", map->faceCount, map->is_bsp2 ? INT_MAX : MAX_MAP_FACES, false));
+						stats.emplace_back(calcStat("clipnodes", map->clipnodeCount, map->is_32bit_clipnodes ? INT_MAX : g_limits.maxMapClipnodes, false));
+						stats.emplace_back(calcStat("leaves", map->leafCount, map->is_bsp2 ? INT_MAX : g_limits.maxMapLeaves, false));
+						stats.emplace_back(calcStat("marksurfaces", map->marksurfCount, map->is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS, false));
+						stats.emplace_back(calcStat("surfedges", map->surfedgeCount, map->is_bsp2 ? INT_MAX : g_limits.maxMapSurfedges, false));
+						stats.emplace_back(calcStat("edges", map->edgeCount, map->is_bsp2 ? INT_MAX : g_limits.maxMapEdges, false));
+						stats.emplace_back(calcStat("textures", map->textureCount, g_limits.maxMapTextures, false));
 						stats.emplace_back(calcStat("texturedata", map->textureDataLength, INT_MAX, true));
-						stats.emplace_back(calcStat("lightdata", map->lightDataLength, MAX_MAP_LIGHTDATA, true));
-						stats.emplace_back(calcStat("visdata", map->visDataLength, MAX_MAP_VISDATA, true));
-						stats.emplace_back(calcStat("entities", (unsigned int)map->ents.size(), MAX_MAP_ENTS, false));
+						stats.emplace_back(calcStat("lightdata", map->lightDataLength, g_limits.maxMapLightdata, true));
+						stats.emplace_back(calcStat("visdata", map->visDataLength, g_limits.maxMapVisdata, true));
+						stats.emplace_back(calcStat("entities", (unsigned int)map->ents.size(), g_limits.maxMapEnts, false));
 						loadedStats = true;
 					}
 
@@ -13046,7 +13092,7 @@ void Gui::drawFaceEditorWidget()
 			if (ImGui::Button("Mark visible for all"))
 			{
 				unsigned char* tmpVisData = new unsigned char[rowSize];
-				unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
+				unsigned char* tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
 
 				// ADD ONE LEAF TO ALL VISIBILITY BYTES
 				for (int i = 1; i < map->leafCount; i++)
@@ -13059,8 +13105,8 @@ void Gui::drawFaceEditorWidget()
 						if (last_leaf > 0)
 							SETVISBIT(tmpVisData, last_leaf - 1);
 
-						memset(tmpCompressed, 0, MAX_MAP_LEAVES / 8);
-						int size = CompressVis(tmpVisData, rowSize, tmpCompressed, MAX_MAP_LEAVES / 8);
+						memset(tmpCompressed, 0, g_limits.maxMapLeaves / 8);
+						int size = CompressVis(tmpVisData, rowSize, tmpCompressed, g_limits.maxMapLeaves / 8);
 
 						map->leaves[i].nVisOffset = map->visDataLength;
 
@@ -13089,7 +13135,7 @@ void Gui::drawFaceEditorWidget()
 			if (ImGui::Button("Mark invisible for all"))
 			{
 				unsigned char* tmpVisData = new unsigned char[rowSize];
-				unsigned char* tmpCompressed = new unsigned char[MAX_MAP_LEAVES / 8];
+				unsigned char* tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
 
 				// ADD ONE LEAF TO ALL VISIBILITY BYTES
 				for (int i = 1; i < map->leafCount; i++)
@@ -13102,8 +13148,8 @@ void Gui::drawFaceEditorWidget()
 						if (last_leaf > 0)
 							CLEARVISBIT(tmpVisData, last_leaf - 1);
 
-						memset(tmpCompressed, 0, MAX_MAP_LEAVES / 8);
-						int size = CompressVis(tmpVisData, rowSize, tmpCompressed, MAX_MAP_LEAVES / 8);
+						memset(tmpCompressed, 0, g_limits.maxMapLeaves / 8);
+						int size = CompressVis(tmpVisData, rowSize, tmpCompressed, g_limits.maxMapLeaves / 8);
 
 						map->leaves[i].nVisOffset = map->visDataLength;
 
@@ -13368,9 +13414,9 @@ void Gui::drawFaceEditorWidget()
 				//	CLEARVISBIT(visData, unsel - 1);
 				//}
 
-				unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES * 8];
-				memset(compressed, 0, MAX_MAP_LEAVES / 8);
-				int size = CompressVis(visData, rowSize, compressed, MAX_MAP_LEAVES / 8);
+				unsigned char* compressed = new unsigned char[g_limits.maxMapLeaves * 8];
+				memset(compressed, 0, g_limits.maxMapLeaves / 8);
+				int size = CompressVis(visData, rowSize, compressed, g_limits.maxMapLeaves / 8);
 
 				map->leaves[last_leaf].nVisOffset = map->visDataLength;
 				unsigned char* newVisLump = new unsigned char[map->visDataLength + size];
@@ -13543,11 +13589,11 @@ void Gui::checkFaceErrors()
 	{
 		int size[2];
 		map->GetFaceLightmapSize((int)app->pickInfo.selectedFaces[i], size);
-		if ((size[0] > MAX_SURFACE_EXTENT) || (size[1] > MAX_SURFACE_EXTENT) || size[0] < 0 || size[1] < 0)
+		if ((size[0] > g_limits.maxSurfaceExtent) || (size[1] > g_limits.maxSurfaceExtent) || size[0] < 0 || size[1] < 0)
 		{
 			print_log(get_localized_string(LANG_0426), size[0], size[1]);
-			size[0] = std::min(size[0], MAX_SURFACE_EXTENT);
-			size[1] = std::min(size[1], MAX_SURFACE_EXTENT);
+			size[0] = std::min(size[0], g_limits.maxSurfaceExtent);
+			size[1] = std::min(size[1], g_limits.maxSurfaceExtent);
 			badSurfaceExtents = true;
 		}
 

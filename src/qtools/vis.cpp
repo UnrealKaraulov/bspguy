@@ -149,7 +149,7 @@ int shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 		// TODO: detect overflows here too
 		if (shift > 0)
 		{
-			unsigned char* temp = new unsigned char[MAX_MAP_LEAVES / 8];
+			unsigned char* temp = new unsigned char[g_limits.maxMapLeaves / 8];
 
 			int startByte = (offsetLeaf + bitShifts) / 8;
 			int moveSize = len - (startByte + byteShifts);
@@ -409,7 +409,7 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 	g_progress.clear();
 	g_progress = ProgressMeter();
 
-	unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES / 8];
+	unsigned char* compressed = new unsigned char[g_limits.maxMapLeaves / 8];
 
 	for (int i = 0; i < iterLeaves; i++)
 	{
@@ -434,12 +434,12 @@ int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* ou
 			continue;
 		}
 
-		memset(compressed, 0, MAX_MAP_LEAVES / 8);
+		memset(compressed, 0, g_limits.maxMapLeaves / 8);
 
 		src = uncompressed + i * g_bitbytes;
 
 		// Compress all leafs into global compression buffer
-		x = CompressVis(src, g_bitbytes, compressed, MAX_MAP_LEAVES / 8);
+		x = CompressVis(src, g_bitbytes, compressed, g_limits.maxMapLeaves / 8);
 
 		dest = vismap_p;
 		vismap_p += x;
