@@ -19,7 +19,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>screenshot D:\SteamLibrary\steamapps\common\Half-Life\cstrike\maps\de_dust2.bsp -count 5 -w 1200 -h 800</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>D:\SteamLibrary\steamapps\common\Half-Life\cstrike\maps\de_dust2.bsp</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerWorkingDirectory>.\..\vs-project\Release\</LocalDebuggerWorkingDirectory>
   </PropertyGroup>

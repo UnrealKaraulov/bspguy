@@ -430,3 +430,4 @@ void R_ConcatTransforms(float in1[][4], float in2[][4], float out[][4]);
 void VectorScale(const vec3& v, float scale, vec3& out);
 float VectorNormalize(vec3& v);
 float fullnormalizeangle(float angle);
+void VectorAngles(const vec3& forward, vec3& angles);

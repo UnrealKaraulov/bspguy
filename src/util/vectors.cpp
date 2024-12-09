@@ -951,3 +951,32 @@ float clamp(float val, float min, float max)
 	}
 	return val;
 }
+
+void VectorAngles(const vec3 & forward, vec3 & angles)
+{
+	float	tmp, yaw, pitch;
+
+	if (forward[1] == 0 && forward[0] == 0)
+	{
+		yaw = 0;
+		if (forward[2] > 0)
+			pitch = 90;
+		else
+			pitch = 270;
+	}
+	else
+	{
+		yaw = (atan2(forward[1], forward[0]) * 180 / Q_PI);
+		if (yaw < 0)
+			yaw += 360;
+
+		tmp = sqrt(forward[0] * forward[0] + forward[1] * forward[1]);
+		pitch = (atan2(forward[2], tmp) * 180 / Q_PI);
+		if (pitch < 0)
+			pitch += 360;
+	}
+
+	angles[0] = pitch;
+	angles[1] = yaw;
+	angles[2] = 0;
+}

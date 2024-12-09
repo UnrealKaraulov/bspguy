@@ -129,6 +129,18 @@ void Texture::upload(int _type)
         break;
     }
 
+    if (make_screenshot)
+    {
+        if (GLEW_EXT_texture_filter_anisotropic)
+        {
+            GLfloat maxAniso = 0.0f;
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, static_cast<GLint>(maxAniso));
+        }
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+
     if (texName[0] == '{' && format == GL_RGB)
     {
         format = GL_RGBA;
@@ -151,7 +163,7 @@ void Texture::upload(int _type)
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-
+    //glGenerateMipmap(GL_TEXTURE_2D);
     if (g_settings.verboseLogs)
         print_log(get_localized_string(LANG_0971), texName, width, height);
 

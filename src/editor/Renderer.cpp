@@ -552,25 +552,25 @@ void Renderer::renderLoop()
 			GLuint fbo = NULL, texture, rbo;
 
 
-			if (ortho_overview)
-			{
-				if (ortho_save_tga || ortho_save_bmp)
-				{
-					setupFakeOrthoView(ortho_tga_w, ortho_tga_h, ortho_mins, ortho_maxs);
-				}
-				else
-				{
-					setupFakeOrthoView(0, 0, ortho_mins, ortho_maxs);
-				}
-			}
-			else
-			{
-				setupView();
-			}
-
-
 			if (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading))
 			{
+				glEnable(GL_MULTISAMPLE);
+				glEnable(GL_LINE_SMOOTH);
+				glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+				glEnable(GL_POLYGON_SMOOTH);
+				glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+				glEnable(GL_POINT_SMOOTH);
+				glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+
+				glHint(GL_FRAGMENT_SHADER_DERIVATIVE_HINT, GL_NICEST);
+				
+
+				//for (auto& tex : g_all_Textures)
+				//{
+				//	tex->upload(tex->type);
+				//}
+
+
 				glGenFramebuffers(1, &fbo);
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
@@ -598,9 +598,12 @@ void Renderer::renderLoop()
 					Bsp* map = SelectedMap;
 					if (map)
 					{
-						int tries = make_screenshot_target;
+						int tries = make_screenshot_target + 1;
 						BspRenderer* rend = SelectedMap->getBspRender();
 						Entity* foundEnt = NULL;
+
+						bool foundCam = false;
+
 						for (auto ent : map->ents)
 						{
 							if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
@@ -608,6 +611,7 @@ void Renderer::renderLoop()
 								tries--;
 								if (tries <= 0)
 								{
+									foundCam = true;
 									foundEnt = ent;
 									break;
 								}
@@ -662,33 +666,65 @@ void Renderer::renderLoop()
 						if (foundEnt)
 						{
 							rend->renderCameraOrigin = foundEnt->origin;
-							rend->renderCameraOrigin.z += 32;
-							for (unsigned int i = 0; i < foundEnt->keyOrder.size(); i++)
+							if (!foundCam)
 							{
-								if (foundEnt->keyOrder[i] == "angles")
+								rend->renderCameraOrigin.z += 32;
+								for (unsigned int i = 0; i < foundEnt->keyOrder.size(); i++)
 								{
-									rend->renderCameraAngles = parseVector(foundEnt->keyvalues["angles"]);
-								}
-								if (foundEnt->keyOrder[i] == "angle")
-								{
-									float y = str_to_float(foundEnt->keyvalues["angle"]);
+									if (foundEnt->keyOrder[i] == "angles")
+									{
+										rend->renderCameraAngles = parseVector(foundEnt->keyvalues["angles"]);
+									}
+									if (foundEnt->keyOrder[i] == "angle")
+									{
+										float y = str_to_float(foundEnt->keyvalues["angle"]);
 
-									if (y >= 0.0f)
-									{
-										rend->renderCameraAngles.y = y;
+										if (y >= 0.0f)
+										{
+											rend->renderCameraAngles.y = y;
+										}
+										else if (y == -1.0f)
+										{
+											rend->renderCameraAngles.x = -90.0f;
+											rend->renderCameraAngles.y = 0.0f;
+											rend->renderCameraAngles.z = 0.0f;
+										}
+										else if (y <= -2.0f)
+										{
+											rend->renderCameraAngles.x = 90.0f;
+											rend->renderCameraAngles.y = 0.0f;
+											rend->renderCameraAngles.z = 0.0f;
+										}
 									}
-									else if (y == -1.0f)
+								}
+							}
+							else
+							{
+								auto targets = foundEnt->getTargets();
+								Entity* targetEnt = NULL;
+								for (auto ent2 : map->ents)
+								{
+									if (targetEnt)
+										break;
+									if (ent2->hasKey("targetname"))
 									{
-										rend->renderCameraAngles.x = -90.0f;
-										rend->renderCameraAngles.y = 0.0f;
-										rend->renderCameraAngles.z = 0.0f;
+										for (auto target : targets)
+										{
+											if (ent2->keyvalues["targetname"] == target)
+											{
+												targetEnt = ent2;
+												break;
+											}
+										}
 									}
-									else if (y <= -2.0f)
-									{
-										rend->renderCameraAngles.x = 90.0f;
-										rend->renderCameraAngles.y = 0.0f;
-										rend->renderCameraAngles.z = 0.0f;
-									}
+								}
+
+								if (targetEnt)
+								{
+									vec3 newAngle = targetEnt->origin - foundEnt->origin;
+									VectorAngles(newAngle, newAngle);
+									newAngle[0] = -newAngle[0];
+									rend->renderCameraAngles = newAngle;
 								}
 							}
 
@@ -704,6 +740,32 @@ void Renderer::renderLoop()
 					}
 				}
 			}
+
+
+
+			if (ortho_overview)
+			{
+				if (ortho_save_tga || ortho_save_bmp)
+				{
+					setupFakeOrthoView(ortho_tga_w, ortho_tga_h, ortho_mins, ortho_maxs);
+				}
+				else
+				{
+					setupFakeOrthoView(0, 0, ortho_mins, ortho_maxs);
+				}
+			}
+			else
+			{
+				if (make_screenshot)
+				{
+					setupView(ortho_tga_w, ortho_tga_h);
+				}
+				else
+				{
+					setupView();
+				}
+			}
+
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1291,12 +1353,8 @@ void Renderer::renderLoop()
 
 				if (ortho_save_tga || (make_screenshot && !isLoading))
 				{
-					make_screenshot--;
-					make_screenshot_target++;
-
 					if (make_screenshot)
 					{
-
 						std::string screenPath = g_working_dir;
 
 
@@ -1316,6 +1374,10 @@ void Renderer::renderLoop()
 						stbi_write_tga((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga")).c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
 						print_log("Saved to {} file!\n", (g_working_dir + "overview.tga"));
 					}
+
+					make_screenshot--;
+					make_screenshot_target++;
+
 
 					if (make_screenshot <= 0)
 					{

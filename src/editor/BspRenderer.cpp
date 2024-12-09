@@ -65,14 +65,30 @@ BspRenderer::BspRenderer(Bsp* _map)
 	{
 		print_log(get_localized_string(LANG_0267));
 		Entity* foundEnt = NULL;
+		bool foundCam = false;
+
 		for (auto ent : map->ents)
 		{
-			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
+			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
 			{
+				foundCam = true;
 				foundEnt = ent;
 				break;
 			}
 		}
+
+		if (!foundEnt)
+		{
+			for (auto ent : map->ents)
+			{
+				if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
+				{
+					foundEnt = ent;
+					break;
+				}
+			}
+		}
+
 		if (!foundEnt)
 		{
 			for (auto ent : map->ents)
@@ -84,74 +100,31 @@ BspRenderer::BspRenderer(Bsp* _map)
 				}
 			}
 		}
+
 		if (!foundEnt)
 		{
 			for (auto ent : map->ents)
 			{
-				if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
-				{
-					foundEnt = ent;
-					break;
-				}
+				foundEnt = ent;
+				break;
 			}
 		}
-
 
 		if (foundEnt)
 		{
 			renderCameraOrigin = foundEnt->origin;
-			renderCameraOrigin.z += 32;
-			for (unsigned int i = 0; i < foundEnt->keyOrder.size(); i++)
+			if (!foundCam)
 			{
-				if (foundEnt->keyOrder[i] == "angles")
+				renderCameraOrigin.z += 32;
+				for (unsigned int i = 0; i < foundEnt->keyOrder.size(); i++)
 				{
-					renderCameraAngles = parseVector(foundEnt->keyvalues["angles"]);
-				}
-				if (foundEnt->keyOrder[i] == "angle")
-				{
-					float y = str_to_float(foundEnt->keyvalues["angle"]);
-
-					if (y >= 0.0f)
+					if (foundEnt->keyOrder[i] == "angles")
 					{
-						renderCameraAngles.y = y;
+						renderCameraAngles = parseVector(foundEnt->keyvalues["angles"]);
 					}
-					else if (y == -1.0f)
+					if (foundEnt->keyOrder[i] == "angle")
 					{
-						renderCameraAngles.x = -90.0f;
-						renderCameraAngles.y = 0.0f;
-						renderCameraAngles.z = 0.0f;
-					}
-					else if (y <= -2.0f)
-					{
-						renderCameraAngles.x = 90.0f;
-						renderCameraAngles.y = 0.0f;
-						renderCameraAngles.z = 0.0f;
-					}
-				}
-			}
-
-			renderCameraAngles = renderCameraAngles.flip();
-			renderCameraAngles.z = renderCameraAngles.z + 90.0f;
-			renderCameraAngles = renderCameraAngles.normalize_angles();
-			renderCameraAngles.y = 0.0f;
-		}
-
-
-		/*for (auto ent : map->ents)
-		{
-			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
-			{
-				renderCameraOrigin = ent->origin;
-
-				/*for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
-				{
-					if (ent->keyOrder[i] == "angles")
-					{
-						renderCameraAngles = parseVector(ent->keyvalues["angles"]);
-					}
-					if (ent->keyOrder[i] == "angle")
-					{
-						float y = str_to_float(ent->keyvalues["angle"]);
+						float y = str_to_float(foundEnt->keyvalues["angle"]);
 
 						if (y >= 0.0f)
 						{
@@ -171,38 +144,42 @@ BspRenderer::BspRenderer(Bsp* _map)
 						}
 					}
 				}
-
-				break;
 			}
-*/
-
-
-//if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
-//{
-//	this->renderCameraOrigin = ent->origin;
-	/*
-	auto targets = ent->getTargets();
-	bool found = false;
-	for (auto ent2 : map->ents)
-	{
-		if (found)
-			break;
-		if (ent2->hasKey("targetname"))
-		{
-			for (auto target : targets)
+			else
 			{
-				if (ent2->keyvalues["targetname"] == target)
+				auto targets = foundEnt->getTargets();
+				Entity* targetEnt = NULL;
+				for (auto ent2 : map->ents)
 				{
-					found = true;
-					break;
+					if (targetEnt)
+						break;
+					if (ent2->hasKey("targetname"))
+					{
+						for (auto target : targets)
+						{
+							if (ent2->keyvalues["targetname"] == target)
+							{
+								targetEnt = ent2;
+								break;
+							}
+						}
+					}
+				}
+
+				if (targetEnt)
+				{
+					vec3 newAngle = targetEnt->origin - foundEnt->origin;
+					VectorAngles(newAngle, newAngle);
+					newAngle[0] = -newAngle[0];
+					renderCameraAngles = newAngle;
 				}
 			}
+
+			renderCameraAngles = renderCameraAngles.flip();
+			renderCameraAngles.z = renderCameraAngles.z + 90.0f;
+			renderCameraAngles = renderCameraAngles.normalize_angles();
+			renderCameraAngles.y = 0.0f;
 		}
-	}
-	*/
-	/*		break;
-		}
-}*/
 	}
 
 
