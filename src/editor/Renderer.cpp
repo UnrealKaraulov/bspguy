@@ -1382,7 +1382,7 @@ void Renderer::saveGuiSettings()
 	g_settings.limits_open = gui->showLimitsWidget;
 	g_settings.entreport_open = gui->showEntityReport;
 	g_settings.settings_tab = gui->settingsTab;
-	g_settings.verboseLogs = g_verbose;
+	g_settings.verboseLogs = g_settings.verboseLogs;
 	g_settings.zfar = zFar;
 	g_settings.fov = fov;
 	g_settings.render_flags = g_render_flags;
@@ -1405,7 +1405,7 @@ void Renderer::loadGuiSettings()
 	gui->settingsTab = g_settings.settings_tab;
 	gui->openSavedTabs = true;
 
-	g_verbose = g_settings.verboseLogs;
+	g_settings.verboseLogs = g_settings.verboseLogs;
 	zFar = g_settings.zfar;
 	fov = g_settings.fov;
 
@@ -2770,7 +2770,7 @@ Bsp* Renderer::getSelectedMap()
 	// TEMP DEBUG FOR CRASH DETECT
 	if (SelectedMap != NULL && !mapRenderers.size())
 	{
-		if (g_verbose)
+		if (g_settings.verboseLogs)
 		{
 			print_log(PRINT_RED, "CRITICAL ERROR! BAD MAP POINTER!!\n");
 		}

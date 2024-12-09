@@ -1289,7 +1289,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		std::vector<cVert> cleanupWireframe = removeDuplicateWireframeLines(wireframeVerts_full);
 
 #ifdef _DEBUG
-		if (g_verbose)
+		if (g_settings.verboseLogs)
 			print_log("Optimize wireframe {} model: {} to {} lines.\n", modelIdx, wireframeVerts_full.size(), cleanupWireframe.size());
 #endif
 		cVert* resultWireFrame = new cVert[cleanupWireframe.size()];
@@ -3770,7 +3770,7 @@ void BspRenderer::saveEntityState(int entIdx)
 
 void BspRenderer::saveLumpState()
 {
-	if (g_verbose)
+	if (g_settings.verboseLogs)
 		print_log("SAVE LUMP STATES TO BACKUP\n");
 	map->update_ent_lump();
 	for (int i = 0; i < HEADER_LUMPS; i++)
@@ -3786,7 +3786,7 @@ void BspRenderer::pushEntityUndoStateDelay(const std::string& actionDesc, int en
 
 void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 {
-	if (g_verbose)
+	if (g_settings.verboseLogs)
 		print_log("SAVE ENT STATES TO BACKUP\n");
 	if ((size_t)entIdx >= map->ents.size())
 	{
@@ -3839,7 +3839,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 
 void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int targets)
 {
-	if (g_verbose)
+	if (g_settings.verboseLogs)
 		print_log("SAVE MODEL STATES TO BACKUP\n");
 	if (!map)
 	{
@@ -3879,7 +3879,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 			{
 				anyDifference = true;
 				differences[i] = true;
-				if (g_verbose)
+				if (g_settings.verboseLogs)
 				{
 					print_log(get_localized_string(LANG_0291), g_lump_names[i], undoLumpState.lumps[i].size(), newLumps.lumps[i].size());
 				}

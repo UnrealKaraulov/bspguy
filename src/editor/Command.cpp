@@ -1051,12 +1051,12 @@ void OptimizeMapCommand::execute()
 		map->delete_hull(2, 1);
 	}
 
-	bool oldVerbose = g_verbose;
-	g_verbose = true;
+	bool oldVerbose = g_settings.verboseLogs;
+	g_settings.verboseLogs = true;
 	auto removestats = map->delete_unused_hulls(true);
 
 	removestats.print_delete_stats(1);
-	g_verbose = oldVerbose;
+	g_settings.verboseLogs = oldVerbose;
 
 	refresh();
 }

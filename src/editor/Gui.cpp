@@ -9193,7 +9193,7 @@ void Gui::drawSettings()
 #ifndef NDEBUG
 			ImGui::BeginDisabled();
 #endif
-			ImGui::Checkbox(get_localized_string(LANG_0722).c_str(), &g_verbose);
+			ImGui::Checkbox(get_localized_string(LANG_0722).c_str(), &g_settings.verboseLogs);
 #ifndef NDEBUG
 			ImGui::EndDisabled();
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)

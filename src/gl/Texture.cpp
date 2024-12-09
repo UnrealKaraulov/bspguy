@@ -62,7 +62,7 @@ Texture::~Texture()
     {
         g_all_Textures.erase(it);
     }
-    else if (g_verbose)
+    else if (g_settings.verboseLogs)
     {
         print_log(PRINT_RED, "MISSING TEX BUFF IN TOTAL TEXTURES BUFF!\n");
     }

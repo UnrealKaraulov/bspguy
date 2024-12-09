@@ -37,7 +37,6 @@ static const vec3  s_baseaxis[18] = {
 };
 
 extern bool DebugKeyPressed;
-extern bool g_verbose;
 extern ProgressMeter g_progress;
 
 std::vector<std::string> splitStringIgnoringQuotes(const std::string& s, const std::string& delimitter);

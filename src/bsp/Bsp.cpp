@@ -9487,7 +9487,7 @@ int Bsp::duplicate_model(int modelIdx)
 
 	if (newFaces.size())
 	{
-		/*if (g_verbose)
+		/*if (g_settings.verboseLogs)
 		{
 			print_log("Origin model faces: {}\n", models[modelIdx].nFaces);
 			print_log("Base light offset = {} copy faces {}\n", lightDataLength, newFaces.size());

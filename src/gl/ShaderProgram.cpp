@@ -271,7 +271,7 @@ void ShaderProgram::bindAttributes(bool hideErrors)
 
         attribs[i].handle = glGetAttribLocation(ID, attribs[i].varName);
 
-        if ((!hideErrors || g_verbose) && attribs[i].handle == -1)
+        if ((!hideErrors || g_settings.verboseLogs) && attribs[i].handle == -1)
             print_log(get_localized_string(LANG_0975), attribs[i].varName);
     }
 

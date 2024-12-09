@@ -26,7 +26,6 @@
 
 std::string g_version_string = "NewBSPGuy v4.39";
 
-bool g_verbose = false;
 
 #ifdef WIN32
 #include <Windows.h>
@@ -76,7 +75,7 @@ int test()
 	STRUCTCOUNT removed;
 	memset(&removed, 0, sizeof(removed));
 
-	g_verbose = true;
+	g_settings.verboseLogs = true;
 	for (size_t i = 0; i < maps.size(); i++)
 	{
 		if (!maps[i]->bsp_valid)
@@ -1039,7 +1038,7 @@ int main(int argc, char* argv[])
 
 		if (g_cmdLine.hasOption("-v") || g_cmdLine.hasOption("-verbose"))
 		{
-			g_verbose = true;
+			g_settings.verboseLogs = true;
 		}
 
 		if constexpr (sizeof(vec4) != 16 ||

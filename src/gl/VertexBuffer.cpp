@@ -119,19 +119,19 @@ void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors
 
     if (start < 0 || start > numVerts || numVerts == 0)
     {
-        if (g_verbose)
+        if (g_settings.verboseLogs)
             print_log(get_localized_string(LANG_0976), start, numVerts);
         return;
     }
     else if (end > numVerts || end < 0)
     {
-        if (g_verbose)
+        if (g_settings.verboseLogs)
             print_log(get_localized_string(LANG_0977), end);
         return;
     }
     else if (end - start <= 0)
     {
-        if (g_verbose)
+        if (g_settings.verboseLogs)
             print_log(get_localized_string(LANG_0978), start, end);
         return;
     }
