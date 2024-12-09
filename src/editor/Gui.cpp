@@ -3023,7 +3023,7 @@ void Gui::drawMenuBar()
 
 				static bool merge_faces = true;
 				static bool use_one_back_vert = true;
-				static bool inside_box = true;
+				static bool inside_box = false;
 
 				if (ImGui::BeginMenu("ValveHammerEditor (.map) [WIP]", map && !map->is_mdl_model))
 				{
