@@ -271,12 +271,22 @@ void Settings::loadSettings()
 {
 	set_localize_lang("EN");
 	fillLanguages("./languages/");
+	loadDefaultSettings();
 
 	if (fileExists(g_settings_path))
 	{
 		try
 		{
 			settings_ini = new inih::INIReader(g_settings_path);
+			int errorLine = settings_ini->ParseError();
+			if (errorLine < 0)
+			{
+				throw std::exception("Error parse! Can't open file bspguy.ini!");
+			}
+			else if (errorLine > 0)
+			{
+				throw std::exception(("Error parse ini at line:" + std::to_string(errorLine)).c_str());
+			}
 		}
 		catch (std::runtime_error& runtime)
 		{
@@ -292,6 +302,15 @@ void Settings::loadSettings()
 		try
 		{
 			settings_ini = new inih::INIReader(g_settings_path);
+			int errorLine = settings_ini->ParseError();
+			if (errorLine < 0)
+			{
+				throw std::exception("Error parse! Can't open file bspguy.ini!");
+			}
+			else if (errorLine > 0)
+			{
+				throw std::exception(("Error parse ini at line:" + std::to_string(errorLine)).c_str());
+			}
 		}
 		catch (std::runtime_error& runtime)
 		{
@@ -332,7 +351,6 @@ void Settings::loadSettings()
 	g_settings.strip_wad_path = settings_ini->Get<int>("GENERAL", "strip_wad_path", 0) != 0;
 	g_settings.default_is_empty = settings_ini->Get<int>("GENERAL", "default_is_empty", 0) != 0;
 	g_settings.undoLevels = settings_ini->Get<int>("GENERAL", "undo_levels", 100);
-	g_settings.engineLimits = settings_ini->Get<std::string>("GENERAL", "engine", "SVEN");
 
 	g_settings.save_windows = settings_ini->Get<int>("WIDGETS", "save_windows", 1) != 0;
 	g_settings.debug_open = settings_ini->Get<int>("WIDGETS", "debug_open", 0) != 0 && g_settings.save_windows;
@@ -346,14 +364,16 @@ void Settings::loadSettings()
 	g_settings.settings_tab = settings_ini->Get<int>("WIDGETS", "settings_tab", 0);
 
 	g_settings.vsync = settings_ini->Get<int>("GRAPHICS", "vsync", 1) != 0;
-	g_settings.mark_unused_texinfos = settings_ini->Get<int>("GRAPHICS", "mark_unused_texinfos", 0) != 0;
-	g_settings.merge_verts = settings_ini->Get<int>("GRAPHICS", "merge_verts", 0) != 0;
-	g_settings.merge_edges = settings_ini->Get<int>("GRAPHICS", "merge_edges", 0) != 0;
 	g_settings.fov = settings_ini->Get<float>("GRAPHICS", "fov", 60.0f);
 	g_settings.zfar = settings_ini->Get<float>("GRAPHICS", "zfar", 1000.0f);
 	g_settings.render_flags = settings_ini->Get<int>("GRAPHICS", "renders_flags", 0);
 	g_settings.fontSize = settings_ini->Get<float>("GRAPHICS", "font_size", 22.0f);
 	g_settings.fpslimit = settings_ini->Get<int>("GRAPHICS", "fpslimit", 60);
+
+
+	g_settings.mark_unused_texinfos = settings_ini->Get<int>("OPTIMIZE", "mark_unused_texinfos", 0) != 0;
+	g_settings.merge_verts = settings_ini->Get<int>("OPTIMIZE", "merge_verts", 0) != 0;
+	g_settings.merge_edges = settings_ini->Get<int>("OPTIMIZE", "merge_edges", 0) != 0;
 
 	if (g_settings.fpslimit < 30) {
 		g_settings.fpslimit = 30;
@@ -639,13 +659,9 @@ void Settings::loadSettings()
 
 
 	FixupAllSystemPaths();
-
-
 	reload_ents_list = false;
-
-
-	saveSettings(g_settings_path);
 }
+
 void Settings::saveSettings(std::string path) 
 {
 	removeFile(path);
@@ -829,13 +845,12 @@ void Settings::saveSettings(std::string path)
 	writeListSection("TRANSPARENT_ENTITIES", transparentEntities);
 
 	iniFile.write(iniData.str().c_str(), iniData.str().size());
-	iniFile.flush();
-	iniFile.close();
 }
-void  Settings::saveSettings()
+
+void Settings::saveSettings()
 {
 	FixupAllSystemPaths();
-	g_app->saveSettings();
+	g_app->saveGuiSettings();
 	saveSettings(g_settings_path);
 }
 

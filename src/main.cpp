@@ -17,18 +17,14 @@
 
 // minor todo (newbspguy):
 // ...
-// ...
 
 // refactoring (newbspguy):
 // ...
 
-// Notes:
-// Removing HULL 0 from any model crashes when shooting unless it's EF_NODRAW or renderamt=0
-// Removing HULL 0 from solid model crashes game when standing on it
-// Solve: 
-// Create empty hull 0 box ?
+// Notes: (newbspguy):
+// ...
 
-std::string g_version_string = "NewBSPGuy v4.38";
+std::string g_version_string = "NewBSPGuy v4.39";
 
 bool g_verbose = false;
 
@@ -996,16 +992,6 @@ int main(int argc, char* argv[])
 		std::error_code err;
 		fs::current_path(bspguy_dir,err);
 
-		/*CSMFile tmpFile;
-		tmpFile.read("d:/SteamLibrary/steamapps/common/Half-Life/bspguy_work/de_dust2.smd/de_dust2_1.csm");
-		tmpFile.validate();
-		tmpFile.write("d:/SteamLibrary/steamapps/common/Half-Life/bspguy_work/de_dust2.smd/de_dust2_1_new.csm");*/
-		/*std::vector<UVVERT> vertices;
-		vec3 mins(-64.0f, -64.0f, -64.0f);
-		vec3 maxs(64.0f, 64.0f, 64.0f);
-
-		CreateSkybox(vertices, mins, maxs);*/
-
 		if (fileExists("./log.txt"))
 		{
 			try
@@ -1035,7 +1021,6 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		g_settings.loadDefaultSettings();
 		g_settings.loadSettings();
 
 		InitializeAngelScripts();

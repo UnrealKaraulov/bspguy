@@ -166,14 +166,7 @@ void window_focus_callback(GLFWwindow* window, int focused)
 void window_close_callback(GLFWwindow* window)
 {
 	g_settings.saveSettings();
-	print_log(get_localized_string(LANG_0901));
-
-#ifdef MINGW 
-	std::set_terminate(NULL);
-	std::terminate();
-#else 
-	std::quick_exit(0);
-#endif
+	g_app->is_closing = true;
 }
 
 int g_scroll = 0;
@@ -1306,6 +1299,18 @@ void Renderer::renderLoop()
 				std::this_thread::sleep_for(25ms);
 			}
 			oldTime = curTime;
+
+			if (is_closing)
+			{
+				print_log(get_localized_string(LANG_0901));
+
+#ifdef MINGW 
+				std::set_terminate(NULL);
+				std::terminate();
+#else 
+				std::quick_exit(0);
+#endif
+			}
 		}
 	}
 
@@ -1366,7 +1371,7 @@ void Renderer::reloadMaps()
 	print_log(get_localized_string(LANG_0908));
 }
 
-void Renderer::saveSettings()
+void Renderer::saveGuiSettings()
 {
 	g_settings.debug_open = gui->showDebugWidget;
 	g_settings.keyvalue_open = gui->showKeyvalueWidget;

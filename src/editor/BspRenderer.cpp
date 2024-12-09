@@ -232,8 +232,10 @@ BspRenderer::BspRenderer(Bsp* _map)
 	renderClipnodes.clear();
 
 	faceMaths.clear();
+	g_mutex_list[2].lock();
 	nodesBufferCache.clear();
 	clipnodesBufferCache.clear();
+	g_mutex_list[2].unlock();
 	clearDrawCache();
 	//loadTextures();
 	//loadLightmaps();
@@ -594,8 +596,10 @@ void BspRenderer::reloadClipnodes()
 
 		deleteRenderClipnodes();
 
+		g_mutex_list[2].lock();
 		clipnodesBufferCache.clear();
 		nodesBufferCache.clear();
+		g_mutex_list[2].unlock();
 
 		clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
 	}
@@ -1322,16 +1326,21 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 			return false;
 		generateClipnodeBuffer(modelIdx);
 	}
+
 	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
 	{
 		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
 		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 		{
+			g_mutex_list[2].lock();
 			clipnodesBufferCache.erase(nodeIdx);
+			g_mutex_list[2].unlock();
 		}
 		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
 		{
+			g_mutex_list[2].lock();
 			nodesBufferCache.erase(nodeIdx);
+			g_mutex_list[2].unlock();
 		}
 	}
 
@@ -1344,9 +1353,10 @@ void BspRenderer::loadClipnodes()
 {
 	if (!map)
 		return;
-
+	g_mutex_list[2].lock();
 	clipnodesBufferCache.clear();
 	nodesBufferCache.clear();
+	g_mutex_list[2].unlock();
 
 	while ((int)renderClipnodes.size() < map->modelCount)
 	{
@@ -1675,7 +1685,6 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	nodeBuffStr oldHullIdxStruct = nodeBuffStr();
 	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
 
-	g_mutex_list[2].lock();
 	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 	{
 		oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
@@ -1684,11 +1693,12 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	{
 		oldHullIdxStruct = nodesBufferCache[nodeIdx];
 	}
-	g_mutex_list[2].unlock();
 
 	if (oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0)
 	{
-		return;/* // Instead of cache.... Just do nothing.
+		//return;
+		/* // Instead of cache.... Just do nothing.
+		* todo need rewrite cache?
 		RenderClipnodes* cachedRenderClip = &renderClipnodes[oldHullIdxStruct.modelIdx];
 
 
@@ -1763,12 +1773,10 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			}
 
 			std::vector<vec3> faceVerts;
-			g_mutex_list[2].lock();
 			for (auto vertIdx : uniqueFaceVerts)
 			{
 				faceVerts.push_back(mesh.verts[vertIdx].pos);
 			}
-			g_mutex_list[2].unlock();
 
 			if (faceVerts.size() < 1)
 			{
@@ -1893,6 +1901,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	curHullIdxStruct.hullIdx = hullIdx;
 	curHullIdxStruct.modelIdx = modelIdx;
 
+	g_mutex_list[2].lock();
 	if (hullIdx == 0)
 	{
 		clipnodesBufferCache[nodeIdx] = curHullIdxStruct;
@@ -1901,6 +1910,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	{
 		nodesBufferCache[nodeIdx] = curHullIdxStruct;
 	}
+	g_mutex_list[2].unlock();
 }
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
@@ -1913,11 +1923,15 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
 		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 		{
+			g_mutex_list[2].lock();
 			clipnodesBufferCache.erase(nodeIdx);
+			g_mutex_list[2].unlock();
 		}
 		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
 		{
+			g_mutex_list[2].lock();
 			nodesBufferCache.erase(nodeIdx);
+			g_mutex_list[2].unlock();
 		}
 	}
 
@@ -2536,9 +2550,10 @@ BspRenderer::~BspRenderer()
 	deleteRenderFaces();
 	deleteRenderClipnodes();
 	deleteFaceMaths();
-
+	g_mutex_list[2].lock();
 	clipnodesBufferCache.clear();
 	nodesBufferCache.clear();
+	g_mutex_list[2].unlock();
 
 	if (g_app->SelectedMap == map)
 		g_app->selectMap(NULL);
@@ -3050,7 +3065,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 		oldHullIdxStruct = nodesBufferCache[nodeIdx];
 	}
 
-	if (oldHullIdxStruct.hullIdx > 0 && oldHullIdxStruct.modelIdx > 0)
+	if (oldHullIdxStruct.hullIdx >= 0 && oldHullIdxStruct.modelIdx >= 0)
 	{
 		RenderClipnodes& clip = renderClipnodes[oldHullIdxStruct.modelIdx];
 
@@ -3636,7 +3651,6 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 		nodeBuffStr oldHullIdxStruct = nodeBuffStr();
 		oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
 
-		g_mutex_list[2].lock();
 		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 		{
 			oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
@@ -3645,7 +3659,6 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 		{
 			oldHullIdxStruct = nodesBufferCache[nodeIdx];
 		}
-		g_mutex_list[2].unlock();
 
 		if (oldHullIdxStruct.modelIdx < 0 || oldHullIdxStruct.hullIdx < 0)
 		{

@@ -161,7 +161,7 @@ public:
 	void postLoadFgds();
 	void reloadMaps();
 	void clearMaps();
-	void saveSettings();
+	void saveGuiSettings();
 	void loadGuiSettings();
 
 	int gl_errors = 0;
@@ -171,6 +171,7 @@ public:
 	bool reloading = false;
 	bool isLoading = false;
 	bool reloadingGameDir = false;
+	bool is_closing = false;
 
 	PickInfo pickInfo = PickInfo();
 	BspRenderer* getMapContainingCamera();

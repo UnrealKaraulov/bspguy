@@ -1,4 +1,5 @@
 #include "log.h"
+#include "Settings.h"
 
 #ifdef WIN32
 #include <Windows.h>
@@ -50,6 +51,13 @@ void FlushConsoleLog()
 					static std::ofstream outfile("log.txt", std::ios_base::app);
 					outfile << str;
 					outfile.flush();
+#else 
+					if (g_settings.verboseLogs)
+					{
+						static std::ofstream outfile("log.txt", std::ios_base::app);
+						outfile << str;
+						outfile.flush();
+					}
 #endif
 
 					set_console_colors(color);

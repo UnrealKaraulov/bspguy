@@ -3955,10 +3955,10 @@ void Gui::drawMenuBar()
 				for (auto& file : g_settings.lastOpened)
 				{
 					std::string smallPath = file;
-					if (smallPath.length() > 51) {
-						smallPath = smallPath.substr(0, 18) + "..." + smallPath.substr(smallPath.length() - 32);
+					if (smallPath.length() > 61) {
+						smallPath = smallPath.substr(0, 18) + "..." + smallPath.substr(smallPath.length() - 42);
 					}
-					if (ImGui::MenuItem(file.c_str(), NULL, false, fileExists(file)))
+					if (ImGui::MenuItem(smallPath.c_str(), NULL, false, fileExists(file)))
 					{
 						OpenFile(file);
 					}
@@ -9335,8 +9335,9 @@ void Gui::drawSettings()
 
 			if (ImGui::Button(get_localized_string(LANG_0739).c_str()))
 			{
-				g_settings.loadDefaultSettings();
+				g_settings.loadDefaultSettings();;
 			}
+
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
@@ -9929,7 +9930,7 @@ void Gui::drawSettings()
 	ImGui::End();
 
 
-	if (oldShowSettings && !showSettingsWidget || apply_settings_pressed)
+	if ((oldShowSettings && !showSettingsWidget) || apply_settings_pressed || g_app->is_closing)
 	{
 		g_settings.selected_lang = langForSelect;
 		g_settings.palette_name = palForSelect;

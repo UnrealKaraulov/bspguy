@@ -76,8 +76,6 @@ struct Settings
 	std::string workingdir;
 	std::string lastdir;
 
-	std::string engineLimits;
-
 	std::string selected_lang;
 	std::vector<std::string> languages;
 
