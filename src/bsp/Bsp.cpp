@@ -12159,6 +12159,7 @@ struct MapBrush
 	std::vector<Winding> backWinds;
 	float back_dist;
 	bool back_empty;
+	bool skip_merge;
 };
 
 std::string GenerateCuboid(float x1, float y1, float z1, float x2, float y2, float z2, std::string texture = "SKY")
@@ -12411,6 +12412,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			tmpBrush.wind = winding;
 			tmpBrush.backWinds = std::vector<Winding>();
 			tmpBrush.back_dist = 0.5f;
+			tmpBrush.skip_merge = false;
 			toExport.push_back(tmpBrush);
 		}
 
@@ -12437,83 +12439,103 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 				auto& brush = toExport[b1];
 
-				if (brush.wind.m_Points.size() == 0)
+				if (brush.wind.m_Points.size() == 0 || brush.skip_merge)
 					continue;
 
-				for (size_t b2 = 0; b2 < toExport.size(); b2++)
+				bool findSomethingMerge = false;
+
+				int mergeStages = 3;
+
+				for (int stage = 0; stage < mergeStages; stage++)
 				{
-					if (decompiledBrushes.count(b2))
-						continue;
-
-
-					auto& brush2 = toExport[b2];
-
-					if (brush2.wind.m_Points.size() == 0)
-						continue;
-					// check for has same parameters
-
-					if ((brush.plane != brush2.plane) ||
-						(brush.mdlIdx != brush2.mdlIdx) ||
-						(brush.texInfo != brush2.texInfo))
+					for (size_t b2 = 0; b2 < toExport.size(); b2++)
 					{
-						continue;
-					}
-
-					// check for has same contents
-					if (brush.contents.size() && brush2.contents.size())
-					{
-						bool same_contents = false;
-						for (int c1 : brush.contents)
-						{
-							if (std::find(brush2.contents.begin(), brush2.contents.end(), c1) != brush2.contents.end())
-							{
-								same_contents = true;
-								break;
-							}
-						}
-						if (!same_contents)
+						if (decompiledBrushes.count(b2))
 							continue;
-					}
 
-					int connected_edges = 0;
 
-					for (auto& v1 : brush.wind.m_Points)
-					{
-						if (std::find(brush2.wind.m_Points.begin(), brush2.wind.m_Points.end(), v1) != brush2.wind.m_Points.end())
+						auto& brush2 = toExport[b2];
+
+						if (brush2.wind.m_Points.size() == 0)
+							continue;
+						// check for has same parameters
+
+						if ((brush.plane != brush2.plane) ||
+							(brush.mdlIdx != brush2.mdlIdx) ||
+							(brush.texInfo != brush2.texInfo))
 						{
-							connected_edges++;
-							if (connected_edges == 2)
-								break;
+							continue;
+						}
+
+						// check for has same contents
+						if (brush.contents.size() && brush2.contents.size())
+						{
+							bool same_contents = false;
+							for (int c1 : brush.contents)
+							{
+								if (std::find(brush2.contents.begin(), brush2.contents.end(), c1) != brush2.contents.end())
+								{
+									same_contents = true;
+									break;
+								}
+							}
+							if (!same_contents)
+								continue;
+						}
+
+						int connected_edges = 0;
+
+						for (auto& v1 : brush.wind.m_Points)
+						{
+							if (std::find(brush2.wind.m_Points.begin(), brush2.wind.m_Points.end(), v1) != brush2.wind.m_Points.end())
+							{
+								connected_edges++;
+								findSomethingMerge = true;
+								if (stage != 0)
+								{
+									if (connected_edges == 2)
+										break;
+								}
+							}
+						}
+
+						if (connected_edges > 0)
+
+						if (connected_edges == 2 || (findSomethingMerge && stage == 2))
+						{
+							Winding wind1(brush.wind);
+							Winding wind2(brush2.wind);
+
+							Winding* tryMergeWinding = wind1.Merge(wind2, brush.plane);
+
+							if (tryMergeWinding)
+							{
+								if (tryMergeWinding->m_Points.size() >= 3)
+								{
+									brush.wind = Winding(*tryMergeWinding);
+									mergedFaces[brush.mdlIdx]++;
+									decompiledBrushes.insert(b2);
+									one_brush_merged = true;
+									brush2.wind = Winding(0);
+									delete tryMergeWinding;
+									break;
+								}
+								else
+								{
+									print_log(PRINT_RED, "ERROR [2] REVERT BACK[ONE BRUSH CAN BE BROKEN!]!\n");
+									bad_tries++;
+									delete tryMergeWinding;
+								}
+							}
 						}
 					}
+					if (!findSomethingMerge)
+						break;
+				}
 
-					if (connected_edges == 2)
-					{
-						Winding wind1(brush.wind);
-						Winding wind2(brush2.wind);
-
-						Winding* tryMergeWinding = wind1.Merge(wind2, brush.plane);
-
-						if (tryMergeWinding)
-						{
-							if (tryMergeWinding->m_Points.size() >= 3)
-							{
-								brush.wind = Winding(*tryMergeWinding);
-								mergedFaces[brush.mdlIdx]++;
-								decompiledBrushes.insert(b2);
-								one_brush_merged = true;
-								brush2.wind = Winding(0);
-								delete tryMergeWinding;
-								break;
-							}
-							else
-							{
-								print_log(PRINT_RED, "ERROR [2] REVERT BACK[ONE BRUSH CAN BE BROKEN!]!\n");
-								bad_tries++;
-								delete tryMergeWinding;
-							}
-						}
-					}
+				if (!findSomethingMerge)
+				{
+					brush.skip_merge = true;
 				}
 			}
 		}
