@@ -110,6 +110,6 @@ void print_log(const std::string& format, Args ...args) noexcept
 }
 
 extern double flushConsoleTime;
-void FlushConsoleLog();
+void FlushConsoleLog(bool wait = false);
 
 #define print_assert(error) if(!(error)) { print_log(PRINT_RED, "Error: {}\n", __LINE__); }

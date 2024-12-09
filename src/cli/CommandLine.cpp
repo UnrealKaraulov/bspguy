@@ -36,7 +36,7 @@ CommandLine::CommandLine(int argc, char* argv[])
 			options.push_back(arg);
 		}
 
-		if ((i == 1 || i == 2) && starts_with(larg,"help") || starts_with(larg,"/?") || starts_with(larg,"--help") || starts_with(larg,"-help") || starts_with(larg,"-h"))
+		if ((i == 1 || i == 2) && starts_with(larg,"help") || starts_with(larg,"/?") || starts_with(larg,"--help") || starts_with(larg, "-help") || starts_with(larg, "/help"))
 		{
 			askingForHelp = true;
 		}

@@ -281,7 +281,7 @@ void Settings::loadSettings()
 			int errorLine = settings_ini->ParseError();
 			if (errorLine < 0)
 			{
-				throw std::runtime_error("Error parse! Can't open file bspguy.ini!");
+				throw std::runtime_error("Error parse! Can't open file !" + g_settings_path);
 			}
 			else if (errorLine > 0)
 			{
@@ -297,6 +297,7 @@ void Settings::loadSettings()
 	}
 	else
 	{
+		print_log(PRINT_RED | PRINT_INTENSITY, "No setting file {} found! Create new...\n", g_settings_path);
 		saveSettings(g_settings_path);
 		try
 		{
@@ -304,7 +305,7 @@ void Settings::loadSettings()
 			int errorLine = settings_ini->ParseError();
 			if (errorLine < 0)
 			{
-				throw std::runtime_error("Error parse! Can't open file bspguy.ini!");
+				throw std::runtime_error("Error parse! Can't open file " + g_settings_path);
 			}
 			else if (errorLine > 0)
 			{
@@ -743,11 +744,8 @@ void Settings::saveSettings(std::string path)
 	iniData << "\n";
 
 	iniData << "[DEBUG]\n";
-#ifndef NDEBUG
-	iniData << "verbose_logs=true\n";
-#else
-	iniData << "verbose_logs=" << g_settings.verboseLogs << "\n";
-#endif
+	iniData << "verbose_logs=" << (g_settings.verboseLogs ? 1 : 0) << "\n";
+
 	iniData << "\n\n";
 
 	iniData << "[LAST_OPENED]\n";

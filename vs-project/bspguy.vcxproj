@@ -255,11 +255,11 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)bspguy.cfg" "$(TargetDir)bspguy.cfg_bak" 
+      <Command>copy "$(TargetDir)bspguy.ini" "$(TargetDir)bspguy.ini_bak" 
 xcopy /I /E /Y  "$(SolutionDir)..\resources\*" "$(TargetDir)"
-del "$(TargetDir)bspguy.cfg"
-copy "$(TargetDir)bspguy.cfg_bak" "$(TargetDir)bspguy.cfg" 
-del "$(TargetDir)bspguy.cfg_bak"</Command>
+del "$(TargetDir)bspguy.ini"
+copy "$(TargetDir)bspguy.ini_bak" "$(TargetDir)bspguy.ini" 
+del "$(TargetDir)bspguy.ini_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -556,11 +556,11 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       </LinkLibraryDependencies>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)bspguy.cfg" "$(TargetDir)bspguy.cfg_bak" 
+      <Command>copy "$(TargetDir)bspguy.ini" "$(TargetDir)bspguy.ini_bak" 
 xcopy /I /E /Y  "$(SolutionDir)..\resources\*" "$(TargetDir)"
-del "$(TargetDir)bspguy.cfg"
-copy "$(TargetDir)bspguy.cfg_bak" "$(TargetDir)bspguy.cfg" 
-del "$(TargetDir)bspguy.cfg_bak"</Command>
+del "$(TargetDir)bspguy.ini"
+copy "$(TargetDir)bspguy.ini_bak" "$(TargetDir)bspguy.ini" 
+del "$(TargetDir)bspguy.ini_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -729,11 +729,11 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       </LinkLibraryDependencies>
     </ProjectReference>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)bspguy.cfg" "$(TargetDir)bspguy.cfg_bak" 
+      <Command>copy "$(TargetDir)bspguy.ini" "$(TargetDir)bspguy.ini_bak" 
 xcopy /I /E /Y  "$(SolutionDir)..\resources\*" "$(TargetDir)"
-del "$(TargetDir)bspguy.cfg"
-copy "$(TargetDir)bspguy.cfg_bak" "$(TargetDir)bspguy.cfg" 
-del "$(TargetDir)bspguy.cfg_bak"</Command>
+del "$(TargetDir)bspguy.ini"
+copy "$(TargetDir)bspguy.ini_bak" "$(TargetDir)bspguy.ini" 
+del "$(TargetDir)bspguy.ini_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">

@@ -36,7 +36,8 @@ bool fileExists(const std::string& fileName)
 	try
 	{
 		std::error_code err{};
-		return fs::exists(fileName, err) && !fs::is_directory(fileName, err);
+		
+		return fs::exists(fileName, err) && fs::is_regular_file(fileName, err);
 	}
 	catch (...)
 	{

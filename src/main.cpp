@@ -710,13 +710,27 @@ void print_help(const std::string& command)
 	else if (command == "importwad")
 	{
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"  importwad   : Import all .wad textures to map.\n\n"
+			"importwad   : Import all .wad textures to map.\n\n"
 
 			"Usage:   bspguy importwad <mapname>\n"
 			"Example: bspguy importwad c1a0.bsp\n"
 			"\n[Options]\n"
 			"  -i <file>     : Input file. By default, <mapname> is overwritten.\n"
 			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
+		);
+	}
+	else if (command == "screenshot")
+	{
+		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
+			"screenshot   : Create screenshot and close map.\n\n"
+
+			"Usage:   bspguy screenshot <mapname> [options]\n"
+			"Example: bspguy screenshot c1a0.bsp -count 5 -w 256 -h 256\n"
+			"\n[Options]\n"
+			"  -count <num>   : Screenshots number.\n"
+			"  -w <width>   : Screenshot width.\n"
+			"  -h <height>   : Screenshot height.\n"
+			"  -out <dir>     : Output directory. By default used workdir.\n"
 		);
 	}
 	else if (command == "importlit")
@@ -746,7 +760,7 @@ void print_help(const std::string& command)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, "{}\n\n", g_version_string);
 		print_log(PRINT_RED | PRINT_GREEN | PRINT_INTENSITY, "{}",
-			"This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
+			std::string("This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
 			"Usage: bspguy <command> <mapname> [options]\n"
 
 			"\n<Commands>\n"
@@ -764,15 +778,17 @@ void print_help(const std::string& command)
 			"  exportrad   : Export RAD.exe .ext & .wa_ files.\n"
 			"  exportwad   : Export all map textures to .wad file.\n"
 			"  importwad   : Import all .wad textures to map.\n"
+			"  screenshot  : Create screenshots and close map.\n"
 			" "
 			" "
 			"  no command  : Open empty bspguy window\n"
 
 			"\nRun 'bspguy <command> help' to read about a specific command.\n"
 			"\nTo launch the 3D editor. Drag and drop a .bsp file onto the executable,\n"
-			"or run 'bspguy <mapname>'"
+			"or run 'bspguy <mapname>'")
 		);
 	}
+	FlushConsoleLog(true);
 }
 #ifdef WIN32
 #ifndef NDEBUG
@@ -1003,9 +1019,9 @@ int main(int argc, char* argv[])
 			}
 		}
 
-
-		if (!fileExists("./bspguy.ini") && fileExists("./bspguy.cfg"))
+		if (!fileExists(g_settings_path) && fileExists("./bspguy.cfg"))
 		{
+			print_log(PRINT_GREEN, "Migrating from CFG file to INI...\n");
 			int length;
 			char* bspguy_cfg = loadFile("./bspguy.cfg", length);
 			if (bspguy_cfg && length > 0)
@@ -1013,11 +1029,11 @@ int main(int argc, char* argv[])
 				if (bspguy_cfg[0] != '[')
 				{
 					std::string bspgu_cfgToIni = ConvertFromCFGtoINI(bspguy_cfg);
-					print_log(PRINT_GREEN, "Migrating from CFG file to INI...\n");
-					writeFile("./bspguy.ini", bspgu_cfgToIni);
+					writeFile(g_settings_path, bspgu_cfgToIni);
 					delete[] bspguy_cfg;
 				}
 			}
+			removeFile("./bspguy.cfg");
 		}
 
 		g_settings.loadSettings();
@@ -1026,7 +1042,7 @@ int main(int argc, char* argv[])
 
 		g_cmdLine = CommandLine(argc, argv);
 
-		if (g_cmdLine.command == "version" || g_cmdLine.command == "--version" || g_cmdLine.command == "-version")
+		if (g_cmdLine.command == "version" || g_cmdLine.command == "--version" || g_cmdLine.command == "-version" )
 		{
 			return 0;
 		}
@@ -1053,7 +1069,92 @@ int main(int argc, char* argv[])
 
 		g_progress.simpleMode = false;
 
-		if (g_cmdLine.command == "exportobj")
+		if (g_cmdLine.askingForHelp)
+		{
+			print_help(g_cmdLine.command);
+			return 0;
+		}
+
+
+		int retval = 0;
+
+		if (g_cmdLine.command == "screenshot")
+		{
+			if (g_cmdLine.hasOption("-count"))
+			{
+				make_screenshot = g_cmdLine.getOptionInt("-count");
+			}
+			else
+			{
+				make_screenshot = 1;
+			}
+
+			if (g_cmdLine.hasOption("-w"))
+			{
+				ortho_tga_w = g_cmdLine.getOptionInt("-w");
+			}
+			else
+			{
+				ortho_tga_w = 1024;
+			}
+
+			if (g_cmdLine.hasOption("-h"))
+			{
+				ortho_tga_h = g_cmdLine.getOptionInt("-h");
+			}
+			else
+			{
+				ortho_tga_h = 768;
+			}
+
+
+			if (g_cmdLine.hasOption("-out"))
+			{
+				make_screenshot_dir = getValueInQuotes(g_cmdLine.getOption("-h"));
+				if (dirExists(make_screenshot_dir))
+				{
+					fixupPath(make_screenshot_dir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+				}
+				else
+				{
+					make_screenshot_dir = "";
+				}
+			}
+			else
+			{
+				make_screenshot_dir = "";
+			}
+
+
+			if (ortho_tga_w < 128)
+			{
+				ortho_tga_w = 128;
+			}
+			else if (ortho_tga_w > 4096)
+			{
+				ortho_tga_w = 4096;
+			}
+
+			if (ortho_tga_h < 128)
+			{
+				ortho_tga_h = 128;
+			}
+			else if (ortho_tga_h > 4096)
+			{
+				ortho_tga_h = 4096;
+			}
+
+
+			if (make_screenshot < 1)
+				make_screenshot = 1;
+			if (make_screenshot > 10)
+				make_screenshot = 10;
+
+			FlushConsoleLog(true);
+			start_viewer(g_cmdLine.bspfile.c_str());
+			retval = 0;
+		}
+		else if (g_cmdLine.command == "exportobj")
 		{
 			int scale = 1;
 			if (g_cmdLine.hasOption("-scale"))
@@ -1061,16 +1162,16 @@ int main(int argc, char* argv[])
 				scale = str_to_int(getValueInQuotes(g_cmdLine.getOption("-scale")));
 			}
 			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
-			tmpBsp->ExportToObjWIP(g_cmdLine.bspfile);
+			tmpBsp->ExportToObjWIP(g_cmdLine.bspfile, scale);
 			delete tmpBsp;
-			return 0;
+			retval = 0;
 		}
 		else if (g_cmdLine.command == "exportlit")
 		{
 			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportLightFile(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
-			return 0;
+			retval = 0;
 		}
 		else if (g_cmdLine.command == "importlit")
 		{
@@ -1078,7 +1179,7 @@ int main(int argc, char* argv[])
 			tmpBsp->ImportLightFile(g_cmdLine.hasOption("-i") ? g_cmdLine.getOption("-i") : g_cmdLine.bspfile);
 			tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
-			return 0;
+			retval = 0;
 		}
 		else if (g_cmdLine.command == "exportrad")
 		{
@@ -1086,14 +1187,14 @@ int main(int argc, char* argv[])
 			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportExtFile(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile, newpath);
 			delete tmpBsp;
-			return 0;
+			retval = 0;
 		}
 		else if (g_cmdLine.command == "exportwad")
 		{
 			Bsp* tmpBsp = new Bsp(g_cmdLine.bspfile);
 			tmpBsp->ExportEmbeddedWad(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile + ".wad");
 			delete tmpBsp;
-			return 0;
+			retval = 0;
 		}
 		else if (g_cmdLine.command == "importwad")
 		{
@@ -1102,7 +1203,7 @@ int main(int argc, char* argv[])
 			tmpBsp->validate();
 			tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
-			return 0;
+			retval = 0;
 		}
 		else if (g_cmdLine.command == "cullfaces")
 		{
@@ -1116,12 +1217,9 @@ int main(int argc, char* argv[])
 			if (tmpBsp->validate() && tmpBsp->isValid())
 				tmpBsp->write(g_cmdLine.hasOption("-o") ? g_cmdLine.getOption("-o") : g_cmdLine.bspfile);
 			delete tmpBsp;
-			return 0;
+			retval = 0;
 		}
-
-		int retval = 0;
-
-		if (g_cmdLine.command == "info")
+		else if (g_cmdLine.command == "info")
 		{
 			if (!fileExists(g_cmdLine.bspfile))
 			{
@@ -1187,23 +1285,21 @@ int main(int argc, char* argv[])
 		}
 		else
 		{
-			if (g_cmdLine.askingForHelp)
-			{
-				print_help(g_cmdLine.command);
-				return 0;
-			}
-			else if (g_cmdLine.bspfile.size() == 0)
+			if (g_cmdLine.bspfile.size() == 0)
 				print_log("{}\n", get_localized_string(LANG_0032));
 			else
 				print_log("{}\n", ("Start bspguy editor with: " + g_cmdLine.bspfile));
 
 			print_log(get_localized_string(LANG_0033), g_settings_path);
+
+			FlushConsoleLog(true);
 			if (!start_viewer(g_cmdLine.bspfile.c_str()))
 			{
 				print_log(get_localized_string(LANG_0034), g_cmdLine.bspfile);
 			}
 		}
 
+		FlushConsoleLog(true);
 		if (retval != 0)
 		{
 			print_help(g_cmdLine.command);

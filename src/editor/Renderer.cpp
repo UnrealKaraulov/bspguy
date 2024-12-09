@@ -42,6 +42,11 @@ int ortho_tga_h = 768;
 bool ortho_save_tga = false;
 bool ortho_save_bmp = false;
 
+// for screenmaker cmd
+int make_screenshot = 0;
+int make_screenshot_target = 0;
+std::string make_screenshot_dir{};
+
 vec2 mousePos;
 vec3 cameraOrigin;
 vec3 cameraAngles;
@@ -504,7 +509,7 @@ void Renderer::renderLoop()
 					clearcolor = 1;
 				}
 			}
-			else if (!ortho_overview)
+			else if (!ortho_overview && !make_screenshot)
 			{
 				if (clearcolor != 2)
 				{
@@ -512,11 +517,19 @@ void Renderer::renderLoop()
 					clearcolor = 2;
 				}
 			}
-			else
+			else if (ortho_overview)
 			{
 				if (clearcolor != 3)
 				{
 					glClearColor(0.0, 1.0, 0.0, 1.0);
+					clearcolor = 3;
+				}
+			}
+			else
+			{
+				if (clearcolor != 3)
+				{
+					glClearColor(0.0, 0.0, 1.0, 1.0);
 					clearcolor = 3;
 				}
 			}
@@ -556,7 +569,7 @@ void Renderer::renderLoop()
 			}
 
 
-			if (ortho_save_tga || ortho_save_bmp)
+			if (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading))
 			{
 				glGenFramebuffers(1, &fbo);
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -579,6 +592,117 @@ void Renderer::renderLoop()
 					print_log(PRINT_RED, "Framebuffer not complete!\n");
 
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+				if (make_screenshot)
+				{
+					Bsp* map = SelectedMap;
+					if (map)
+					{
+						int tries = make_screenshot_target;
+						BspRenderer* rend = SelectedMap->getBspRender();
+						Entity* foundEnt = NULL;
+						for (auto ent : map->ents)
+						{
+							if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
+							{
+								tries--;
+								if (tries <= 0)
+								{
+									foundEnt = ent;
+									break;
+								}
+							}
+						}
+
+						if (!foundEnt)
+						{
+							for (auto ent : map->ents)
+							{
+								if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
+								{
+									tries--;
+									if (tries <= 0)
+									{
+										foundEnt = ent;
+										break;
+									}
+								}
+							}
+						}
+
+						if (!foundEnt)
+						{
+							for (auto ent : map->ents)
+							{
+								if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_deathmatch")
+								{
+									tries--;
+									if (tries <= 0)
+									{
+										foundEnt = ent;
+										break;
+									}
+								}
+							}
+						}
+
+						if (!foundEnt)
+						{
+							for (auto ent : map->ents)
+							{
+								tries--;
+								if (tries <= 0)
+								{
+									foundEnt = ent;
+									break;
+								}
+							}
+						}
+
+						if (foundEnt)
+						{
+							rend->renderCameraOrigin = foundEnt->origin;
+							rend->renderCameraOrigin.z += 32;
+							for (unsigned int i = 0; i < foundEnt->keyOrder.size(); i++)
+							{
+								if (foundEnt->keyOrder[i] == "angles")
+								{
+									rend->renderCameraAngles = parseVector(foundEnt->keyvalues["angles"]);
+								}
+								if (foundEnt->keyOrder[i] == "angle")
+								{
+									float y = str_to_float(foundEnt->keyvalues["angle"]);
+
+									if (y >= 0.0f)
+									{
+										rend->renderCameraAngles.y = y;
+									}
+									else if (y == -1.0f)
+									{
+										rend->renderCameraAngles.x = -90.0f;
+										rend->renderCameraAngles.y = 0.0f;
+										rend->renderCameraAngles.z = 0.0f;
+									}
+									else if (y <= -2.0f)
+									{
+										rend->renderCameraAngles.x = 90.0f;
+										rend->renderCameraAngles.y = 0.0f;
+										rend->renderCameraAngles.z = 0.0f;
+									}
+								}
+							}
+
+							rend->renderCameraAngles = rend->renderCameraAngles.flip();
+							rend->renderCameraAngles.z = rend->renderCameraAngles.z + 90.0f;
+							rend->renderCameraAngles = rend->renderCameraAngles.normalize_angles();
+							rend->renderCameraAngles.y = 0.0f;
+
+							cameraAngles = rend->renderCameraAngles;
+							cameraOrigin = rend->renderCameraOrigin;
+							makeVectors(cameraAngles, cameraForward, cameraRight, cameraUp);
+						}
+					}
+				}
 			}
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -705,14 +829,14 @@ void Renderer::renderLoop()
 					matmodel.loadIdentity();
 					modelShader->bind();
 					modelShader->updateMatrixes();
-					if (anyCtrlPressed && !ortho_overview)
+					if (anyCtrlPressed && !ortho_overview && !make_screenshot)
 					{
 						if (SelectedMap->map_mdl->mdl_cube && SelectedMap->map_mdl->mdl_cube->axesBuffer)
 						{
 							SelectedMap->map_mdl->mdl_cube->axesBuffer->drawFull();
 						}
 					}
-					if (anyAltPressed && !ortho_overview)
+					if (anyAltPressed && !ortho_overview && !make_screenshot)
 					{
 						if (SelectedMap->map_mdl->mdl_cube && SelectedMap->map_mdl->mdl_cube->cubeBuffer)
 						{
@@ -794,7 +918,7 @@ void Renderer::renderLoop()
 				}
 			}
 
-			if (SelectedMap && !ortho_overview)
+			if (SelectedMap && !ortho_overview && !make_screenshot)
 			{
 				if (debugClipnodes && modelIdx > 0)
 				{
@@ -857,7 +981,7 @@ void Renderer::renderLoop()
 			glDepthMask(GL_FALSE);
 			glDepthFunc(GL_ALWAYS);
 
-			if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS) && !ortho_overview)
+			if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS) && !ortho_overview && !make_screenshot)
 			{
 				matmodel.loadIdentity();
 				colorShader->updateMatrixes();
@@ -875,7 +999,7 @@ void Renderer::renderLoop()
 			drawingMoveAxes = false;
 			drawingScaleAxes = false;
 
-			if (showDragAxes && !ortho_overview && pickMode == pick_modes::PICK_OBJECT)
+			if (showDragAxes && !ortho_overview && !make_screenshot && pickMode == pick_modes::PICK_OBJECT)
 			{
 				if (!movingEnt && !isTransformingWorld && entIdx.size() && (isTransformingValid || isMovingOrigin))
 				{
@@ -883,7 +1007,7 @@ void Renderer::renderLoop()
 				}
 			}
 
-			if (modelIdx > 0 && !ortho_overview && pickMode == PICK_OBJECT)
+			if (modelIdx > 0 && !ortho_overview && !make_screenshot && pickMode == PICK_OBJECT)
 			{
 				if (transformTarget == TRANSFORM_VERTEX && isTransformableSolid)
 				{
@@ -897,7 +1021,7 @@ void Renderer::renderLoop()
 				}
 			}
 
-			if (!ortho_overview)
+			if (!ortho_overview && !make_screenshot)
 			{
 				matmodel.loadIdentity();
 				colorShader->updateMatrixes();
@@ -1152,7 +1276,7 @@ void Renderer::renderLoop()
 			glDepthMask(GL_TRUE);
 			glDepthFunc(GL_LESS);
 
-			if (fbo && (ortho_save_tga || ortho_save_bmp))
+			if (fbo && (ortho_save_tga || ortho_save_bmp || (make_screenshot && !isLoading)))
 			{
 				std::vector<uint8_t> pixels(3 * ortho_tga_w * ortho_tga_h);
 				glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -1165,10 +1289,38 @@ void Renderer::renderLoop()
 						pixels.begin() + 3 * ortho_tga_w * (ortho_tga_h - line - 1));
 				}
 
-				if (ortho_save_tga)
+				if (ortho_save_tga || (make_screenshot && !isLoading))
 				{
-					stbi_write_tga((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga")).c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
-					print_log("Saved to {} file!\n", (g_working_dir + "overview.tga").c_str());
+					make_screenshot--;
+					make_screenshot_target++;
+
+					if (make_screenshot)
+					{
+
+						std::string screenPath = g_working_dir;
+
+
+						if (make_screenshot_dir.size() && dirExists(make_screenshot_dir))
+						{
+							screenPath = make_screenshot_dir;
+						}
+
+						screenPath += SelectedMap ? SelectedMap->bsp_name : "screenshot";
+						screenPath += "_" + std::to_string(make_screenshot_target + 1) + ".tga";
+
+						stbi_write_tga(screenPath.c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+						print_log("Saved to {} file!\n", screenPath);
+					}
+					else
+					{
+						stbi_write_tga((g_working_dir + (SelectedMap ? (SelectedMap->bsp_name + ".tga") : "overview.tga")).c_str(), ortho_tga_w, ortho_tga_h, 3, pixels.data());
+						print_log("Saved to {} file!\n", (g_working_dir + "overview.tga"));
+					}
+
+					if (make_screenshot <= 0)
+					{
+						is_closing = true;
+					}
 				}
 				else
 				{
@@ -1683,7 +1835,7 @@ void Renderer::controls()
 
 		cameraOrigin += getMoveDir() * (float)(curTime - oldTime) * moveSpeed;
 
-		if (!ortho_overview)
+		if (!ortho_overview && !make_screenshot)
 		{
 			moveGrabbedEnt();
 
@@ -1698,19 +1850,19 @@ void Renderer::controls()
 
 		cameraContextMenus();
 
-		if (!ortho_overview)
+		if (!ortho_overview && !make_screenshot)
 		{
 			cameraRotationControls();
 		}
 
 		makeVectors(cameraAngles, cameraForward, cameraRight, cameraUp);
 
-		if (!ortho_overview)
+		if (!ortho_overview && !make_screenshot)
 		{
 			cameraObjectHovering();
 		}
 
-		if (!ortho_overview)
+		if (!ortho_overview && !make_screenshot)
 		{
 			cameraPickingControls();
 		}

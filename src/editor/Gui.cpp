@@ -7011,7 +7011,8 @@ void Gui::drawOverviewWidget()
 		ImGui::DragInt("Height###3", &ortho_tga_h, 1.0f, 256, 4096);
 		ImGui::PopItemWidth();
 
-		if (ImGui::Button("Save .tga")) {
+		if (ImGui::Button("Save .tga")) 
+		{
 			ortho_save_tga = true;
 			imgFormat = ".tga";
 		}
@@ -9908,7 +9909,8 @@ void Gui::drawSettings()
 		g_settings.selected_lang = langForSelect;
 		g_settings.palette_name = palForSelect;
 		set_localize_lang(g_settings.selected_lang);
-		
+
+		g_settings.saveSettings();
 		if (!app->reloading)
 		{
 			app->reloading = true;

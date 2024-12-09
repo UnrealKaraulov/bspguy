@@ -65,6 +65,10 @@ extern int ortho_tga_h;
 extern bool ortho_save_tga;
 extern bool ortho_save_bmp;
 
+extern int make_screenshot;
+extern int make_screenshot_target;
+extern std::string make_screenshot_dir;
+
 extern vec2 mousePos;
 extern vec3 cameraOrigin;
 extern vec3 cameraAngles;

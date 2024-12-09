@@ -2994,7 +2994,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 
 
-	if (g_app->pickMode == PICK_FACE_LEAF && !ortho_overview)
+	if (g_app->pickMode == PICK_FACE_LEAF && !ortho_overview && !make_screenshot)
 	{
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
@@ -3026,7 +3026,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 		hullIdx = getBestClipnodeHull(modelIdx);
 	}
 
-	if (hullIdx <= -1 || hullIdx > 3 || ortho_overview)
+	if (hullIdx <= -1 || hullIdx > 3 || ortho_overview || make_screenshot)
 	{
 		return; // nothing can be drawn
 	}
@@ -3102,7 +3102,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 	if (pass == REND_PASS_COLORSHADER)
 	{
 		RenderModel* rend_mdl = renderModels[modelIdx];
-		if (rend_mdl->wireframeBuffer && !ortho_overview)
+		if (rend_mdl->wireframeBuffer && !ortho_overview && !make_screenshot)
 		{
 			if (ent && ent->isDuplicateModel)
 				rend_mdl->wireframeBuffer->frameId--;
@@ -3187,7 +3187,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 	{
 		if (rgroup.special)
 		{
-			if (ortho_overview)
+			if (ortho_overview | make_screenshot)
 				continue;
 
 			if (modelIdx == 0 && !(g_render_flags & RENDER_SPECIAL))
@@ -3273,7 +3273,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 				}
 
 
-				if (g_app->pickMode != PICK_OBJECT && highlight && !ortho_overview)
+				if (g_app->pickMode != PICK_OBJECT && highlight && !ortho_overview && !make_screenshot)
 				{
 					if (ent)
 					{
@@ -3285,7 +3285,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 				}
 				else
 				{
-					if (highlight && !ortho_overview)
+					if (highlight && !ortho_overview && !make_screenshot)
 					{
 						if (ent)
 						{
@@ -3329,7 +3329,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 		if (mapEnt->hide)
 			continue;
 
-		if (ortho_overview)
+		if (ortho_overview || make_screenshot)
 		{
 			if (!starts_with(mapEnt->classname, "cycler_") &&
 				!starts_with(mapEnt->classname, "func_"))
@@ -3338,7 +3338,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 			}
 		}
 
-		if (g_app->pickInfo.IsSelectedEnt(i) && !ortho_overview)
+		if (g_app->pickInfo.IsSelectedEnt(i) && !ortho_overview && !make_screenshot)
 		{
 			if (g_render_flags & RENDER_SELECTED_AT_TOP)
 				glDepthFunc(GL_ALWAYS);
@@ -3359,7 +3359,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 						renderEnts[i].spr->DrawSprite();
 					}
 				}
-				else if (pass == REND_PASS_COLORSHADER && !ortho_overview)
+				else if (pass == REND_PASS_COLORSHADER && !ortho_overview && !make_screenshot)
 				{
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
@@ -3380,7 +3380,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 			}
 			else
 			{
-				if (pass == REND_PASS_COLORSHADER && !ortho_overview)
+				if (pass == REND_PASS_COLORSHADER && !ortho_overview && !make_screenshot)
 				{
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();
@@ -3434,7 +3434,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 			}
 			else
 			{
-				if (pass == REND_PASS_COLORSHADER && !ortho_overview)
+				if (pass == REND_PASS_COLORSHADER && !ortho_overview && !make_screenshot)
 				{
 					g_app->matmodel = renderEnts[i].modelMat4x4_calc_angles;
 					g_app->colorShader->updateMatrixes();

@@ -18,7 +18,7 @@ std::vector<unsigned int> g_console_color_buffer = { 0 };
 unsigned int last_console_color = PRINT_BLUE | PRINT_GREEN | PRINT_RED | PRINT_INTENSITY;
 double flushConsoleTime = 0.0;
 
-void FlushConsoleLog()
+void FlushConsoleLog(bool wait)
 {
 	if (g_console_log_buffer.empty())
 	{
@@ -70,7 +70,14 @@ void FlushConsoleLog()
 			}
 		}
 	);
-	t.detach();
+	if (!wait)
+	{
+		t.detach();
+	}
+	else
+	{
+		t.join();
+	}
 }
 
 
