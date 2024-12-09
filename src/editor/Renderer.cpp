@@ -165,7 +165,6 @@ void window_focus_callback(GLFWwindow* window, int focused)
 
 void window_close_callback(GLFWwindow* window)
 {
-	g_settings.saveSettings();
 	g_app->is_closing = true;
 }
 
@@ -374,15 +373,8 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
-	g_settings.saveSettings();
 	print_log(get_localized_string(LANG_0901));
 	glfwTerminate();
-#ifdef MINGW 
-	std::set_terminate(NULL);
-	std::terminate();
-#else 
-	std::quick_exit(0);
-#endif
 }
 
 void Renderer::updateWindowTitle(double _curTime)

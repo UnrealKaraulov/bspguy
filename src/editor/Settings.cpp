@@ -281,11 +281,11 @@ void Settings::loadSettings()
 			int errorLine = settings_ini->ParseError();
 			if (errorLine < 0)
 			{
-				throw std::exception("Error parse! Can't open file bspguy.ini!");
+				throw std::runtime_error("Error parse! Can't open file bspguy.ini!");
 			}
 			else if (errorLine > 0)
 			{
-				throw std::exception(("Error parse ini at line:" + std::to_string(errorLine)).c_str());
+				throw std::runtime_error(("Error parse ini at line:" + std::to_string(errorLine)).c_str());
 			}
 		}
 		catch (std::runtime_error& runtime)
@@ -293,7 +293,6 @@ void Settings::loadSettings()
 			print_log(PRINT_RED | PRINT_INTENSITY, "Settings parse from {} fatal error: {}\n", g_settings_path, runtime.what());
 			delete settings_ini;
 			settings_ini = NULL;
-			saveSettings(g_settings_path);
 		}
 	}
 	else
@@ -305,11 +304,11 @@ void Settings::loadSettings()
 			int errorLine = settings_ini->ParseError();
 			if (errorLine < 0)
 			{
-				throw std::exception("Error parse! Can't open file bspguy.ini!");
+				throw std::runtime_error("Error parse! Can't open file bspguy.ini!");
 			}
 			else if (errorLine > 0)
 			{
-				throw std::exception(("Error parse ini at line:" + std::to_string(errorLine)).c_str());
+				throw std::runtime_error(("Error parse ini at line:" + std::to_string(errorLine)).c_str());
 			}
 		}
 		catch (std::runtime_error& runtime)

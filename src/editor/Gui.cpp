@@ -3994,34 +3994,7 @@ void Gui::drawMenuBar()
 			ImGui::Separator();
 			if (ImGui::MenuItem(get_localized_string(LANG_0555).c_str(), NULL))
 			{
-				g_settings.saveSettings();
-				if (fileSize(g_settings_path) == 0)
-				{
-					g_settings.saveSettings();
-					glfwTerminate();
-
-#ifdef MINGW 
-					std::set_terminate(NULL);
-					std::terminate();
-#else 
-					std::quick_exit(0);
-#endif
-				}
-				g_settings.saveSettings();
-				if (fileSize(g_settings_path) == 0)
-				{
-					print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0359));
-				}
-				else
-				{
-					glfwTerminate();
-#ifdef MINGW 
-					std::set_terminate(NULL);
-					std::terminate();
-#else 
-					std::quick_exit(0);
-#endif
-				}
+				g_app->is_closing = true;
 			}
 			ImGui::EndMenu();
 		}
@@ -9930,12 +9903,12 @@ void Gui::drawSettings()
 	ImGui::End();
 
 
-	if ((oldShowSettings && !showSettingsWidget) || apply_settings_pressed || g_app->is_closing)
+	if ((oldShowSettings && !showSettingsWidget) || apply_settings_pressed )
 	{
 		g_settings.selected_lang = langForSelect;
 		g_settings.palette_name = palForSelect;
 		set_localize_lang(g_settings.selected_lang);
-		g_settings.saveSettings();
+		
 		if (!app->reloading)
 		{
 			app->reloading = true;

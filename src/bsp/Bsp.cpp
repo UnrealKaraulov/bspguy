@@ -12444,7 +12444,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 				bool findSomethingMerge = false;
 
-				int mergeStages = 3;
+				int mergeStages = 2;
 
 				for (int stage = 0; stage < mergeStages; stage++)
 				{
@@ -12491,17 +12491,10 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 							{
 								connected_edges++;
 								findSomethingMerge = true;
-								if (stage != 0)
-								{
-									if (connected_edges == 2)
-										break;
-								}
 							}
 						}
 
-						if (connected_edges > 0)
-
-						if (connected_edges == 2 || (findSomethingMerge && stage == 2))
+						if (stage == 0 || findSomethingMerge)
 						{
 							Winding wind1(brush.wind);
 							Winding wind2(brush2.wind);
