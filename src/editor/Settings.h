@@ -119,6 +119,8 @@ struct Settings
 	std::vector<PathToggleStruct> fgdPaths;
 	std::vector<PathToggleStruct> resPaths;
 
+	std::vector<std::string> lastOpened;
+
 	std::vector<std::string> conditionalPointEntTriggers;
 	std::vector<std::string> entsThatNeverNeedAnyHulls;
 	std::vector<std::string> entsThatNeverNeedCollision;
@@ -135,6 +137,7 @@ struct Settings
 	void saveSettings(std::string path);
 	void fillLanguages(const std::string& folderPath);
 	void fillPalettes(const std::string& folderPath);
+	void AddRecentFile(const std::string& file);
 };
 
 extern Settings g_settings;

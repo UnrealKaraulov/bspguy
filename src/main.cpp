@@ -28,7 +28,7 @@
 // Solve: 
 // Create empty hull 0 box ?
 
-std::string g_version_string = "NewBSPGuy v4.37";
+std::string g_version_string = "NewBSPGuy v4.38";
 
 bool g_verbose = false;
 
@@ -51,6 +51,7 @@ bool start_viewer(const char* map)
 	Renderer renderer{};
 	if (map && map[0] != '\0')
 	{
+		g_settings.AddRecentFile(map);
 		renderer.addMap(new Bsp(map));
 	}
 	renderer.reloadBspModels();

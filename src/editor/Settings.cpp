@@ -140,8 +140,6 @@ void Settings::loadDefaultSettings()
 
 	ResetBspLimits();
 
-
-
 	fgdPaths.clear();
 	fgdPaths.emplace_back("/moddir/GameDefinitionFile.fgd", true);
 
@@ -258,6 +256,14 @@ void Settings::fillPalettes(const std::string& folderPath)
 				}
 			}
 		}
+	}
+}
+
+void Settings::AddRecentFile(const std::string& file)
+{
+	if (fileExists(file) && std::find(g_settings.lastOpened.begin(), g_settings.lastOpened.end(), file) == g_settings.lastOpened.end())
+	{
+		g_settings.lastOpened.push_back(file);
 	}
 }
 
@@ -396,6 +402,18 @@ void Settings::loadSettings()
 #ifndef NDEBUG
 	g_settings.verboseLogs = true;
 #endif
+
+	int lastCount = settings_ini->Get<int>("LAST_OPENED", "count", 0);
+	lastOpened.clear();
+
+	for (int i = 0; i < lastCount; i++)
+	{
+		std::string file = settings_ini->Get<std::string>("LAST_OPENED", "file_" + std::to_string(i + 1), "");
+		if (fileExists(file))
+		{
+			AddRecentFile(file);
+		}
+	}
 
 	int limitEngines = settings_ini->Get<int>("ENGINE", "count", 0);
 	if (limitEngines > 0)
@@ -715,10 +733,47 @@ void Settings::saveSettings(std::string path)
 #else
 	iniData << "verbose_logs=" << g_settings.verboseLogs << "\n";
 #endif
-	iniData << "\n";
+	iniData << "\n\n";
 
+	iniData << "[LAST_OPENED]\n";
+
+	int openCount = 0;
+
+	if (lastOpened.size())
+		std::reverse(lastOpened.begin(), lastOpened.end());
+	
+	for (auto & file : lastOpened)
+	{
+		if (fileExists(file))
+		{
+			openCount++;
+			if (openCount == 10)
+				break;
+		}
+	}
 
 	int id = 1;
+	iniData << "count=" << openCount << "\n";
+
+	for (auto& file : lastOpened)
+	{
+		if (fileExists(file))
+		{
+			iniData << "file_" + std::to_string(id) << "=" << file << "\n";
+
+			if (id == 10)
+				break;
+
+			id++;
+		}
+	}
+	iniData << "\n\n";
+
+	if (lastOpened.size())
+		std::reverse(lastOpened.begin(), lastOpened.end());
+
+	id = 1;
+
 	iniData << "[ENGINE]\n";
 	iniData << "count=" << limitsMap.size() << "\n";
 

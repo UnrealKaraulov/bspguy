@@ -1872,6 +1872,84 @@ void Gui::drawBspContexMenu()
 	}
 }
 
+void Gui::OpenFile(const std::string& file)
+{
+	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = map ? map->getBspRender() : NULL;
+
+	std::string pathlowercase = toLowerCase(file);
+	if (ends_with(pathlowercase, ".wad"))
+	{
+		if (!map)
+		{
+			app->addMap(new Bsp(""));
+			app->selectMapId(0);
+			map = app->getSelectedMap();
+		}
+
+		if (map)
+		{
+			bool foundInMap = false;
+			for (auto& wad : rend->wads)
+			{
+				std::string tmppath = toLowerCase(wad->filename);
+				if (tmppath.find(basename(pathlowercase)) != std::string::npos)
+				{
+					foundInMap = true;
+					print_log(get_localized_string(LANG_0340));
+					break;
+				}
+			}
+
+			if (!foundInMap)
+			{
+				Wad* wad = new Wad(file);
+				if (wad->readInfo())
+				{
+					rend->wads.push_back(wad);
+					if (!ends_with(map->ents[0]->keyvalues["wad"], ";"))
+						map->ents[0]->keyvalues["wad"] += ";";
+					map->ents[0]->keyvalues["wad"] += basename(file) + ";";
+					map->update_ent_lump();
+					app->updateEnts();
+					app->reloading = true;
+					rend->reload();
+					app->reloading = false;
+				}
+				else
+					delete wad;
+			}
+		}
+	}
+	else if (ends_with(pathlowercase, ".mdl"))
+	{
+		Bsp* tmpMap = new Bsp(file);
+		tmpMap->is_mdl_model = true;
+		app->addMap(tmpMap);
+		app->selectMap(tmpMap);
+	}
+	else if (ends_with(pathlowercase, ".spr"))
+	{
+		Bsp* tmpMap = new Bsp(file);
+		tmpMap->is_mdl_model = true;
+		app->addMap(tmpMap);
+		app->selectMap(tmpMap);
+	}
+	else if (ends_with(pathlowercase, ".csm"))
+	{
+		Bsp* tmpMap = new Bsp(file);
+		tmpMap->is_mdl_model = true;
+		app->addMap(tmpMap);
+		app->selectMap(tmpMap);
+	}
+	else
+	{
+		Bsp* tmpMap = new Bsp(file);
+		app->addMap(tmpMap);
+		app->selectMap(tmpMap);
+	}
+}
+
 void Gui::drawMenuBar()
 {
 	ImGuiContext& g = *GImGui;
@@ -1902,13 +1980,21 @@ void Gui::drawMenuBar()
 			ifd::FileDialog::Instance().Close();
 		}
 
-		if (map)
+		if (ifd::FileDialog::Instance().IsDone("WadOpenDialog"))
 		{
-			if (ifd::FileDialog::Instance().IsDone("WadOpenDialog"))
+			if (ifd::FileDialog::Instance().HasResult())
 			{
-				if (ifd::FileDialog::Instance().HasResult())
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				if (fileExists(res.string()))
 				{
-					std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+					if (!map)
+					{
+						app->addMap(new Bsp(""));
+						app->selectMapId(0);
+						map = app->getSelectedMap();
+					}
+
+					g_settings.AddRecentFile(res.string());
 					for (size_t i = 0; i < map->ents.size(); i++)
 					{
 						if (map->ents[i]->keyvalues["classname"] == "worldspawn")
@@ -1929,8 +2015,8 @@ void Gui::drawMenuBar()
 					app->reloadBspModels();
 					g_settings.lastdir = stripFileName(res.string());
 				}
-				ifd::FileDialog::Instance().Close();
 			}
+			ifd::FileDialog::Instance().Close();
 		}
 
 		if (ifd::FileDialog::Instance().IsDone("MapOpenDialog"))
@@ -1938,78 +2024,12 @@ void Gui::drawMenuBar()
 			if (ifd::FileDialog::Instance().HasResult())
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				std::string pathlowercase = toLowerCase(res.string());
-				if (ends_with(pathlowercase, ".wad"))
+				if (fileExists(res.string()))
 				{
-					if (!map)
-					{
-						app->addMap(new Bsp(""));
-						app->selectMapId(0);
-						map = app->getSelectedMap();
-					}
-
-					if (map)
-					{
-						bool foundInMap = false;
-						for (auto& wad : rend->wads)
-						{
-							std::string tmppath = toLowerCase(wad->filename);
-							if (tmppath.find(basename(pathlowercase)) != std::string::npos)
-							{
-								foundInMap = true;
-								print_log(get_localized_string(LANG_0340));
-								break;
-							}
-						}
-
-						if (!foundInMap)
-						{
-							Wad* wad = new Wad(res.string());
-							if (wad->readInfo())
-							{
-								rend->wads.push_back(wad);
-								if (!ends_with(map->ents[0]->keyvalues["wad"], ";"))
-									map->ents[0]->keyvalues["wad"] += ";";
-								map->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
-								map->update_ent_lump();
-								app->updateEnts();
-								app->reloading = true;
-								rend->reload();
-								app->reloading = false;
-							}
-							else
-								delete wad;
-						}
-					}
+					g_settings.AddRecentFile(res.string());
+					OpenFile(res.string());
+					g_settings.lastdir = stripFileName(res.string());
 				}
-				else if (ends_with(pathlowercase, ".mdl"))
-				{
-					Bsp* tmpMap = new Bsp(res.string());
-					tmpMap->is_mdl_model = true;
-					app->addMap(tmpMap);
-					app->selectMap(tmpMap);
-				}
-				else if (ends_with(pathlowercase, ".spr"))
-				{
-					Bsp* tmpMap = new Bsp(res.string());
-					tmpMap->is_mdl_model = true;
-					app->addMap(tmpMap);
-					app->selectMap(tmpMap);
-				}
-				else if (ends_with(pathlowercase, ".csm"))
-				{
-					Bsp* tmpMap = new Bsp(res.string());
-					tmpMap->is_mdl_model = true;
-					app->addMap(tmpMap);
-					app->selectMap(tmpMap);
-				}
-				else
-				{
-					Bsp* tmpMap = new Bsp(res.string());
-					app->addMap(tmpMap);
-					app->selectMap(tmpMap);
-				}
-				g_settings.lastdir = stripFileName(res.string());
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -3930,6 +3950,22 @@ void Gui::drawMenuBar()
 					"generate a playable map without you having to make any manual edits (Sven Co-op only).").c_str());
 
 			*/
+			if (ImGui::BeginMenu("Recent Files",g_settings.lastOpened.size()))
+			{
+				for (auto& file : g_settings.lastOpened)
+				{
+					std::string smallPath = file;
+					if (smallPath.length() > 51) {
+						smallPath = smallPath.substr(0, 18) + "..." + smallPath.substr(smallPath.length() - 32);
+					}
+					if (ImGui::MenuItem(file.c_str(), NULL, false, fileExists(file)))
+					{
+						OpenFile(file);
+					}
+				}
+
+				ImGui::EndMenu();
+			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0552).c_str(), 0, false, map && !map->is_mdl_model && !app->isLoading))
 			{

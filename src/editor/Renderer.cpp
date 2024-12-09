@@ -95,6 +95,7 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 
 		if (fileExists(tmpPath.string()))
 		{
+			g_settings.AddRecentFile(tmpPath.string());
 			if (ends_with(lowerPath, ".bsp"))
 			{
 				print_log(get_localized_string(LANG_0896), tmpPath.string());
