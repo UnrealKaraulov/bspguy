@@ -131,7 +131,12 @@ private:
 	mat4x4 * modelViewMat;
 
 	// stores previous states of matrices
-	std::vector<mat4x4> matStack[3];
+	std::vector<mat4x4> modelStack;
+	std::vector<mat4x4> viewStack;
+	std::vector<mat4x4> projStack;
+	size_t modelStackIdx;
+	size_t viewStackIdx;
+	size_t projStackIdx;
 
 	void link();
 };

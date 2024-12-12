@@ -87,7 +87,7 @@ public:
 	bool openSavedTabs = false;
 
 private:
-	ImGuiIO* imgui_io = nullptr;
+	ImGuiIO* imgui_io = NULL;
 	int settingsTab = 0;
 
 	ImFont* defaultFont;

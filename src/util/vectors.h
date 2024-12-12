@@ -3,18 +3,21 @@
 #include <vector>
 #include <cmath>
 
+
 #define HL_PI 3.141592f
-
 #define EPSILON 0.0001f // EPSILON from rad.h / 10
-
 #define EPSILON2 0.00001f // EPSILON from rad.h / 100
-
 #define ON_EPSILON 0.01f // changed for test default is 0.03125f
 
 
 float clamp(float val, float min, float max);
-
 #define CLAMP(v, min, max) if (v < min) { v = min; } else if (v > max) { v = max; }
+
+
+unsigned char FixBounds(int i);
+unsigned char FixBounds(unsigned int i);
+unsigned char FixBounds(float i);
+unsigned char FixBounds(double i);
 
 struct COLOR3
 {
@@ -29,9 +32,9 @@ struct COLOR3
 
 	COLOR3 operator*(float scale)
 	{
-		r = (unsigned char)(r * scale);
-		g = (unsigned char)(g * scale);
-		b = (unsigned char)(b * scale);
+		r = FixBounds(r * scale);
+		g = FixBounds(g * scale);
+		b = FixBounds(b * scale);
 		return *this;
 	}
 };
@@ -49,9 +52,9 @@ struct COLOR4
 
 	COLOR3 rgb(COLOR3 background) {
 		float alpha = a / 255.0f;
-		unsigned char r_new = (unsigned char)clamp((1.0f - alpha) * r + alpha * background.r, 0.0f, 255.0f);
-		unsigned char g_new = (unsigned char)clamp((1.0f - alpha) * g + alpha * background.g, 0.0f, 255.0f);
-		unsigned char b_new = (unsigned char)clamp((1.0f - alpha) * b + alpha * background.b, 0.0f, 255.0f);
+		unsigned char r_new = FixBounds((1.0f - alpha) * r + alpha * background.r);
+		unsigned char g_new = FixBounds((1.0f - alpha) * g + alpha * background.g);
+		unsigned char b_new = FixBounds((1.0f - alpha) * b + alpha * background.b);
 		return COLOR3(r_new, g_new, b_new);
 	}
 	COLOR3 rgb() {
@@ -63,32 +66,53 @@ struct vec3
 {
 	float x, y, z;
 
-	void Copy(const vec3& other)
-	{
-		x = other.x;
-		y = other.y;
-		z = other.z;
-	}
-
-	vec3& operator =(const vec3& other)
-	{
-		Copy(other);
-		return *this;
-	}
+	vec3() : x(0), y(0), z(0) {}
 
 	vec3(const vec3& other)
 	{
 		Copy(other);
 	}
 
-	vec3() : x(+0.00f), y(+0.00f), z(+0.00f)
-	{
+	~vec3() = default;
 
+	vec3(vec3&& other) noexcept : x(other.x), y(other.y), z(other.z) {
+		other.x = 0;
+		other.y = 0;
+		other.z = 0;
+	}
+
+	vec3& operator=(const vec3& other) {
+		Copy(other);
+		return *this;
+	}
+
+	vec3& CopyAssign(const vec3& other) {
+		Copy(other);
+		return *this;
+	}
+
+	vec3& operator=(vec3&& other) noexcept {
+		if (this != &other) {
+			x = other.x;
+			y = other.y;
+			z = other.z;
+			other.x = 0;
+			other.y = 0;
+			other.z = 0;
+		}
+		return *this;
 	}
 
 	vec3(float x, float y, float z) : x(x), y(y), z(z)
 	{
-		
+
+	}
+
+	void Copy(const vec3& other)
+	{
+		x = other.x;
+		y = other.y;
+		z = other.z;
 	}
 
 	void operator-=(const vec3& v);

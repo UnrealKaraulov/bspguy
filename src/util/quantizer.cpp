@@ -2,40 +2,6 @@
 #include <cstring>
 #include <limits.h>
 
-unsigned char FixBounds(int i)
-{
-	if (i > 0xFF)
-		return 0xFF;
-	else if (i < 0x00)
-		return 0x00;
-	return (unsigned char)i;
-}
-
-unsigned char FixBounds(unsigned int i)
-{
-	if (i > 0xFF)
-		return 0xFF;
-	return (unsigned char)i;
-}
-
-unsigned char FixBounds(float i)
-{
-	if (i > (double)0xFF)
-		return 0xFF;
-	else if (i < (double)0x00)
-		return 0x00;
-	return (unsigned char)i;
-}
-
-unsigned char FixBounds(double i)
-{
-	if (i > (double)0xFF)
-		return 0xFF;
-	else if (i < (double)0x00)
-		return 0x00;
-	return (unsigned char)i;
-}
-
 Quantizer::Quantizer(unsigned int nMaxColors, unsigned char nColorBits)
 {
 	m_nColorBits = nColorBits;
@@ -588,15 +554,15 @@ void Quantizer::GenColorTable()
 
 			if (ns != 0)
 			{
-				m_pPalette[j].r = FixBounds(static_cast<int>(nr / ns));
-				m_pPalette[j].g = FixBounds(static_cast<int>(ng / ns));
-				m_pPalette[j].b = FixBounds(static_cast<int>(nb / ns));
+				m_pPalette[j].r = FixBounds(nr / ns);
+				m_pPalette[j].g = FixBounds(ng / ns);
+				m_pPalette[j].b = FixBounds(nb / ns);
 			}
 		}
 	}
 	else
 	{
-		GetPaletteColors(m_pTree, m_pPalette, &nIndex, nullptr);
+		GetPaletteColors(m_pTree, m_pPalette, &nIndex, NULL);
 	}
 }
 

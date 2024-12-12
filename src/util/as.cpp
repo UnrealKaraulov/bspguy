@@ -90,12 +90,12 @@ struct AScript
 		}
 
 		if (modulename.length() < 2) {
-			modulename = "m" + std::to_string(reinterpret_cast<uintptr_t>(this));
+			modulename = "m" + std::to_string((unsigned long long)(this));
 		}
 
         engine = asCreateScriptEngine();
-		ctx = nullptr;
-		module = nullptr;
+		ctx = NULL;
+		module = NULL;
 		bsp_name = "";
 
 		if (engine) 
@@ -162,14 +162,14 @@ struct AScript
 				if (ctx)
 				{
 					ctx->Release();
-					ctx = nullptr;
+					ctx = NULL;
 				}
 				if (engine)
 				{
 					engine->Release();
-					engine = nullptr;
+					engine = NULL;
 				}
-				module = nullptr;
+				module = NULL;
 			}
 		}
 	}
@@ -410,7 +410,7 @@ void RegisterStructs(asIScriptEngine* engine)
 	r = engine->RegisterObjectBehaviour("vec3", asBEHAVE_DESTRUCT, "void f()", asFUNCTIONPR([](vec3* memory) { memory->~vec3(); }, (vec3*), void), asCALL_CDECL_OBJFIRST); print_assert(r >= 0);
 
 	r = engine->RegisterObjectMethod("vec3", "void Copy(const vec3 &in)", asMETHOD(vec3, Copy), asCALL_THISCALL); print_assert(r >= 0);
-	r = engine->RegisterObjectMethod("vec3", "vec3& opAssign(const vec3 &in)", asMETHOD(vec3, operator=), asCALL_THISCALL); print_assert(r >= 0);
+	r = engine->RegisterObjectMethod("vec3", "vec3& opAssign(const vec3 &in)", asMETHOD(vec3, CopyAssign), asCALL_THISCALL); print_assert(r >= 0);
 	r = engine->RegisterObjectMethod("vec3", "vec3 opNeg()", asMETHOD(vec3, invert), asCALL_THISCALL); print_assert(r >= 0);
 
 	r = engine->RegisterObjectMethod("vec3", "void opSubAssign(const vec3 &in)", asMETHODPR(vec3, operator-=, (const vec3&), void), asCALL_THISCALL); print_assert(r >= 0);

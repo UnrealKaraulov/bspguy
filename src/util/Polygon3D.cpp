@@ -462,7 +462,7 @@ namespace GrahamScan {
 		return (dir == 2) ? -1 : 1;
 	}
 
-	std::vector<vec2> findConvexHull(vec2 points[], int n) {
+	std::vector<vec2> findConvexHull(vec2 * points, int n) {
 		std::vector<vec2> convexHullPoints;
 		int minY = (int)points[0].y, min = 0;
 

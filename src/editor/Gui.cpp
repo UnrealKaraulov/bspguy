@@ -1876,6 +1876,8 @@ void Gui::OpenFile(const std::string& file)
 {
 	Bsp* map = app->getSelectedMap();
 	BspRenderer* rend = map ? map->getBspRender() : NULL;
+	if (!rend)
+		return;
 
 	std::string pathlowercase = toLowerCase(file);
 	if (ends_with(pathlowercase, ".wad"))
@@ -3668,31 +3670,31 @@ void Gui::drawMenuBar()
 						print_log("\nSaved .umd map to {} path\n", g_working_dir + "exported.umd");
 
 						if (tmpmap.is_open()) {
-							tmpmap.write(reinterpret_cast<const char*>(&UMD_MAGIC), 4);
+							tmpmap.write((const char*)(&UMD_MAGIC), 4);
 
 							int zero = 0;
-							tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
-							tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
-							tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
-							tmpmap.write(reinterpret_cast<const char*>(&zero), 4);
+							tmpmap.write((const char*)(&zero), 4);
+							tmpmap.write((const char*)(&zero), 4);
+							tmpmap.write((const char*)(&zero), 4);
+							tmpmap.write((const char*)(&zero), 4);
 
-							tmpmap.write(reinterpret_cast<const char*>(&cell_x), 4);
-							tmpmap.write(reinterpret_cast<const char*>(&cell_y), 4);
-							tmpmap.write(reinterpret_cast<const char*>(&cell_size), 4);
-							tmpmap.write(reinterpret_cast<const char*>(&cell_size), 4);
-							tmpmap.write(reinterpret_cast<const char*>(&cell_levels), 4);
-							tmpmap.write(reinterpret_cast<const char*>(&cell_layers), 4);
+							tmpmap.write((const char*)(&cell_x), 4);
+							tmpmap.write((const char*)(&cell_y), 4);
+							tmpmap.write((const char*)(&cell_size), 4);
+							tmpmap.write((const char*)(&cell_size), 4);
+							tmpmap.write((const char*)(&cell_levels), 4);
+							tmpmap.write((const char*)(&cell_layers), 4);
 
 							for (const auto& tmpcell : cell_list)
 							{
-								tmpmap.write(reinterpret_cast<const char*>(&tmpcell.height), 1);
-								tmpmap.write(reinterpret_cast<const char*>(&tmpcell.height_offset), 1);
-								tmpmap.write(reinterpret_cast<const char*>(&tmpcell.texid), 1);
-								tmpmap.write(reinterpret_cast<const char*>(&tmpcell.type), 1);
+								tmpmap.write((const char*)(&tmpcell.height), 1);
+								tmpmap.write((const char*)(&tmpcell.height_offset), 1);
+								tmpmap.write((const char*)(&tmpcell.texid), 1);
+								tmpmap.write((const char*)(&tmpcell.type), 1);
 							}
 
 							int skybool = 0;
-							tmpmap.write(reinterpret_cast<const char*>(&skybool), 4);
+							tmpmap.write((const char*)(&skybool), 4);
 
 							unsigned int options = 0;
 							if (texture_support)
@@ -3704,15 +3706,15 @@ void Gui::drawMenuBar()
 								options |= umd_flags::UMD_OPTIMIZE_DISABLED;
 							}
 
-							tmpmap.write(reinterpret_cast<const char*>(&options), 4);
+							tmpmap.write((const char*)(&options), 4);
 
 							// textures
 							int textureCount = (int)umdTextures.size();
-							tmpmap.write(reinterpret_cast<const char*>(&textureCount), 4);
+							tmpmap.write((const char*)(&textureCount), 4);
 
 							for (const auto& texture : umdTextures) {
 								int length = (int)texture.length();
-								tmpmap.write(reinterpret_cast<const char*>(&length), 4);
+								tmpmap.write((const char*)(&length), 4);
 								tmpmap.write(texture.c_str(), length);
 							}
 
@@ -6438,7 +6440,7 @@ void Gui::drawDebugWidget()
 				for (int key = 0; key < GLFW_KEY_LAST; key++) {
 					if (app->pressed[key]) {
 						const char* keyName = glfwGetKeyName(key, 0);
-						if (keyName != nullptr) {
+						if (keyName != NULL) {
 							keysStr += std::string(keyName) + " ";
 						}
 						else
@@ -8875,7 +8877,7 @@ void Gui::loadFonts()
 
 	config.GlyphRanges = glyphRanges.Data;
 
-	ImFont* tmpFont = nullptr;
+	ImFont* tmpFont = NULL;
 
 	for (const auto& fontFile : fontFiles)
 	{
@@ -11702,8 +11704,9 @@ void Gui::drawLightMapTool()
 					}
 
 					int offset = ArrayXYtoId(currentlightMap[i]->width, imagex, imagey);
-					if (offset >= currentlightMap[i]->width * currentlightMap[i]->height * (int)sizeof(COLOR3))
-						offset = (currentlightMap[i]->width * currentlightMap[i]->height * (int)sizeof(COLOR3)) - 1;
+					int len = currentlightMap[i]->width * currentlightMap[i]->height * (int)sizeof(COLOR3);
+					if (offset >= len)
+						offset = len - 1;
 					if (offset < 0)
 						offset = 0;
 
@@ -11718,8 +11721,8 @@ void Gui::drawLightMapTool()
 					}
 					else
 					{
-						lighdata[offset] = COLOR3((unsigned char)(colourPatch[0] * 255.f),
-							(unsigned char)(colourPatch[1] * 255.f), (unsigned char)(colourPatch[2] * 255.f));
+						lighdata[offset] = COLOR3(FixBounds(colourPatch[0] * 255.f),
+							FixBounds(colourPatch[1] * 255.f), FixBounds(colourPatch[2] * 255.f));
 						currentlightMap[i]->upload(Texture::TEXTURE_TYPE::TYPE_LIGHTMAP);
 					}
 				}

@@ -4,11 +4,6 @@
 
 #include "bsptypes.h"
 
-unsigned char FixBounds(int i);
-unsigned char FixBounds(unsigned int i);
-unsigned char FixBounds(float i);
-unsigned char FixBounds(double i);
-
 
 class Quantizer
 {

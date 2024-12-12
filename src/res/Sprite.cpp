@@ -123,25 +123,25 @@ Sprite::Sprite(const std::string& filename, const vec3& mins , const vec3& maxs 
 	}
 
 	int id, version;
-	spr.read(reinterpret_cast<char*>(&id), sizeof(id));
+	spr.read((char*)(&id), sizeof(id));
 	if (id != 'PSDI' || !spr)
 	{
 		print_log(PRINT_RED, "Not a sprite {}\n", filename);
 		set_missing_sprite();
 		return;
 	}
-	spr.read(reinterpret_cast<char*>(&version), sizeof(version));
+	spr.read((char*)(&version), sizeof(version));
 	if (version != 2 || !spr) {
 		print_log(PRINT_RED, "Wrong version {}\n", filename);
 		set_missing_sprite();
 		return;
 	}
 	spr.seekg(0);
-	spr.read(reinterpret_cast<char*>(&header), sizeof(header));
-	spr.read(reinterpret_cast<char*>(&colors), sizeof(short));
+	spr.read((char*)(&header), sizeof(header));
+	spr.read((char*)(&colors), sizeof(short));
 
 	palette.resize(colors);
-	spr.read(reinterpret_cast<char*>(palette.data()), colors * sizeof(COLOR3));
+	spr.read((char*)(palette.data()), colors * sizeof(COLOR3));
 
 	sprite_groups.resize(header.numframes);
 	if (!spr)
@@ -156,17 +156,17 @@ Sprite::Sprite(const std::string& filename, const vec3& mins , const vec3& maxs 
 	for (int i = 0; i < header.numframes; ++i)
 	{
 		int is_group;
-		spr.read(reinterpret_cast<char*>(&is_group), sizeof(int));
+		spr.read((char*)(&is_group), sizeof(int));
 
 		int group_frames = 1;
 		sprite_groups[i].currentinterval = 0.0f;
 		sprite_groups[i].current_spr = 0;
 
 		if (is_group != 0) {
-			spr.read(reinterpret_cast<char*>(&group_frames), sizeof(int));
+			spr.read((char*)(&group_frames), sizeof(int));
 			sprite_groups[i].sprites.resize(group_frames);
 			for (int j = 0; j < group_frames; ++j) {
-				spr.read(reinterpret_cast<char*>(&sprite_groups[i].sprites[j].interval), sizeof(float));
+				spr.read((char*)(&sprite_groups[i].sprites[j].interval), sizeof(float));
 				sprite_groups[i].totalinterval += sprite_groups[i].sprites[j].interval;
 			}
 		}
@@ -181,14 +181,14 @@ Sprite::Sprite(const std::string& filename, const vec3& mins , const vec3& maxs 
 		{
 			SpriteImage& tmpSpriteImage = sprite_groups[i].sprites[j];
 
-			spr.read(reinterpret_cast<char*>(&tmpSpriteImage.frameinfo), sizeof(dspriteframe_t));
+			spr.read((char*)(&tmpSpriteImage.frameinfo), sizeof(dspriteframe_t));
 
 			int frame_size = tmpSpriteImage.frameinfo.width * tmpSpriteImage.frameinfo.height;
 
 			std::vector<unsigned char> raw_image;
 			raw_image.resize(frame_size);
 
-			spr.read(reinterpret_cast<char*>(raw_image.data()), frame_size);
+			spr.read((char*)(raw_image.data()), frame_size);
 
 			tmpSpriteImage.image.resize(frame_size);
 

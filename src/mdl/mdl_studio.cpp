@@ -8,16 +8,14 @@
 
 void StudioModel::CalcBoneAdj()
 {
-	// Valve
-	int					i, j;
-	float				value;
-	mstudiobonecontroller_t* pbonecontroller;
 
-	pbonecontroller = (mstudiobonecontroller_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bonecontrollerindex);
+	 mstudiobonecontroller_t* pbonecontroller = (mstudiobonecontroller_t*)
+		 ((unsigned char*)m_pstudiohdr + m_pstudiohdr->bonecontrollerindex);
 
-	for (j = 0; j < m_pstudiohdr->numbonecontrollers; j++)
+	for (int j = 0; j < m_pstudiohdr->numbonecontrollers; j++)
 	{
-		i = pbonecontroller[j].index;
+		float value = 0.0f;
+		int i = pbonecontroller[j].index;
 		if (i < 4)
 		{
 			// check for 360% wrapping
@@ -59,13 +57,10 @@ void StudioModel::CalcBoneAdj()
 
 void StudioModel::CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec4& q)
 {
-	// Valve
-	int					j, k;
-	vec4				q1, q2;
-	vec3				angle1, angle2;
+	vec3 angle1{}, angle2{};
 	mstudioanimvalue_t* panimvalue;
 
-	for (j = 0; j < 3; j++)
+	for (int j = 0; j < 3; j++)
 	{
 		if (panim->offset[j + 3] == 0)
 		{
@@ -74,7 +69,7 @@ void StudioModel::CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, m
 		else
 		{
 			panimvalue = (mstudioanimvalue_t*)((unsigned char*)panim + panim->offset[j + 3]);
-			k = frame;
+			int k = frame;
 			while (panimvalue->num.total <= k)
 			{
 				k -= panimvalue->num.total;
@@ -122,6 +117,7 @@ void StudioModel::CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, m
 
 	if (!VectorCompare(angle1, angle2))
 	{
+		vec4 q1, q2;
 		AngleQuaternion(angle1, q1);
 		AngleQuaternion(angle2, q2);
 		QuaternionSlerp(q1, q2, s, q);
@@ -271,8 +267,8 @@ void StudioModel::AdvanceFrame(float dt)
 {
 	if (!m_pstudiohdr) return;
 
-	auto* pseqdesc = reinterpret_cast<mstudioseqdesc_t*>(
-		reinterpret_cast<unsigned char*>(m_pstudiohdr) + m_pstudiohdr->seqindex) + m_sequence;
+	auto* pseqdesc = (mstudioseqdesc_t*)(
+		(unsigned char*)(m_pstudiohdr) + m_pstudiohdr->seqindex) + m_sequence;
 
 	m_frame += dt * pseqdesc->fps;
 
@@ -444,8 +440,6 @@ void StudioModel::SetupLighting()
 
 void StudioModel::SetupModel(int bodypart)
 {
-	int index;
-
 	if (bodypart >= m_pstudiohdr->numbodyparts || bodypart < 0)
 	{
 		print_log(get_localized_string(LANG_0979), bodypart);
@@ -464,7 +458,7 @@ void StudioModel::SetupModel(int bodypart)
 	}
 	else
 	{
-		index = m_bodynum / pbodypart->base;
+		int index = m_bodynum / pbodypart->base;
 		index = index % pbodypart->nummodels;
 		m_pmodel = (mstudiomodel_t*)((unsigned char*)m_pstudiohdr + pbodypart->modelindex) + index;
 	}
@@ -502,8 +496,6 @@ void StudioModel::UpdateModelMeshList()
 	if (!m_pstudiohdr || m_pstudiohdr->numbodyparts == 0)
 		return;
 
-	int i;
-
 	g_smodels_total++; // render data cache cookie
 
 	SetUpBones();
@@ -513,7 +505,7 @@ void StudioModel::UpdateModelMeshList()
 	if ((int)mdl_mesh_groups.size() < m_pstudiohdr->numbodyparts)
 		mdl_mesh_groups.resize(m_pstudiohdr->numbodyparts);
 
-	for (i = 0; i < m_pstudiohdr->numbodyparts; i++)
+	for (int i = 0; i < m_pstudiohdr->numbodyparts; i++)
 	{
 		SetupModel(i);
 		RefreshMeshList(i);
@@ -525,14 +517,7 @@ void StudioModel::RefreshMeshList(int body)
 	if (!m_pstudiohdr)
 		return;
 	StudioMesh tmpStudioMesh = StudioMesh();
-	mstudiomesh_t* pmesh;
-	unsigned char* pvertbone;
-	unsigned char* pnormbone;
-	vec3* pstudioverts;
-	vec3* pstudionorms;
-	mstudiotexture_t* ptexture;
-	float				lv_tmp;
-	short* pskinref;
+	float lv_tmp = 0.0f;
 
 	if (needForceUpdate)
 	{
@@ -540,16 +525,16 @@ void StudioModel::RefreshMeshList(int body)
 		maxs = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
 	}
 
-	pvertbone = ((unsigned char*)m_pstudiohdr + m_pmodel->vertinfoindex);
-	pnormbone = ((unsigned char*)m_pstudiohdr + m_pmodel->norminfoindex);
-	ptexture = m_ptexturehdr ? (mstudiotexture_t*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->textureindex) : NULL;
+	unsigned char* pvertbone = ((unsigned char*)m_pstudiohdr + m_pmodel->vertinfoindex);
+	unsigned char* pnormbone = ((unsigned char*)m_pstudiohdr + m_pmodel->norminfoindex);
+	mstudiotexture_t* ptexture = m_ptexturehdr ? (mstudiotexture_t*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->textureindex) : NULL;
 
-	pmesh = (mstudiomesh_t*)((unsigned char*)m_pstudiohdr + m_pmodel->meshindex);
+	mstudiomesh_t* pmesh = (mstudiomesh_t*)((unsigned char*)m_pstudiohdr + m_pmodel->meshindex);
 
-	pstudioverts = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->vertindex);
-	pstudionorms = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->normindex);
+	vec3* pstudioverts = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->vertindex);
+	vec3* pstudionorms = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->normindex);
 
-	pskinref = m_ptexturehdr ? (short*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->skinindex) : NULL;
+	short* pskinref = m_ptexturehdr ? (short*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->skinindex) : NULL;
 
 	if (m_ptexturehdr && m_ptexturehdr->skinindex < 0)
 	{
@@ -621,10 +606,8 @@ void StudioModel::RefreshMeshList(int body)
 
 	for (int j = 0; j < m_pmodel->nummesh; j++)
 	{
-		short* ptricmds;
-
 		pmesh = (mstudiomesh_t*)((unsigned char*)m_pstudiohdr + m_pmodel->meshindex) + j;
-		ptricmds = (short*)((unsigned char*)m_pstudiohdr + pmesh->triindex);
+		short* ptricmds = (short*)((unsigned char*)m_pstudiohdr + pmesh->triindex);
 		int texidx = ptexture && pskinref ? ptexture[pskinref[pmesh->skinref]].index : 0;
 		if (mdl_textures.size())
 		{
@@ -849,7 +832,7 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 	// ptexture->width = outwidth;
 	// ptexture->height = outheight;
 
-	auto texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name[0] != '\0' ? stripExt(ptexture->name) : "UNNAMED", true);
+	Texture * texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name[0] != '\0' ? stripExt(ptexture->name) : "UNNAMED", true);
 	texture->setWadName("model_textures");
 	texture->upload();
 	ptexture->index = (int)mdl_textures.size();
@@ -1132,14 +1115,12 @@ int StudioModel::SetSkin(int iValue)
 
 void StudioModel::ExtractBBox(vec3& _mins, vec3& _maxs)
 {
-	mstudioseqdesc_t* pseqdesc;
-
 	if (!m_pstudiohdr || m_sequence > m_pstudiohdr->numseq)
 		return;
 	if (m_sequence < 0)
 		return;
 
-	pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex);
+	mstudioseqdesc_t* pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex);
 	
 	_mins[0] = pseqdesc[m_sequence].bbmin[0];
 	_mins[1] = pseqdesc[m_sequence].bbmin[1];
@@ -1217,7 +1198,7 @@ float StudioModel::SetController(int iController, float flValue)
 	if (setting < 0.0f) setting = 0.0f;
 	if (setting > 255.0f) setting = 255.0f;
 	
-	m_controller[iController] = (unsigned char)round(setting);
+	m_controller[iController] = FixBounds(setting);
 
 	return setting * (1.0f / 255.0f) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
 }
@@ -1265,7 +1246,7 @@ float StudioModel::SetMouth(float flValue)
 	if (setting < 0.0f) setting = 0.0f;
 	if (setting > 64.0f) setting = 64.0f;
 
-	m_mouth = (unsigned char)round(setting);
+	m_mouth = FixBounds(setting);
 
 	return setting * (1.0f / 64.0f) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
 }
@@ -1301,7 +1282,7 @@ float StudioModel::SetBlending(int iBlender, float flValue)
 	if (setting < 0.0f) setting = 0.0f;
 	if (setting > 255.0f) setting = 255.0f;
 
-	m_blending[iBlender] = (unsigned char)round(setting);
+	m_blending[iBlender] = FixBounds(setting);
 
 	return setting * (1.0f / 255.0f) * (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]) + pseqdesc->blendstart[iBlender];
 }

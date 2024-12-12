@@ -181,6 +181,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntDir>glfw.dir\Release\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+    <CodeAnalysisRuleSet>NativeMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

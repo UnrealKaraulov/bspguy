@@ -23,8 +23,8 @@ BspRenderer::BspRenderer(Bsp* _map)
 	map->setBspRender(this);
 
 	lightmaps = NULL;
-	glTexturesSwap = NULL;
-	glTextures = NULL;
+	glTexturesSwap.clear();
+	glTextures.clear();
 
 	leafCube = new EntCube();
 	nodeCube = new EntCube();/*
@@ -340,7 +340,7 @@ void BspRenderer::loadTextures()
 
 	map->update_lump_pointers();
 
-	glTexturesSwap = new std::vector<Texture*>[map->textureCount];
+	glTexturesSwap.resize(map->textureCount);
 	for (int i = 0; i < map->textureCount; i++)
 	{
 		int texOffset = ((int*)map->textures)[i + 1];
@@ -615,9 +615,9 @@ RenderClipnodes* BspRenderer::addClipnodeModel(int modelIdx)
 
 void BspRenderer::loadLightmaps()
 {
-	std::vector<LightmapNode*> atlases;
-	std::vector<Texture*> atlasTextures;
-	atlases.push_back(new LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
+	std::vector<LightmapNode> atlases{};
+	std::vector<Texture*> atlasTextures{};
+	atlases.push_back(LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
 	atlasTextures.push_back(new Texture(MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE,
 		new unsigned char[MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
@@ -698,15 +698,15 @@ void BspRenderer::loadLightmaps()
 					atlasId = (int)(atlases.size()) - 1;
 
 				// TODO: Try fitting in earlier atlases before using the latest one
-				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
+				if (!atlases[atlasId].insert(info.w, info.h, info.x[s], info.y[s]))
 				{
-					atlases.push_back(new LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
+					atlases.push_back(LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
 					atlasTextures.push_back(new Texture(MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE, new unsigned char[MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
 					atlasId++;
 					memset(atlasTextures[atlasId]->get_data(), 255, MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
-					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
+					if (!atlases[atlasId].insert(info.w, info.h, info.x[s], info.y[s]))
 					{
 						print_log(get_localized_string(LANG_0275), info.w, info.h, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE);
 						continue;
@@ -745,15 +745,8 @@ void BspRenderer::loadLightmaps()
 		}
 	}
 
+	glLightmapTextures.assign(atlasTextures.begin(), atlasTextures.end());
 
-	glLightmapTextures = new Texture * [atlasTextures.size()];
-	for (size_t i = 0; i < atlasTextures.size(); i++)
-	{
-		glLightmapTextures[i] = atlasTextures[i];
-		delete atlases[i];
-	}
-
-	numLightmapAtlases = (int)(atlasTextures.size());
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE);
 	print_log(get_localized_string(LANG_0276), lightmapCount, atlases.size());
 	lightmapsGenerated = true;
@@ -894,9 +887,9 @@ void BspRenderer::deleteRenderFaces()
 
 void BspRenderer::deleteTextures()
 {
-	if (glTextures)
+	for (int i = 0; i < numLoadedTextures; i++)
 	{
-		for (int i = 0; i < numLoadedTextures; i++)
+		if (glTextures[i].size())
 		{
 			for (auto& tex : glTextures[i])
 			{
@@ -909,28 +902,22 @@ void BspRenderer::deleteTextures()
 				}
 			}
 		}
-		delete[] glTextures;
 	}
 
-	glTextures = NULL;
+	glTextures.clear();
 }
 
 void BspRenderer::deleteLightmapTextures()
 {
-	if (glLightmapTextures)
+	for (size_t i = 0; i < glLightmapTextures.size(); i++)
 	{
-		for (int i = 0; i < numLightmapAtlases; i++)
+		if (glLightmapTextures[i])
 		{
-			if (glLightmapTextures[i])
-			{
-				delete glLightmapTextures[i];
-				glLightmapTextures[i] = NULL;
-			}
+			delete glLightmapTextures[i];
+			glLightmapTextures[i] = NULL;
 		}
-		delete[] glLightmapTextures;
 	}
-	numLightmapAtlases = 0;
-	glLightmapTextures = NULL;
+	glLightmapTextures.clear();
 }
 
 void BspRenderer::deleteFaceMaths()
@@ -1460,14 +1447,11 @@ void BspRenderer::generateNavMeshBuffer() {
 	}
 
 	cVert* output = new cVert[allVerts.size()];
-	for (size_t i = 0; i < allVerts.size(); i++) {
-		output[i] = allVerts[i];
-	}
+	std::copy(allVerts.begin(), allVerts.end(), output);
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
-	for (size_t i = 0; i < wireframeVerts.size(); i++) {
-		wireOutput[i] = wireframeVerts[i];
-	}
+	std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
+
 
 	if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
 		renderClip->clipnodeBuffer[hull] = NULL;
@@ -1598,14 +1582,10 @@ void BspRenderer::generateLeafNavMeshBuffer() {
 	}
 
 	cVert* output = new cVert[allVerts.size()];
-	for (size_t i = 0; i < allVerts.size(); i++) {
-		output[i] = allVerts[i];
-	}
+	std::copy(allVerts.begin(), allVerts.end(), output);
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
-	for (size_t i = 0; i < wireframeVerts.size(); i++) {
-		wireOutput[i] = wireframeVerts[i];
-	}
+	std::copy(wireframeVerts.begin(), wireframeVerts.end(), wireOutput);
 
 	if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
 		renderClip->clipnodeBuffer[hull] = NULL;
@@ -2542,12 +2522,12 @@ BspRenderer::~BspRenderer()
 
 void BspRenderer::reuploadTextures()
 {
-	if (!glTexturesSwap)
+	if (!glTexturesSwap.size())
 	{
 		loadTextures();
 	}
 
-	if (!glTexturesSwap)
+	if (!glTexturesSwap.size())
 		return;
 
 	deleteTextures();
@@ -2555,7 +2535,7 @@ void BspRenderer::reuploadTextures()
 	//loadTextures();
 
 	glTextures = glTexturesSwap;
-	glTexturesSwap = NULL;
+	glTexturesSwap.clear();
 
 	for (int i = 0; i < map->textureCount; i++)
 	{
@@ -2574,7 +2554,7 @@ void BspRenderer::delayLoadData()
 {
 	if (!lightmapsUploaded && lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
-		for (int i = 0; i < numLightmapAtlases; i++)
+		for (int i = 0; i < glLightmapTextures.size(); i++)
 		{
 			if (glLightmapTextures[i])
 				glLightmapTextures[i]->upload();

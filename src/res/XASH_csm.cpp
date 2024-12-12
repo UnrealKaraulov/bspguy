@@ -104,7 +104,7 @@ bool CSMFile::read(const std::string& filePath)
 		return false;
 	}
 
-	if (!file.read(reinterpret_cast<char*>(&header), sizeof(header)))
+	if (!file.read((char*)(&header), sizeof(header)))
 	{
 		print_log(PRINT_RED, "Error: Failed to read CSM header: {}\n", filePath);
 		return false;
@@ -131,7 +131,7 @@ bool CSMFile::read(const std::string& filePath)
 		return false;
 	}
 
-	if (!file.read(reinterpret_cast<char*>(matstr.data()), header.mat_size))
+	if (!file.read((char*)(matstr.data()), header.mat_size))
 	{
 		print_log(PRINT_RED, "Error: Failed to read CSM materials: {}\n", filePath);
 		return false;
@@ -148,7 +148,7 @@ bool CSMFile::read(const std::string& filePath)
 		return false;
 	}
 
-	if (!file.read(reinterpret_cast<char*>(vertices.data()), header.vertex_size * header.vertex_count))
+	if (!file.read((char*)(vertices.data()), header.vertex_size * header.vertex_count))
 	{
 		print_log(PRINT_RED, "Error: Failed to read CSM vertices: {}\n", filePath);
 		return false;
@@ -162,7 +162,7 @@ bool CSMFile::read(const std::string& filePath)
 
 	faces.resize(header.faces_count);
 
-	if (!file.read(reinterpret_cast<char*>(faces.data()), header.face_size * header.faces_count))
+	if (!file.read((char*)(faces.data()), header.face_size * header.faces_count))
 	{
 		print_log(PRINT_RED, "Error: Failed to read CSM faces: {}\n", filePath);
 		return false;
@@ -202,7 +202,7 @@ bool CSMFile::write(const std::string& filePath) {
 	header.vertex_ofs = header.mat_ofs + header.mat_size;
 	header.faces_ofs = header.vertex_ofs + (header.vertex_size * header.vertex_count);
 
-	file.write(reinterpret_cast<char*>(&header), sizeof(header));
+	file.write((char*)(&header), sizeof(header));
 
 	matstr.push_back('\0');
 

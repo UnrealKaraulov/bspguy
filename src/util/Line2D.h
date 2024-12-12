@@ -30,5 +30,5 @@ struct Line2D {
 	// returns the the distance that the lines overlap, and sets range of overlap for each segment
 	// t0-t1 = 0-1 range for this segment
 	// t2-t2 = 0-1 range for other segment
-	float getOverlapRanges(Line2D& other, float& t0, float& t1, float& t2, float& t3);
+	float getOverlapRanges(const Line2D& other, float& t0, float& t1, float& t2, float& t3);
 };

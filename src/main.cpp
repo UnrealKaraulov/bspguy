@@ -24,7 +24,7 @@
 // Notes: (newbspguy):
 // ...
 
-std::string g_version_string = "NewBSPGuy v4.39";
+std::string g_version_string = "NewBSPGuy v4.40";
 
 
 #ifdef WIN32
@@ -814,10 +814,10 @@ void make_minidump(EXCEPTION_POINTERS* e)
 	}
 
 	auto hDbgHelp = LoadLibraryA("dbghelp");
-	if (hDbgHelp == nullptr)
+	if (hDbgHelp == NULL)
 		return;
 	auto pMiniDumpWriteDump = (decltype(&MiniDumpWriteDump))GetProcAddress(hDbgHelp, "MiniDumpWriteDump");
-	if (pMiniDumpWriteDump == nullptr)
+	if (pMiniDumpWriteDump == NULL)
 		return;
 
 	SYSTEMTIME t;
@@ -842,9 +842,9 @@ void make_minidump(EXCEPTION_POINTERS* e)
 		GetCurrentProcessId(),
 		hFile,
 		MINIDUMP_TYPE(MiniDumpNormal),
-		e ? &exceptionInfo : nullptr,
-		nullptr,
-		nullptr);
+		e ? &exceptionInfo : NULL,
+		NULL,
+		NULL);
 
 	CloseHandle(hFile);
 }

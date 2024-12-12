@@ -28,6 +28,8 @@ public:
 	Winding(int numpoints);
 	Winding(const BSPPLANE& plane, float epsilon = ON_EPSILON);
 	Winding();
+	~Winding() = default;
+
 	Winding(const Winding& other);
 	void getPlane(BSPPLANE& plane) const;
 	Winding& operator=(const Winding& other);

@@ -180,6 +180,10 @@
     <IntDir>bspguy.dir\Release\</IntDir>
     <OutDir>.\..\vs-project\Release\</OutDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>bspguy.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -517,6 +521,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
       <AdditionalOptions>/wd4100 /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <EnablePREfast>true</EnablePREfast>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
@@ -968,6 +973,7 @@ del "$(TargetDir)bspguy.cfg_bak"</Command>
     <None Include="..\resources\languages\language.ini" />
     <None Include="..\resources\languages\language_ru.ini" />
     <None Include="..\resources\languages\language_zh.ini" />
+    <None Include="bspguy.ruleset" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

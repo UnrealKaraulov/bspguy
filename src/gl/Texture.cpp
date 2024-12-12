@@ -54,7 +54,7 @@ Texture::~Texture()
     if (id != 0xFFFFFFFF)
         glDeleteTextures(1, &id);
 
-    if (tex_owndata && data != nullptr)
+    if (tex_owndata && data != NULL)
         delete[] data;
 
     auto it = std::remove(g_all_Textures.begin(), g_all_Textures.end(), this);
@@ -70,13 +70,13 @@ Texture::~Texture()
 
 unsigned char* Texture::get_data()
 {
-    if (data == nullptr)
+    if (data == NULL)
     {
         tex_owndata = true;
         data = new unsigned char[dataLen];
         if (id != 0xFFFFFFFF)
         {
-            std::fill(std::begin(binded_tex), std::end(binded_tex), nullptr);
+            memset(binded_tex, 0, sizeof(binded_tex));
             glBindTexture(GL_TEXTURE_2D, id);
             glPixelStorei(GL_PACK_ALIGNMENT, 1);
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -170,7 +170,7 @@ void Texture::upload(int _type)
     if (tex_owndata)
     {
         delete[] data;
-        data = nullptr;
+        data = NULL;
     }
     g_mutex_list[3].unlock();
 }

@@ -284,3 +284,9 @@ void mapFixLightEnts(Bsp* map);
 
 void ExportModel(Bsp* src_map, const std::string & export_path, int model_id, int ExportType, bool movemodel);
 int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip);
+
+
+unsigned char FixBounds(int i);
+unsigned char FixBounds(unsigned int i);
+unsigned char FixBounds(float i);
+unsigned char FixBounds(double i);

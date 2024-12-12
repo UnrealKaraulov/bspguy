@@ -1353,7 +1353,6 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 		{
 			BSPMIPTEX* tex = (BSPMIPTEX*)(mapA.textures + offset);
 			int sz = mapA.getBspTextureSize(i);
-			//memset(tex->nOffsets, 0, sizeof(unsigned int) * 4);
 
 			mipTexOffsets[newTexCount] = (int)(mipTexWritePtr - newMipTexData);
 			memcpy(mipTexWritePtr, tex, sz);
@@ -1421,18 +1420,20 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 	texHeader[0] = newTexCount;
 	for (unsigned int i = 0; i < newTexCount; i++)
 	{
-		texHeader[i + 1] = (mipTexOffsets[i] == -1) ? -1 : mipTexOffsets[i] + texHeaderSize;
+		if (i + 1 < newTexCount + 1) {
+			texHeader[i + 1] = (mipTexOffsets[i] == -1) ? -1 : mipTexOffsets[i] + texHeaderSize;
+		}
 	}
 
 	memcpy(newTextureData + texHeaderSize, newMipTexData, mipTexWritePtr - newMipTexData);
 
 	delete[] mipTexOffsets;
 
-
 	print_log(get_localized_string(LANG_0241), duplicates);
 	print_log("\n");
 
 	mapA.replace_lump(LUMP_TEXTURES, newTextureData, newLen);
+	delete[] newMipTexData;
 }
 
 void BspMerger::merge_vertices(Bsp& mapA, Bsp& mapB)
@@ -2096,17 +2097,17 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 	}
 
 
-	// write new head node (clipnode BSP)
-	{
-		const int NEW_NODE_COUNT = MAX_MAP_HULLS - 1;
 
-		BSPCLIPNODE32 newHeadNodes[NEW_NODE_COUNT];
+	// Write new head node (clipnode BSP)
+	{
+		constexpr int NEW_NODE_COUNT = MAX_MAP_HULLS - 1;  // Use constexpr as suggested
+
+		std::vector<BSPCLIPNODE32> newHeadNodes(NEW_NODE_COUNT);
 		for (int i = 0; i < NEW_NODE_COUNT; i++)
 		{
-			//print_log(get_localized_string(LANG_0246),i+1,thisWorld.iHeadnodes[i+1]);
 			newHeadNodes[i] = {
-				separationPlaneIdx,	// plane idx
-				{	// child nodes
+				separationPlaneIdx,    // plane idx
+				{   // child nodes
 					otherWorld.iHeadnodes[i + 1] + mapA.clipnodeCount + NEW_NODE_COUNT,
 					thisWorld.iHeadnodes[i + 1] + NEW_NODE_COUNT
 				},
@@ -2123,16 +2124,13 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 
 			if (swapNodeChildren)
 			{
-				int temp = newHeadNodes[i].iChildren[0];
-				newHeadNodes[i].iChildren[0] = newHeadNodes[i].iChildren[1];
-				newHeadNodes[i].iChildren[1] = temp;
+				std::swap(newHeadNodes[i].iChildren[0], newHeadNodes[i].iChildren[1]);
 			}
 		}
 
-		BSPCLIPNODE32* newThisNodes = new BSPCLIPNODE32[mapA.clipnodeCount + NEW_NODE_COUNT];
-		memcpy(newThisNodes, newHeadNodes, NEW_NODE_COUNT * sizeof(BSPCLIPNODE32));
-		memcpy(newThisNodes + NEW_NODE_COUNT, mapA.clipnodes, mapA.clipnodeCount * sizeof(BSPCLIPNODE32));
+		std::vector<BSPCLIPNODE32> newThisClipNodes(newHeadNodes.begin(), newHeadNodes.end());
+		newThisClipNodes.insert(newThisClipNodes.end(), mapA.clipnodes, mapA.clipnodes + mapA.clipnodeCount);
 
-		mapA.replace_lump(LUMP_CLIPNODES, newThisNodes, (mapA.clipnodeCount + NEW_NODE_COUNT) * sizeof(BSPCLIPNODE32));
+		mapA.replace_lump(LUMP_CLIPNODES, newThisClipNodes.data(), newThisClipNodes.size() * sizeof(BSPCLIPNODE32));
 	}
 }

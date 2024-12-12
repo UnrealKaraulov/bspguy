@@ -3911,8 +3911,8 @@ void Renderer::updateEntConnections()
 	size_t numVerts = targets.size() * 2 + callers.size() * 2 + callerAndTarget.size() * 2;
 	size_t numPoints = callers.size() + targets.size() + callerAndTarget.size();
 
-	cVert* lines = new cVert[numVerts + 9];
-	cCube* points = new cCube[numPoints + 3];
+	cVert* lines = new cVert[numVerts];
+	cCube* points = new cCube[numPoints];
 
 	const COLOR4 targetColor = { 255, 255, 0, 255 };
 	const COLOR4 callerColor = { 0, 255, 255, 255 };
@@ -3927,24 +3927,36 @@ void Renderer::updateEntConnections()
 	for (size_t i = 0; i < targets.size(); i++)
 	{
 		vec3 ori = getEntOrigin(map, targets[i]).flip();
-		points[cidx++] = cCube(ori - extent, ori + extent, targetColor);
-		lines[idx++] = cVert(srcPos, targetColor);
-		lines[idx++] = cVert(ori, targetColor);
+		if (cidx < numPoints) {
+			points[cidx++] = cCube(ori - extent, ori + extent, targetColor);
+		}
+		if (idx < numVerts) {
+			lines[idx++] = cVert(srcPos, targetColor);
+			lines[idx++] = cVert(ori, targetColor);
+		}
 	}
 	for (size_t i = 0; i < callers.size(); i++)
 	{
 		vec3 ori = getEntOrigin(map, callers[i]).flip();
-		points[cidx++] = cCube(ori - extent, ori + extent, callerColor);
-		lines[idx++] = cVert(srcPos, callerColor);
-		lines[idx++] = cVert(ori, callerColor);
+		if (cidx < numPoints) {
+			points[cidx++] = cCube(ori - extent, ori + extent, callerColor);
+		}
+		if (idx < numVerts) {
+			lines[idx++] = cVert(srcPos, callerColor);
+			lines[idx++] = cVert(ori, callerColor);
+		}
 	}
 
-	for (size_t i = 0; i < callerAndTarget.size() && cidx < numPoints && idx < numVerts; i++)
+	for (size_t i = 0; i < callerAndTarget.size(); i++)
 	{
 		vec3 ori = getEntOrigin(map, callerAndTarget[i]).flip();
-		points[cidx++] = cCube(ori - extent, ori + extent, bothColor);
-		lines[idx++] = cVert(srcPos, bothColor);
-		lines[idx++] = cVert(ori, bothColor);
+		if (cidx < numPoints) {
+			points[cidx++] = cCube(ori - extent, ori + extent, bothColor);
+		}
+		if (idx < numVerts) {
+			lines[idx++] = cVert(srcPos, bothColor);
+			lines[idx++] = cVert(ori, bothColor);
+		}
 	}
 
 	entConnections = new VertexBuffer(colorShader, lines, (int)numVerts, GL_LINES);

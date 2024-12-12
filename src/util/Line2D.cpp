@@ -44,7 +44,7 @@ bool Line2D::isAlignedWith(const Line2D& other) {
 	return cross1 * cross2 < EPSILON;
 }
 
-float Line2D::getOverlapRanges(Line2D& other, float& t0, float& t1, float& t2, float& t3) {
+float Line2D::getOverlapRanges(const Line2D& other, float& t0, float& t1, float& t2, float& t3) {
 	float d1 = dotProduct(start, dir);
 	float d2 = dotProduct(end, dir);
 	float d3 = dotProduct(other.start, dir);

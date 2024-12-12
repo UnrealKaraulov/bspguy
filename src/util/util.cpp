@@ -379,7 +379,7 @@ bool pickAABB(const vec3& start, const vec3& rayDir, const vec3& mins, const vec
 	char quadrant[3];
 	int whichPlane = 0;
 	float maxT[3] = { -1.0f, -1.0f, -1.0f };
-	float candidatePlane[3];
+	float candidatePlane[3]{};
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -458,7 +458,7 @@ float getDistAlongAxis(const vec3& axis, const vec3& p)
 
 bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& outDist)
 {
-	const float tolerance = 0.00001f;
+	constexpr float tolerance = 0.00001f;
 
 	size_t numVerts = verts.size();
 	for (size_t i = 0; i < numVerts; ++i)
@@ -2930,3 +2930,4 @@ void mapFixLightEnts(Bsp* map)
 
 	map->update_ent_lump();
 }
+

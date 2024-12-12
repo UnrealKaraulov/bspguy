@@ -267,18 +267,17 @@ public:
 	EntCube* nodeCube;/*
 	EntCube* nodePlaneCube;*/
 
-	int numLightmapAtlases;
-
 	int numRenderLightmapInfos;
 	int numLoadedTextures;
 	std::vector<Polygon3D> debugFaces;
 	NavMesh* debugNavMesh;
 
-	std::vector<Texture*>* glTextures = NULL;
-	// textures loaded in a separate thread
-	std::vector<Texture*>* glTexturesSwap;
+	std::vector<std::vector<Texture*>> glTextures{};
 
-	Texture** glLightmapTextures = NULL;
+	// textures loaded in a separate thread
+	std::vector<std::vector<Texture*>> glTexturesSwap{};
+
+	std::vector<Texture*> glLightmapTextures{};
 	std::future<void> texturesFuture;
 
 	bool lightmapsGenerated = false;

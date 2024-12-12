@@ -310,7 +310,7 @@ void Winding::Offset(vec3 Offset)
 
 bool Winding::IsConvex()
 {
-	int numPoint = static_cast<int>(m_Points.size());
+	int numPoint = (int)(m_Points.size());
 	float positiveArea = 0.0;
 	float negativeArea = 0.0;
 

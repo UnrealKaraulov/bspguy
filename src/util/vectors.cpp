@@ -980,3 +980,38 @@ void VectorAngles(const vec3 & forward, vec3 & angles)
 	angles[1] = yaw;
 	angles[2] = 0;
 }
+
+
+unsigned char FixBounds(int i)
+{
+	if (i > 0xFF)
+		return 0xFF;
+	else if (i < 0x00)
+		return 0x00;
+	return (unsigned char)i;
+}
+
+unsigned char FixBounds(unsigned int i)
+{
+	if (i > 0xFF)
+		return 0xFF;
+	return (unsigned char)i;
+}
+
+unsigned char FixBounds(float i)
+{
+	if (i > (double)0xFF)
+		return 0xFF;
+	else if (i < (double)0x00)
+		return 0x00;
+	return (unsigned char)i;
+}
+
+unsigned char FixBounds(double i)
+{
+	if (i > (double)0xFF)
+		return 0xFF;
+	else if (i < (double)0x00)
+		return 0x00;
+	return (unsigned char)i;
+}
