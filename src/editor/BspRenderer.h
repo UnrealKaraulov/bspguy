@@ -134,8 +134,7 @@ struct RenderModel
 
 	~RenderModel()
 	{
-		if (wireframeBuffer)
-			delete wireframeBuffer;
+		delete wireframeBuffer;
 
 		for (auto& g : renderGroups)
 		{
@@ -268,7 +267,6 @@ public:
 	EntCube* nodePlaneCube;*/
 
 	int numRenderLightmapInfos;
-	int numLoadedTextures;
 	std::vector<Polygon3D> debugFaces;
 	NavMesh* debugNavMesh;
 

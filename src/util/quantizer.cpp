@@ -18,8 +18,7 @@ Quantizer::~Quantizer()
 {
 	if (m_pTree)
 		DeleteTree(&m_pTree);
-	if (m_pPalette)
-		delete[] m_pPalette;
+	delete[] m_pPalette;
 
 	for (unsigned char i = 0; i <= m_nColorBits; i++)
 		m_pReducibleNodes[i] = 0;
@@ -98,8 +97,7 @@ void Quantizer::ProcessImage(COLOR3* image, unsigned int size)
 		ReduceTree(&m_nLeafCount, m_pReducibleNodes);
 
 
-	if (m_pPalette)
-		delete[] m_pPalette;
+	delete[] m_pPalette;
 
 	m_pPalette = new COLOR3[m_nMaxColors];
 
@@ -504,8 +502,7 @@ void Quantizer::SetColorTable(COLOR3* pal, unsigned int colors)
 	if (m_pTree)
 		DeleteTree(&m_pTree);
 
-	if (m_pPalette)
-		delete[] m_pPalette;
+	delete[] m_pPalette;
 
 	*this = Quantizer(colors, m_nColorBits);
 

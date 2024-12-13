@@ -481,8 +481,7 @@ public:
 			mdl_cube = NULL;
 		}
 
-		if (m_pstudiohdr)
-			delete[] m_pstudiohdr;
+		delete[] m_pstudiohdr;
 
 		for (auto& tex : mdl_textures)
 		{
@@ -493,10 +492,7 @@ public:
 
 		for (int i = 0; i < 32; i++)
 		{
-			if (m_panimhdr[i])
-			{
-				delete[] m_panimhdr[i];
-			}
+			delete[] m_panimhdr[i];
 		}
 		for (auto& body : mdl_mesh_groups)
 		{

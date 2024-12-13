@@ -7,8 +7,7 @@
 Wad::Wad(void)
 {
 	dirEntries.clear();
-	if (filedata)
-		delete[] filedata;
+	delete[] filedata;
 	filedata = NULL;
 }
 

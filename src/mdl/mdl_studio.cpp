@@ -908,10 +908,7 @@ void StudioModel::DrawMDL(int meshnum)
 					{
 						for (auto& submesh : body)
 						{
-							if (submesh.buffer)
-							{
-								delete submesh.buffer;
-							}
+							delete submesh.buffer;
 						}
 					}
 				}

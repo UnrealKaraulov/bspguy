@@ -105,10 +105,7 @@ struct CSM_MDL_MESH
 	}
 	~CSM_MDL_MESH()
 	{
-		if (buffer)
-		{
-			delete buffer;
-		}
+		delete buffer;
 		buffer = NULL;
 		matid = 0;
 		verts = std::vector<modelVert>();

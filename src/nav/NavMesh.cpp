@@ -53,6 +53,7 @@ int NavNode::numLinks() {
 
 NavMesh::NavMesh() {
 	clear();
+	numPolys = 0;
 }
 
 void NavMesh::clear() {

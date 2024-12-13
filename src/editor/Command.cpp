@@ -93,8 +93,7 @@ DeleteEntityCommand::DeleteEntityCommand(std::string desc, int entIdx)
 
 DeleteEntityCommand::~DeleteEntityCommand()
 {
-	if (entData)
-		delete entData;
+	delete entData;
 }
 
 void DeleteEntityCommand::execute()
@@ -164,10 +163,7 @@ CreateEntityCommand::CreateEntityCommand(std::string desc, int mapIdx, Entity* e
 
 CreateEntityCommand::~CreateEntityCommand()
 {
-	if (entData)
-	{
-		delete entData;
-	}
+	delete entData;
 }
 
 void CreateEntityCommand::execute()
@@ -248,8 +244,7 @@ void CreateEntityFromTextCommand::execute() {
 			}
 			lastBracket = 0;
 
-			if (ent != NULL)
-				delete ent;
+			delete ent;
 			ent = new Entity();
 		}
 		else if (line[0] == '}')

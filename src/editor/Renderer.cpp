@@ -29,7 +29,7 @@ std::vector<BspRenderer*> mapRenderers{};
 int current_fps = 0;
 int ortho_overview = 0;
 
-vec3 ortho_mins(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord), ortho_maxs(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
+vec3 ortho_mins(-FLT_MAX, -FLT_MAX, -FLT_MAX), ortho_maxs(FLT_MAX, FLT_MAX, FLT_MAX);
 vec3 ortho_offset = {};
 float ortho_near = 1.0f;
 float ortho_far = 262144.0f;
@@ -814,11 +814,11 @@ void Renderer::renderLoop()
 					pickInfo.selectedEnts.clear();
 					for (auto& f : pickInfo.selectedFaces)
 					{
-						int mdl = SelectedMap->get_model_from_face(static_cast<int>(f));
+						int mdl = SelectedMap->get_model_from_face(f);
 						if (mdl > 0 && mdl < SelectedMap->modelCount)
 						{
 							int mdl_ent = SelectedMap->get_ent_from_model(mdl);
-							if (mdl_ent >= 0 && mdl_ent < static_cast<int>(SelectedMap->ents.size()))
+							if (mdl_ent >= 0 && mdl_ent < (int)SelectedMap->ents.size())
 							{
 								pickInfo.AddSelectedEnt(mdl_ent);
 							}
@@ -1588,7 +1588,6 @@ void Renderer::saveGuiSettings()
 	g_settings.limits_open = gui->showLimitsWidget;
 	g_settings.entreport_open = gui->showEntityReport;
 	g_settings.settings_tab = gui->settingsTab;
-	g_settings.verboseLogs = g_settings.verboseLogs;
 	g_settings.zfar = zFar;
 	g_settings.fov = fov;
 	g_settings.render_flags = g_render_flags;
@@ -1611,7 +1610,6 @@ void Renderer::loadGuiSettings()
 	gui->settingsTab = g_settings.settings_tab;
 	gui->openSavedTabs = true;
 
-	g_settings.verboseLogs = g_settings.verboseLogs;
 	zFar = g_settings.zfar;
 	fov = g_settings.fov;
 
@@ -2027,11 +2025,11 @@ void Renderer::cameraPickingControls()
 				}
 			}
 
-			if (hoverVert != -1 && hoverVert < static_cast<int>(modelVerts.size()))
+			if (hoverVert != -1 && hoverVert < (int)modelVerts.size())
 			{
 				modelVerts[hoverVert].selected = anyCtrlPressed ? !modelVerts[hoverVert].selected : true;
 			}
-			else if (hoverEdge != -1 && hoverEdge < static_cast<int>(modelEdges.size()))
+			else if (hoverEdge != -1 && hoverEdge < (int)modelEdges.size())
 			{
 				modelEdges[hoverEdge].selected = anyCtrlPressed ? !modelEdges[hoverEdge].selected : true;
 				for (int i = 0; i < 2; ++i)
@@ -3930,7 +3928,7 @@ void Renderer::updateEntConnections()
 		if (cidx < numPoints) {
 			points[cidx++] = cCube(ori - extent, ori + extent, targetColor);
 		}
-		if (idx < numVerts) {
+		if (idx + 1 < numVerts) {
 			lines[idx++] = cVert(srcPos, targetColor);
 			lines[idx++] = cVert(ori, targetColor);
 		}
@@ -3941,7 +3939,7 @@ void Renderer::updateEntConnections()
 		if (cidx < numPoints) {
 			points[cidx++] = cCube(ori - extent, ori + extent, callerColor);
 		}
-		if (idx < numVerts) {
+		if (idx + 1 < numVerts) {
 			lines[idx++] = cVert(srcPos, callerColor);
 			lines[idx++] = cVert(ori, callerColor);
 		}
@@ -3953,7 +3951,7 @@ void Renderer::updateEntConnections()
 		if (cidx < numPoints) {
 			points[cidx++] = cCube(ori - extent, ori + extent, bothColor);
 		}
-		if (idx < numVerts) {
+		if (idx + 1 < numVerts) {
 			lines[idx++] = cVert(srcPos, bothColor);
 			lines[idx++] = cVert(ori, bothColor);
 		}
@@ -4725,8 +4723,7 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 			}
 			lastBracket = 0;
 
-			if (ent != NULL)
-				delete ent;
+			delete ent;
 			ent = new Entity();
 		}
 		else if (line[0] == '}')
@@ -5216,8 +5213,7 @@ void Renderer::merge(std::string fpath)
 
 	if (!mergeResult.map || !mergeResult.map->bsp_valid) {
 		delete map2;
-		if (mergeResult.map)
-			delete mergeResult.map;
+		delete mergeResult.map;
 
 		mergeResult.map = NULL;
 		return;

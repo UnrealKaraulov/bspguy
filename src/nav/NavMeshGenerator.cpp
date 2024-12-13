@@ -19,9 +19,9 @@ NavMesh* NavMeshGenerator::generate(Bsp* map, int hull) {
 	mergeFaces(map, faces);
 	cullTinyFaces(faces);
 
-	for (int i = 0; i < solidFaces.size(); i++) {
-		if (solidFaces[i])
-			delete solidFaces[i];
+	for (int i = 0; i < solidFaces.size(); i++) 
+	{
+		delete solidFaces[i];
 	}
 
 	print_log("Generated nav mesh in {}\n", faces.size(), (float)(glfwGetTime() - NavMeshGeneratorGenStart));

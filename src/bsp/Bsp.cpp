@@ -33,15 +33,13 @@ size_t totalBspStructs = 0;
 
 void Bsp::init_empty_bsp()
 {
-	lumps = new unsigned char* [HEADER_LUMPS];
+	lumps.resize(HEADER_LUMPS);
 
 	bsp_header.nVersion = 30;
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
-		replacedLump[i] = true;
-		lumps[i] = new unsigned char[512];
-		memset(lumps[i], 0, 512);
+		lumps[i].resize(512, 0);
 		bsp_header.lump[i].nOffset = 0;
 		bsp_header.lump[i].nLength = 4;
 	}
@@ -114,6 +112,9 @@ Bsp::Bsp()
 	is_bsp_model = false;
 	is_mdl_model = false;
 
+	bsp_valid = true;
+	renderer = NULL;
+
 	map_mdl = NULL;
 	map_spr = NULL;
 	map_csm = NULL;
@@ -142,14 +143,13 @@ Bsp::Bsp()
 	parentMap = NULL;
 	pvsFaces = NULL;
 
-	lumps = new unsigned char* [HEADER_LUMPS];
-	memset(lumps, 0, sizeof(unsigned char*) * HEADER_LUMPS);
-
-	extralumps = NULL;
+	lumps.resize(HEADER_LUMPS);
+	extralumps.clear();
 
 	bsp_header.nVersion = 30;
 	totalBspStructs++;
 	realIdx = totalBspStructs;
+	update_lump_pointers();
 }
 
 Bsp::Bsp(std::string fpath)
@@ -269,6 +269,7 @@ Bsp::Bsp(std::string fpath)
 		int len;
 		char* newlump = loadFile(entFilePath, len);
 		replace_lump(LUMP_ENTITIES, newlump, len);
+		delete[] newlump;
 	}
 
 	load_ents();
@@ -333,11 +334,6 @@ Bsp::Bsp(std::string fpath)
 		update_ent_lump();
 	}
 
-	for (int i = 0; i < HEADER_LUMPS; i++)
-	{
-		replacedLump[i] = false;
-	}
-
 	if (g_settings.save_cam)
 	{
 		if (world)
@@ -380,28 +376,14 @@ Bsp::Bsp(std::string fpath)
 
 Bsp::~Bsp()
 {
-	for (int i = 0; i < HEADER_LUMPS; i++)
-	{
-		if (lumps[i] && replacedLump[i])
-		{
-			delete[] lumps[i];
-		}
-	}
-	delete[] lumps;
+	lumps.clear();
 
 	for (size_t i = 0; i < ents.size(); i++)
 	{
 		delete ents[i];
 	}
-	for (int i = 0; i < HEADER_LUMPS; i++)
-	{
-		replacedLump[i] = false;
-	}
 
-	if (pvsFaces)
-	{
-		delete[] pvsFaces;
-	}
+	delete[] pvsFaces;
 	//if (mdl)
 	//{
 	//	delete mdl;
@@ -542,7 +524,7 @@ std::vector<int> Bsp::getModelVertsIds(int modelIdx)
 	std::vector<int> outverts;
 	std::set<int> visited;
 	BSPMODEL& model = models[modelIdx];
-	
+
 	for (int i = 0; i < model.nFaces; i++)
 	{
 		BSPFACE32& face = faces[model.iFirstFace + i];
@@ -889,6 +871,7 @@ int Bsp::addTextureInfo(BSPTEXTUREINFO& copy)
 	newInfos[newIdx] = copy;
 
 	replace_lump(LUMP_TEXINFO, newInfos, (texinfoCount + 1) * sizeof(BSPTEXTUREINFO));
+	delete[] newInfos;
 
 	return newIdx;
 }
@@ -1418,6 +1401,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 	memcpy(tmpLump, newLightData.data(), newLightData.size() * sizeof(COLOR3));
 	replace_lump(LUMP_LIGHTING, tmpLump, newLightData.size() * sizeof(COLOR3));
 	save_undo_lightmaps(logged);
+	delete[] tmpLump;
 }
 
 
@@ -1537,6 +1521,10 @@ void Bsp::split_shared_model_structures(int modelIdx)
 	replace_lump(LUMP_CLIPNODES, newClipnodes, newClipnodeCount * sizeof(BSPCLIPNODE32));
 	replace_lump(LUMP_TEXINFO, newTexinfos, newTexinfoCount * sizeof(BSPTEXTUREINFO));
 
+	delete[] newPlanes;
+	delete[] newClipnodes;
+	delete[] newTexinfos;
+
 	std::vector<bool> newVisitedClipnodes(newClipnodeCount, false);
 	remappedStuff.visitedClipnodes = std::move(newVisitedClipnodes);
 
@@ -1584,19 +1572,18 @@ bool Bsp::does_model_use_shared_structures(int modelIdx)
 	return false;
 }
 
-LumpState Bsp::duplicate_lumps(int targets)
+LumpState Bsp::duplicate_lumps(unsigned int targets)
 {
 	LumpState state{};
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
-		if ((targets & (1 << i)) == 0)
+		if ((targets & (1 << i)) == 0 || lumps[i].empty())
 		{
 			continue;
 		}
-		state.lumps[i] = std::vector<unsigned char>(lumps[i], lumps[i] + bsp_header.lump[i].nLength);
+		state.lumps[i] = lumps[i];
 	}
-
 	return state;
 }
 
@@ -1605,7 +1592,7 @@ int Bsp::delete_embedded_textures()
 	unsigned int headerSz = (textureCount + 1) * sizeof(int);
 	unsigned int newTexDataSize = headerSz + (textureCount * sizeof(BSPMIPTEX));
 
-	unsigned char* newTextureData = new unsigned char[newTexDataSize];
+	unsigned char* newTextureData = new unsigned char[newTexDataSize + sizeof(int)];
 	memset(newTextureData, 0, newTexDataSize);
 
 	int* header = (int*)newTextureData;
@@ -1643,7 +1630,7 @@ int Bsp::delete_embedded_textures()
 	}
 
 	replace_lump(LUMP_TEXTURES, newTextureData, newTexDataSize);
-
+	delete[] newTextureData;
 
 	remove_unused_model_structures(CLEAN_TEXINFOS | CLEAN_TEXTURES);
 
@@ -1656,9 +1643,8 @@ void Bsp::replace_lumps(const LumpState& state)
 	{
 		if (state.lumps[i].size())
 		{
-			unsigned char* tmplump = new unsigned char[state.lumps[i].size()];
-			std::copy(state.lumps[i].begin(), state.lumps[i].end(), tmplump);
-			replace_lump(i, tmplump, state.lumps[i].size());
+			lumps[i] = state.lumps[i];
+			bsp_header.lump[i].nLength = (int)lumps[i].size();
 		}
 	}
 
@@ -1712,8 +1698,8 @@ unsigned int Bsp::remove_unused_structs(int lumpIdx, std::vector<bool>& usedStru
 
 	int newStructCount = oldStructCount - removeCount;
 
-	unsigned char* oldStructs = lumps[lumpIdx];
-	unsigned char* newStructs = new unsigned char[newStructCount * structSize];
+	unsigned char* oldStructs = lumps[lumpIdx].data();
+	unsigned char* newStructs = new unsigned char[oldStructCount * structSize];
 
 	for (int i = 0, k = 0; i < oldStructCount; i++)
 	{
@@ -1727,7 +1713,7 @@ unsigned int Bsp::remove_unused_structs(int lumpIdx, std::vector<bool>& usedStru
 	}
 
 	replace_lump(lumpIdx, newStructs, newStructCount * structSize);
-
+	delete[] newStructs;
 	return removeCount;
 }
 
@@ -1809,7 +1795,7 @@ unsigned int Bsp::remove_unused_textures(std::vector<bool>& usedTextures, std::v
 
 	totalSize = (totalSize + 3) & ~3; // 4 bytes align lump
 
-	unsigned char* newTexData = new unsigned char[totalSize];
+	unsigned char* newTexData = new unsigned char[totalSize + sizeof(int)];
 	memset(newTexData, 0, totalSize);
 
 	int* texHeader = (int*)newTexData;
@@ -1841,7 +1827,7 @@ unsigned int Bsp::remove_unused_textures(std::vector<bool>& usedTextures, std::v
 		*removeddata = removeSize;
 
 	replace_lump(LUMP_TEXTURES, newTexData, totalSize);
-
+	delete[] newTexData;
 	return removeCount;
 }
 
@@ -1884,7 +1870,7 @@ unsigned int Bsp::remove_unused_lightmaps(std::vector<bool>& usedFaces)
 	delete[] lightmapSizes;
 
 	replace_lump(LUMP_LIGHTING, newColorData, newLightDataSize);
-
+	delete[] newColorData;
 	return (unsigned int)(oldLightdataSize - newLightDataSize);
 }
 
@@ -1896,8 +1882,8 @@ unsigned int Bsp::remove_unused_visdata(BSPLEAF32* oldLeaves, int oldLeafCount, 
 	int oldVisLeafCount = oldLeafCount;
 	int newVisLeafCount = (bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF32));
 
-	int oldWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS])->nVisLeafs; // TODO: allow deleting world leaves
-	int newWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS])->nVisLeafs;
+	int oldWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS].data())->nVisLeafs; // TODO: allow deleting world leaves
+	int newWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS].data())->nVisLeafs;
 
 	unsigned int oldVisRowSize = ((oldVisLeafCount + 63) & ~63) >> 3;
 	unsigned int newVisRowSize = ((newVisLeafCount + 63) & ~63) >> 3;
@@ -1907,7 +1893,7 @@ unsigned int Bsp::remove_unused_visdata(BSPLEAF32* oldLeaves, int oldLeafCount, 
 	memset(decompressedVis, 0xFF, decompressedVisSize);
 
 
-	decompress_vis_lump(this, oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
+	decompress_vis_lump(this, oldLeaves, lumps[LUMP_VISIBILITY].data(), decompressedVis,
 		oldWorldLeaves, oldVisLeafCount - 1, oldVisLeafCount - 1, oldLeavesMemSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
 
 	if (oldVisRowSize != newVisRowSize)
@@ -1940,6 +1926,7 @@ unsigned int Bsp::remove_unused_visdata(BSPLEAF32* oldLeaves, int oldLeafCount, 
 
 	replace_lump(LUMP_VISIBILITY, compressedVisResized, newVisLen);
 
+	delete[] compressedVisResized;
 	delete[] decompressedVis;
 	delete[] compressedVis;
 
@@ -1950,7 +1937,7 @@ unsigned int Bsp::remove_unused_visdata(BSPLEAF32* oldLeaves, int oldLeafCount, 
 	int oldVisLeafCount = oldLeavesMemSize / sizeof(BSPLEAF32);
 	int newVisLeafCount = bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF32);
 
-	int newWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS])->nVisLeafs;
+	int newWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS].data())->nVisLeafs;
 
 	print_log(get_localized_string(LANG_0064),oldVisLeafCount,newVisLeafCount);
 
@@ -1969,7 +1956,7 @@ unsigned int Bsp::remove_unused_visdata(BSPLEAF32* oldLeaves, int oldLeafCount, 
 
 	memset(decompressedVis, 0xFF, oldDecompressedLen); // fill with visible VIS, if input data is corrupted.
 
-	decompress_vis_lump(oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
+	decompress_vis_lump(oldLeaves, lumps[LUMP_VISIBILITY].data(), decompressedVis,
 		oldWorldLeaves, oldVisLeafCount - 1, newVisLeafCount, oldLeavesMemSize, tmpLumpVisMemSize);
 
 	if (oldVisRowSize != newVisRowSize)
@@ -2002,6 +1989,7 @@ unsigned int Bsp::remove_unused_visdata(BSPLEAF32* oldLeaves, int oldLeafCount, 
 
 	replace_lump(LUMP_VISIBILITY, compressedVisResized, newVisLen);
 
+	delete[] compressedVisResized;
 	delete[] decompressedVis;
 	delete[] compressedVis;
 
@@ -2240,7 +2228,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	update_lump_pointers();
 	int oldLeavesLumpLen = bsp_header.lump[LUMP_LEAVES].nLength;
 	unsigned char* oldLeaves = new unsigned char[oldLeavesLumpLen];
-	memcpy(oldLeaves, lumps[LUMP_LEAVES], oldLeavesLumpLen);
+	memcpy(oldLeaves, lumps[LUMP_LEAVES].data(), oldLeavesLumpLen);
 
 	if (target & CLEAN_LIGHTMAP && lightDataLength > 0)
 		removeCount.lightdata = remove_unused_lightmaps(usedStructures.faces);
@@ -2702,7 +2690,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 			}
 		}
 
-		BSPMODEL& model = ((BSPMODEL*)lumps[LUMP_MODELS])[i];
+		BSPMODEL& model = ((BSPMODEL*)lumps[LUMP_MODELS].data())[i];
 
 		if (!needsVisibleHull && !needsMonsterHulls)
 		{
@@ -3064,8 +3052,10 @@ void Bsp::delete_oob_data(int clipFlags) {
 		for (int k = 0; k < node.iFirstFace; k++) {
 			offset += oobFaces[k];
 		}
-		for (int k = 0; k < node.nFaces; k++) {
-			countReduce += oobFaces[node.iFirstFace + k];
+		for (int k = 0; k < node.nFaces; k++) 
+		{
+			if (node.iFirstFace + k < faceCount)
+				countReduce += oobFaces[node.iFirstFace + k];
 		}
 
 		node.iFirstFace -= offset;
@@ -3111,6 +3101,7 @@ void Bsp::delete_oob_data(int clipFlags) {
 
 	replace_lump(LUMP_FACES, newFaces, (faceCount - oobFaceCount) * sizeof(BSPFACE32));
 
+	delete[] newFaces;
 	delete[] oobFaces;
 
 	worldmodel = models[0];
@@ -3385,7 +3376,8 @@ void Bsp::delete_box_data(vec3 clipMins, vec3 clipMaxs) {
 			offset += oobFaces[k];
 		}
 		for (int k = 0; k < node.nFaces; k++) {
-			countReduce += oobFaces[node.iFirstFace + k];
+			if (node.iFirstFace + k < faceCount)
+				countReduce += oobFaces[node.iFirstFace + k];
 		}
 
 		node.iFirstFace -= offset;
@@ -3431,6 +3423,7 @@ void Bsp::delete_box_data(vec3 clipMins, vec3 clipMaxs) {
 
 	replace_lump(LUMP_FACES, newFaces, (faceCount - oobFaceCount) * sizeof(BSPFACE32));
 
+	delete[] newFaces;
 	delete[] oobFaces;
 
 	worldmodel = models[0];
@@ -3907,6 +3900,10 @@ bool Bsp::subdivide_face(int faceIdx) {
 	replace_lump(LUMP_SURFEDGES, newSurfEdges, (surfedgeCount + addVerts) * sizeof(int));
 	replace_lump(LUMP_VERTICES, newVerts, (vertCount + addVerts) * sizeof(vec3));
 
+	delete[] newMarkSurfs;
+	delete[] newEdges;
+	delete[] newSurfEdges;
+	delete[] newVerts;
 	return true;
 }
 
@@ -4516,6 +4513,7 @@ void Bsp::update_ent_lump(bool stripNodes)
 	newEntData[str_data.size()] = 0;
 
 	replace_lump(LUMP_ENTITIES, newEntData, str_data.size() + 1);
+	delete[] newEntData;
 }
 
 vec3 Bsp::get_model_center(int modelIdx)
@@ -4566,6 +4564,8 @@ void Bsp::write(const std::string& path)
 		delete[] oldfile;
 	}
 
+	auto backupLumps = duplicate_lumps(0xFFFFFFFF);
+
 	std::ofstream file(path, std::ios::trunc | std::ios::binary);
 	if (!file.is_open())
 	{
@@ -4599,9 +4599,6 @@ void Bsp::write(const std::string& path)
 			update_ent_lump();
 		}
 	}
-
-	update_lump_pointers();
-
 	// convert textures
 
 	if (target_save_texture_has_pal != is_texture_has_pal)
@@ -4616,11 +4613,9 @@ void Bsp::write(const std::string& path)
 		}
 	}
 
-	unsigned char* nulls = new unsigned char[sizeof(BSPHEADER) + sizeof(BSPHEADER_EX)];
-
-	file.write((const char*)nulls, is_bsp30ext && extralumps ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER) + (is_bsp_pathos ? 4 : 0));
-
-	delete[] nulls;
+	update_lump_pointers();
+	std::vector<unsigned char> nulls(is_bsp30ext && extralumps.size() ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER) + (is_bsp_pathos ? 4 : 0), 0);
+	file.write(reinterpret_cast<const char*>(nulls.data()), nulls.size());
 
 	unsigned char* oldLighting = (unsigned char*)lightdata;
 	unsigned char* freelighting = NULL;
@@ -4639,8 +4634,7 @@ void Bsp::write(const std::string& path)
 		}
 
 		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels;
-		lumps[LUMP_LIGHTING] = (unsigned char*)freelighting;
-
+		lumps[LUMP_LIGHTING].assign((unsigned char*)freelighting, (unsigned char*)(freelighting)+bsp_header.lump[LUMP_LIGHTING].nLength);
 
 		//int offset = 0;
 
@@ -4675,7 +4669,7 @@ void Bsp::write(const std::string& path)
 			freeClipnodes16[n].iPlane = clipnodes[n].iPlane;
 		}
 		bsp_header.lump[LUMP_CLIPNODES].nLength = clipnodeCount * sizeof(BSPCLIPNODE16);
-		lumps[LUMP_CLIPNODES] = (unsigned char*)freeClipnodes16;
+		lumps[LUMP_CLIPNODES].assign((unsigned char*)freeClipnodes16, (unsigned char*)(freeClipnodes16)+bsp_header.lump[LUMP_CLIPNODES].nLength);
 	}
 
 	unsigned char* oldnodes = (unsigned char*)nodes;
@@ -4700,7 +4694,7 @@ void Bsp::write(const std::string& path)
 			}
 		}
 		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE16);
-		lumps[LUMP_NODES] = (unsigned char*)freenodes16;
+		lumps[LUMP_NODES].assign((unsigned char*)freenodes16, (unsigned char*)(freenodes16)+bsp_header.lump[LUMP_NODES].nLength);
 	}
 	else if (is_bsp2_old)
 	{
@@ -4720,7 +4714,7 @@ void Bsp::write(const std::string& path)
 			}
 		}
 		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE32A);
-		lumps[LUMP_NODES] = (unsigned char*)freenodes32a;
+		lumps[LUMP_NODES].assign((unsigned char*)freenodes32a, (unsigned char*)(freenodes32a)+bsp_header.lump[LUMP_NODES].nLength);
 	}
 
 
@@ -4744,7 +4738,7 @@ void Bsp::write(const std::string& path)
 			}
 		}
 		bsp_header.lump[LUMP_FACES].nLength = faceCount * sizeof(BSPFACE16);
-		lumps[LUMP_FACES] = (unsigned char*)freefaces16;
+		lumps[LUMP_FACES].assign((unsigned char*)freefaces16, (unsigned char*)(freefaces16)+bsp_header.lump[LUMP_FACES].nLength);
 	}
 
 	unsigned char* oldmarksurfs = (unsigned char*)marksurfs;
@@ -4758,7 +4752,7 @@ void Bsp::write(const std::string& path)
 			freemarksurfs16[n] = (unsigned short)marksurfs[n];
 		}
 		bsp_header.lump[LUMP_MARKSURFACES].nLength = marksurfCount * sizeof(unsigned short);
-		lumps[LUMP_MARKSURFACES] = (unsigned char*)freemarksurfs16;
+		lumps[LUMP_MARKSURFACES].assign((unsigned char*)freemarksurfs16, (unsigned char*)(freemarksurfs16)+bsp_header.lump[LUMP_MARKSURFACES].nLength);
 	}
 
 	unsigned char* oldleaves = (unsigned char*)leaves;
@@ -4785,7 +4779,7 @@ void Bsp::write(const std::string& path)
 			}
 		}
 		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF16);
-		lumps[LUMP_LEAVES] = (unsigned char*)freeleaves16;
+		lumps[LUMP_LEAVES].assign((unsigned char*)freeleaves16, (unsigned char*)(freeleaves16)+bsp_header.lump[LUMP_LEAVES].nLength);
 	}
 	else if (is_bsp2_old)
 	{
@@ -4807,7 +4801,7 @@ void Bsp::write(const std::string& path)
 			}
 		}
 		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF32A);
-		lumps[LUMP_LEAVES] = (unsigned char*)freeleaves32a;
+		lumps[LUMP_LEAVES].assign((unsigned char*)freeleaves32a, (unsigned char*)(freeleaves32a)+bsp_header.lump[LUMP_LEAVES].nLength);
 	}
 
 	unsigned char* oldedges = (unsigned char*)edges;
@@ -4822,7 +4816,7 @@ void Bsp::write(const std::string& path)
 			freeedges16[n].iVertex[1] = (unsigned short)edges[n].iVertex[1];
 		}
 		bsp_header.lump[LUMP_EDGES].nLength = edgeCount * sizeof(BSPEDGE16);
-		lumps[LUMP_EDGES] = (unsigned char*)freeedges16;
+		lumps[LUMP_EDGES].assign((unsigned char*)freeedges16, (unsigned char*)(freeedges16)+bsp_header.lump[LUMP_EDGES].nLength);
 	}
 
 
@@ -4830,6 +4824,7 @@ void Bsp::write(const std::string& path)
 	{
 		std::swap(bsp_header.lump[LUMP_PLANES], bsp_header.lump[LUMP_ENTITIES]);
 		std::swap(lumps[LUMP_PLANES], lumps[LUMP_ENTITIES]);
+		update_lump_pointers();
 	}
 
 	if (is_protected)
@@ -4841,14 +4836,9 @@ void Bsp::write(const std::string& path)
 				int* newsurfs = new int[surfedgeCount + 1];
 				memcpy(newsurfs, surfedges, surfedgeCount * sizeof(int));
 				newsurfs[surfedgeCount] = 0;
-				if (replacedLump[LUMP_SURFEDGES])
-				{
-					delete[] lumps[LUMP_SURFEDGES];
-				}
-				replacedLump[LUMP_SURFEDGES] = true;
-				lumps[LUMP_SURFEDGES] = (unsigned char*)newsurfs;
 				surfedgeCount++;
 				bsp_header.lump[LUMP_SURFEDGES].nLength = (surfedgeCount) * sizeof(int);
+				lumps[LUMP_SURFEDGES].assign((unsigned char*)newsurfs, (unsigned char*)(newsurfs)+bsp_header.lump[LUMP_SURFEDGES].nLength);
 			}
 		}
 	}
@@ -4869,7 +4859,7 @@ void Bsp::write(const std::string& path)
 		for (int i = 0; i < HEADER_LUMPS; i++)
 		{
 			if (i != LUMP_ENTITIES)
-				crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
+				crc32 = GetCrc32InMemory(lumps[i].data(), bsp_header.lump[i].nLength, crc32);
 		}
 
 		print_log(get_localized_string(LANG_0077), reverse_bits(crc32));
@@ -4886,34 +4876,34 @@ void Bsp::write(const std::string& path)
 
 			memset(tmpNewModelds, 0, originsize + sizeof(BSPMODEL));
 
-			memcpy(tmpNewModelds, lumps[LUMP_MODELS], originsize);
+			memcpy(tmpNewModelds, lumps[LUMP_MODELS].data(), originsize);
 
 			BSPMODEL* lastmodel = (BSPMODEL*)(tmpNewModelds + (modelCount * sizeof(BSPMODEL)));
 
 			lastmodel->vOrigin.z = 9999.0f;
 
-			if (replacedLump[LUMP_MODELS])
-				delete[] lumps[LUMP_MODELS];
-			lumps[LUMP_MODELS] = tmpNewModelds;
-
 			bsp_header.lump[LUMP_MODELS].nLength = originsize + sizeof(BSPMODEL);
 
+			lumps[LUMP_MODELS].assign((unsigned char*)tmpNewModelds, (unsigned char*)(tmpNewModelds)+bsp_header.lump[LUMP_MODELS].nLength);
+
+			delete[] tmpNewModelds;
+
 			crc32 = UINT32_C(0xFFFFFFFF);
 
 
 			for (int i = 0; i < HEADER_LUMPS; i++)
 			{
 				if (i != LUMP_ENTITIES)
-					crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
+					crc32 = GetCrc32InMemory(lumps[i].data(), bsp_header.lump[i].nLength, crc32);
 			}
 
-			PathCrc32InMemory(lumps[LUMP_MODELS], bsp_header.lump[LUMP_MODELS].nLength, originsize, crc32, originCrc32);
+			PathCrc32InMemory(lumps[LUMP_MODELS].data(), bsp_header.lump[LUMP_MODELS].nLength, originsize, crc32, originCrc32);
 
 			crc32 = UINT32_C(0xFFFFFFFF);
 			for (int i = 0; i < HEADER_LUMPS; i++)
 			{
 				if (i != LUMP_ENTITIES)
-					crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
+					crc32 = GetCrc32InMemory(lumps[i].data(), bsp_header.lump[i].nLength, crc32);
 			}
 
 			print_log(get_localized_string(LANG_0079), reverse_bits(crc32));
@@ -4924,7 +4914,7 @@ void Bsp::write(const std::string& path)
 	// calculate lump offsets
 	int offset = sizeof(BSPHEADER) + (is_bsp_pathos ? 4 : 0);
 
-	if (is_bsp30ext && extralumps)
+	if (is_bsp30ext && extralumps.size())
 	{
 		offset += sizeof(BSPHEADER_EX);
 
@@ -4933,7 +4923,7 @@ void Bsp::write(const std::string& path)
 		{
 			bsp_header_ex.lump[i].nOffset = offset;
 			offset += bsp_header_ex.lump[i].nLength;
-			file.write((char*)extralumps[i], bsp_header_ex.lump[i].nLength);
+			file.write((char*)extralumps[i].data(), extralumps[i].size());
 
 			int padding = ((bsp_header_ex.lump[i].nLength + 3) & ~3) - bsp_header_ex.lump[i].nLength;
 			if (padding > 0)
@@ -4955,7 +4945,7 @@ void Bsp::write(const std::string& path)
 	{
 		bsp_header.lump[i].nOffset = offset;
 		offset += bsp_header.lump[i].nLength;
-		file.write((char*)lumps[i], bsp_header.lump[i].nLength);
+		file.write((char*)lumps[i].data(), lumps[i].size());
 
 		int padding = ((bsp_header.lump[i].nLength + 3) & ~3) - bsp_header.lump[i].nLength;
 		if (padding > 0)
@@ -4981,87 +4971,22 @@ void Bsp::write(const std::string& path)
 
 	file.write((char*)&bsp_header, sizeof(BSPHEADER));
 
-	if (is_bsp30ext && extralumps)
+	if (is_bsp30ext && extralumps.size())
 	{
 		file.write((char*)&bsp_header_ex, sizeof(BSPHEADER_EX));
 	}
 
-	if (is_blue_shift)
-	{
-		std::swap(bsp_header.lump[LUMP_PLANES], bsp_header.lump[LUMP_ENTITIES]);
-		std::swap(lumps[LUMP_PLANES], lumps[LUMP_ENTITIES]);
-	}
+	delete[] freeClipnodes16;
+	delete[] freenodes16;
+	delete[] freenodes32a;
+	delete[] freeedges16;
+	delete[] freemarksurfs16;
+	delete[] freefaces16;
+	delete[] freeleaves16;
+	delete[] freeleaves32a;
+	delete[] freelighting;
 
-	if (freeClipnodes16)
-	{
-		delete[] freeClipnodes16;
-		lumps[LUMP_CLIPNODES] = (unsigned char*)oldClipnodes;
-		bsp_header.lump[LUMP_CLIPNODES].nLength = clipnodeCount * sizeof(BSPCLIPNODE32);
-	}
-
-	if (freenodes16)
-	{
-		delete[] freenodes16;
-		lumps[LUMP_NODES] = (unsigned char*)oldnodes;
-		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE32);
-	}
-	else if (freenodes32a)
-	{
-		delete[] freenodes32a;
-		lumps[LUMP_NODES] = (unsigned char*)oldnodes;
-		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE32);
-	}
-
-	if (freeedges16)
-	{
-		delete[] freeedges16;
-		lumps[LUMP_EDGES] = (unsigned char*)oldedges;
-		bsp_header.lump[LUMP_EDGES].nLength = edgeCount * sizeof(BSPEDGE32);
-	}
-
-	if (freemarksurfs16)
-	{
-		delete[] freemarksurfs16;
-		lumps[LUMP_MARKSURFACES] = (unsigned char*)oldmarksurfs;
-		bsp_header.lump[LUMP_MARKSURFACES].nLength = marksurfCount * sizeof(int);
-	}
-
-	if (freefaces16)
-	{
-		delete[] freefaces16;
-		lumps[LUMP_FACES] = (unsigned char*)oldfaces;
-		bsp_header.lump[LUMP_FACES].nLength = faceCount * sizeof(BSPFACE32);
-	}
-
-	if (freeleaves16)
-	{
-		delete[] freeleaves16;
-		lumps[LUMP_LEAVES] = (unsigned char*)oldleaves;
-		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF32);
-	}
-	else if (freeleaves32a)
-	{
-		delete[] freeleaves32a;
-		lumps[LUMP_LEAVES] = (unsigned char*)oldleaves;
-		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF32);
-	}
-
-	// revert monochrome lighting and face offsets
-	if (freelighting)
-	{
-		delete[] freelighting;
-		lumps[LUMP_LIGHTING] = (unsigned char*)oldLighting;
-		bsp_header.lump[LUMP_LIGHTING].nLength = lightDataLength * sizeof(COLOR3);
-		if (!is_colored_lightmap)
-		{
-			for (int n = 0; n < faceCount; n++)
-			{
-				faces[n].nLightmapOffset = faces[n].nLightmapOffset * sizeof(COLOR3);
-			}
-		}
-	}
-
-	update_lump_pointers();
+	replace_lumps(backupLumps);
 }
 
 bool Bsp::load_lumps(const std::string& fpath)
@@ -5138,7 +5063,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 		{
 			if (extra_clipnodes_lumps[i].nLength == 0)
 			{
-				extralumps[i] = NULL;
+				extralumps[i].clear();
 				continue;
 			}
 
@@ -5179,8 +5104,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 		int extralumpscount = bsp_header_ex.nVersion <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
 		print_log(get_localized_string(LANG_0088), bsp_header_ex.nVersion, extralumpscount);
 
-		extralumps = new unsigned char* [EXTRA_LUMPS];
-		memset(extralumps, 0, sizeof(unsigned char*) * EXTRA_LUMPS);
+		extralumps.resize(EXTRA_LUMPS);
 
 		for (int i = 0; i < extralumpscount; i++)
 		{
@@ -5193,7 +5117,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 		{
 			if (bsp_header_ex.lump[i].nLength == 0)
 			{
-				extralumps[i] = NULL;
+				extralumps[i].clear();
 				continue;
 			}
 
@@ -5213,22 +5137,22 @@ bool Bsp::load_lumps(const std::string& fpath)
 			}
 			else
 			{
-				extralumps[i] = new unsigned char[bsp_header_ex.lump[i].nLength];
-				fin.read((char*)extralumps[i], bsp_header_ex.lump[i].nLength);
+				extralumps[i].resize(bsp_header_ex.lump[i].nLength);
+				fin.read((char*)extralumps[i].data(), bsp_header_ex.lump[i].nLength);
 			}
 		}
 	}
 
+	lumps.resize(HEADER_LUMPS);
 
-	lumps = new unsigned char* [HEADER_LUMPS];
-	memset(lumps, 0, sizeof(unsigned char*) * HEADER_LUMPS);
+	//update_lump_pointers();
 
 	unsigned int crc32 = UINT32_C(0xFFFFFFFF);
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		if (bsp_header.lump[i].nLength == 0)
 		{
-			lumps[i] = NULL;
+			lumps[i].clear();
 			continue;
 		}
 
@@ -5240,16 +5164,20 @@ bool Bsp::load_lumps(const std::string& fpath)
 		}
 		else
 		{
-			lumps[i] = new unsigned char[bsp_header.lump[i].nLength];
-			fin.read((char*)lumps[i], bsp_header.lump[i].nLength);
-			replacedLump[i] = true;
+			lumps[i].resize(bsp_header.lump[i].nLength);
+			fin.read((char*)lumps[i].data(), bsp_header.lump[i].nLength);
 		}
 	}
 
-	const char* classnametmp = "classname";
+	update_lump_pointers();
 
-	if (bsp_header.lump[LUMP_PLANES].nLength < sizeof(BSPPLANE) ||
-		&lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength - 1] != std::search(&lumps[LUMP_PLANES][0], &lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength - 1], &classnametmp[0], &classnametmp[strlen(classnametmp)]))
+	std::vector<unsigned char> classnametmp = { 'c', 'l', 'a', 's', 's', 'n', 'a', 'm', 'e' };
+	auto& lump_planes = lumps[LUMP_PLANES];
+	size_t length = bsp_header.lump[LUMP_PLANES].nLength;
+
+	if (length < sizeof(BSPPLANE) ||
+		std::search(lump_planes.begin(), lump_planes.end(),
+			classnametmp.begin(), classnametmp.end()) != lump_planes.end())
 	{
 		print_log(get_localized_string(LANG_0092));
 		is_blue_shift = true;
@@ -5261,13 +5189,13 @@ bool Bsp::load_lumps(const std::string& fpath)
 	{
 		if (bsp_header.lump[i].nLength == 0)
 		{
-			lumps[i] = NULL;
+			lumps[i].clear();
 			continue;
 		}
 
 		if (i != LUMP_ENTITIES)
 		{
-			crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
+			crc32 = GetCrc32InMemory(lumps[i].data(), bsp_header.lump[i].nLength, crc32);
 		}
 
 		if (i == LUMP_NODES)
@@ -5280,7 +5208,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 					BSPNODE32* tmpnodes = new BSPNODE32[nodeCount];
 
-					BSPNODE32A* nodes16 = (BSPNODE32A*)lumps[i];
+					BSPNODE32A* nodes16 = (BSPNODE32A*)lumps[i].data();
 
 					for (int n = 0; n < nodeCount; n++)
 					{
@@ -5304,10 +5232,9 @@ bool Bsp::load_lumps(const std::string& fpath)
 						//print_log("\n");
 					}
 
-					delete[] lumps[i];
-
-					lumps[i] = (unsigned char*)tmpnodes;
 					bsp_header.lump[i].nLength = nodeCount * sizeof(BSPNODE32);
+					lumps[i].assign((unsigned char*)tmpnodes, (unsigned char*)(tmpnodes)+bsp_header.lump[i].nLength);
+					delete[] tmpnodes;
 					print_log(get_localized_string(LANG_0093) + "[OLD]");
 				}
 				else
@@ -5322,7 +5249,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 				BSPNODE32* tmpnodes = new BSPNODE32[nodeCount];
 
-				BSPNODE16* nodes16 = (BSPNODE16*)lumps[i];
+				BSPNODE16* nodes16 = (BSPNODE16*)lumps[i].data();
 
 				for (int n = 0; n < nodeCount; n++)
 				{
@@ -5346,21 +5273,18 @@ bool Bsp::load_lumps(const std::string& fpath)
 					//print_log("\n");
 				}
 
-				delete[] lumps[i];
-
-				lumps[i] = (unsigned char*)tmpnodes;
 				bsp_header.lump[i].nLength = nodeCount * sizeof(BSPNODE32);
+				lumps[i].assign((unsigned char*)tmpnodes, (unsigned char*)(tmpnodes)+bsp_header.lump[i].nLength);
+				delete[] tmpnodes;
 			}
 		}
 
 
 		if (i == LUMP_FACES)
 		{
-			BSPFACE32* tmpMapFaces = NULL;
 			if (is_bsp2)
 			{
 				faceCount = bsp_header.lump[i].nLength / sizeof(BSPFACE32);
-				tmpMapFaces = (BSPFACE32*)lumps[i];
 				print_log(get_localized_string(LANG_0094));
 			}
 			else
@@ -5368,9 +5292,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 				faceCount = bsp_header.lump[i].nLength / sizeof(BSPFACE16);
 
 				BSPFACE32* tmpfaces = new BSPFACE32[faceCount];
-				tmpMapFaces = tmpfaces;
-
-				BSPFACE16* faces16 = (BSPFACE16*)lumps[i];
+				BSPFACE16* faces16 = (BSPFACE16*)lumps[i].data();
 
 				for (int n = 0; n < faceCount; n++)
 				{
@@ -5386,11 +5308,9 @@ bool Bsp::load_lumps(const std::string& fpath)
 					}
 				}
 
-				delete[] lumps[i];
-				lumps[i] = (unsigned char*)tmpfaces;
-				replacedLump[i] = true;
-
 				bsp_header.lump[i].nLength = faceCount * sizeof(BSPFACE32);
+				lumps[i].assign((unsigned char*)tmpfaces, (unsigned char*)(tmpfaces)+bsp_header.lump[i].nLength);
+				delete[] tmpfaces;
 			}
 		}
 		if (i == LUMP_CLIPNODES)
@@ -5411,7 +5331,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 				BSPCLIPNODE32* tmpclipnodes = new BSPCLIPNODE32[clipnodeCount];
 
-				BSPCLIPNODE16* clipnodes16 = (BSPCLIPNODE16*)lumps[i];
+				BSPCLIPNODE16* clipnodes16 = (BSPCLIPNODE16*)lumps[i].data();
 
 				for (int n = 0; n < clipnodeCount; n++)
 				{
@@ -5458,11 +5378,9 @@ bool Bsp::load_lumps(const std::string& fpath)
 					}
 				}
 
-				delete[] lumps[i];
-				lumps[i] = (unsigned char*)tmpclipnodes;
-				replacedLump[i] = true;
-
 				bsp_header.lump[i].nLength = clipnodeCount * sizeof(BSPCLIPNODE32);
+				lumps[i].assign((unsigned char*)tmpclipnodes, (unsigned char*)(tmpclipnodes)+bsp_header.lump[i].nLength);
+				delete[] tmpclipnodes;
 			}
 		}
 
@@ -5481,7 +5399,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 					BSPLEAF32* tmpleaves = new BSPLEAF32[leafCount];
 
-					BSPLEAF32A* leaves16 = (BSPLEAF32A*)lumps[i];
+					BSPLEAF32A* leaves16 = (BSPLEAF32A*)lumps[i].data();
 					for (int n = 0; n < leafCount; n++)
 					{
 						tmpleaves[n].iFirstMarkSurface = leaves16[n].iFirstMarkSurface;
@@ -5502,11 +5420,9 @@ bool Bsp::load_lumps(const std::string& fpath)
 						//	tmpleaves[n].iFirstMarkSurface, tmpleaves[n].nMarkSurfaces, tmpleaves[n].nContents, tmpleaves[n].nVisOffset);
 					}
 
-					delete[] lumps[i];
-					lumps[i] = (unsigned char*)tmpleaves;
-					replacedLump[i] = true;
-
 					bsp_header.lump[i].nLength = leafCount * sizeof(BSPLEAF32);
+					lumps[i].assign((unsigned char*)tmpleaves, (unsigned char*)(tmpleaves)+bsp_header.lump[i].nLength);
+					delete[] tmpleaves;
 				}
 			}
 			else
@@ -5515,7 +5431,7 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 				BSPLEAF32* tmpleaves = new BSPLEAF32[leafCount];
 
-				BSPLEAF16* leaves16 = (BSPLEAF16*)lumps[i];
+				BSPLEAF16* leaves16 = (BSPLEAF16*)lumps[i].data();
 				for (int n = 0; n < leafCount; n++)
 				{
 					tmpleaves[n].iFirstMarkSurface = leaves16[n].iFirstMarkSurface;
@@ -5533,11 +5449,9 @@ bool Bsp::load_lumps(const std::string& fpath)
 					}
 				}
 
-				delete[] lumps[i];
-				lumps[i] = (unsigned char*)tmpleaves;
-				replacedLump[i] = true;
-
 				bsp_header.lump[i].nLength = leafCount * sizeof(BSPLEAF32);
+				lumps[i].assign((unsigned char*)tmpleaves, (unsigned char*)(tmpleaves)+bsp_header.lump[i].nLength);
+				delete[] tmpleaves;
 			}
 		}
 		if (i == LUMP_MARKSURFACES)
@@ -5553,18 +5467,16 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 				int* tmpSurf = new int[marksurfCount];
 
-				unsigned short* surfs16 = (unsigned short*)lumps[i];
+				unsigned short* surfs16 = (unsigned short*)lumps[i].data();
 
 				for (int n = 0; n < marksurfCount; n++)
 				{
 					tmpSurf[n] = surfs16[n];
 				}
 
-				delete[] lumps[i];
-				lumps[i] = (unsigned char*)tmpSurf;
-				replacedLump[i] = true;
-
 				bsp_header.lump[i].nLength = marksurfCount * sizeof(int);
+				lumps[i].assign((unsigned char*)tmpSurf, (unsigned char*)(tmpSurf)+bsp_header.lump[i].nLength);
+				delete[] tmpSurf;
 			}
 		}
 
@@ -5581,18 +5493,16 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 				BSPEDGE32* tmpedges = new BSPEDGE32[edgeCount];
 
-				BSPEDGE16* edges16 = (BSPEDGE16*)lumps[i];
+				BSPEDGE16* edges16 = (BSPEDGE16*)lumps[i].data();
 				for (int n = 0; n < edgeCount; n++)
 				{
 					tmpedges[n].iVertex[0] = edges16[n].iVertex[0];
 					tmpedges[n].iVertex[1] = edges16[n].iVertex[1];
 				}
 
-				delete[] lumps[i];
-				lumps[i] = (unsigned char*)tmpedges;
-				replacedLump[i] = true;
-
 				bsp_header.lump[i].nLength = edgeCount * sizeof(BSPEDGE32);
+				lumps[i].assign((unsigned char*)tmpedges, (unsigned char*)(tmpedges)+bsp_header.lump[i].nLength);
+				delete[] tmpedges;
 			}
 		}
 	}
@@ -5701,14 +5611,12 @@ bool Bsp::load_lumps(const std::string& fpath)
 
 		for (int m = 0; m < lightPixels; m++)
 		{
-			newLight[m] = COLOR3(lumps[LUMP_LIGHTING][m], lumps[LUMP_LIGHTING][m], lumps[LUMP_LIGHTING][m]);
+			newLight[m] = COLOR3(lumps[LUMP_LIGHTING].data()[m], lumps[LUMP_LIGHTING].data()[m], lumps[LUMP_LIGHTING].data()[m]);
 		}
 
-		if (replacedLump[LUMP_LIGHTING])
-			delete lumps[LUMP_LIGHTING];
-
-		lumps[LUMP_LIGHTING] = (unsigned char*)newLight;
 		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels * sizeof(COLOR3);
+		lumps[LUMP_LIGHTING].assign((unsigned char*)newLight, (unsigned char*)(newLight)+bsp_header.lump[LUMP_LIGHTING].nLength);
+		delete[] newLight;
 
 
 		for (int n = 0; n < faceCount; n++)
@@ -5721,19 +5629,16 @@ bool Bsp::load_lumps(const std::string& fpath)
 		int lightPixels = bsp_header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR4);
 
 		COLOR3* newLight = new COLOR3[lightPixels];
-		COLOR4* oldLight = (COLOR4*)lumps[LUMP_LIGHTING];
+		COLOR4* oldLight = (COLOR4*)lumps[LUMP_LIGHTING].data();
 
 		for (int m = 0; m < lightPixels; m++)
 		{
 			newLight[m] = oldLight[m].rgb(COLOR3(255, 255, 255));
 		}
 
-		if (replacedLump[LUMP_LIGHTING])
-			delete lumps[LUMP_LIGHTING];
-
-		lumps[LUMP_LIGHTING] = (unsigned char*)newLight;
 		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels * sizeof(COLOR3);
-
+		lumps[LUMP_LIGHTING].assign((unsigned char*)newLight, (unsigned char*)(newLight)+bsp_header.lump[LUMP_LIGHTING].nLength);
+		delete[] newLight;
 
 		for (int n = 0; n < faceCount; n++)
 		{
@@ -5799,11 +5704,9 @@ bool Bsp::load_lumps(const std::string& fpath)
 				newClipnodes[i + offset].iPlane = extra_clipnodes_data[1][i].iPlane;
 			}
 
-			if (replacedLump[LUMP_CLIPNODES])
-				delete lumps[LUMP_CLIPNODES];
-
-			lumps[LUMP_CLIPNODES] = (unsigned char*)newClipnodes;
 			bsp_header.lump[LUMP_CLIPNODES].nLength = newCount * sizeof(BSPCLIPNODE32);
+			lumps[LUMP_CLIPNODES].assign((unsigned char*)newClipnodes, (unsigned char*)(newClipnodes)+bsp_header.lump[LUMP_CLIPNODES].nLength);
+			delete[] newClipnodes;
 
 			for (int i = 0; i < modelCount; i++)
 			{
@@ -5836,8 +5739,7 @@ void Bsp::load_ents()
 		delete ents[i];
 	ents.clear();
 
-	membuf sbuf((char*)lumps[LUMP_ENTITIES], bsp_header.lump[LUMP_ENTITIES].nLength);
-	std::istream in(&sbuf);
+	std::istringstream in(std::string((char*)lumps[LUMP_ENTITIES].data(), (char*)lumps[LUMP_ENTITIES].data() + bsp_header.lump[LUMP_ENTITIES].nLength));
 
 	int lineNum = 0;
 	int lastBracket = -1;
@@ -5864,8 +5766,7 @@ void Bsp::load_ents()
 				continue;
 			}
 			lastBracket = 0;
-			if (ent)
-				delete ent;
+			delete ent;
 			ent = new Entity();
 
 			if (line.find('}') == std::string::npos &&
@@ -5946,8 +5847,7 @@ void Bsp::load_ents()
 		}
 	}
 
-	if (ent)
-		delete ent;
+	delete ent;
 }
 
 void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem)
@@ -7194,7 +7094,7 @@ bool Bsp::is_leaf_visible(int ileaf, vec3 pos) {
 	BSPLEAF32& pvsLeaf = leaves[ipvsLeaf];
 
 	int p = pvsLeaf.nVisOffset; // pvs offset
-	unsigned char* pvs = lumps[LUMP_VISIBILITY];
+	unsigned char* pvs = lumps[LUMP_VISIBILITY].data();
 
 	bool isVisible = false;
 	int numVisible = 0;
@@ -7246,7 +7146,7 @@ int Bsp::count_visible_polys(vec3 pos, vec3 angles) {
 	BSPLEAF32& pvsLeaf = leaves[ipvsLeaf];
 
 	int p = pvsLeaf.nVisOffset; // pvs offset
-	unsigned char* pvs = lumps[LUMP_VISIBILITY];
+	unsigned char* pvs = lumps[LUMP_VISIBILITY].data();
 
 	int numVisible = 0;
 
@@ -7481,7 +7381,7 @@ void Bsp::remap_model_structures(int modelIdx, STRUCTREMAP* remap)
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1028));
 		return;
 	}
-	BSPMODEL& model = ((BSPMODEL*)lumps[LUMP_MODELS])[modelIdx];
+	BSPMODEL& model = ((BSPMODEL*)lumps[LUMP_MODELS].data())[modelIdx];
 
 	// sometimes the face index is invalid when the model has no faces
 	if (model.nFaces > 0)
@@ -7603,6 +7503,7 @@ void Bsp::delete_model(int modelIdx)
 		(modelCount - (modelIdx + 1)) * sizeof(BSPMODEL));
 
 	replace_lump(LUMP_MODELS, newModels, newSize);
+	delete[] newModels;
 }
 
 int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool empty)
@@ -7964,7 +7865,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 	// create new texture lump header
 	int* newLumpHeader = (int*)newTexData;
-	int* oldLumpHeader = (int*)lumps[LUMP_TEXTURES];
+	int* oldLumpHeader = (int*)lumps[LUMP_TEXTURES].data();
 	*newLumpHeader = textureCount + 1;
 
 	for (int i = 0; i < textureCount; i++)
@@ -7979,7 +7880,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	int oldTexHeaderSize = (textureCount + 1) * sizeof(int);
 	int newTexHeaderSize = oldTexHeaderSize + sizeof(int);
 	int oldTexDatSize = bsp_header.lump[LUMP_TEXTURES].nLength - ((textureCount + 1) * sizeof(int));
-	memcpy(newTexData + newTexHeaderSize, lumps[LUMP_TEXTURES] + oldTexHeaderSize, oldTexDatSize);
+	memcpy(newTexData + newTexHeaderSize, lumps[LUMP_TEXTURES].data() + oldTexHeaderSize, oldTexDatSize);
 
 	// add new texture to the end of the lump
 	int newTexOffset = newTexHeaderSize + oldTexDatSize;
@@ -8017,6 +7918,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	}
 
 	replace_lump(LUMP_TEXTURES, newTexData, newTexLumpSize);
+	delete[] newTexData;
 	return textureCount - 1;
 }
 
@@ -8164,9 +8066,9 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 				COLOR4* image_bytes = NULL;
 				unsigned int w2, h2;
 				auto error = lodepng_decode32_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str());
-				COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
 				if (error == 0 && image_bytes)
 				{
+					COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
 					for (unsigned int i = 0; i < w2 * h2; i++)
 					{
 						COLOR4& curPixel = image_bytes[i];
@@ -8243,6 +8145,7 @@ int Bsp::create_leaf(int contents)
 	unsigned int newLeafIdx = leafCount;
 
 	replace_lump(LUMP_LEAVES, newLeaves, (leafCount + 1) * sizeof(BSPLEAF32));
+	delete[] newLeaves;
 
 	return newLeafIdx;
 }
@@ -8258,6 +8161,7 @@ int Bsp::create_leaf_back(int contents)
 	newLeaf.nContents = contents;
 
 	replace_lump(LUMP_LEAVES, newLeaves, (leafCount + 1) * sizeof(BSPLEAF32));
+	delete[] newLeaves;
 
 	return 0;
 }
@@ -8330,6 +8234,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		}
 
 		replace_lump(LUMP_VERTICES, newVerts, (vertCount + 8) * sizeof(vec3));
+		delete[] newVerts;
 	}
 
 	// add new edges (4 for each face)
@@ -8393,6 +8298,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		}
 
 		replace_lump(LUMP_EDGES, newEdges, (edgeCount + 12) * sizeof(BSPEDGE32));
+		delete[] newEdges;
 	}
 
 	// add new surfedges (2 for each edge)
@@ -8410,6 +8316,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		}
 
 		replace_lump(LUMP_SURFEDGES, newSurfedges, (surfedgeCount + 24) * sizeof(int));
+		delete[] newSurfedges;
 	}
 
 	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 6];
@@ -8434,6 +8341,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 			}*/
 
 		replace_lump(LUMP_PLANES, newPlanes, (planeCount + 6) * sizeof(BSPPLANE));
+		delete[] newPlanes;
 	}
 
 	unsigned int startTexinfo = texinfoCount;
@@ -8479,6 +8387,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		}
 
 		replace_lump(LUMP_TEXINFO, newTexinfos, (texinfoCount + 6) * sizeof(BSPTEXTUREINFO));
+		delete[] newTexinfos;
 	}
 
 	// add new faces
@@ -8500,6 +8409,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		}
 
 		replace_lump(LUMP_FACES, newFaces, (faceCount + 6) * sizeof(BSPFACE32));
+		delete[] newFaces;
 	}
 
 	// Submodels don't use leaves like the world does. Everything except nContents is ignored.
@@ -8550,6 +8460,7 @@ void Bsp::create_primitive_box(const vec3& min, const vec3& max, BSPMODEL* targe
 		}
 
 		replace_lump(LUMP_NODES, newNodes, (nodeCount + 6) * sizeof(BSPNODE32));
+		delete[] newNodes;
 	}
 
 	targetModel->iHeadnodes[0] = startNode;
@@ -8589,6 +8500,7 @@ void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 		}
 
 		replace_lump(LUMP_VERTICES, newVerts, (vertCount + solid.hullVerts.size()) * sizeof(vec3));
+		delete[] newVerts;
 	}
 
 	// add new edges (not actually edges - just an indirection layer for the verts)
@@ -8617,6 +8529,7 @@ void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 			idx++;
 		}
 		replace_lump(LUMP_EDGES, newEdges, (edgeCount + addEdges) * sizeof(BSPEDGE32));
+		delete[] newEdges;
 	}
 
 	// add new surfedges (2 for each edge)
@@ -8642,6 +8555,7 @@ void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 		}
 
 		replace_lump(LUMP_SURFEDGES, newSurfedges, (surfedgeCount + addSurfedges) * sizeof(int));
+		delete[] newSurfedges;
 	}
 
 	// add new planes (1 for each face/node)
@@ -8657,6 +8571,7 @@ void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 		}
 
 		replace_lump(LUMP_PLANES, newPlanes, (planeCount + solid.faces.size()) * sizeof(BSPPLANE));
+		delete[] newPlanes;
 	}
 
 	// add new faces
@@ -8680,6 +8595,7 @@ void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 		}
 
 		replace_lump(LUMP_FACES, newFaces, (faceCount + solid.faces.size()) * sizeof(BSPFACE32));
+		delete[] newFaces;
 	}
 
 	//TODO: move to common function
@@ -8732,6 +8648,7 @@ void Bsp::create_solid_nodes(Solid& solid, BSPMODEL* targetModel)
 		}
 
 		replace_lump(LUMP_NODES, newNodes, (nodeCount + solid.faces.size()) * sizeof(BSPNODE32));
+		delete[] newNodes;
 	}
 
 	targetModel->iHeadnodes[0] = startNode;
@@ -8832,6 +8749,10 @@ int Bsp::create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetMod
 		std::copy(addNodes.begin(), addNodes.end(), newNodes + nodeCount);
 	replace_lump(LUMP_NODES, newNodes, (nodeCount + addNodes.size()) * sizeof(BSPNODE32));
 
+
+	delete[] newPlanes;
+	delete[] newNodes;
+
 	return solidNodeIdx;
 }
 
@@ -8908,6 +8829,10 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 		std::copy(addNodes.begin(), addNodes.end(), newClipnodes + clipnodeCount);
 	replace_lump(LUMP_CLIPNODES, newClipnodes, (clipnodeCount + addNodes.size()) * sizeof(BSPCLIPNODE32));
 
+
+	delete[] newPlanes;
+	delete[] newClipnodes;
+
 	return solidNodeIdx;
 }
 
@@ -8959,7 +8884,7 @@ int Bsp::create_clipnode(bool force_reversed, int reversed_id)
 		memcpy(newNodes, clipnodes, clipnodeCount * sizeof(BSPCLIPNODE32));
 		newNodes[clipnodeCount] = BSPCLIPNODE32();
 		replace_lump(LUMP_CLIPNODES, newNodes, (clipnodeCount + 1) * sizeof(BSPCLIPNODE32));
-
+		delete[] newNodes;
 		return clipnodeCount - 1;
 	}
 
@@ -8975,6 +8900,7 @@ int Bsp::create_clipnode(bool force_reversed, int reversed_id)
 	BSPCLIPNODE32* newNodesArray = new BSPCLIPNODE32[newNodes.size()];
 	memcpy(newNodesArray, newNodes.data(), newNodes.size() * sizeof(BSPCLIPNODE32));
 	replace_lump(LUMP_CLIPNODES, newNodesArray, newNodes.size() * sizeof(BSPCLIPNODE32));
+	delete[] newNodesArray;
 
 	for (int i = 0; i < clipnodeCount; i++)
 	{
@@ -9008,6 +8934,7 @@ int Bsp::create_node(bool force_reversed, int reversed_id)
 		memcpy(newNodes, nodes, nodeCount * sizeof(BSPNODE32));
 		newNodes[nodeCount] = BSPNODE32();
 		replace_lump(LUMP_NODES, newNodes, (nodeCount + 1) * sizeof(BSPNODE32));
+		delete[] newNodes;
 		return nodeCount - 1;
 	}
 
@@ -9023,6 +8950,7 @@ int Bsp::create_node(bool force_reversed, int reversed_id)
 	BSPNODE32* newNodesArray = new BSPNODE32[newNodes.size()];
 	memcpy(newNodesArray, newNodes.data(), newNodes.size() * sizeof(BSPNODE32));
 	replace_lump(LUMP_NODES, newNodesArray, newNodes.size() * sizeof(BSPNODE32));
+	delete[] newNodesArray;
 
 	for (int i = 0; i < nodeCount; i++)
 	{
@@ -9053,6 +8981,7 @@ int Bsp::create_edge()
 	memcpy(newEdges, edges, edgeCount * sizeof(BSPEDGE32));
 	newEdges[edgeCount] = BSPEDGE32();
 	replace_lump(LUMP_EDGES, newEdges, (edgeCount + 1) * sizeof(BSPEDGE32));
+	delete[] newEdges;
 	return edgeCount - 1;
 }
 
@@ -9062,6 +8991,7 @@ int Bsp::create_vert()
 	memcpy(newVerts, verts, vertCount * sizeof(vec3));
 	newVerts[vertCount] = vec3();
 	replace_lump(LUMP_VERTICES, newVerts, (vertCount + 1) * sizeof(vec3));
+	delete[] newVerts;
 	return vertCount - 1;
 }
 
@@ -9071,6 +9001,7 @@ int Bsp::create_surfedge()
 	memcpy(newSurfedges, surfedges, surfedgeCount * sizeof(int));
 	newSurfedges[surfedgeCount] = 0;
 	replace_lump(LUMP_SURFEDGES, newSurfedges, (surfedgeCount + 1) * sizeof(int));
+	delete[] newSurfedges;
 	return surfedgeCount - 1;
 }
 
@@ -9080,7 +9011,7 @@ int Bsp::create_plane()
 	memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
 	newPlanes[planeCount] = BSPPLANE();
 	replace_lump(LUMP_PLANES, newPlanes, (planeCount + 1) * sizeof(BSPPLANE));
-
+	delete[] newPlanes;
 	return planeCount - 1;
 }
 
@@ -9093,7 +9024,7 @@ int Bsp::create_model()
 	//BSPMODEL& newModel = newModels[modelCount];
 
 	replace_lump(LUMP_MODELS, newModels, (modelCount + 1) * sizeof(BSPMODEL));
-
+	delete[] newModels;
 	return modelCount - 1;
 }
 
@@ -9106,7 +9037,7 @@ int Bsp::create_texinfo()
 	newTexinfos[texinfoCount] = BSPTEXTUREINFO();
 
 	replace_lump(LUMP_TEXINFO, newTexinfos, (texinfoCount + 1) * sizeof(BSPTEXTUREINFO));
-
+	delete[] newTexinfos;
 	return texinfoCount - 1;
 }
 
@@ -9647,7 +9578,7 @@ bool Bsp::leaf_add_face(int faceIdx, int leafIdx)
 	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
 	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
 	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
-
+	delete[] newLump;
 	return true;
 }
 
@@ -9684,7 +9615,7 @@ bool Bsp::leaf_del_face(int faceIdx, int leafIdx)
 	unsigned char* newLump = new unsigned char[sizeof(int) * all_mark_surfaces.size()];
 	memcpy(newLump, &all_mark_surfaces[0], sizeof(int) * all_mark_surfaces.size());
 	replace_lump(LUMP_MARKSURFACES, newLump, sizeof(int) * all_mark_surfaces.size());
-
+	delete[] newLump;
 	return true;
 }
 
@@ -9818,7 +9749,7 @@ bool Bsp::remove_face(int faceIdx)
 	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
-
+	delete[] newLump;
 	// Remove face from all leaves
 	leaf_del_face(faceIdx, -1);
 
@@ -9897,8 +9828,10 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 					memcpy(newThisPlanes, planes, planeCount * sizeof(BSPPLANE));
 					newThisPlanes[planeCount] = planes[node.iPlane];
 					replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
+					delete[] newThisPlanes;
 				}
 				replace_lump(LUMP_NODES, newThisNodes, (nodeCount + 2) * sizeof(BSPNODE32));
+				delete[] newThisNodes;
 			}
 		}
 		if (node.iChildren[1] < 0)
@@ -9925,9 +9858,11 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 					memcpy(newThisPlanes, planes, planeCount * sizeof(BSPPLANE));
 					newThisPlanes[planeCount] = planes[node.iPlane];
 					replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
+					delete[] newThisPlanes;
 				}
 
 				replace_lump(LUMP_NODES, newThisNodes, (nodeCount + 2) * sizeof(BSPNODE32));
+				delete[] newThisNodes;
 			}
 		}
 	}
@@ -9952,6 +9887,7 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 			memcpy(newMarkSurfs + marksurfCount, &marksurfs[leaves[oldleafIdx].iFirstMarkSurface],
 				leaves[oldleafIdx].nMarkSurfaces * sizeof(int));
 			replace_lump(LUMP_MARKSURFACES, newMarkSurfs, (marksurfCount + leaves[oldleafIdx].nMarkSurfaces) * sizeof(int));
+			delete[] newMarkSurfs;
 		}
 
 		models[0].nVisLeafs++;
@@ -9977,6 +9913,7 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 			memcpy(newVisLump, visdata, visDataLength);
 			memcpy(newVisLump + visDataLength, compressed, size);
 			replace_lump(LUMP_VISIBILITY, newVisLump, visDataLength + size);
+			delete[] newVisLump;
 		}
 	}
 
@@ -9986,6 +9923,7 @@ int Bsp::clone_world_leaf(int oldleafIdx)
 	BSPLEAF32* newLeaves = new BSPLEAF32[outLeafs.size()];
 	memcpy(newLeaves, outLeafs.data(), outLeafs.size() * sizeof(BSPLEAF32));
 	replace_lump(LUMP_LEAVES, newLeaves, outLeafs.size() * sizeof(BSPLEAF32));
+	delete[] newLeaves;
 
 	// repack visdata
 	auto removed = remove_unused_model_structures(CLEAN_VISDATA);
@@ -10135,6 +10073,7 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
+	delete[] newLump;
 
 	print_log(PRINT_GREEN, "SeparatePlane : {:4f} {:4f} {:4f} -> {:4f}\n", separate_plane.vNormal.x, separate_plane.vNormal.y, separate_plane.vNormal.z, separate_plane.fDist);
 
@@ -10162,6 +10101,7 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 
 	newThisPlanes[planeCount] = separate_plane;
 	replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
+	delete[] newThisPlanes;
 
 	{
 		if (models[dst_model].iHeadnodes[0] >= 0 || models[src_model].iHeadnodes[0] >= 0)
@@ -10375,6 +10315,7 @@ int Bsp::merge_two_models_ents(int src_ent, int dst_ent, int& tryanotherway)
 	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
 	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
 	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
+	delete[] newLump;
 
 	print_log(PRINT_GREEN, "SeparatePlane : {:4f} {:4f} {:4f} -> {:4f}\n", separate_plane.vNormal.x, separate_plane.vNormal.y, separate_plane.vNormal.z, separate_plane.fDist);
 
@@ -10401,7 +10342,7 @@ int Bsp::merge_two_models_ents(int src_ent, int dst_ent, int& tryanotherway)
 
 	newThisPlanes[planeCount] = separate_plane;
 	replace_lump(LUMP_PLANES, newThisPlanes, (planeCount + 1) * sizeof(BSPPLANE));
-
+	delete[] newThisPlanes;
 	{
 		if (models[dst_model].iHeadnodes[0] >= 0 || models[src_model].iHeadnodes[0] >= 0)
 		{
@@ -10634,7 +10575,7 @@ bool Bsp::is_worldspawn_ent(int entIdx)
 
 int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success)
 {
-	if (iNode < 0 || iNode >= nodeCount) 
+	if (iNode < 0 || iNode >= nodeCount)
 	{
 		success = false;
 		return -1;
@@ -10642,7 +10583,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success)
 
 	BSPNODE32& node = nodes[iNode];
 
-	if (node.iPlane < 0 || node.iPlane >= planeCount) 
+	if (node.iPlane < 0 || node.iPlane >= planeCount)
 	{
 		success = false;
 		return -1;
@@ -10660,7 +10601,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success)
 			if (node.iChildren[i] < 0)
 			{
 				int leafIndex = ~node.iChildren[i];
-				if (leafIndex >= leafCount) 
+				if (leafIndex >= leafCount)
 				{
 					success = false;
 					return -1;
@@ -10689,7 +10630,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success)
 	}
 
 	int newClipnodeIdx = create_clipnode();
-	if (newClipnodeIdx < 0 || newClipnodeIdx >= clipnodeCount) 
+	if (newClipnodeIdx < 0 || newClipnodeIdx >= clipnodeCount)
 	{
 		success = false;
 		return -1;
@@ -10703,7 +10644,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success)
 		if (node.iChildren[i] >= 0)
 		{
 			int childIdx = regenerate_clipnodes_from_nodes(node.iChildren[i], hullIdx, success);
-			if (childIdx < 0 || childIdx >= clipnodeCount) 
+			if (childIdx < 0 || childIdx >= clipnodeCount)
 			{
 				success = false;
 				return -1;
@@ -10714,7 +10655,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success)
 		else
 		{
 			int leafIndex = ~node.iChildren[i];
-			if (leafIndex >= leafCount) 
+			if (leafIndex >= leafCount)
 			{
 				success = false;
 				return -1;
@@ -10728,13 +10669,13 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success)
 		}
 	}
 
-	if (node.iPlane >= planeCount) 
+	if (node.iPlane >= planeCount)
 	{
 		success = false;
 		return -1;
 	}
 	BSPPLANE& nodePlane = planes[node.iPlane];
-	if (clipnodes[newClipnodeIdx].iPlane < 0 || clipnodes[newClipnodeIdx].iPlane >= planeCount) 
+	if (clipnodes[newClipnodeIdx].iPlane < 0 || clipnodes[newClipnodeIdx].iPlane >= planeCount)
 	{
 		success = false;
 		return -1;
@@ -10756,7 +10697,7 @@ int Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx, bool& success)
 	// enough to "link" clipnode planes to node planes during scaling because BSP trees might not match.
 	if (solidChild != -1)
 	{
-		if (clipnodes[newClipnodeIdx].iPlane < 0 || clipnodes[newClipnodeIdx].iPlane >= planeCount) 
+		if (clipnodes[newClipnodeIdx].iPlane < 0 || clipnodes[newClipnodeIdx].iPlane >= planeCount)
 		{
 			success = false;
 			return -1;
@@ -10802,7 +10743,7 @@ bool Bsp::regenerate_clipnodes(int modelIdx, int hullIdx)
 
 void Bsp::write_csg_outputs(const std::string& path)
 {
-	BSPPLANE* thisPlanes = (BSPPLANE*)lumps[LUMP_PLANES];
+	BSPPLANE* thisPlanes = (BSPPLANE*)lumps[LUMP_PLANES].data();
 	int numPlanes = bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
 
 	// add flipped version of planes since face output files can't specify plane side
@@ -10817,10 +10758,13 @@ void Bsp::write_csg_outputs(const std::string& path)
 		flipped.fDist = -flipped.fDist;
 		newPlanes[numPlanes + i] = flipped;
 	}
-	delete[] lumps[LUMP_PLANES];
-	lumps[LUMP_PLANES] = (unsigned char*)newPlanes;
+
 	numPlanes *= 2;
 	bsp_header.lump[LUMP_PLANES].nLength = numPlanes * sizeof(BSPPLANE);
+	lumps[LUMP_PLANES].assign((unsigned char*)newPlanes, (unsigned char*)(newPlanes)+bsp_header.lump[LUMP_PLANES].nLength);
+
+	update_lump_pointers();
+
 	thisPlanes = newPlanes;
 
 	std::ofstream pln_file(path + bsp_name + ".pln", std::ios::trunc | std::ios::binary);
@@ -10837,7 +10781,7 @@ void Bsp::write_csg_outputs(const std::string& path)
 	}
 	print_log(get_localized_string(LANG_0176), numPlanes);
 
-	BSPMODEL* tmodels = (BSPMODEL*)lumps[LUMP_MODELS];
+	BSPMODEL* tmodels = (BSPMODEL*)lumps[LUMP_MODELS].data();
 	BSPMODEL world = tmodels[0];
 
 	for (int i = 0; i < 4; i++)
@@ -10892,8 +10836,9 @@ void Bsp::write_csg_outputs(const std::string& path)
 	// write the lumps
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
-		bsp_file.write((char*)lumps[i], bsp_header.lump[i].nLength);
+		bsp_file.write((char*)lumps[i].data(), bsp_header.lump[i].nLength);
 	}
+	delete[] newPlanes;
 }
 
 void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool debug)
@@ -10985,24 +10930,24 @@ void Bsp::print_leaf(int leafid)
 
 void Bsp::update_lump_pointers()
 {
-	planes = (BSPPLANE*)lumps[LUMP_PLANES];
-	texinfos = (BSPTEXTUREINFO*)lumps[LUMP_TEXINFO];
-	leaves = (BSPLEAF32*)lumps[LUMP_LEAVES];
-	models = (BSPMODEL*)lumps[LUMP_MODELS];
-	nodes = (BSPNODE32*)lumps[LUMP_NODES];
-	clipnodes = (BSPCLIPNODE32*)lumps[LUMP_CLIPNODES];
-	faces = (BSPFACE32*)lumps[LUMP_FACES];
-	if (is_bsp30ext && extralumps)
-		faceinfos = (BSPFACE_INFOEX*)extralumps[LUMP_FACEINFO];
+	planes = (BSPPLANE*)lumps[LUMP_PLANES].data();
+	texinfos = (BSPTEXTUREINFO*)lumps[LUMP_TEXINFO].data();
+	leaves = (BSPLEAF32*)lumps[LUMP_LEAVES].data();
+	models = (BSPMODEL*)lumps[LUMP_MODELS].data();
+	nodes = (BSPNODE32*)lumps[LUMP_NODES].data();
+	clipnodes = (BSPCLIPNODE32*)lumps[LUMP_CLIPNODES].data();
+	faces = (BSPFACE32*)lumps[LUMP_FACES].data();
+	if (is_bsp30ext && extralumps.size())
+		faceinfos = (BSPFACE_INFOEX*)extralumps[LUMP_FACEINFO].data();
 	else
 		faceinfos = NULL;
-	verts = (vec3*)lumps[LUMP_VERTICES];
-	lightdata = lumps[LUMP_LIGHTING];
-	surfedges = (int*)lumps[LUMP_SURFEDGES];
-	edges = (BSPEDGE32*)lumps[LUMP_EDGES];
-	marksurfs = (int*)lumps[LUMP_MARKSURFACES];
-	visdata = lumps[LUMP_VISIBILITY];
-	textures = lumps[LUMP_TEXTURES];
+	verts = (vec3*)lumps[LUMP_VERTICES].data();
+	lightdata = lumps[LUMP_LIGHTING].data();
+	surfedges = (int*)lumps[LUMP_SURFEDGES].data();
+	edges = (BSPEDGE32*)lumps[LUMP_EDGES].data();
+	marksurfs = (int*)lumps[LUMP_MARKSURFACES].data();
+	visdata = lumps[LUMP_VISIBILITY].data();
+	textures = lumps[LUMP_TEXTURES].data();
 
 	planeCount = bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
 	texinfoCount = bsp_header.lump[LUMP_TEXINFO].nLength / sizeof(BSPTEXTUREINFO);
@@ -11011,7 +10956,7 @@ void Bsp::update_lump_pointers()
 	nodeCount = bsp_header.lump[LUMP_NODES].nLength / sizeof(BSPNODE32);
 	vertCount = bsp_header.lump[LUMP_VERTICES].nLength / sizeof(vec3);
 	faceCount = bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE32);
-	if (is_bsp30ext && extralumps)
+	if (is_bsp30ext && extralumps.size())
 		faceinfoCount = bsp_header_ex.lump[LUMP_FACEINFO].nLength / sizeof(BSPFACE_INFOEX);
 	else
 		faceinfoCount = 0;
@@ -11051,13 +10996,8 @@ void Bsp::update_lump_pointers()
 
 void Bsp::replace_lump(int lumpIdx, void* newData, size_t newLength)
 {
-	if (replacedLump[lumpIdx] && lumps[lumpIdx])
-	{
-		delete[] lumps[lumpIdx];
-	}
-	lumps[lumpIdx] = (unsigned char*)newData;
 	bsp_header.lump[lumpIdx].nLength = (int)newLength;
-	replacedLump[lumpIdx] = true;
+	lumps[lumpIdx].assign((unsigned char*)newData, (unsigned char*)(newData)+bsp_header.lump[lumpIdx].nLength);
 	update_lump_pointers();
 }
 
@@ -11067,10 +11007,11 @@ void Bsp::append_lump(int lumpIdx, void* newData, size_t appendLength)
 	unsigned char* newLump = new unsigned char[oldLen + appendLength];
 
 	if (oldLen > 0)
-		memcpy(newLump, lumps[lumpIdx], oldLen);
+		memcpy(newLump, lumps[lumpIdx].data(), oldLen);
 	memcpy(newLump + oldLen, newData, appendLength);
 
 	replace_lump(lumpIdx, newLump, oldLen + appendLength);
+	delete[] newLump;
 }
 
 bool Bsp::isModelHasFaceIdx(const BSPMODEL& bspmdl, int faceid)
@@ -13760,7 +13701,7 @@ void Bsp::ExportExtFile(const std::string& path, std::string& out_map_path)
 
 	print_log(get_localized_string(LANG_0212), targetMapFileName + "_nolight.bsp");
 
-	tmpBsp->lumps[LUMP_LIGHTING] = NULL;
+	tmpBsp->lumps[LUMP_LIGHTING].clear();
 	tmpBsp->bsp_header.lump[LUMP_LIGHTING].nOffset = 0;
 	tmpBsp->bsp_header.lump[LUMP_LIGHTING].nLength = 0;
 
@@ -13995,8 +13936,6 @@ bool Bsp::ImportWad(const std::string& path)
 
 int Bsp::import_mdl_to_bspmodel(int ent, int generateClipnodes)
 {
-	std::set<Texture*> added_textures;
-
 	auto& rndEntity = renderer->renderEnts[ent];
 
 	if (rndEntity.mdl)
@@ -14285,6 +14224,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 	memcpy(testlightdata, lightdata, lightDataLength);
 	memset(testlightdata + lightDataLength, 125, tmpLightSize);
 	replace_lump(LUMP_LIGHTING, testlightdata, lightDataLength + tmpLightSize);
+	delete[] testlightdata;
 
 	vec3 mins = vec3(g_limits.fltMaxCoord, g_limits.fltMaxCoord, g_limits.fltMaxCoord);
 	vec3 maxs = vec3(-g_limits.fltMaxCoord, -g_limits.fltMaxCoord, -g_limits.fltMaxCoord);
@@ -14302,6 +14242,8 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 		vec3* newverts = new vec3[newVertCount];
 		memcpy(newverts, verts, startVertCount * sizeof(vec3));
 		replace_lump(LUMP_VERTICES, newverts, newVertCount * sizeof(vec3));
+		delete[] newverts;
+
 		newverts = verts;
 
 		std::vector<vec2> newuv;
@@ -14325,6 +14267,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 		BSPEDGE32* newedges = new BSPEDGE32[newdedgescount];
 		memcpy(newedges, edges, startEdge * sizeof(BSPEDGE32));
 		replace_lump(LUMP_EDGES, newedges, newdedgescount * sizeof(BSPEDGE32));
+		delete[] newedges;
 		newedges = edges;
 
 
@@ -14352,6 +14295,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 		int* newsurfedges = new int[newsurfedges_count];
 		memcpy(newsurfedges, surfedges, startSurfedgeCount * sizeof(int));
 		replace_lump(LUMP_SURFEDGES, newsurfedges, newsurfedges_count * sizeof(int));
+		delete[] newsurfedges;
 		newsurfedges = surfedges;
 
 		for (v = (int)startSurfedgeCount; v < newsurfedges_count; v++)
@@ -14367,6 +14311,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 		BSPFACE32* newfaces = new BSPFACE32[newFaceCount];
 		memcpy(newfaces, faces, startFaceCount * sizeof(BSPFACE32));
 		replace_lump(LUMP_FACES, newfaces, newFaceCount * sizeof(BSPFACE32));
+		delete[] newfaces;
 		newfaces = faces;
 
 		int startPlaneCount = planeCount;
@@ -14374,6 +14319,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 		BSPPLANE* newplanes = new BSPPLANE[newPlaneCount];
 		memcpy(newplanes, planes, startPlaneCount * sizeof(BSPPLANE));
 		replace_lump(LUMP_PLANES, newplanes, newPlaneCount * sizeof(BSPPLANE));
+		delete[] newplanes;
 		newplanes = planes;
 
 		int startTexinfoCount = texinfoCount;
@@ -14381,6 +14327,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 		BSPTEXTUREINFO* newtexinfos = new BSPTEXTUREINFO[newTexinfosCount];
 		memcpy(newtexinfos, texinfos, startTexinfoCount * sizeof(BSPTEXTUREINFO));
 		replace_lump(LUMP_TEXINFO, newtexinfos, newTexinfosCount * sizeof(BSPTEXTUREINFO));
+		delete[] newtexinfos;
 		newtexinfos = texinfos;
 
 		for (v = (int)startFaceCount; v < newFaceCount; v++)
@@ -14430,7 +14377,9 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 						newWidth, newHeight);
 					delete[] tmpData;
 					tmpData = new COLOR3[newWidth * newHeight];
-					std::copy(newData.begin(), newData.end(), tmpData);
+
+					if (newData.size() == newWidth * newHeight)
+						std::copy(newData.begin(), newData.end(), tmpData);
 
 					if (GetImageColors(tmpData, newWidth * newHeight) > 256)
 					{
@@ -14627,6 +14576,7 @@ int Bsp::import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes, mat4x4 angles, 
 		}
 
 		replace_lump(LUMP_NODES, newNodes, newnodecount * sizeof(BSPNODE32));
+		delete[] newNodes;
 	}
 
 	models[newModelIdx].iHeadnodes[0] = startNode;*/
@@ -15122,7 +15072,7 @@ int Bsp::CalcFaceTextureStep(int facenum)
 	}
 
 	// next xash 
-	if (is_bsp30ext && extralumps)
+	if (is_bsp30ext && extralumps.size())
 	{
 		BSPTEXTUREINFO& tex = texinfos[faces[facenum].iTextureInfo];
 

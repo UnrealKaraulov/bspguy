@@ -22,6 +22,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 	map = _map;
 	map->setBspRender(this);
 
+	curLeafIdx = 0;
 	lightmaps = NULL;
 	glTexturesSwap.clear();
 	glTextures.clear();
@@ -106,7 +107,8 @@ BspRenderer::BspRenderer(Bsp* _map)
 			for (auto ent : map->ents)
 			{
 				foundEnt = ent;
-				break;
+				if (foundEnt)
+					break;
 			}
 		}
 
@@ -510,8 +512,7 @@ void BspRenderer::loadTextures()
 				}
 			}
 
-			if (wadTex)
-				delete wadTex;
+			delete wadTex;
 		}
 
 		if (glTexturesSwap[i].empty())
@@ -617,7 +618,7 @@ void BspRenderer::loadLightmaps()
 {
 	std::vector<LightmapNode> atlases{};
 	std::vector<Texture*> atlasTextures{};
-	atlases.push_back(LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
+	atlases.emplace_back(LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
 	atlasTextures.push_back(new Texture(MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE,
 		new unsigned char[MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
@@ -700,7 +701,7 @@ void BspRenderer::loadLightmaps()
 				// TODO: Try fitting in earlier atlases before using the latest one
 				if (!atlases[atlasId].insert(info.w, info.h, info.x[s], info.y[s]))
 				{
-					atlases.push_back(LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
+					atlases.emplace_back(LightmapNode(0, 0, MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE));
 					atlasTextures.push_back(new Texture(MAX_LIGHTMAP_ATLAS_SIZE, MAX_LIGHTMAP_ATLAS_SIZE, new unsigned char[MAX_LIGHTMAP_ATLAS_SIZE * MAX_LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3)], "LIGHTMAP"));
 
 					atlasId++;
@@ -861,16 +862,10 @@ void BspRenderer::deleteRenderModelClipnodes(RenderClipnodes* renderClip)
 {
 	for (int i = 0; i < MAX_MAP_HULLS; i++)
 	{
-		if (renderClip->clipnodeBuffer[i])
-		{
-			delete renderClip->clipnodeBuffer[i];
-		}
+		delete renderClip->clipnodeBuffer[i];
 		renderClip->clipnodeBuffer[i] = NULL;
 
-		if (renderClip->wireframeClipnodeBuffer[i])
-		{
-			delete renderClip->wireframeClipnodeBuffer[i];
-		}
+		delete renderClip->wireframeClipnodeBuffer[i];
 		renderClip->wireframeClipnodeBuffer[i] = NULL;
 	}
 }
@@ -887,7 +882,7 @@ void BspRenderer::deleteRenderFaces()
 
 void BspRenderer::deleteTextures()
 {
-	for (int i = 0; i < numLoadedTextures; i++)
+	for (size_t i = 0; i < glTextures.size(); i++)
 	{
 		if (glTextures[i].size())
 		{
@@ -1680,7 +1675,6 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 		return;*/
 	}
-
 
 	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, hullIdx, CONTENTS_SOLID);
 	//
@@ -2485,10 +2479,7 @@ BspRenderer::~BspRenderer()
 	}
 	wads.clear();
 
-	if (lightmaps)
-	{
-		delete[] lightmaps;
-	}
+	delete[] lightmaps;
 
 	if (renderEnts.size())
 	{
@@ -2537,13 +2528,11 @@ void BspRenderer::reuploadTextures()
 	glTextures = glTexturesSwap;
 	glTexturesSwap.clear();
 
-	for (int i = 0; i < map->textureCount; i++)
+	for (size_t i = 0; i < glTextures.size(); i++)
 	{
 		for (auto& tex : glTextures[i])
 			tex->upload();
 	}
-
-	numLoadedTextures = map->textureCount;
 
 	texturesLoaded = true;
 
@@ -2735,7 +2724,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	static double leafUpdTime = 0.0;
 
-	if (map->models && fabs(g_app->curTime - leafUpdTime) > 0.25)
+	//if (map->models && fabs(g_app->curTime - leafUpdTime) > 0.25)
 	{
 		leafUpdTime = g_app->curTime;
 		std::vector<int> nodeBranch;
@@ -2816,7 +2805,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 			g_app->bspShader->bind();
 			g_app->bspShader->updateMatrixes();
 
-			if (!map->ents[0]->hide)
+			if (!map->ents.empty() && !map->ents[0]->hide)
 				drawModel(0, pass, false, false);
 
 			size_t ent_count = std::min(map->ents.size(), renderEnts.size());
@@ -3494,10 +3483,11 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			}
 			if (g_render_flags & RENDER_MODELS && rendEntity.spr)
 			{
-				mins = rendEntity.offset + rendEntity.spr->sprite_groups[rendEntity.spr->current_group].
-					sprites[rendEntity.spr->sprite_groups[rendEntity.spr->current_group].current_spr].spriteCube->mins;
-				maxs = rendEntity.offset + rendEntity.spr->sprite_groups[rendEntity.spr->current_group].
-					sprites[rendEntity.spr->sprite_groups[rendEntity.spr->current_group].current_spr].spriteCube->maxs;
+				auto& group = rendEntity.spr->sprite_groups[rendEntity.spr->current_group];
+
+				mins = rendEntity.offset + group.sprites[group.current_spr].spriteCube->mins;
+				maxs = rendEntity.offset + group.sprites[group.current_spr].spriteCube->maxs;
+
 				if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
 				{
 					if (!*tmpMap || *tmpMap == map)
@@ -3732,7 +3722,7 @@ void BspRenderer::saveLumpState()
 	map->update_ent_lump();
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
-		undoLumpState.lumps[i] = std::vector<unsigned char>(map->lumps[i], map->lumps[i] + map->bsp_header.lump[i].nLength);
+		undoLumpState.lumps[i] = map->lumps[i];
 	}
 }
 

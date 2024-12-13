@@ -23,14 +23,6 @@ class BspRenderer;
 #define OOB_CLIP_Z 16
 #define OOB_CLIP_Z_NEG 32
 
-struct membuf : std::streambuf
-{
-	membuf(char* begin, int len)
-	{
-		this->setg(begin, begin, begin + len);
-	}
-};
-
 struct LeafDebug
 {
 	int leafIdx;
@@ -50,8 +42,8 @@ public:
 	BSPHEADER bsp_header;
 	BSPHEADER_EX bsp_header_ex;
 
-	unsigned char** lumps;
-	unsigned char** extralumps;
+	std::vector<std::vector<unsigned char>> lumps;
+	std::vector<std::vector<unsigned char>> extralumps;
 
 	std::vector<LIGHTMAP> undo_lightmaps;
 
@@ -111,9 +103,6 @@ public:
 
 	std::string bsp_path;
 	std::string bsp_name;
-
-	bool replacedLump[32];
-
 	vec3 save_cam_pos, save_cam_angles;
 
 	bool bsp_valid;
@@ -413,7 +402,7 @@ public:
 	bool does_model_use_shared_structures(int modelIdx);
 
 	// returns the current lump contents
-	LumpState duplicate_lumps(int targets);
+	LumpState duplicate_lumps(unsigned int targets);
 
 	void replace_lumps(const LumpState& state);
 

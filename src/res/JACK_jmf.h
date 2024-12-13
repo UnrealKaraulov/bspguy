@@ -15,7 +15,7 @@ public:
 
 	template <typename T>
 	void write(const T& value) {
-		file.write(reinterpret_cast<const char*>(&value), sizeof(T));
+		file.write((const char*)&value, sizeof(T));
 	}
 
 	void writeLenStr(const std::string& str) {

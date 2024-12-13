@@ -74,7 +74,7 @@ void VertexBuffer::upload(bool hideErrors, bool forceReupload)
             continue;
 
         glEnableVertexAttribArray(a.handle);
-        glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, shaderProgram->elementSize, reinterpret_cast<const GLvoid*>(offset));
+        glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, shaderProgram->elementSize, (const GLvoid*)offset);
         if (!hideErrors && glGetError() != GL_NO_ERROR)
         {
             std::cout << "Error! Name: " << a.varName << std::endl;

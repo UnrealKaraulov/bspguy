@@ -206,11 +206,11 @@ bool CSMFile::write(const std::string& filePath) {
 
 	matstr.push_back('\0');
 
-	file.write(reinterpret_cast<const char*>(matstr.data()), header.mat_size);
+	file.write((const char*)matstr.data(), header.mat_size);
 	//matstr.pop_back(); -- if need do something with matstr
 
-	file.write(reinterpret_cast<const char*>(vertices.data()), header.vertex_size * header.vertex_count);
-	file.write(reinterpret_cast<const char*>(faces.data()), header.face_size * header.faces_count);
+	file.write((const char*)vertices.data(), header.vertex_size * header.vertex_count);
+	file.write((const char*)faces.data(), header.face_size * header.faces_count);
 
 	file.close();
 	return true;

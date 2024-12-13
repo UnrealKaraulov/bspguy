@@ -29,7 +29,7 @@ STRUCTCOUNT::STRUCTCOUNT(Bsp* map)
 	clipnodes = map->bsp_header.lump[LUMP_CLIPNODES].nLength / sizeof(BSPCLIPNODE32);
 	verts = map->bsp_header.lump[LUMP_VERTICES].nLength / sizeof(vec3);
 	faces = map->bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE32);
-	textures = *((int*)(map->lumps[LUMP_TEXTURES]));
+	textures = *((int*)(map->lumps[LUMP_TEXTURES].data()));
 	markSurfs = map->bsp_header.lump[LUMP_MARKSURFACES].nLength / sizeof(int);
 	surfEdges = map->bsp_header.lump[LUMP_SURFEDGES].nLength / sizeof(int);
 	edges = map->bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE32);

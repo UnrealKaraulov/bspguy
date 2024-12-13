@@ -112,8 +112,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 	min = vec3(min.x, min.z, -min.y);
 	max = vec3(max.x, max.z, -max.y);
 
-	if (entCube->cubeBuffer)
-		delete entCube->cubeBuffer;
+	delete entCube->cubeBuffer;
 
 	if (!entCube->Textured)
 	{
@@ -139,13 +138,11 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 	selectCube->top.setColor(selectColor * 0.40f);
 	selectCube->back.setColor(selectColor * 0.53f);
 
-	if (entCube->selectBuffer)
-		delete entCube->selectBuffer;
+	delete entCube->selectBuffer;
 
 	entCube->selectBuffer = new VertexBuffer(g_app->colorShader, selectCube, (6 * 6), GL_TRIANGLES);
 
-	if (entCube->axesBuffer)
-		delete entCube->axesBuffer;
+	delete entCube->axesBuffer;
 
 	cCubeAxes* axescube = new cCubeAxes(min, max);
 	entCube->axesBuffer = new VertexBuffer(g_app->colorShader, axescube, (6 * 6), GL_TRIANGLES);
@@ -184,8 +181,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube)
 	cVert* selectWireframeBuf = new cVert[12 * 2];
 	memcpy(selectWireframeBuf, selectWireframe, sizeof(cVert) * 12 * 2);
 
-	if (entCube->wireframeBuffer)
-		delete entCube->wireframeBuffer;
+	delete entCube->wireframeBuffer;
 
 	entCube->wireframeBuffer = new VertexBuffer(g_app->colorShader, selectWireframeBuf, 2 * 12, GL_LINES);
 

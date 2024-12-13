@@ -144,7 +144,7 @@ void Texture::upload(int _type)
     if (texName[0] == '{' && format == GL_RGB)
     {
         format = GL_RGBA;
-        auto* rgbData = reinterpret_cast<COLOR3*>(data);
+        auto* rgbData = (COLOR3*)(data);
         auto pixelCount = width * height;
         auto* rgbaData = new COLOR4[pixelCount];
         for (int i = 0; i < pixelCount; i++)
@@ -156,8 +156,8 @@ void Texture::upload(int _type)
             }
         }
         delete[] data;
-        data = reinterpret_cast<unsigned char*>(rgbaData);
-        dataLen = static_cast<unsigned int>(width * height * sizeof(COLOR4));
+        data = (unsigned char*)(rgbaData);
+        dataLen = (unsigned int)(width * height * sizeof(COLOR4));
     }
 
     glPixelStorei(GL_PACK_ALIGNMENT, 1);

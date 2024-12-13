@@ -12,14 +12,8 @@ Sprite::~Sprite()
 	{
 		for (auto& s : g.sprites)
 		{
-			if (s.texture)
-			{
-				delete s.texture;
-			}
-			if (s.spriteCube)
-			{
-				delete s.spriteCube;
-			}
+			delete s.texture;
+			delete s.spriteCube;
 		}
 		g.sprites.clear();
 	}

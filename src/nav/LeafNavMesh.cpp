@@ -70,6 +70,7 @@ bool LeafNode::addLink(int node, vec3 linkPos) {
 
 LeafNavMesh::LeafNavMesh() {
 	clear();
+	octree = NULL;
 }
 
 void LeafNavMesh::clear() {

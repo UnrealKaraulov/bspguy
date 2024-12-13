@@ -598,11 +598,11 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	{
 		bspModel->bsp_header.lump[i].nOffset = 0;
 		bspModel->bsp_header.lump[i].nLength = 0;
-		bspModel->replacedLump[i] = false;
 	}
+	int textureCount = 0;
 
-	bspModel->replace_lump(LUMP_TEXTURES,
-		new unsigned char[sizeof(int)] {0, 0, 0, 0}, sizeof(int));
+	bspModel->replace_lump(LUMP_TEXTURES,&textureCount, sizeof(int));
+
 	bspModel->textureCount = 0;
 
 	bspModel->ents.clear();
@@ -853,6 +853,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 			memcpy(newVisLump, bspModel->visdata, bspModel->visDataLength);
 			memcpy(newVisLump + bspModel->visDataLength, tmpCompressed, g_limits.maxMapLeaves / 8);
 			bspModel->replace_lump(LUMP_VISIBILITY, newVisLump, bspModel->visDataLength + g_limits.maxMapLeaves / 8);
+			delete[] newVisLump;
 		}
 	}
 	// recompile vis lump, remove unused textures
@@ -985,6 +986,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	//	unsigned char* newVisLump = new unsigned char[g_limits.maxMapLeaves / 8];
 	//	memset(newVisLump, 255, g_limits.maxMapLeaves / 8);
 	//	tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, g_limits.maxMapLeaves / 8);
+	//  delete[] newVisLump;
 	//}
 
 	//print_log(get_localized_string(LANG_0327));
@@ -1017,6 +1019,8 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	//				memcpy(newVisLump, tmpMap->visdata, tmpMap->visDataLength);
 	//			memcpy(newVisLump + tmpMap->visDataLength, tmpCompressed, size);
 	//			tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, tmpMap->visDataLength + size);
+	//			delete[] newVisLump;
+	// 
 	//		}
 	//	}
 
@@ -2897,7 +2901,7 @@ void Gui::drawMenuBar()
 					map->update_ent_lump();
 					if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
 					{
-						std::string entities = std::string(map->lumps[LUMP_ENTITIES], map->lumps[LUMP_ENTITIES] + map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
+						std::string entities = std::string(map->lumps[LUMP_ENTITIES].data(), map->lumps[LUMP_ENTITIES].data() + map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
 						entFile.write(entities.c_str(), entities.size());
 					}
 				}
@@ -3823,6 +3827,7 @@ void Gui::drawMenuBar()
 							int len;
 							char* newlump = loadFile(entFilePath, len);
 							map->replace_lump(LUMP_ENTITIES, newlump, len);
+							delete[] newlump;
 							map->load_ents();
 							g_app->updateEnts();
 							app->reloading = true;
@@ -3919,7 +3924,7 @@ void Gui::drawMenuBar()
 					if (entFile.is_open())
 					{
 						print_log(get_localized_string(LANG_1053), entPath);
-						entFile.write((const char*)map->lumps[LUMP_ENTITIES], map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
+						entFile.write((const char*)map->lumps[LUMP_ENTITIES].data(), map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
 					}
 					else
 					{
@@ -4453,7 +4458,7 @@ void Gui::drawMenuBar()
 					};
 
 					for (int i = 0; i < 10; i++) {
-						if (ImGui::MenuItem(optionNames[i], 0, false, !app->isLoading && app->getSelectedMap() && app)) {
+						if (ImGui::MenuItem(optionNames[i], 0, false, !app->isLoading && app->getSelectedMap())) {
 							if (map->ents[0]->hasKey("origin")) {
 								vec3 ori = map->ents[0]->origin;
 								print_log("Moved worldspawn origin by {} {} {}\n", ori.x, ori.y, ori.z);
@@ -4489,7 +4494,7 @@ void Gui::drawMenuBar()
 					"engine with stricter map limits.\n\n"
 					"Create 2 cull entities from the \"Create\" menu to define the culling box. "
 					"A transparent red box will form between them.");
-				if (ImGui::MenuItem("Deduplicate Models", 0, false, !app->isLoading && app->getSelectedMap())) {
+				if (ImGui::MenuItem("Deduplicate Models", 0, false, rend && !app->isLoading && app->getSelectedMap())) {
 					DeduplicateModelsCommand* command = new DeduplicateModelsCommand("Deduplicate models",
 						app->getSelectedMapId(), rend->undoLumpState);
 					rend->pushUndoCommand(command);
@@ -4497,7 +4502,7 @@ void Gui::drawMenuBar()
 				IMGUI_TOOLTIP(g, "Scans for duplicated BSP models and updates entity model keys to reference only one model in set of duplicated models. "
 					"This lowers the model count and allows more game models to be precached.\n\n"
 					"This does not delete BSP data structures unless you run the Clean command afterward.");
-				if (ImGui::MenuItem("Downscale Invalid Textures", "(WIP)", false, !app->isLoading && app->getSelectedMap() && rend)) {
+				if (ImGui::MenuItem("Downscale Invalid Textures", "(WIP)", false, rend && !app->isLoading && app->getSelectedMap())) {
 					map->downscale_invalid_textures();
 
 					rend->preRenderFaces();
@@ -5374,6 +5379,7 @@ void Gui::drawMenuBar()
 								memset(newlump, 0, dataOffset + texOffset + texlen);
 								memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
 								map->replace_lump(LUMP_TEXTURES, newlump, dataOffset + texOffset + texlen);
+								delete[] newlump;
 								foundfixes = true;
 							}
 							int texdata = (int)(((unsigned char*)tex) - map->textures) + tex->nOffsets[0] + texlen - sizeof(BSPMIPTEX);
@@ -5385,7 +5391,7 @@ void Gui::drawMenuBar()
 								memset(newlump, 0, texdata);
 								memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
 								map->replace_lump(LUMP_TEXTURES, newlump, texdata);
-
+								delete[] newlump;
 								foundfixes = true;
 							}
 						}
@@ -11604,8 +11610,7 @@ void Gui::drawLightMapTool()
 
 				for (int i = 0; i < MAX_LIGHTMAPS; i++)
 				{
-					if (currentlightMap[i])
-						delete currentlightMap[i];
+					delete currentlightMap[i];
 					currentlightMap[i] = NULL;
 				}
 
@@ -13129,6 +13134,7 @@ void Gui::drawFaceEditorWidget()
 						memcpy(newVisLump, map->visdata, map->visDataLength);
 						memcpy(newVisLump + map->visDataLength, tmpCompressed, size);
 						map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
+						delete[] newVisLump;
 					}
 				}
 
@@ -13172,6 +13178,7 @@ void Gui::drawFaceEditorWidget()
 						memcpy(newVisLump, map->visdata, map->visDataLength);
 						memcpy(newVisLump + map->visDataLength, tmpCompressed, size);
 						map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
+						delete[] newVisLump;
 					}
 				}
 
@@ -13438,6 +13445,7 @@ void Gui::drawFaceEditorWidget()
 				memcpy(newVisLump, map->visdata, map->visDataLength);
 				memcpy(newVisLump + map->visDataLength, compressed, size);
 				map->replace_lump(LUMP_VISIBILITY, newVisLump, map->visDataLength + size);
+				delete[] newVisLump;
 
 				delete[] compressed;
 
