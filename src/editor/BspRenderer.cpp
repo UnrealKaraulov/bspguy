@@ -2724,7 +2724,7 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 
 	static double leafUpdTime = 0.0;
 
-	//if (map->models && fabs(g_app->curTime - leafUpdTime) > 0.25)
+	if (map->models && fabs(g_app->curTime - leafUpdTime) > 0.25)
 	{
 		leafUpdTime = g_app->curTime;
 		std::vector<int> nodeBranch;
