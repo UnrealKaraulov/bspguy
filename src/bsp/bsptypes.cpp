@@ -116,3 +116,47 @@ bool BSPLEAF32A::isEmpty()
 
 	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF32A)) == 0;
 }
+
+std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
+{
+	std::vector<int> updateModels{};
+	if (newLump.lumps[LUMP_MODELS].empty())
+		return updateModels;
+
+	if (oldLump.lumps[LUMP_MODELS].empty() && newLump.lumps[LUMP_MODELS].size())
+	{
+		int addModelCount = (int)(newLump.lumps[LUMP_MODELS].size() / sizeof(BSPMODEL));
+		for (int i = 0; i < addModelCount; i++)
+		{
+			updateModels.push_back(i);
+		}
+		return updateModels;
+	}
+
+	if (newLump.lumps[LUMP_MODELS].size() > oldLump.lumps[LUMP_MODELS].size())
+	{
+		int curModelCount = (int)(oldLump.lumps[LUMP_MODELS].size() / sizeof(BSPMODEL));
+		int addModelCount = (int)((newLump.lumps[LUMP_MODELS].size() - newLump.lumps[LUMP_MODELS].size()) / sizeof(BSPMODEL));
+		for (int i = curModelCount; i < curModelCount + addModelCount; i++)
+		{
+			updateModels.push_back(i);
+		}
+	}
+
+	size_t modelLumpCount = std::min(newLump.lumps[LUMP_MODELS].size(), oldLump.lumps[LUMP_MODELS].size());
+
+	modelLumpCount /= sizeof(BSPMODEL);
+
+	BSPMODEL* listOld = (BSPMODEL*)oldLump.lumps[LUMP_MODELS].data();
+	BSPMODEL* listNew = (BSPMODEL*)newLump.lumps[LUMP_MODELS].data();
+
+	for (size_t i = 0; i < modelLumpCount; i++)
+	{
+		if (memcmp(&listOld[i], &listNew[i], sizeof(BSPMODEL)) != 0)
+		{
+			updateModels.push_back((int)i);
+		}
+	}
+
+	return updateModels;
+}

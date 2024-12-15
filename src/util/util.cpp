@@ -2931,3 +2931,119 @@ void mapFixLightEnts(Bsp* map)
 	map->update_ent_lump();
 }
 
+
+std::vector<Entity*> load_ents(const std::string& entLump, const std::string& mapName)
+{
+	std::vector<Entity*> ents{};
+	std::istringstream in(entLump);
+
+	int lineNum = 0;
+	int lastBracket = -1;
+	Entity* ent = NULL;
+
+	std::string line;
+	while (std::getline(in, line))
+	{
+		lineNum++;
+
+		while (line[0] == ' ' || line[0] == '\t' || line[0] == '\r')
+		{
+			line.erase(line.begin());
+		}
+
+		if (line.length() < 1 || line[0] == '\n')
+			continue;
+
+		if (line[0] == '{')
+		{
+			if (lastBracket == 0)
+			{
+				print_log(get_localized_string(LANG_0103), mapName, lineNum);
+				continue;
+			}
+			lastBracket = 0;
+			delete ent;
+			ent = new Entity();
+
+			if (line.find('}') == std::string::npos &&
+				line.find('\"') == std::string::npos)
+			{
+				continue;
+			}
+		}
+		if (line[0] == '}')
+		{
+			if (lastBracket == 1)
+				print_log(get_localized_string(LANG_0104), mapName, lineNum);
+			lastBracket = 1;
+			if (!ent)
+				continue;
+
+			if (ent->keyvalues.count("classname"))
+				ents.push_back(ent);
+			else
+				print_log(get_localized_string(LANG_0105));
+
+			ent = NULL;
+
+			// you can end/start an ent on the same line, you know
+			if (line.find('{') != std::string::npos)
+			{
+				ent = new Entity();
+				lastBracket = 0;
+
+				if (line.find('\"') == std::string::npos)
+				{
+					continue;
+				}
+				line.erase(line.begin());
+			}
+		}
+		if (lastBracket == 0 && ent) // currently defining an entity
+		{
+			Keyvalues k(line);
+			for (size_t i = 0; i < k.keys.size(); i++)
+			{
+				ent->addKeyvalue(k.keys[i], k.values[i], true);
+			}
+
+			if (line.find('}') != std::string::npos)
+			{
+				lastBracket = 1;
+
+				if (ent->keyvalues.count("classname"))
+					ents.push_back(ent);
+				else
+					print_log(get_localized_string(LANG_1022));
+
+				ent = NULL;
+			}
+			if (line.find('{') != std::string::npos)
+			{
+				ent = new Entity();
+				lastBracket = 0;
+			}
+		}
+	}
+
+	// swap worldspawn to first entity
+	if (ents.size() > 1)
+	{
+		if (ents[0]->keyvalues["classname"] != "worldspawn")
+		{
+			print_log(get_localized_string(LANG_0106));
+			for (size_t i = 1; i < ents.size(); i++)
+			{
+				if (ents[i]->keyvalues["classname"] == "worldspawn")
+				{
+					std::swap(ents[0], ents[i]);
+					break;
+				}
+			}
+		}
+	}
+
+	delete ent;
+
+	return ents;
+}

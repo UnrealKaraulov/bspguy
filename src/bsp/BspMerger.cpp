@@ -47,7 +47,7 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 		{
 			Bsp* mapB = maps[b];
 
-			mapB->load_ents();
+			mapB->reload_ents();
 			mapB->save_undo_lightmaps();
 
 			g_progress.update("Merging lightstyles", (int)(maps[0]->faceCount + maps[b]->faceCount));
@@ -1100,7 +1100,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 				switch (i)
 				{
 				case LUMP_ENTITIES:
-					mapA.load_ents(); break;
+					mapA.reload_ents(); break;
 				}
 			}
 		}

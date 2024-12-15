@@ -583,13 +583,15 @@ int ImportModel(Bsp* map, const std::string& mdl_path, bool noclip)
 	rend->refreshModel(newModelIdx);
 	rend->preRenderEnts();
 
-	map->getBspRender()->pushModelUndoState("IMPORT MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+	map->getBspRender()->pushUndoState("IMPORT MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 
 	return newModelIdx;
 }
 
 void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int ExportType, bool movemodel)
 {
+	LumpState backupLumps = src_map->duplicate_lumps();
+
 	Bsp* bspModel = new Bsp();
 	bspModel->setBspRender(src_map->getBspRender());
 	bspModel->bsp_valid = true;
@@ -866,189 +868,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	delete bspModel;
 	delete[] tmpCompressed;
 
-
-	//print_log(get_localized_string(LANG_0315));
-	//src_map->update_ent_lump();
-	//src_map->update_lump_pointers();
-	//src_map->validate();
-	//src_map->write(src_map->bsp_path + ".tmp.bsp");
-
-
-	//print_log(get_localized_string(LANG_0316));
-
-	//Bsp* tmpMap = new Bsp(src_map->bsp_path + ".tmp.bsp");
-
-	//tmpMap->force_skip_crc = true;
-
-	//if (ExportType == 1)
-	//{
-	//	tmpMap->is_bsp29 = true;
-	//	tmpMap->is_texture_has_pal = false;
-	//	tmpMap->bsp_header.nVersion = 29;
-	//}
-	//else
-	//{
-	//	tmpMap->is_bsp29 = false;
-	//	tmpMap->is_texture_has_pal = true;
-	//	tmpMap->bsp_header.nVersion = 30;
-	//}
-
-	//print_log(get_localized_string(LANG_0317));
-	//removeFile(src_map->bsp_path + ".tmp.bsp");
-
-	//vec3 modelOrigin = tmpMap->get_model_center(model_id);
-
-	//BSPMODEL tmpModel = src_map->models[model_id];
-
-	//if (tmpMap->modelCount < 1)
-	//{
-	//	print_log(get_localized_string(LANG_0318));
-	//	tmpMap->create_model();
-	//}
-
-	//print_log(get_localized_string(LANG_0319));
-	//tmpMap->models[0] = tmpModel;
-
-	//for (int i = 1; i < tmpMap->ents.size(); i++)
-	//{
-	//	delete tmpMap->ents[i];
-	//}
-	//print_log(get_localized_string(LANG_0320));
-
-	//Entity* tmpEnt = new Entity("worldspawn");
-
-	//tmpEnt->setOrAddKeyvalue("compiler", g_version_string);
-	//tmpEnt->setOrAddKeyvalue("message", "bsp model");
-
-	//print_log(get_localized_string(LANG_0321));
-	//tmpMap->modelCount = 1;
-	//tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
-	//tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL);
-
-	//tmpMap->ents.clear();
-	//tmpMap->ents.push_back(tmpEnt);
-
-	//tmpMap->update_ent_lump();
-	//tmpMap->update_lump_pointers();
-
-	//print_log(get_localized_string(LANG_0322));
-	//STRUCTCOUNT removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-	//	CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
-	//if (!removed.allZero())
-	//	removed.print_delete_stats(1);
-
-
-	//int markid = 0;
-	//for (int i = 0; i < tmpMap->leafCount; i++)
-	//{
-	//	BSPLEAF32& tmpLeaf = tmpMap->leaves[i];
-	//	if (tmpLeaf.nMarkSurfaces > 0)
-	//	{
-	//		tmpLeaf.iFirstMarkSurface = markid;
-	//		markid += tmpLeaf.nMarkSurfaces;
-	//	}
-	//}
-
-	//tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
-
-	//int totalLeaves = 1;
-	//totalLeaves += tmpMap->models[0].nVisLeafs;
-	//if (totalLeaves > tmpMap->leafCount)
-	//{
-	//	while (totalLeaves > tmpMap->leafCount)
-	//		tmpMap->create_leaf(CONTENTS_EMPTY);
-	//}
-	//else if (totalLeaves < tmpMap->leafCount)
-	//{
-	//	while (totalLeaves < tmpMap->leafCount)
-	//	{
-	//		tmpMap->models[0].nVisLeafs++;
-	//		totalLeaves++;
-	//	}
-	//}
-
-	//if (movemodel)
-	//{
-	//	print_log(get_localized_string(LANG_0325));
-	//	tmpMap->move(-modelOrigin, 0, true, true);
-	//}
-
-	//print_log(get_localized_string(LANG_0326));
-	//tmpMap->update_lump_pointers();
-	//update_unused_wad_files(src_map, tmpMap, ExportType);
-
-	//if (model_id != 0)
-	//{
-	//	for (int i = 0; i < tmpMap->leafCount; i++)
-	//	{
-	//		tmpMap->leaves[i].nVisOffset = 0;
-	//	}
-	//	unsigned char* newVisLump = new unsigned char[g_limits.maxMapLeaves / 8];
-	//	memset(newVisLump, 255, g_limits.maxMapLeaves / 8);
-	//	tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, g_limits.maxMapLeaves / 8);
-	//  delete[] newVisLump;
-	//}
-
-	//print_log(get_localized_string(LANG_0327));
-	//removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-	//	CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MARKSURFACES);
-
-	//if (model_id == 0)
-	//{
-	//	int rowSize = (((tmpMap->leafCount - 1) + 63) & ~63) >> 3;
-	//	unsigned char* tmpVisData = new unsigned char[rowSize];
-	//	unsigned char* tmpCompressed = new unsigned char[g_limits.maxMapLeaves / 8];
-
-	//	for (int i = 1; i < tmpMap->leafCount; i++)
-	//	{
-	//		if (tmpMap->leaves[i].nVisOffset >= 0)
-	//		{
-	//			memset(tmpVisData, 0, rowSize);
-
-	//			if (tmpMap->visdata)
-	//				DecompressVis(tmpMap->visdata + tmpMap->leaves[i].nVisOffset, tmpVisData, rowSize, tmpMap->leafCount - 1, tmpMap->visDataLength - tmpMap->leaves[i].nVisOffset);
-	//			else
-	//				memset(tmpVisData, 255, rowSize);
-
-	//			int size = CompressVis(tmpVisData, rowSize, tmpCompressed, g_limits.maxMapLeaves / 8);
-
-	//			tmpMap->leaves[i].nVisOffset = tmpMap->visDataLength;
-
-	//			unsigned char* newVisLump = new unsigned char[tmpMap->visDataLength + size];
-	//			if (tmpMap->visdata)
-	//				memcpy(newVisLump, tmpMap->visdata, tmpMap->visDataLength);
-	//			memcpy(newVisLump + tmpMap->visDataLength, tmpCompressed, size);
-	//			tmpMap->replace_lump(LUMP_VISIBILITY, newVisLump, tmpMap->visDataLength + size);
-	//			delete[] newVisLump;
-	// 
-	//		}
-	//	}
-
-	//	delete[] tmpVisData;
-	//	delete[] tmpCompressed;
-	//}
-
-	//tmpMap->update_ent_lump();
-	//tmpMap->update_lump_pointers();
-
-	//print_log("NODE FACES: {}\n", tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nFaces);
-	//print_log("NODE MINS/MAXS: {} {} {} / {} {} {}\n", tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMins.x, 
-	//	tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMins.y, tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMins.z,
-	//	tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMaxs.x, tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMaxs.y,
-	//	tmpMap->nodes[tmpMap->models[0].iHeadnodes[0]].nMaxs.z);
-
-	//if (tmpMap->validate())
-	//{
-	//	createDir(g_working_dir);
-	//	removeFile(g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp");
-	//	tmpMap->write(g_working_dir + src_map->bsp_name + "_model" + std::to_string(model_id) + ".bsp");
-	//}
-	//else
-	//{
-	//	print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0341));
-	//}
-
-	//delete tmpMap;
+	src_map->replace_lumps(backupLumps);
 }
 
 
@@ -1646,11 +1466,12 @@ void Gui::drawBspContexMenu()
 						{
 							if (map->ents[tmpentIdx]->isBspModel())
 							{
-								DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), (int)tmpentIdx);
-								rend->pushUndoCommand(command);
 								app->modelUsesSharedStructures = false;
+								map->ents[tmpentIdx]->setOrAddKeyvalue("model", "*" + std::to_string(map->duplicate_model(map->ents[tmpentIdx]->getBspModelIdx())));
 							}
 						}
+						map->remove_unused_model_structures(CLEAN_LEAVES);
+						rend->pushUndoState(get_localized_string("LANG_DUPLICATE_BSP"), EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 
 					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1676,9 +1497,8 @@ void Gui::drawBspContexMenu()
 								app->modelUsesSharedStructures = false;
 							}
 						}
-						map->update_ent_lump();
-						rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 
+						rend->pushUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 						pickCount++;
 					}
 
@@ -1769,7 +1589,7 @@ void Gui::drawBspContexMenu()
 						rend->loadLightmaps();
 						rend->preRenderEnts();
 
-						rend->pushModelUndoState("MERGE {} and {} SELECTED BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
+						rend->pushUndoState("MERGE {} and {} SELECTED BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
 
 						if (merge_errors > 0)
 						{
@@ -3268,7 +3088,7 @@ void Gui::drawMenuBar()
 
 
 						mapFixLightEnts(map);
-						rend->pushModelUndoState("Create lights", FL_ENTITIES);
+						rend->pushUndoState("Create lights", FL_ENTITIES);
 						FlushConsoleLog();
 						vec3 mins{}, maxs{};
 						/*map->get_bounding_box(mins, maxs);*/
@@ -3828,7 +3648,7 @@ void Gui::drawMenuBar()
 							char* newlump = loadFile(entFilePath, len);
 							map->replace_lump(LUMP_ENTITIES, newlump, len);
 							delete[] newlump;
-							map->load_ents();
+							map->reload_ents();
 							g_app->updateEnts();
 							app->reloading = true;
 							for (size_t i = 0; i < mapRenderers.size(); i++)
@@ -4008,12 +3828,12 @@ void Gui::drawMenuBar()
 
 		if (ImGui::BeginMenu(get_localized_string(LANG_0556).c_str(), (map && !map->is_mdl_model)))
 		{
-			Command* undoCmd = !rend->undoHistory.empty() ? rend->undoHistory[rend->undoHistory.size() - 1] : NULL;
-			Command* redoCmd = !rend->redoHistory.empty() ? rend->redoHistory[rend->redoHistory.size() - 1] : NULL;
+			EditBspCommand* undoCmd = !rend->undoHistory.empty() ? rend->undoHistory[rend->undoHistory.size() - 1] : NULL;
+			EditBspCommand* redoCmd = !rend->redoHistory.empty() ? rend->redoHistory[rend->redoHistory.size() - 1] : NULL;
 			std::string undoTitle = undoCmd ? "Undo " + undoCmd->desc : "Can't undo";
 			std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
-			bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
-			bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
+			bool canUndo = undoCmd && (!app->isLoading);
+			bool canRedo = redoCmd && (!app->isLoading);
 			bool entSelected = app->pickInfo.selectedEnts.size();
 			bool nonWorldspawnEntSelected = entSelected;
 
@@ -4107,10 +3927,12 @@ void Gui::drawMenuBar()
 				{
 					if (map->ents[tmpentIdx]->isBspModel())
 					{
-						DuplicateBspModelCommand* command = new DuplicateBspModelCommand(get_localized_string("LANG_DUPLICATE_BSP"), (int)tmpentIdx);
-						rend->pushUndoCommand(command);
+						app->modelUsesSharedStructures = false;
+						map->ents[tmpentIdx]->setOrAddKeyvalue("model", "*" + std::to_string(map->duplicate_model(map->ents[tmpentIdx]->getBspModelIdx())));
 					}
 				}
+				map->remove_unused_model_structures(CLEAN_LEAVES);
+				rend->pushUndoState(get_localized_string("LANG_DUPLICATE_BSP"), EDIT_MODEL_LUMPS | FL_ENTITIES);
 			}
 
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -4131,11 +3953,12 @@ void Gui::drawMenuBar()
 				{
 					if (map->ents[tmpentIdx]->isBspModel())
 					{
-						pickCount++;
 						map->duplicate_model_structures(map->ents[tmpentIdx]->getBspModelIdx());
-						rend->pushModelUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
+						app->modelUsesSharedStructures = false;
 					}
 				}
+
+				rend->pushUndoState(get_localized_string("LANG_DUPLICATE_BSP_STRUCT"), EDIT_MODEL_LUMPS);
 			}
 
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -4205,14 +4028,30 @@ void Gui::drawMenuBar()
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0564).c_str(), 0, false, !app->isLoading && map))
 			{
-				CleanMapCommand* command = new CleanMapCommand("Clean " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
-				rend->pushUndoCommand(command);
+				print_log(get_localized_string(LANG_0296), map->bsp_name);
+				map->remove_unused_model_structures().print_delete_stats(1);
+				rend->pushUndoState("Clean " + map->bsp_name, EDIT_MODEL_LUMPS);
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0565).c_str(), 0, false, !app->isLoading && map))
 			{
-				OptimizeMapCommand* command = new OptimizeMapCommand("Optimize " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
-				rend->pushUndoCommand(command);
+				map->update_ent_lump();
+
+				print_log(get_localized_string(LANG_0297), map->bsp_name);
+				if (!map->has_hull2_ents())
+				{
+					print_log(get_localized_string(LANG_0298));
+					map->delete_hull(2, 1);
+				}
+
+				bool oldVerbose = g_settings.verboseLogs;
+				g_settings.verboseLogs = true;
+				auto removestats = map->delete_unused_hulls(true);
+
+				removestats.print_delete_stats(1);
+				g_settings.verboseLogs = oldVerbose;
+
+				rend->pushUndoState("Optimize " + map->bsp_name, EDIT_MODEL_LUMPS | FL_ENTITIES);
 			}
 
 			if (ImGui::BeginMenu(get_localized_string(LANG_0566).c_str(), map))
@@ -4277,7 +4116,7 @@ void Gui::drawMenuBar()
 					rend->preRenderFaces();
 					rend->preRenderEnts();
 
-					rend->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+					rend->pushUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 				}
 				ImGui::EndMenu();
 			}
@@ -4417,7 +4256,7 @@ void Gui::drawMenuBar()
 
 				map->is_protected = true;
 
-				rend->pushModelUndoState("PROTECT MAP FROM DECOMPILER", EDIT_MODEL_LUMPS);
+				rend->pushUndoState("PROTECT MAP FROM DECOMPILER", EDIT_MODEL_LUMPS);
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
@@ -4464,12 +4303,9 @@ void Gui::drawMenuBar()
 								print_log("Moved worldspawn origin by {} {} {}\n", ori.x, ori.y, ori.z);
 								map->move(ori);
 								map->ents[0]->removeKeyvalue("origin");
-
 							}
-
-							DeleteOobDataCommand* command = new DeleteOobDataCommand("Delete OOB Data",
-								app->getSelectedMapId(), clipFlags[i], rend->undoLumpState);
-							rend->pushUndoCommand(command);
+							map->delete_oob_data(clipFlags[i]);
+							rend->pushUndoState("Delete OOB Data", EDIT_MODEL_LUMPS | FL_ENTITIES);
 						}
 						IMGUI_TOOLTIP(g, "Deletes BSP data and entities outside of the "
 							"max map boundary.\n\n"
@@ -4483,9 +4319,8 @@ void Gui::drawMenuBar()
 						print_log("Create at least 2 entities with \"cull\" as a classname first!\n");
 					}
 					else {
-						DeleteBoxedDataCommand* command = new DeleteBoxedDataCommand("Delete Boxed Data",
-							app->getSelectedMapId(), g_app->cullMins, g_app->cullMaxs, rend->undoLumpState);
-						rend->pushUndoCommand(command);
+						map->delete_box_data(g_app->cullMins, g_app->cullMaxs);
+						rend->pushUndoState("Delete Boxed Data", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 
 				}
@@ -4494,55 +4329,51 @@ void Gui::drawMenuBar()
 					"engine with stricter map limits.\n\n"
 					"Create 2 cull entities from the \"Create\" menu to define the culling box. "
 					"A transparent red box will form between them.");
-				if (ImGui::MenuItem("Deduplicate Models", 0, false, rend && !app->isLoading && app->getSelectedMap())) {
-					DeduplicateModelsCommand* command = new DeduplicateModelsCommand("Deduplicate models",
-						app->getSelectedMapId(), rend->undoLumpState);
-					rend->pushUndoCommand(command);
+				if (ImGui::MenuItem("Deduplicate Models", 0, false, rend && !app->isLoading && app->getSelectedMap()))
+				{
+					map->deduplicate_models();
+					rend->pushUndoState("Deduplicate Models", EDIT_MODEL_LUMPS | FL_ENTITIES);
 				}
 				IMGUI_TOOLTIP(g, "Scans for duplicated BSP models and updates entity model keys to reference only one model in set of duplicated models. "
 					"This lowers the model count and allows more game models to be precached.\n\n"
 					"This does not delete BSP data structures unless you run the Clean command afterward.");
 				if (ImGui::MenuItem("Downscale Invalid Textures", "(WIP)", false, rend && !app->isLoading && app->getSelectedMap())) {
 					map->downscale_invalid_textures();
-
-					rend->preRenderFaces();
-					g_app->gui->refresh();
-					reloadLimits();
+					rend->pushUndoState("Downscale Invalid Textures", FL_TEXINFO | FL_TEXTURES);
 				}
 				IMGUI_TOOLTIP(g, "Shrinks textures that exceed the max texture size and adjusts texture coordinates accordingly. Does not work with WAD textures yet.\n");
 				if (ImGui::BeginMenu("Fix Bad Surface Extents", !app->isLoading && app->getSelectedMap()))
 				{
-					if (ImGui::MenuItem("Shrink Textures (512)", 0, false, !app->isLoading && app->getSelectedMap())) {
-						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Shrink textures (512)",
-							app->getSelectedMapId(), false, true, 512, rend->undoLumpState);
-						rend->pushUndoCommand(command);
+					if (ImGui::MenuItem("Shrink Textures (512)", 0, false, !app->isLoading && app->getSelectedMap())) 
+					{
+						map->fix_bad_surface_extents(false, true, 512);
+						rend->pushUndoState("Shrink Textures (512)", FL_TEXINFO | FL_TEXTURES | FL_FACES);
 					}
 					IMGUI_TOOLTIP(g, "Downscales embedded textures on bad faces to a max resolution of 512x512 pixels. "
 						"This alone will likely not be enough to fix all faces with bad surface extents."
 						"You may also have to apply the Subdivide or Scale methods.");
 
-					if (ImGui::MenuItem("Shrink Textures (256)", 0, false, !app->isLoading && app->getSelectedMap())) {
-						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Shrink textures (256)",
-							app->getSelectedMapId(), false, true, 256, rend->undoLumpState);
-						rend->pushUndoCommand(command);
+					if (ImGui::MenuItem("Shrink Textures (256)", 0, false, !app->isLoading && app->getSelectedMap())) 
+					{
+						map->fix_bad_surface_extents(false, true, 256);
+						rend->pushUndoState("Shrink Textures (256)", FL_TEXINFO | FL_TEXTURES | FL_FACES);
 					}
 					IMGUI_TOOLTIP(g, "Downscales embedded textures on bad faces to a max resolution of 256x256 pixels. "
 						"This alone will likely not be enough to fix all faces with bad surface extents."
 						"You may also have to apply the Subdivide or Scale methods.");
 
 					if (ImGui::MenuItem("Shrink Textures (128)", 0, false, !app->isLoading && app->getSelectedMap())) {
-						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Shrink textures (128)",
-							app->getSelectedMapId(), false, true, 128, rend->undoLumpState);
-						rend->pushUndoCommand(command);
+						map->fix_bad_surface_extents(false, true, 128);
+						rend->pushUndoState("Shrink Textures (128)", FL_TEXINFO | FL_TEXTURES | FL_FACES);
 					}
 					IMGUI_TOOLTIP(g, "Downscales embedded textures on bad faces to a max resolution of 128x128 pixels. "
 						"This alone will likely not be enough to fix all faces with bad surface extents."
 						"You may also have to apply the Subdivide or Scale methods.");
 
-					if (ImGui::MenuItem("Shrink Textures (64)", 0, false, !app->isLoading && app->getSelectedMap())) {
-						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Shrink textures (64)",
-							app->getSelectedMapId(), false, true, 64, rend->undoLumpState);
-						rend->pushUndoCommand(command);
+					if (ImGui::MenuItem("Shrink Textures (64)", 0, false, !app->isLoading && app->getSelectedMap())) 
+					{
+						map->fix_bad_surface_extents(false, true, 512);
+						rend->pushUndoState("Shrink Textures (64)", FL_TEXINFO | FL_TEXTURES | FL_FACES);
 					}
 					IMGUI_TOOLTIP(g, "Downscales embedded textures to a max resolution of 64x64 pixels. "
 						"This alone will likely not be enough to fix all faces with bad surface extents."
@@ -4550,17 +4381,16 @@ void Gui::drawMenuBar()
 
 					ImGui::Separator();
 
-					if (ImGui::MenuItem("Scale", 0, false, !app->isLoading && app->getSelectedMap())) {
-						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Scale faces",
-							app->getSelectedMapId(), true, false, 0, rend->undoLumpState);
-						rend->pushUndoCommand(command);
+					if (ImGui::MenuItem("Scale", 0, false, !app->isLoading && app->getSelectedMap())) 
+					{
+						map->fix_bad_surface_extents(true, false, 0);
+						rend->pushUndoState("Scale Textures", FL_TEXINFO | FL_TEXTURES | FL_FACES);
 					}
 					IMGUI_TOOLTIP(g, "Scales up face textures until they have valid extents. The drawback to this method is shifted texture coordinates and lower apparent texture quality.");
 
 					if (ImGui::MenuItem("Subdivide", 0, false, !app->isLoading && app->getSelectedMap())) {
-						FixSurfaceExtentsCommand* command = new FixSurfaceExtentsCommand("Subdivide faces",
-							app->getSelectedMapId(), false, false, 0, rend->undoLumpState);
-						rend->pushUndoCommand(command);
+						map->fix_bad_surface_extents(false, false, 0);
+						rend->pushUndoState("Subdivide Textures", FL_TEXINFO | FL_TEXTURES | FL_FACES);
 					}
 					IMGUI_TOOLTIP(g, "Subdivides faces until they have valid extents. The drawback to this method is reduced in-game performace from higher poly counts.");
 
@@ -4577,10 +4407,8 @@ void Gui::drawMenuBar()
 						origin = app->snapToGrid(origin);
 					newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 					newEnt->addKeyvalue("classname", "cull");
-
-					CreateEntityCommand* createCommand = new CreateEntityCommand("Create Entity", app->getSelectedMapId(), newEnt);
-					delete newEnt;
-					rend->pushUndoCommand(createCommand);
+					map->ents.push_back(newEnt);
+					rend->pushUndoState("Cull Entity", FL_ENTITIES);
 				}
 				IMGUI_TOOLTIP(g, "Create a point entity for use with the culling tool. 2 of these define the bounding box for structure culling operations.\n");
 
@@ -5072,7 +4900,7 @@ void Gui::drawMenuBar()
 							map->update_ent_lump();
 							map->update_lump_pointers();
 
-							rend->pushModelUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
+							rend->pushUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
 						}
 					}
 					ImGui::EndMenu();
@@ -5085,7 +4913,6 @@ void Gui::drawMenuBar()
 				{
 					map->remove_faces_by_content(CONTENTS_SKY);
 
-					map->save_undo_lightmaps();
 					map->resize_all_lightmaps();
 					rend->loadLightmaps();
 					rend->preRenderFaces();
@@ -5093,7 +4920,7 @@ void Gui::drawMenuBar()
 					map->update_ent_lump();
 					map->update_lump_pointers();
 
-					rend->pushModelUndoState("REMOVE FACES FROM SKY", EDIT_MODEL_LUMPS);
+					rend->pushUndoState("REMOVE FACES FROM SKY", EDIT_MODEL_LUMPS);
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -5107,14 +4934,13 @@ void Gui::drawMenuBar()
 					map->remove_faces_by_content(CONTENTS_SOLID);
 
 
-					map->save_undo_lightmaps();
 					map->resize_all_lightmaps();
 					rend->loadLightmaps();
 					rend->preRenderFaces();
 
 					map->update_ent_lump();
 					map->update_lump_pointers();
-					rend->pushModelUndoState("REMOVE FACES FROM SOLID", EDIT_MODEL_LUMPS);
+					rend->pushUndoState("REMOVE FACES FROM SOLID", EDIT_MODEL_LUMPS);
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -5128,7 +4954,6 @@ void Gui::drawMenuBar()
 					{
 						map->cull_leaf_faces(rend->curLeafIdx);
 
-						map->save_undo_lightmaps();
 						map->resize_all_lightmaps();
 
 						rend->loadLightmaps();
@@ -5137,7 +4962,7 @@ void Gui::drawMenuBar()
 						map->update_ent_lump();
 						map->update_lump_pointers();
 
-						rend->pushModelUndoState(fmt::format("REMOVE FACES FROM {} LEAF", rend->curLeafIdx), EDIT_MODEL_LUMPS);
+						rend->pushUndoState(fmt::format("REMOVE FACES FROM {} LEAF", rend->curLeafIdx), EDIT_MODEL_LUMPS);
 					}
 					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 					{
@@ -5504,10 +5329,8 @@ void Gui::drawMenuBar()
 				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 				newEnt->addKeyvalue("classname", "info_player_deathmatch");
 
-				CreateEntityCommand* createCommand = new CreateEntityCommand("Create Entity", app->getSelectedMapId(), newEnt);
-				rend->pushUndoCommand(createCommand);
-
-				delete newEnt;
+				map->ents.push_back(newEnt);
+				rend->pushUndoState("Create Entity", FL_ENTITIES);
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0589).c_str(), 0, false, !app->isLoading && map))
@@ -5520,15 +5343,20 @@ void Gui::drawMenuBar()
 				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 				newEnt->addKeyvalue("classname", "func_illusionary");
 
-				float snapSize = app->snapSize;
-				if (snapSize < 16)
+				float mdl_size = 64.0f;
+
+				int aaatriggerIdx = map->GetTriggerTexture();
+				unsigned int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES | FL_ENTITIES;
+				if (aaatriggerIdx == -1)
 				{
-					snapSize = 16;
+					dupLumps |= FL_TEXTURES;
+					aaatriggerIdx = map->AddTriggerTexture();
 				}
 
-				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
-				rend->pushUndoCommand(command);
-				delete newEnt;
+				vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
+				vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
+				int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, true);
+				newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
 
 				if (map->ents.size())
 				{
@@ -5543,6 +5371,10 @@ void Gui::drawMenuBar()
 					}
 				}
 				map->resize_all_lightmaps();
+
+
+				map->ents.push_back(newEnt);
+				rend->pushUndoState(get_localized_string(LANG_0589), dupLumps);
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0591).c_str(), 0, false, !app->isLoading && map))
@@ -5555,31 +5387,30 @@ void Gui::drawMenuBar()
 				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 				newEnt->addKeyvalue("classname", "func_wall");
 
-				float snapSize = app->snapSize;
-				if (snapSize < 16)
+				float mdl_size = 64.0f;
+
+				int aaatriggerIdx = map->GetTriggerTexture();
+				unsigned int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES;
+				if (aaatriggerIdx == -1)
 				{
-					snapSize = 16;
+					dupLumps |= FL_TEXTURES;
+					aaatriggerIdx = map->AddTriggerTexture();
 				}
 
-				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
-				rend->pushUndoCommand(command);
-				map->save_undo_lightmaps();
+				vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
+				vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
+				int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, false);
+				newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
 
-				delete newEnt;
-
-				if (map->ents.size())
+				BSPMODEL& model = map->models[modelIdx];
+				for (int i = 0; i < model.nFaces; i++)
 				{
-					newEnt = map->ents[map->ents.size() - 1];
-					if (newEnt && newEnt->getBspModelIdx() >= 0)
-					{
-						BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
-						for (int i = 0; i < model.nFaces; i++)
-						{
-							map->faces[model.iFirstFace + i].nStyles[0] = 0;
-						}
-					}
+					map->faces[model.iFirstFace + i].nStyles[0] = 0;
 				}
+
 				map->resize_all_lightmaps();
+				map->ents.push_back(newEnt);
+				rend->pushUndoState(get_localized_string(LANG_0589), dupLumps);
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0590).c_str(), 0, false, !app->isLoading && map))
@@ -5592,27 +5423,31 @@ void Gui::drawMenuBar()
 				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 				newEnt->addKeyvalue("classname", "trigger_once");
 
-				float snapSize = app->snapSize;
-				if (snapSize < 16)
+				float mdl_size = 64.0f;
+
+				int aaatriggerIdx = map->GetTriggerTexture();
+				unsigned int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES | FL_ENTITIES;
+				if (aaatriggerIdx == -1)
 				{
-					snapSize = 16;
+					dupLumps |= FL_TEXTURES;
+					aaatriggerIdx = map->AddTriggerTexture();
 				}
 
-				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
-				rend->pushUndoCommand(command);
+				vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
+				vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
+				int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, true);
+				newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
 
-				delete newEnt;
-				if (map->ents.size())
-				{
-					newEnt = map->ents[map->ents.size() - 1];
-					if (newEnt && newEnt->getBspModelIdx() >= 0)
-					{
-						BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
-						model.iFirstFace = 0;
-						model.nFaces = 0;
-					}
-				}
+				BSPMODEL& model = map->models[modelIdx];
+				model.iFirstFace = 0;
+				model.nFaces = 0;
 				map->remove_unused_model_structures(CLEAN_FACES | CLEAN_MARKSURFACES);
+				map->ents.push_back(newEnt);
+
+
+				map->resize_all_lightmaps();
+				map->ents.push_back(newEnt);
+				rend->pushUndoState(get_localized_string(LANG_0590), dupLumps);
 			}
 
 			if (ImGui::MenuItem("BSP Clip model", 0, false, !app->isLoading && map))
@@ -5625,27 +5460,31 @@ void Gui::drawMenuBar()
 				newEnt->addKeyvalue("origin", origin.toKeyvalueString());
 				newEnt->addKeyvalue("classname", "func_wall");
 
-				float snapSize = app->snapSize;
-				if (snapSize < 16)
+				float mdl_size = 64.0f;
+
+				int aaatriggerIdx = map->GetTriggerTexture();
+				unsigned int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES | FL_ENTITIES;
+				if (aaatriggerIdx == -1)
 				{
-					snapSize = 16;
+					dupLumps |= FL_TEXTURES;
+					aaatriggerIdx = map->AddTriggerTexture();
 				}
 
-				CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
-				rend->pushUndoCommand(command);
+				vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
+				vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
+				int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, true);
+				newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
 
-				delete newEnt;
-				if (map->ents.size())
-				{
-					newEnt = map->ents[map->ents.size() - 1];
-					if (newEnt && newEnt->getBspModelIdx() >= 0)
-					{
-						BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
-						model.iFirstFace = 0;
-						model.nFaces = 0;
-					}
-				}
+				BSPMODEL& model = map->models[modelIdx];
+				model.iFirstFace = 0;
+				model.nFaces = 0;
 				map->remove_unused_model_structures(CLEAN_FACES | CLEAN_MARKSURFACES);
+				map->ents.push_back(newEnt);
+
+
+				map->resize_all_lightmaps();
+				map->ents.push_back(newEnt);
+				rend->pushUndoState("BSP Clip model", dupLumps);
 			}
 
 			if (DebugKeyPressed)
@@ -6082,7 +5921,7 @@ void Gui::drawMenuBar()
 
 					rend->reuploadTextures();
 					rend->preRenderFaces();
-					rend->pushModelUndoState("CREATE SKYBOX", EDIT_MODEL_LUMPS | FL_ENTITIES);
+					rend->pushUndoState("CREATE SKYBOX", EDIT_MODEL_LUMPS | FL_ENTITIES);
 				}
 
 
@@ -6708,7 +6547,8 @@ void Gui::drawDebugWidget()
 			ImGui::Text(get_localized_string(LANG_0638).c_str(), app->debugVec3.x, app->debugVec3.y, app->debugVec3.z);
 
 			float mb = renderer->undoMemoryUsage / (1024.0f * 1024.0f);
-			ImGui::Text(get_localized_string(LANG_0639).c_str(), mb);
+			float mb_zip = renderer->undoMemoryUsageZip / (1024.0f * 1024.0f);
+			ImGui::Text(get_localized_string("UNDO_MEM_USAGE").c_str(), mb, mb_zip);
 
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0388)), app->isTransformableSolid).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0389)), app->isScalingObject).c_str());
@@ -7264,10 +7104,10 @@ void Gui::drawKeyvalueEditor()
 							{
 								ent->setOrAddKeyvalue("classname", group.classes[k]->name);
 								map->getBspRender()->refreshEnt((int)entIdx[0]);
-								map->getBspRender()->pushEntityUndoStateDelay("Change Class", (int)entIdx[0], ent);
 							}
 						}
 
+						map->getBspRender()->pushEntityUndoStateDelay("Change Class");
 						ImGui::EndMenu();
 					}
 
@@ -7504,9 +7344,9 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 												map->getBspRender()->refreshEnt(selected_entId);
 											}
 										}
-
-										map->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", (int)selected_entId, selected_ent);
 									}
+
+									map->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue");
 								}
 							}
 							pickCount++;
@@ -7637,8 +7477,8 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 												map2->getBspRender()->refreshModel(ent->getBspModelIdx());
 											}
 										}
-										map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue", (int)selected_entId, ent);
 									}
+									map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue");
 								}
 							}
 						}
@@ -7735,9 +7575,9 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 					selected_ent->setOrAddKeyvalue("spawnflags", std::to_string(spawnflags));
 				else
 					selected_ent->removeKeyvalue("spawnflags");
-
-				map->getBspRender()->pushEntityUndoStateDelay(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", (int)selected_entId, selected_ent);
 			}
+
+			map->getBspRender()->pushEntityUndoStateDelay(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag");
 		}
 		if ((!name.empty() || !description.empty()) && ImGui::IsItemHovered())
 		{
@@ -7781,6 +7621,7 @@ struct TextChangeCallback
 					std::string key = map->ents[g_app->pickInfo.selectedEnts[0]]->keyOrder[inputData->idx];
 					if (key != data->Buf)
 					{
+						bool reloadModels = false;
 						for (auto entId : g_app->pickInfo.selectedEnts)
 						{
 							Entity* selent = map->ents[entId];
@@ -7789,13 +7630,17 @@ struct TextChangeCallback
 								render->refreshEnt((int)entId);
 								if (key == "model" || std::string(data->Buf) == "model")
 								{
-									g_app->reloadBspModels();
+									reloadModels = true;
 								}
-
-								g_app->updateEntConnections();
-								map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue", (int)entId, selent);
 							}
 						}
+						if (reloadModels)
+						{
+							g_app->reloadBspModels();
+						}
+						g_app->updateEntConnections();
+						map->getBspRender()->pushEntityUndoStateDelay("Rename Keyvalue");
+
 					}
 				}
 			}
@@ -7896,28 +7741,25 @@ struct TextChangeCallback
 								selent->setOrAddKeyvalue(key, data->Buf);
 							}
 							render->refreshEnt((int)entId);
-							pickCount++;
-							vertPickCount++;
-							g_app->updateEntConnections();
 							if (needrefreshmodel)
 							{
 								if (selent->getBspModelIdx() > 0)
 								{
 									map2->getBspRender()->refreshModel(selent->getBspModelIdx());
-									g_app->updateEntConnections();
 								}
 							}
-							map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue RAW", (int)entId, selent);
 						}
 					}
 
 					if (needreloadmodels)
 					{
-						pickCount++;
-						vertPickCount++;
-						g_app->updateEntConnections();
 						g_app->reloadBspModels();
 					}
+
+					pickCount++;
+					vertPickCount++;
+					g_app->updateEntConnections();
+					map2->getBspRender()->pushEntityUndoStateDelay("Edit Keyvalue RAW");
 				}
 			}
 		}
@@ -8131,7 +7973,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 				ent->removeKeyvalue(keyOrdname);
 				map->getBspRender()->refreshEnt(entIdx);
 				app->updateEntConnections();
-				map->getBspRender()->pushEntityUndoStateDelay("Delete Keyvalue RAW", entIdx, ent);
+				map->getBspRender()->pushEntityUndoStateDelay("Delete Keyvalue RAW");
 			}
 			ImGui::PopStyleColor(3);
 			ImGui::NextColumn();
@@ -8141,7 +7983,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	if (!keyDragging && wasKeyDragging)
 	{
 		map->getBspRender()->refreshEnt(entIdx);
-		map->getBspRender()->pushEntityUndoStateDelay("Move Keyvalue", entIdx, ent);
+		map->getBspRender()->pushEntityUndoStateDelay("Move Keyvalue");
 	}
 
 	wasKeyDragging = keyDragging;
@@ -8164,7 +8006,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			map->getBspRender()->refreshEnt(entIdx);
 			app->updateEntConnections();
 			keyName.clear();
-			map->getBspRender()->pushEntityUndoStateDelay("Add Keyvalue", entIdx, ent);
+			map->getBspRender()->pushEntityUndoStateDelay("Add Keyvalue");
 		}
 	}
 	ImGui::SameLine();
@@ -10350,6 +10192,12 @@ void Gui::drawLimits()
 		oldMap = map;
 	}
 
+	if (!map)
+		return;
+
+	BspRenderer* rend = map->getBspRender();
+	if (!rend)
+		return;
 
 	if (ImGui::Begin(fmt::format("{}###LIMITS_WIDGET", title).c_str(), &showLimitsWidget))
 	{
@@ -10460,6 +10308,10 @@ void Gui::drawLimits()
 		}
 	}
 
+	ImGui::SeparatorText((get_localized_string(LANG_0721) + " " + std::to_string(rend->undoHistory.size())).c_str());
+	float mb = rend->undoMemoryUsage / (1024.0f * 1024.0f);
+	float mb_zip = rend->undoMemoryUsageZip / (1024.0f * 1024.0f);
+	ImGui::Text(get_localized_string("UNDO_MEM_USAGE").c_str(), mb, mb_zip);
 	ImGui::End();
 }
 
@@ -11769,7 +11621,7 @@ void Gui::drawLightMapTool()
 						memcpy(map->lightdata + offset, currentlightMap[i]->get_data(), lightmapSz);
 					}
 					map->resize_all_lightmaps(true);
-					renderer->pushModelUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
+					renderer->pushUndoState(get_localized_string(LANG_0599), FL_LIGHTING);
 				}
 				ImGui::SameLine();
 
@@ -12468,7 +12320,7 @@ void Gui::drawFaceEditorWidget()
 			mergeFaceVec = updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
 				textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
 
-			map->getBspRender()->pushModelUndoState(targetEditName, targetLumps);
+			map->getBspRender()->pushUndoState(targetEditName, targetLumps);
 		}
 
 		pasteTextureNow = false;
@@ -12636,7 +12488,7 @@ void Gui::drawFaceEditorWidget()
 					map->update_ent_lump();
 					map->update_lump_pointers();
 
-					mapRenderer->pushModelUndoState("DELETE FACES", EDIT_MODEL_LUMPS);
+					mapRenderer->pushUndoState("DELETE FACES", EDIT_MODEL_LUMPS);
 				}
 				if (ImGui::IsItemHovered())
 				{
@@ -12662,7 +12514,7 @@ void Gui::drawFaceEditorWidget()
 					map->update_ent_lump();
 					map->update_lump_pointers();
 
-					mapRenderer->pushModelUndoState("REMOVE FACES FROM PVS", EDIT_MODEL_LUMPS);
+					mapRenderer->pushUndoState("REMOVE FACES FROM PVS", EDIT_MODEL_LUMPS);
 				}
 				if (ImGui::IsItemHovered())
 				{
@@ -12685,7 +12537,7 @@ void Gui::drawFaceEditorWidget()
 
 					map->update_lump_pointers();
 
-					mapRenderer->pushModelUndoState("MAKE FACES VISIBLE IN ALL LEAFS", FL_LEAVES | FL_MARKSURFACES);
+					mapRenderer->pushUndoState("MAKE FACES VISIBLE IN ALL LEAFS", FL_LEAVES | FL_MARKSURFACES);
 				}
 				if (ImGui::IsItemHovered())
 				{
@@ -12709,7 +12561,7 @@ void Gui::drawFaceEditorWidget()
 					map->update_ent_lump();
 					map->update_lump_pointers();
 
-					mapRenderer->pushModelUndoState("MAKE FACES INVISIBLE FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
+					mapRenderer->pushUndoState("MAKE FACES INVISIBLE FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
 				}
 				if (ImGui::IsItemHovered())
 				{
@@ -12733,7 +12585,7 @@ void Gui::drawFaceEditorWidget()
 					map->update_ent_lump();
 					map->update_lump_pointers();
 
-					mapRenderer->pushModelUndoState("MAKE FACES VISIBLE FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
+					mapRenderer->pushUndoState("MAKE FACES VISIBLE FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
 				}
 				if (ImGui::IsItemHovered())
 				{
@@ -12827,7 +12679,7 @@ void Gui::drawFaceEditorWidget()
 
 					g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodePlaneCube);*/
 					updatedLeafVec = false;
-					mapRenderer->pushModelUndoState("UPDATE MODEL PLANE MINS/MAXS", FL_NODES);
+					mapRenderer->pushUndoState("UPDATE MODEL PLANE MINS/MAXS", FL_NODES);
 				}
 				ImGui::PopItemWidth();
 			}
@@ -13147,7 +12999,7 @@ void Gui::drawFaceEditorWidget()
 				if (!removed.allZero())
 					removed.print_delete_stats(1);
 
-				mapRenderer->pushModelUndoState("UPDATE LEAF VISIBILITY", FL_VISIBILITY);
+				mapRenderer->pushUndoState("UPDATE LEAF VISIBILITY", FL_VISIBILITY);
 			}
 
 			ImGui::PopStyleColor();
@@ -13192,7 +13044,7 @@ void Gui::drawFaceEditorWidget()
 					removed.print_delete_stats(1);
 
 
-				mapRenderer->pushModelUndoState("UPDATE LEAF VISIBILITY", FL_VISIBILITY);
+				mapRenderer->pushUndoState("UPDATE LEAF VISIBILITY", FL_VISIBILITY);
 			}
 			ImGui::PopStyleColor();
 
@@ -13266,7 +13118,7 @@ void Gui::drawFaceEditorWidget()
 				g_app->pointEntRenderer->genCubeBuffers(mapRenderer->leafCube);
 				updatedLeafVec = false;
 
-				mapRenderer->pushModelUndoState("EDIT LEAF", FL_LEAVES);
+				mapRenderer->pushUndoState("EDIT LEAF", FL_LEAVES);
 			}
 
 			std::vector<int> leafNodes{};
@@ -13343,7 +13195,7 @@ void Gui::drawFaceEditorWidget()
 
 					g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodeCube);
 					updatedLeafVec = false;
-					mapRenderer->pushModelUndoState("UPDATE LEAF NODE MINS/MAXS", FL_NODES);
+					mapRenderer->pushUndoState("UPDATE LEAF NODE MINS/MAXS", FL_NODES);
 				}
 			}
 
@@ -13400,7 +13252,7 @@ void Gui::drawFaceEditorWidget()
 
 					g_app->pointEntRenderer->genCubeBuffers(mapRenderer->nodePlaneCube);*/
 					updatedLeafVec = false;
-					mapRenderer->pushModelUndoState("UPDATE LEAF NODE MINS/MAXS", FL_NODES);
+					mapRenderer->pushUndoState("UPDATE LEAF NODE MINS/MAXS", FL_NODES);
 				}
 				ImGui::PopItemWidth();
 			}
@@ -13410,7 +13262,7 @@ void Gui::drawFaceEditorWidget()
 				last_leaf = map->clone_world_leaf(last_leaf);
 				BSPLEAF32& leaf = map->leaves[last_leaf];
 				app->goToCoords(getCenter(leaf.nMins, leaf.nMaxs));
-				mapRenderer->pushModelUndoState("DUPLICATE LEAF", FL_LEAVES | FL_NODES | FL_PLANES | FL_MARKSURFACES | FL_VISIBILITY);
+				mapRenderer->pushUndoState("DUPLICATE LEAF", FL_LEAVES | FL_NODES | FL_PLANES | FL_MARKSURFACES | FL_VISIBILITY);
 			}
 
 			if (ImGui::IsItemHovered())
@@ -13454,7 +13306,7 @@ void Gui::drawFaceEditorWidget()
 				if (!removed.allZero())
 					removed.print_delete_stats(1);
 
-				mapRenderer->pushModelUndoState("UPDATE VIS LUMP", FL_LEAVES | FL_MARKSURFACES);
+				mapRenderer->pushUndoState("UPDATE VIS LUMP", FL_LEAVES | FL_MARKSURFACES);
 			}
 		}
 	}

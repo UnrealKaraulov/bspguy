@@ -99,14 +99,7 @@ extern std::vector<BspRenderer*> mapRenderers;
 class Renderer
 {
 	friend class Gui;
-	friend class EditEntityCommand;
-	friend class DeleteEntityCommand;
-	friend class CreateEntityCommand;
-	friend class DuplicateBspModelCommand;
-	friend class CreateBspModelCommand;
-	friend class EditBspModelCommand;
-	friend class CleanMapCommand;
-	friend class OptimizeMapCommand;
+	friend class EditBspCommand;
 
 public:
 
@@ -366,7 +359,6 @@ public:
 	void copyEnt();
 	void pasteEnt(bool noModifyOrigin, bool copyModel = false);
 	void pasteEntsFromText(std::string text);
-	void deleteEnt(int entIdx = 0);
 	void deleteEnts();
 	void scaleSelectedObject(Bsp* map, int modelIdx, float x, float y, float z);
 	void scaleSelectedObject(Bsp* map, int modelIdx, vec3 dir, const vec3& fromDir, bool logging = false);

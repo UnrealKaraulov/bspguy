@@ -2801,18 +2801,15 @@ bool Renderer::transformAxisControls()
 						map->getBspRender()->refreshModel(modelIdx);
 						map->getBspRender()->refreshModelClipnodes(modelIdx);
 						applyTransform(map, true);
-						map->getBspRender()->pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
+						map->getBspRender()->pushUndoState("Move verts", EDIT_MODEL_LUMPS);
 					}
 				}
 				else if (transformTarget == TRANSFORM_OBJECT)
 				{
 					if (moveOrigin || modelIdx < 0)
 					{
-						for (int tmpentIdx : pickInfo.selectedEnts)
-						{
-							saveTranformResult = false;
-							map->getBspRender()->pushEntityUndoState("Move Entity", (int)tmpentIdx);
-						}
+						saveTranformResult = false;
+						map->getBspRender()->pushEntityUndoStateDelay("Move Entity");
 					}
 					else
 					{
@@ -2832,7 +2829,7 @@ bool Renderer::transformAxisControls()
 						map->getBspRender()->refreshModel(modelIdx);
 						map->getBspRender()->refreshModelClipnodes(modelIdx);
 						updateEntConnectionPositions();
-						map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
+						map->getBspRender()->pushUndoState("Move Model", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 				}
 				else if (transformTarget == TRANSFORM_ORIGIN)
@@ -2861,7 +2858,7 @@ bool Renderer::transformAxisControls()
 					if (updateModels)
 					{
 						map->resize_all_lightmaps();
-						map->getBspRender()->pushModelUndoState("Move model [vOrigin]", EDIT_MODEL_LUMPS | FL_ENTITIES);
+						map->getBspRender()->pushUndoState("Move model [vOrigin]", EDIT_MODEL_LUMPS | FL_ENTITIES);
 					}
 				}
 			}
@@ -2881,7 +2878,7 @@ bool Renderer::transformAxisControls()
 						map->resize_all_lightmaps();
 						map->getBspRender()->refreshModel(modelIdx);
 						map->getBspRender()->refreshModelClipnodes(modelIdx);
-						map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
+						map->getBspRender()->pushUndoState("Scale Model", EDIT_MODEL_LUMPS);
 					}
 				}
 			}
@@ -4545,7 +4542,7 @@ bool Renderer::splitModelFace()
 	mapRenderer->refreshModel(modelIdx);
 	pickCount++;
 	vertPickCount++;
-	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
+	map->getBspRender()->pushUndoState("Split Face", EDIT_MODEL_LUMPS);
 	return true;
 }
 
@@ -4634,6 +4631,7 @@ void Renderer::cutEnt()
 	Bsp* map = SelectedMap;
 	if (!map)
 		return;
+	BspRenderer * rend = map->getBspRender();
 
 	std::ostringstream ss;
 
@@ -4648,11 +4646,15 @@ void Renderer::cutEnt()
 			removeFile(g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp");
 			ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
 		}
-
-		DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Cut Entity", ents[i]);
-		map->getBspRender()->pushUndoCommand(deleteCommand);
 	}
 
+	for (int i = (int)ents.size() - 1; i >= 0; i--)
+	{
+		delete map->ents[i];
+		map->ents.erase(map->ents.begin() + i);
+	}
+
+	rend->pushUndoState("Cut Entity", FL_ENTITIES);
 	ImGui::SetClipboardText(ss.str().c_str());
 }
 
@@ -4699,64 +4701,15 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 	}
 
 	BspRenderer* rend = map->getBspRender();
+	std::vector<Entity*> copiedEnts{};
 
-	std::vector<Entity*> copiedEnts;
-	std::istringstream in(clipboardText);
-
-	int lineNum = 0;
-	int lastBracket = -1;
-	Entity* ent = NULL;
-	std::string line = "";
-
-	while (std::getline(in, line))
+	try
 	{
-		lineNum++;
-		if (line.length() < 1 || line[0] == '\n')
-			continue;
+		copiedEnts = load_ents(clipboardText, map->bsp_name);
+	}
+	catch (...)
+	{
 
-		if (line[0] == '{')
-		{
-			if (lastBracket == 0)
-			{
-				print_log("clipboard ent text data (line {}): Unexpected '{'\n", lineNum);
-				continue;
-			}
-			lastBracket = 0;
-
-			delete ent;
-			ent = new Entity();
-		}
-		else if (line[0] == '}')
-		{
-			if (lastBracket == 1)
-				print_log("clipboard ent text data (line {}): Unexpected '}'\n", lineNum);
-			lastBracket = 1;
-
-			if (ent == NULL)
-				continue;
-
-			if (ent->keyvalues.count("classname"))
-				copiedEnts.push_back(ent);
-			else
-				print_log("Found unknown classname entity. Skip it.\n");
-			ent = NULL;
-
-			// you can end/start an ent on the same line, you know
-			if (line.find('{') != std::string::npos)
-			{
-				ent = new Entity();
-				lastBracket = 0;
-			}
-		}
-		else if (lastBracket == 0 && ent != NULL) // currently defining an entity
-		{
-			Keyvalues keyvals(line);
-			for (size_t k = 0; k < keyvals.keys.size(); k++)
-			{
-				if (keyvals.keys[k].length() && keyvals.values[k].length())
-					ent->addKeyvalue(keyvals.keys[k], keyvals.values[k]);
-			}
-		}
 	}
 
 	clearSelection();
@@ -4789,51 +4742,60 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
 			copiedEnts[i]->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
 		}
-
-		CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), copiedEnts[i]);
-		map->getBspRender()->pushUndoCommand(createCommand);
-		selectEnt(map, map->ents.size() > 1 ? ((int)map->ents.size() - 1) : 0, true);
+		map->ents.push_back(copiedEnts[i]);
+		selectEnt(map, (int)map->ents.size() - 1, true);
 	}
+
+	if (copiedEnts.size())
+	rend->pushUndoState("Paste Entity", FL_ENTITIES);
 }
 
-void Renderer::pasteEntsFromText(std::string text) {
+void Renderer::pasteEntsFromText(std::string text) 
+{
+	auto clipboardText = ImGui::GetClipboardText();
+	if (!clipboardText)
+		return;
 	Bsp* map = getSelectedMap();
 	if (!map)
 	{
 		return;
 	}
 	BspRenderer* rend = map->getBspRender();
+	std::vector<Entity*> copiedEnts{};
 
-	CreateEntityFromTextCommand* createCommand =
-		new CreateEntityFromTextCommand("Paste entities from clipboard", getSelectedMapId(), text);
-	rend->pushUndoCommand(createCommand);
+	try
+	{
+		copiedEnts = load_ents(clipboardText, map->bsp_name);
+	}
+	catch (...)
+	{
 
-	if (createCommand->createdEnts == 1) {
-		Entity* createdEnt = map->ents[map->ents.size() - 1];
-		vec3 oldOrigin = getEntOrigin(map, createdEnt);
-		vec3 modelOffset = getEntOffset(map, createdEnt);
-		vec3 mapOffset = rend->mapOffset;
-
-		vec3 moveDist = (cameraOrigin + cameraForward * 100) - oldOrigin;
-		vec3 newOri = (oldOrigin + moveDist) - (modelOffset + mapOffset);
-		vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
-		createdEnt->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
-		createCommand->refresh();
 	}
 
-	if (map->ents.size() > 0)
-		selectEnt(map, (int)map->ents.size() - 1);
-}
+	clearSelection();
+	selectMap(map);
 
-void Renderer::deleteEnt(int entIdx)
-{
-	Bsp* map = SelectedMap;
+	for (size_t i = 0; i < copiedEnts.size(); i++)
+	{
+		vec3 baseOrigin = copiedEnts[0]->origin;
 
-	if (!map || entIdx <= 0)
-		return;
-	PickInfo tmpPickInfo = pickInfo;
-	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Delete Entity", entIdx);
-	map->getBspRender()->pushUndoCommand(deleteCommand);
+		vec3 entOrigin = copiedEnts[i]->origin;
+		vec3 offset = entOrigin - baseOrigin;
+		vec3 mapOffset = map->getBspRender()->mapOffset;
+		vec3 moveDist = (cameraOrigin + cameraForward * 100) - entOrigin;
+		vec3 newOri = (entOrigin + moveDist) - (entOrigin + mapOffset);
+
+		newOri += offset;
+
+		vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
+		copiedEnts[i]->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
+
+		map->ents.push_back(copiedEnts[i]);
+		selectEnt(map, (int)map->ents.size() - 1, true);
+	}
+	
+
+	rend->pushUndoState("Paste Ents from clipboard", FL_ENTITIES);
 }
 
 void Renderer::deleteEnts()
@@ -4857,13 +4819,16 @@ void Renderer::deleteEnts()
 			{
 				reloadbspmdls = true;
 			}
-			deleteEnt((int)entIdx);
+			delete map->ents[entIdx];
+			map->ents.erase(map->ents.begin() + entIdx);
 		}
 
 		if (reloadbspmdls)
 		{
 			reloadBspModels();
 		}
+
+		map->getBspRender()->pushUndoState("Delete ents", FL_ENTITIES);
 	}
 }
 
@@ -4966,7 +4931,6 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 		}
 		filterNeeded = true;
 		updateEntConnections();
-		map->getBspRender()->saveEntityState(entIdx);
 		pickCount++; // force transform window update
 	}
 }
@@ -5090,8 +5054,7 @@ void Renderer::ungrabEnt()
 	{
 		return;
 	}
-	for (auto& ent : pickEnts)
-		map->getBspRender()->pushEntityUndoState("Move Entity", (int)ent);
+	map->getBspRender()->pushEntityUndoStateDelay("Move Entity");
 	movingEnt = false;
 }
 

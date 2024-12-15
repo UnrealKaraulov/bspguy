@@ -17,7 +17,7 @@
 
 #include <execution>
 
-BspRenderer::BspRenderer(Bsp* _map)
+BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 {
 	map = _map;
 	map->setBspRender(this);
@@ -232,9 +232,7 @@ BspRenderer::BspRenderer(Bsp* _map)
 		map->ents[i]->getTargets();
 	}
 
-	undoLumpState = LumpState();
-	undoEntityStateMap = std::map<int, Entity>();
-
+	undoLumpState = LumpState(map);
 	saveLumpState();
 }
 
@@ -1916,8 +1914,7 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 
 void BspRenderer::preRenderEnts()
 {
-	while (renderEnts.size() < map->ents.size())
-		renderEnts.emplace_back(RenderEnt());
+	renderEnts.resize(map->ents.size(), RenderEnt());
 
 	for (int i = 0; i < (int)map->ents.size(); i++)
 	{
@@ -1995,17 +1992,8 @@ void BspRenderer::refreshEnt(int entIdx, int refreshFlags)
 	if (entIdx >= (int)map->ents.size())
 		return;
 
-	//print_log("Refresh {} ent with flags: {}\n", entIdx, refreshFlags);
-
-	while (renderEnts.size() < map->ents.size())
-	{
-		renderEnts.emplace_back(RenderEnt());
-	}
-
-	while (renderEnts.size() > map->ents.size())
-	{
-		renderEnts.pop_back();
-	}
+	if (renderEnts.size() != map->ents.size())
+		renderEnts.resize(map->ents.size(), RenderEnt());
 
 	int skin = -1;
 	int sequence = -1;
@@ -2702,16 +2690,10 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 	renderOffset = mapOffset.flip();
 	localCameraOrigin = cameraOrigin - mapOffset;
 
-	if (delayEntUndoList.size())
+	if (delayEntUndo)
 	{
-		for (const auto& undoEnt : delayEntUndoList)
-		{
-			if (undoEnt.entIdx < (int)map->ents.size() && undoEnt.ent == map->ents[undoEnt.entIdx])
-			{
-				pushEntityUndoState(undoEnt.description, undoEnt.entIdx);
-			}
-		}
-		delayEntUndoList.clear();
+		delayEntUndo = false;
+		pushUndoState(delayEntUndoDesc, FL_ENTITIES);
 	}
 
 	g_app->matmodel.loadIdentity();
@@ -3710,81 +3692,15 @@ int BspRenderer::getBestClipnodeHull(int modelIdx)
 }
 
 
-void BspRenderer::saveEntityState(int entIdx)
-{
-	undoEntityStateMap[entIdx] = *map->ents[entIdx];
-}
-
 void BspRenderer::saveLumpState()
 {
 	if (g_settings.verboseLogs)
 		print_log("SAVE LUMP STATES TO BACKUP\n");
-	map->update_ent_lump();
-	for (int i = 0; i < HEADER_LUMPS; i++)
-	{
-		undoLumpState.lumps[i] = map->lumps[i];
-	}
+	undoLumpState = map->duplicate_lumps();
 }
 
-void BspRenderer::pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity* ent)
-{
-	delayEntUndoList.emplace_back(actionDesc, entIdx, ent);
-}
 
-void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
-{
-	if (g_settings.verboseLogs)
-		print_log("SAVE ENT STATES TO BACKUP\n");
-	if ((size_t)entIdx >= map->ents.size())
-	{
-		print_log(get_localized_string(LANG_0287));
-		return;
-	}
-
-	Entity* ent = map->ents[entIdx];
-
-	if (!ent)
-	{
-		print_log(get_localized_string(LANG_0288));
-		return;
-	}
-
-	bool anythingToUndo = false;
-	if (undoEntityStateMap[entIdx].keyOrder.size() == ent->keyOrder.size())
-	{
-		for (size_t i = 0; i < undoEntityStateMap[entIdx].keyOrder.size(); i++)
-		{
-			std::string oldKey = undoEntityStateMap[entIdx].keyOrder[i];
-			std::string newKey = ent->keyOrder[i];
-			if (oldKey != newKey)
-			{
-				anythingToUndo = true;
-				break;
-			}
-			std::string oldVal = undoEntityStateMap[entIdx].keyvalues[oldKey];
-			std::string newVal = ent->keyvalues[oldKey];
-			if (oldVal != newVal)
-			{
-				anythingToUndo = true;
-				break;
-			}
-		}
-	}
-	else
-	{
-		anythingToUndo = true;
-	}
-
-	if (!anythingToUndo)
-	{
-		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0289));
-		return; // nothing to undo
-	}
-	pushUndoCommand(new EditEntityCommand(actionDesc, entIdx, undoEntityStateMap[entIdx], *ent));
-	saveEntityState(entIdx);
-}
-
-void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int targets)
+void BspRenderer::pushUndoState(const std::string& actionDesc, unsigned int targets)
 {
 	if (g_settings.verboseLogs)
 		print_log("SAVE MODEL STATES TO BACKUP\n");
@@ -3792,21 +3708,6 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0290));
 		return;
-	}
-
-	auto entIdx = g_app->pickInfo.selectedEnts;
-	if (!entIdx.size() && g_app->pickInfo.selectedFaces.size())
-	{
-		int modelIdx = map->get_model_from_face((int)g_app->pickInfo.selectedFaces[0]);
-		if (modelIdx >= 0)
-		{
-			int entid = map->get_ent_from_model(modelIdx);
-			entIdx.push_back(entid);
-		}
-	}
-	if (!entIdx.size())
-	{
-		entIdx.push_back(0);
 	}
 
 	LumpState newLumps = map->duplicate_lumps(targets);
@@ -3851,16 +3752,21 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 		}
 	}
 
-	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, (int)entIdx[0], undoLumpState, newLumps, undoEntityStateMap[entIdx[0]].origin, targetLumps);
+	EditBspCommand* editCommand = new EditBspCommand(actionDesc, undoLumpState, newLumps, targetLumps);
 	pushUndoCommand(editCommand);
 
-	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
-	// saveEntityState((int)entIdx[0]);
+	if (differences[LUMP_ENTITIES])
+	{
+		preRenderEnts();
+	}
 }
 
-void BspRenderer::pushUndoCommand(Command* cmd)
+void BspRenderer::pushUndoCommand(EditBspCommand* cmd)
 {
 	cmd->execute();
+
+	undoLumpState = map->duplicate_lumps();
+
 	undoHistory.push_back(cmd);
 	clearRedoCommands();
 
@@ -3871,8 +3777,6 @@ void BspRenderer::pushUndoCommand(Command* cmd)
 	}
 
 	calcUndoMemoryUsage();
-
-	saveLumpState();
 }
 
 void BspRenderer::undo()
@@ -3882,8 +3786,8 @@ void BspRenderer::undo()
 		return;
 	}
 
-	Command* undoCommand = undoHistory[undoHistory.size() - 1];
-	if (!undoCommand->allowedDuringLoad && g_app->isLoading)
+	EditBspCommand* undoCommand = undoHistory[undoHistory.size() - 1];
+	if (g_app->isLoading)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0293), undoCommand->desc);
 		return;
@@ -3893,6 +3797,11 @@ void BspRenderer::undo()
 	undoHistory.pop_back();
 	redoHistory.push_back(undoCommand);
 	g_app->updateEnts();
+
+	undoLumpState = map->duplicate_lumps();
+
+
+	calcUndoMemoryUsage();
 }
 
 void BspRenderer::redo()
@@ -3902,8 +3811,8 @@ void BspRenderer::redo()
 		return;
 	}
 
-	Command* redoCommand = redoHistory[redoHistory.size() - 1];
-	if (!redoCommand->allowedDuringLoad && g_app->isLoading)
+	EditBspCommand * redoCommand = redoHistory[redoHistory.size() - 1];
+	if (g_app->isLoading)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0294), redoCommand->desc);
 		return;
@@ -3913,6 +3822,10 @@ void BspRenderer::redo()
 	redoHistory.pop_back();
 	undoHistory.push_back(redoCommand);
 	g_app->updateEnts();
+
+
+	calcUndoMemoryUsage();
+	
 }
 
 void BspRenderer::clearUndoCommands()
@@ -3939,15 +3852,18 @@ void BspRenderer::clearRedoCommands()
 
 void BspRenderer::calcUndoMemoryUsage()
 {
-	undoMemoryUsage = (undoHistory.size() + redoHistory.size()) * sizeof(Command*);
+	undoMemoryUsageZip = (undoHistory.size() + redoHistory.size()) * sizeof(EditBspCommand*);
+	undoMemoryUsage = undoMemoryUsageZip;
 
 	for (size_t i = 0; i < undoHistory.size(); i++)
 	{
+		undoMemoryUsageZip += undoHistory[i]->memoryUsageZip();
 		undoMemoryUsage += undoHistory[i]->memoryUsage();
 	}
 	for (size_t i = 0; i < redoHistory.size(); i++)
 	{
-		undoMemoryUsage += redoHistory[i]->memoryUsage();
+		undoMemoryUsageZip += redoHistory[i]->memoryUsageZip();
+		undoMemoryUsageZip += redoHistory[i]->memoryUsage();
 	}
 }
 
@@ -3955,6 +3871,12 @@ void BspRenderer::clearDrawCache()
 {
 	drawedClipnodes.clear();
 	drawedNodes.clear();
+}
+
+void BspRenderer::pushEntityUndoStateDelay(const std::string& desc)
+{
+	delayEntUndo = true;
+	delayEntUndoDesc = desc;
 }
 
 PickInfo::PickInfo()

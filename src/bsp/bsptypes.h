@@ -53,7 +53,7 @@ struct BSPFACE_INFOEX
 	short        groupid;        // to determine equal landscapes from various groups, -1 - no group
 };
 
-enum lump_copy_targets
+enum lump_copy_targets : unsigned int
 {
 	FL_ENTITIES = 1,
 	FL_PLANES = 2,
@@ -72,7 +72,7 @@ enum lump_copy_targets
 	FL_MODELS = 16384
 };
 
-enum clean_unused_lump
+enum clean_unused_lump : unsigned int
 {
 	CLEAN_PLANES = 2,
 	CLEAN_TEXTURES = 4,
@@ -365,11 +365,6 @@ struct BSPHEADER_EX
 	}
 };
 
-struct LumpState
-{
-	std::vector<unsigned char> lumps[HEADER_LUMPS];
-};
-
 struct BSPFACE16
 {
 	unsigned short iPlane;          // Plane the face is parallel to
@@ -561,3 +556,12 @@ struct TraceResult
 	//edict_t* pHit;				// entity the surface is on
 	int		iHitgroup;			// 0 == generic, non zero is specific body part
 };
+
+struct LumpState
+{
+	void* map;
+	std::vector<unsigned char> lumps[HEADER_LUMPS];
+	LumpState(void* _map) : map(_map) {}
+};
+
+std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump);

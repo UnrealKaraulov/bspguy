@@ -16,7 +16,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-class Command;
+class EditBspCommand;
 
 enum RENDER_PASS : int
 {
@@ -302,11 +302,12 @@ public:
 	void delayLoadData();
 	int getBestClipnodeHull(int modelIdx);
 
+	size_t undoMemoryUsageZip = 0; // approximate space used by undo+redo history (compressed)
 	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
-	std::vector<Command*> undoHistory;
-	std::vector<Command*> redoHistory;
-	std::map<int, Entity> undoEntityStateMap;
-	LumpState undoLumpState{};
+
+	std::vector<EditBspCommand*> undoHistory;
+	std::vector<EditBspCommand*> redoHistory;
+	LumpState undoLumpState;
 
 	struct DelayEntUndo
 	{
@@ -320,18 +321,17 @@ public:
 		}
 	};
 
-	std::vector<DelayEntUndo> delayEntUndoList;
+	bool delayEntUndo = false;
+	std::string delayEntUndoDesc = "undo";
 
-	void pushModelUndoState(const std::string& actionDesc, unsigned int targets);
-	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
-	void pushEntityUndoStateDelay(const std::string& actionDesc, int entIdx, Entity* ent);
-	void pushUndoCommand(Command* cmd);
+	void pushUndoState(const std::string& actionDesc, unsigned int targets);
+	void pushEntityUndoStateDelay(const std::string& desc);
+
 	void undo();
 	void redo();
 	void clearUndoCommands();
 	void clearRedoCommands();
 	void calcUndoMemoryUsage();
-	void saveEntityState(int entIdx);
 	void saveLumpState();
 	void clearDrawCache();
 
@@ -341,6 +341,8 @@ public:
 	vec3 intersectVec;
 	float intersectDist;
 private:
+
+	void pushUndoCommand(EditBspCommand* cmd);
 
 	struct nodeBuffStr
 	{

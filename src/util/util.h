@@ -17,6 +17,7 @@ namespace fs = std::filesystem;
 #include <math.h>
 #include "primitives.h"
 
+class Entity;
 class Bsp;
 
 extern std::string g_version_string;
@@ -290,3 +291,5 @@ unsigned char FixBounds(int i);
 unsigned char FixBounds(unsigned int i);
 unsigned char FixBounds(float i);
 unsigned char FixBounds(double i);
+
+std::vector<Entity*> load_ents(const std::string& entLump, const std::string& mapName);

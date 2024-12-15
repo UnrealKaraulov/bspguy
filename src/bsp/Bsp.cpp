@@ -55,7 +55,7 @@ void Bsp::init_empty_bsp()
 
 	update_lump_pointers();
 
-	load_ents();
+	reload_ents();
 
 	Entity* ent = new Entity();
 	ent->setOrAddKeyvalue("mapversion", "220");
@@ -272,7 +272,7 @@ Bsp::Bsp(std::string fpath)
 		delete[] newlump;
 	}
 
-	load_ents();
+	reload_ents();
 	update_lump_pointers();
 
 	if (modelCount > 0)
@@ -1574,7 +1574,12 @@ bool Bsp::does_model_use_shared_structures(int modelIdx)
 
 LumpState Bsp::duplicate_lumps(unsigned int targets)
 {
-	LumpState state{};
+	LumpState state(this);
+
+	if (targets & FL_ENTITIES)
+	{
+		update_ent_lump();
+	}
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -1639,16 +1644,23 @@ int Bsp::delete_embedded_textures()
 
 void Bsp::replace_lumps(const LumpState& state)
 {
+	bool uploadEnts = false;
+
 	for (unsigned int i = 0; i < HEADER_LUMPS; i++)
 	{
 		if (state.lumps[i].size())
 		{
 			lumps[i] = state.lumps[i];
 			bsp_header.lump[i].nLength = (int)lumps[i].size();
+			if (i == LUMP_ENTITIES)
+			{
+				uploadEnts = true;
+			}
 		}
 	}
 
-	load_ents();
+	if (uploadEnts)
+		reload_ents();
 	update_lump_pointers();
 }
 
@@ -4564,7 +4576,7 @@ void Bsp::write(const std::string& path)
 		delete[] oldfile;
 	}
 
-	auto backupLumps = duplicate_lumps(0xFFFFFFFF);
+	auto backupLumps = duplicate_lumps();
 
 	std::ofstream file(path, std::ios::trunc | std::ios::binary);
 	if (!file.is_open())
@@ -4615,9 +4627,8 @@ void Bsp::write(const std::string& path)
 
 	update_lump_pointers();
 	std::vector<unsigned char> nulls(is_bsp30ext && extralumps.size() ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER) + (is_bsp_pathos ? 4 : 0), 0);
-	file.write(reinterpret_cast<const char*>(nulls.data()), nulls.size());
+	file.write((const char*)nulls.data(), nulls.size());
 
-	unsigned char* oldLighting = (unsigned char*)lightdata;
 	unsigned char* freelighting = NULL;
 
 	// first process, for face restore offsets
@@ -4644,9 +4655,6 @@ void Bsp::write(const std::string& path)
 		}
 	}
 
-
-
-	unsigned char* oldClipnodes = (unsigned char*)clipnodes;
 	BSPCLIPNODE16* freeClipnodes16 = NULL;
 
 	if (!is_bsp2 && (is_broken_clipnodes || !is_32bit_clipnodes || bsp_header.lump[LUMP_CLIPNODES].nLength / sizeof(BSPCLIPNODE32) < MAX_MAP_CLIPNODES_DEFAULT))
@@ -4672,7 +4680,6 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_CLIPNODES].assign((unsigned char*)freeClipnodes16, (unsigned char*)(freeClipnodes16)+bsp_header.lump[LUMP_CLIPNODES].nLength);
 	}
 
-	unsigned char* oldnodes = (unsigned char*)nodes;
 	BSPNODE16* freenodes16 = NULL;
 	BSPNODE32A* freenodes32a = NULL;
 
@@ -4717,8 +4724,6 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_NODES].assign((unsigned char*)freenodes32a, (unsigned char*)(freenodes32a)+bsp_header.lump[LUMP_NODES].nLength);
 	}
 
-
-	unsigned char* oldfaces = (unsigned char*)faces;
 	BSPFACE16* freefaces16 = NULL;
 
 	if (!is_bsp2)
@@ -4741,7 +4746,6 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_FACES].assign((unsigned char*)freefaces16, (unsigned char*)(freefaces16)+bsp_header.lump[LUMP_FACES].nLength);
 	}
 
-	unsigned char* oldmarksurfs = (unsigned char*)marksurfs;
 	unsigned short* freemarksurfs16 = NULL;
 
 	if (!is_bsp2)
@@ -4755,7 +4759,6 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_MARKSURFACES].assign((unsigned char*)freemarksurfs16, (unsigned char*)(freemarksurfs16)+bsp_header.lump[LUMP_MARKSURFACES].nLength);
 	}
 
-	unsigned char* oldleaves = (unsigned char*)leaves;
 	BSPLEAF16* freeleaves16 = NULL;
 	BSPLEAF32A* freeleaves32a = NULL;
 
@@ -4804,7 +4807,6 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_LEAVES].assign((unsigned char*)freeleaves32a, (unsigned char*)(freeleaves32a)+bsp_header.lump[LUMP_LEAVES].nLength);
 	}
 
-	unsigned char* oldedges = (unsigned char*)edges;
 	BSPEDGE16* freeedges16 = NULL;
 
 	if (!is_bsp2)
@@ -5733,121 +5735,13 @@ bool Bsp::load_lumps(const std::string& fpath)
 	return valid;
 }
 
-void Bsp::load_ents()
+void Bsp::reload_ents()
 {
 	for (size_t i = 0; i < ents.size(); i++)
 		delete ents[i];
 	ents.clear();
 
-	std::istringstream in(std::string((char*)lumps[LUMP_ENTITIES].data(), (char*)lumps[LUMP_ENTITIES].data() + bsp_header.lump[LUMP_ENTITIES].nLength));
-
-	int lineNum = 0;
-	int lastBracket = -1;
-	Entity* ent = NULL;
-
-	std::string line;
-	while (std::getline(in, line))
-	{
-		lineNum++;
-
-		while (line[0] == ' ' || line[0] == '\t' || line[0] == '\r')
-		{
-			line.erase(line.begin());
-		}
-
-		if (line.length() < 1 || line[0] == '\n')
-			continue;
-
-		if (line[0] == '{')
-		{
-			if (lastBracket == 0)
-			{
-				print_log(get_localized_string(LANG_0103), bsp_path, lineNum);
-				continue;
-			}
-			lastBracket = 0;
-			delete ent;
-			ent = new Entity();
-
-			if (line.find('}') == std::string::npos &&
-				line.find('\"') == std::string::npos)
-			{
-				continue;
-			}
-		}
-		if (line[0] == '}')
-		{
-			if (lastBracket == 1)
-				print_log(get_localized_string(LANG_0104), bsp_path, lineNum);
-			lastBracket = 1;
-			if (!ent)
-				continue;
-
-			if (ent->keyvalues.count("classname"))
-				ents.push_back(ent);
-			else
-				print_log(get_localized_string(LANG_0105));
-
-			ent = NULL;
-
-			// you can end/start an ent on the same line, you know
-			if (line.find('{') != std::string::npos)
-			{
-				ent = new Entity();
-				lastBracket = 0;
-
-				if (line.find('\"') == std::string::npos)
-				{
-					continue;
-				}
-				line.erase(line.begin());
-			}
-		}
-		if (lastBracket == 0 && ent) // currently defining an entity
-		{
-			Keyvalues k(line);
-			for (size_t i = 0; i < k.keys.size(); i++)
-			{
-				ent->addKeyvalue(k.keys[i], k.values[i], true);
-			}
-
-			if (line.find('}') != std::string::npos)
-			{
-				lastBracket = 1;
-
-				if (ent->keyvalues.count("classname"))
-					ents.push_back(ent);
-				else
-					print_log(get_localized_string(LANG_1022));
-
-				ent = NULL;
-			}
-			if (line.find('{') != std::string::npos)
-			{
-				ent = new Entity();
-				lastBracket = 0;
-			}
-		}
-	}
-
-	// swap worldspawn to first entity
-	if (ents.size() > 1)
-	{
-		if (ents[0]->keyvalues["classname"] != "worldspawn")
-		{
-			print_log(get_localized_string(LANG_0106));
-			for (size_t i = 1; i < ents.size(); i++)
-			{
-				if (ents[i]->keyvalues["classname"] == "worldspawn")
-				{
-					std::swap(ents[0], ents[i]);
-					break;
-				}
-			}
-		}
-	}
-
-	delete ent;
+	ents = load_ents(std::string((char*)lumps[LUMP_ENTITIES].data(), (char*)lumps[LUMP_ENTITIES].data() + bsp_header.lump[LUMP_ENTITIES].nLength),bsp_name);
 }
 
 void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem)
@@ -11080,6 +10974,7 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 
 	save_undo_lightmaps();
 	resize_all_lightmaps();
+
 	bsprend->reuploadTextures();
 	bsprend->loadLightmaps();
 
@@ -11455,14 +11350,13 @@ void Bsp::ExportToSmdWIP(const std::string& path, bool split, bool oneRoot)
 	update_lump_pointers();
 
 	remove_unused_model_structures(CLEAN_MODELS);
-	save_undo_lightmaps();
 	resize_all_lightmaps();
 	bsprend->reloadTextures();
 	bsprend->loadLightmaps();
 
 	update_ent_lump();
 	update_lump_pointers();
-	renderer->pushModelUndoState("EXPORT .SMD EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
+	renderer->pushUndoState("EXPORT .SMD EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 }
 
 void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode, bool with_mdl, bool export_csm, int grouping)
@@ -11498,7 +11392,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	print_log(PRINT_RED, " Merged {} verts \n", merged);
 	remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
 
-	save_undo_lightmaps();
 	resize_all_lightmaps();
 	bsprend->reuploadTextures();
 	bsprend->loadLightmaps();
@@ -11556,10 +11449,6 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 		tmp.tick();
 		g_progress = tmp;
-		save_undo_lightmaps();
-
-		tmp.tick();
-		g_progress = tmp;
 		resize_all_lightmaps();
 
 		tmp.tick();
@@ -11576,7 +11465,7 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 
 		tmp.tick();
 		g_progress = tmp;
-		renderer->pushModelUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
+		renderer->pushUndoState("CREATE MDL->BSP MODEL", EDIT_MODEL_LUMPS | FL_ENTITIES);
 	}
 	else
 		renderer->preRenderEnts();
@@ -12152,7 +12041,6 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		print_log(PRINT_RED, " Merged {} verts \n", merged);
 		remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
 
-		save_undo_lightmaps();
 		resize_all_lightmaps();
 		bsprend->reuploadTextures();
 		bsprend->loadLightmaps();
@@ -13531,7 +13419,6 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 
 		if (!selected)
 		{
-			save_undo_lightmaps();
 			resize_all_lightmaps();
 			bsprend->reloadTextures();
 			bsprend->loadLightmaps();
@@ -13548,7 +13435,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 			print_log(PRINT_BLUE, "Export {} wad!\n", targetMapFileName);
 		}
 
-		renderer->pushModelUndoState("EXPORT .MAP EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
+		renderer->pushUndoState("EXPORT .MAP EDITED", EDIT_MODEL_LUMPS | FL_ENTITIES);
 	}
 	else
 	{
@@ -15090,4 +14977,28 @@ int Bsp::CalcFaceTextureStep(int facenum)
 	}
 
 	return g_limits.textureStep;
+}
+
+int Bsp::GetTriggerTexture()
+{
+	unsigned int totalTextures = ((unsigned int*)textures)[0];
+	for (unsigned int i = 0; i < totalTextures; i++)
+	{
+		int texOffset = ((int*)textures)[i + 1];
+		if (texOffset >= 0)
+		{
+			BSPMIPTEX& tex = *((BSPMIPTEX*)(textures + texOffset));
+			if (tex.szName[0] != '\0' && strcasecmp(tex.szName, "aaatrigger") == 0)
+			{
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+int Bsp::AddTriggerTexture()
+{
+	//print_log(get_localized_string(LANG_0295));
+	return add_texture("aaatrigger", aaatriggerTex->get_data(), aaatriggerTex->width, aaatriggerTex->height);
 }

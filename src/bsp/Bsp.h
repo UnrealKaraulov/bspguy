@@ -210,8 +210,7 @@ public:
 	// TODO: split any planes shared with other models
 	bool vertex_manipulation_sync(int modelIdx, const std::vector<TransformVert>& hullVerts, bool convexCheckOnly);
 
-	void load_ents();
-
+	void reload_ents();
 	// call this after editing ents
 	void update_ent_lump(bool stripNodes = false);
 
@@ -402,7 +401,7 @@ public:
 	bool does_model_use_shared_structures(int modelIdx);
 
 	// returns the current lump contents
-	LumpState duplicate_lumps(unsigned int targets);
+	LumpState duplicate_lumps(unsigned int targets = 0xFFFFFFFF);
 
 	void replace_lumps(const LumpState& state);
 
@@ -473,6 +472,8 @@ public:
 	bool CalcFaceExtents(lightinfo_t* l);
 
 	int CalcFaceTextureStep(int facenum);
+	int GetTriggerTexture();
+	int AddTriggerTexture();
 
 	unsigned int remove_unused_lightmaps(std::vector<bool> & usedFaces);
 	unsigned int remove_unused_visdata(BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
