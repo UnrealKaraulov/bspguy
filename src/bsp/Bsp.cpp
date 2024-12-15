@@ -1336,7 +1336,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 	for (int faceId = 0; faceId < faceCount; faceId++) 
 	{
 		BSPFACE32& face = faces[faceId];
-		int newLightMapOffset = static_cast<int>(newLightData.size());
+		int newLightMapOffset = (int)newLightData.size();
 		for (int lightId = 0; lightId < MAX_LIGHTMAPS; lightId++) 
 		{
 			if (face.nStyles[lightId] == 255 || face.nLightmapOffset < 0) 
@@ -1344,7 +1344,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 				continue;
 			}
 			int size[2] = { 0, 0 };
-			if (faceId < static_cast<int>(undo_lightmaps.size())) 
+			if (faceId < (int)undo_lightmaps.size()) 
 			{
 				size[0] = undo_lightmaps[faceId].width;
 				size[1] = undo_lightmaps[faceId].height;

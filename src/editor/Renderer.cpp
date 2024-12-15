@@ -1379,7 +1379,7 @@ void Renderer::renderLoop()
 					make_screenshot_target++;
 
 
-					if (make_screenshot <= 0)
+					if (make_screenshot <= 0 && !ortho_save_tga)
 					{
 						is_closing = true;
 					}
