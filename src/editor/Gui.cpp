@@ -5347,6 +5347,7 @@ void Gui::drawMenuBar()
 
 				int aaatriggerIdx = map->GetTriggerTexture();
 				unsigned int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES | FL_ENTITIES;
+
 				if (aaatriggerIdx == -1)
 				{
 					dupLumps |= FL_TEXTURES;
@@ -5357,23 +5358,15 @@ void Gui::drawMenuBar()
 				vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
 				int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, true);
 				newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
-
-				if (map->ents.size())
-				{
-					newEnt = map->ents[map->ents.size() - 1];
-					if (newEnt && newEnt->getBspModelIdx() >= 0)
-					{
-						BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
-						for (int i = 0; i < model.nFaces; i++)
-						{
-							map->faces[model.iFirstFace + i].nStyles[0] = 0;
-						}
-					}
-				}
-				map->resize_all_lightmaps();
-
-
 				map->ents.push_back(newEnt);
+
+				BSPMODEL& model = map->models[modelIdx];
+				for (int i = 0; i < model.nFaces; i++)
+				{
+					map->faces[model.iFirstFace + i].nStyles[0] = 0;
+				}
+
+				map->resize_all_lightmaps();
 				rend->pushUndoState(get_localized_string(LANG_0589), dupLumps);
 			}
 
@@ -5390,7 +5383,7 @@ void Gui::drawMenuBar()
 				float mdl_size = 64.0f;
 
 				int aaatriggerIdx = map->GetTriggerTexture();
-				unsigned int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES;
+				unsigned int dupLumps = FL_MARKSURFACES | FL_EDGES | FL_FACES | FL_NODES | FL_PLANES | FL_CLIPNODES | FL_SURFEDGES | FL_TEXINFO | FL_VERTICES | FL_LIGHTING | FL_MODELS | FL_LEAVES | FL_ENTITIES;
 				if (aaatriggerIdx == -1)
 				{
 					dupLumps |= FL_TEXTURES;
@@ -5401,6 +5394,7 @@ void Gui::drawMenuBar()
 				vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
 				int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, false);
 				newEnt->addKeyvalue("model", "*" + std::to_string(modelIdx));
+				map->ents.push_back(newEnt);
 
 				BSPMODEL& model = map->models[modelIdx];
 				for (int i = 0; i < model.nFaces; i++)
@@ -5409,8 +5403,7 @@ void Gui::drawMenuBar()
 				}
 
 				map->resize_all_lightmaps();
-				map->ents.push_back(newEnt);
-				rend->pushUndoState(get_localized_string(LANG_0589), dupLumps);
+				rend->pushUndoState(get_localized_string(LANG_0591), dupLumps);
 			}
 
 			if (ImGui::MenuItem(get_localized_string(LANG_0590).c_str(), 0, false, !app->isLoading && map))
@@ -5446,7 +5439,6 @@ void Gui::drawMenuBar()
 
 
 				map->resize_all_lightmaps();
-				map->ents.push_back(newEnt);
 				rend->pushUndoState(get_localized_string(LANG_0590), dupLumps);
 			}
 
@@ -5483,7 +5475,6 @@ void Gui::drawMenuBar()
 
 
 				map->resize_all_lightmaps();
-				map->ents.push_back(newEnt);
 				rend->pushUndoState("BSP Clip model", dupLumps);
 			}
 

@@ -136,7 +136,7 @@ std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
 	if (newLump.lumps[LUMP_MODELS].size() > oldLump.lumps[LUMP_MODELS].size())
 	{
 		int curModelCount = (int)(oldLump.lumps[LUMP_MODELS].size() / sizeof(BSPMODEL));
-		int addModelCount = (int)((newLump.lumps[LUMP_MODELS].size() - newLump.lumps[LUMP_MODELS].size()) / sizeof(BSPMODEL));
+		int addModelCount = (int)((newLump.lumps[LUMP_MODELS].size() - oldLump.lumps[LUMP_MODELS].size()) / sizeof(BSPMODEL));
 		for (int i = curModelCount; i < curModelCount + addModelCount; i++)
 		{
 			updateModels.push_back(i);

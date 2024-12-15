@@ -382,6 +382,7 @@ Bsp::~Bsp()
 	{
 		delete ents[i];
 	}
+	ents.clear();
 
 	delete[] pvsFaces;
 	//if (mdl)
