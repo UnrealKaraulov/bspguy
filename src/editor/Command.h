@@ -23,5 +23,6 @@ public:
 	LumpState oldLumps;
 	LumpState newLumps;
 private:
+	void refresh(BspRenderer* renderer);
 	unsigned int targetLumps;
 };

@@ -160,3 +160,48 @@ std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump)
 
 	return updateModels;
 }
+
+
+std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump)
+{
+	std::vector<int> updateFaces{};
+	if (newLump.lumps[LUMP_FACES].empty())
+		return updateFaces;
+
+	if (oldLump.lumps[LUMP_FACES].empty() && newLump.lumps[LUMP_FACES].size())
+	{
+		int addModelCount = (int)(newLump.lumps[LUMP_FACES].size() / sizeof(BSPFACE32));
+		for (int i = 0; i < addModelCount; i++)
+		{
+			updateFaces.push_back(i);
+		}
+		return updateFaces;
+	}
+
+	if (newLump.lumps[LUMP_FACES].size() > oldLump.lumps[LUMP_FACES].size())
+	{
+		int curModelCount = (int)(oldLump.lumps[LUMP_FACES].size() / sizeof(BSPFACE32));
+		int addModelCount = (int)((newLump.lumps[LUMP_FACES].size() - oldLump.lumps[LUMP_FACES].size()) / sizeof(BSPFACE32));
+		for (int i = curModelCount; i < curModelCount + addModelCount; i++)
+		{
+			updateFaces.push_back(i);
+		}
+	}
+
+	size_t modelLumpCount = std::min(newLump.lumps[LUMP_FACES].size(), oldLump.lumps[LUMP_FACES].size());
+
+	modelLumpCount /= sizeof(BSPFACE32);
+
+	BSPFACE32* listOld = (BSPFACE32*)oldLump.lumps[LUMP_FACES].data();
+	BSPFACE32* listNew = (BSPFACE32*)newLump.lumps[LUMP_FACES].data();
+
+	for (size_t i = 0; i < modelLumpCount; i++)
+	{
+		if (memcmp(&listOld[i], &listNew[i], sizeof(BSPFACE32)) != 0)
+		{
+			updateFaces.push_back((int)i);
+		}
+	}
+
+	return updateFaces;
+}

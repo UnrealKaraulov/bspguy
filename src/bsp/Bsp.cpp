@@ -9571,22 +9571,12 @@ void Bsp::remove_faces_by_content(int content)
 	print_log("Removed {} faces from map!\n", removedFaces);
 }
 
-bool Bsp::remove_face(int faceIdx)
+bool Bsp::remove_face(int faceIdx, bool fromModels)
 {
 	// Check if face index is valid
 	if (faceIdx < 0 || faceIdx >= faceCount)
 	{
 		return false;
-	}
-
-	// Create a vector to hold all the faces except the one to be removed
-	std::vector<BSPFACE32> all_faces;
-	for (int f = 0; f < faceCount; f++)
-	{
-		if (f != faceIdx)
-		{
-			all_faces.push_back(faces[f]);
-		}
 	}
 
 	// Shift face count in models
@@ -9615,51 +9605,63 @@ bool Bsp::remove_face(int faceIdx)
 		}
 	}
 
-	// Shift face count in nodes
-	for (int n = 0; n < nodeCount; n++)
+	if (!fromModels)
 	{
-		// If the node has no faces or its first face index is out of bounds, reset the face count and continue to the next node
-		if (nodes[n].nFaces <= 0 || nodes[n].iFirstFace < 0)
+		// Create a vector to hold all the faces except the one to be removed
+		std::vector<BSPFACE32> all_faces;
+		for (int f = 0; f < faceCount; f++)
 		{
-			nodes[n].iFirstFace = 0;
-			nodes[n].nFaces = 0;
-			continue;
+			if (f != faceIdx)
+			{
+				all_faces.push_back(faces[f]);
+			}
 		}
-		if (faceIdx >= nodes[n].iFirstFace && faceIdx < nodes[n].iFirstFace + nodes[n].nFaces)
+
+		// Shift face count in nodes
+		for (int n = 0; n < nodeCount; n++)
 		{
-			nodes[n].nFaces--;
+			// If the node has no faces or its first face index is out of bounds, reset the face count and continue to the next node
+			if (nodes[n].nFaces <= 0 || nodes[n].iFirstFace < 0)
+			{
+				nodes[n].iFirstFace = 0;
+				nodes[n].nFaces = 0;
+				continue;
+			}
+			if (faceIdx >= nodes[n].iFirstFace && faceIdx < nodes[n].iFirstFace + nodes[n].nFaces)
+			{
+				nodes[n].nFaces--;
+			}
+			else if (faceIdx < nodes[n].iFirstFace)
+			{
+				nodes[n].iFirstFace--;
+			}
+			if (nodes[n].nFaces <= 0 || nodes[n].iFirstFace < 0)
+			{
+				nodes[n].iFirstFace = 0;
+				nodes[n].nFaces = 0;
+			}
 		}
-		else if (faceIdx < nodes[n].iFirstFace)
+
+		// Update the faces array after removing the specified face
+		unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
+		memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
+		replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
+		delete[] newLump;
+		// Remove face from all leaves
+		leaf_del_face(faceIdx, -1);
+
+		// Shift face count in marksurfs and mark the surfaces to be deleted
+		for (int s = 0; s < marksurfCount; s++)
 		{
-			nodes[n].iFirstFace--;
-		}
-		if (nodes[n].nFaces <= 0 || nodes[n].iFirstFace < 0)
-		{
-			nodes[n].iFirstFace = 0;
-			nodes[n].nFaces = 0;
+			if (marksurfs[s] < 0)
+				continue;
+
+			if (faceIdx < marksurfs[s])
+			{
+				marksurfs[s]--;
+			}
 		}
 	}
-
-	// Update the faces array after removing the specified face
-	unsigned char* newLump = new unsigned char[sizeof(BSPFACE32) * all_faces.size()];
-	memcpy(newLump, &all_faces[0], sizeof(BSPFACE32) * all_faces.size());
-	replace_lump(LUMP_FACES, newLump, sizeof(BSPFACE32) * all_faces.size());
-	delete[] newLump;
-	// Remove face from all leaves
-	leaf_del_face(faceIdx, -1);
-
-	// Shift face count in marksurfs and mark the surfaces to be deleted
-	for (int s = 0; s < marksurfCount; s++)
-	{
-		if (marksurfs[s] < 0)
-			continue;
-
-		if (faceIdx < marksurfs[s])
-		{
-			marksurfs[s]--;
-		}
-	}
-
 	return true;
 }
 

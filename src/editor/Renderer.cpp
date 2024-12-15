@@ -1504,10 +1504,17 @@ void Renderer::renderLoop()
 				using namespace std::chrono_literals;
 				std::this_thread::sleep_for(25ms);
 			}
+
 			oldTime = curTime;
 
 			if (is_closing)
 			{
+				saveGuiSettings();
+				g_settings.saveSettings();
+
+				using namespace std::chrono_literals;
+				std::this_thread::sleep_for(100ms);
+
 				print_log(get_localized_string(LANG_0901));
 
 #ifdef MINGW 

@@ -367,7 +367,7 @@ public:
 	bool cull_leaf_faces(int leafIdx);
 	bool leaf_add_face(int faceIdx, int leafIdx);
 	bool leaf_del_face(int faceIdx, int leafIdx);
-	bool remove_face(int faceid);
+	bool remove_face(int faceid, bool fromModels = false);
 	void remove_faces_by_content(int content);
 	std::vector<int> getFaceContents(int faceIdx);
 	int clone_world_leaf(int oldleafIdx);

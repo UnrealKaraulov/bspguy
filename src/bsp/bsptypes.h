@@ -565,3 +565,4 @@ struct LumpState
 };
 
 std::vector<int> getDiffModels(LumpState& oldLump, LumpState& newLump);
+std::vector<int> getDiffFaces(LumpState& oldLump, LumpState& newLump);

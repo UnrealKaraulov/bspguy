@@ -1208,6 +1208,63 @@ void Gui::drawBspContexMenu()
 
 				ImGui::EndMenu();
 			}
+			/*ImGui::Separator();
+			if (ImGui::BeginMenu("Extact faces"))
+			{
+				auto& faces = app->pickInfo.selectedFaces;
+				for (auto& f : faces)
+				{
+					map->remove_face(f, true);
+				}
+				auto mdlIdx = map->create_model();
+				BSPMODEL& mdl = map->models[mdlIdx];
+				mdl.nFaces = (int)faces.size();
+				
+				int sharedSolidLeaf = 0;
+				int anyEmptyLeaf = map->create_leaf(CONTENTS_EMPTY);
+
+				for (auto & f : faces)
+				{
+					map->leaf_add_face(f, anyEmptyLeaf);
+				}
+				// add new nodes
+				unsigned int startNode = map->nodeCount;
+				BSPNODE32* newNodes = new BSPNODE32[map->nodeCount + faces.size()]{};
+				memcpy(newNodes, map->nodes, map->nodeCount * sizeof(BSPNODE32));
+				for (int k = 0; k < faces.size(); k++)
+				{
+					BSPNODE32& node = newNodes[map->nodeCount + k];
+
+					node.iFirstFace = faces[k];
+					node.nFaces = 1;
+					node.iPlane = map->faces[faces[k]].iPlane;
+					int insideContents = k == faces.size() - 1 ? (~sharedSolidLeaf) : (map->nodeCount + k + 1);
+					int outsideContents = ~anyEmptyLeaf;
+					if (false ? k % 2 != 0 : k % 2 == 0)
+					{
+						node.iChildren[0] = insideContents;
+						node.iChildren[1] = outsideContents;
+					}
+					else
+					{
+						node.iChildren[0] = outsideContents;
+						node.iChildren[1] = insideContents;
+					}
+				}
+
+				map->replace_lump(LUMP_NODES, newNodes, (map->nodeCount + faces.size()) * sizeof(BSPNODE32));
+				delete[] newNodes;
+
+				mdl.iHeadnodes[0] = startNode;
+				bool success = false;
+				map->regenerate_clipnodes(startNode, -1);
+
+				mdl.vOrigin = vec3();
+				mdl.nVisLeafs = 1;
+				
+				auto & vertlist = map->get_face_verts(f);
+
+			}*/
 
 			ImGui::EndPopup();
 		}
@@ -6537,9 +6594,7 @@ void Gui::drawDebugWidget()
 			ImGui::Text(get_localized_string(LANG_0637).c_str(), app->debugVec2.x, app->debugVec2.y, app->debugVec2.z);
 			ImGui::Text(get_localized_string(LANG_0638).c_str(), app->debugVec3.x, app->debugVec3.y, app->debugVec3.z);
 
-			float mb = renderer->undoMemoryUsage / (1024.0f * 1024.0f);
-			float mb_zip = renderer->undoMemoryUsageZip / (1024.0f * 1024.0f);
-			ImGui::Text(get_localized_string("UNDO_MEM_USAGE").c_str(), mb, mb_zip);
+			drawUndoMemUsage(renderer);
 
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0388)), app->isTransformableSolid).c_str());
 			ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0389)), app->isScalingObject).c_str());
@@ -10266,7 +10321,10 @@ void Gui::drawLimits()
 					ImGui::Columns(1);
 					ImGui::EndChild();
 					ImGui::PopFont();
+					drawUndoMemUsage(rend);
+
 					ImGui::EndChild();
+
 					ImGui::EndTabItem();
 				}
 
@@ -10299,11 +10357,15 @@ void Gui::drawLimits()
 		}
 	}
 
+	ImGui::End();
+}
+
+void Gui::drawUndoMemUsage(BspRenderer * rend)
+{
 	ImGui::SeparatorText((get_localized_string(LANG_0721) + " " + std::to_string(rend->undoHistory.size())).c_str());
 	float mb = rend->undoMemoryUsage / (1024.0f * 1024.0f);
 	float mb_zip = rend->undoMemoryUsageZip / (1024.0f * 1024.0f);
 	ImGui::Text(get_localized_string("UNDO_MEM_USAGE").c_str(), mb, mb_zip);
-	ImGui::End();
 }
 
 void Gui::drawLimitTab(Bsp* map, int sortMode)

@@ -10,6 +10,8 @@
 #include "qtools/rad.h"
 #include <GLFW/glfw3.h>
 
+class BspRenderer;
+
 struct ModelInfo
 {
 	std::string classname;
@@ -146,6 +148,7 @@ private:
 	void drawLightMapTool();
 	void drawFaceEditorWidget();
 	void drawLimitTab(Bsp* map, int sortMode);
+	void drawUndoMemUsage(BspRenderer * rend);
 	void drawEntityReport();
 	StatInfo calcStat(std::string name, unsigned int val, unsigned int max, bool isMem);
 	ModelInfo calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val, unsigned int max, bool isMem);

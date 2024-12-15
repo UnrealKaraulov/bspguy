@@ -37,7 +37,7 @@ std::vector<unsigned char> decompressData(const std::vector<unsigned char>& comp
 }
 
 
-EditBspCommand::EditBspCommand(const std::string & desc, LumpState _oldLumps, LumpState _newLumps, unsigned int targetLumps) :
+EditBspCommand::EditBspCommand(const std::string& desc, LumpState _oldLumps, LumpState _newLumps, unsigned int targetLumps) :
 	desc(desc), oldLumps(std::move(_oldLumps)), newLumps(std::move(_newLumps)), targetLumps(targetLumps), memoryused(0)
 {
 	for (int i = 0; i < HEADER_LUMPS; i++)
@@ -93,11 +93,34 @@ void EditBspCommand::execute()
 	}
 	map->replace_lumps(newLumps);
 
+	refresh(renderer);
+
 	auto mdls = getDiffModels(oldLumps, newLumps);
+	auto faces = getDiffFaces(oldLumps, newLumps);
+	for (auto& face : faces)
+	{
+		if (std::find(mdls.begin(), mdls.end(), map->get_model_from_face(face)) == mdls.end())
+		{
+			mdls.push_back(map->get_model_from_face(face));
+		}
+	}
+
+	/*if (mdls.size() > 5)
+	{
+		renderer->genRenderFaces();
+	}
+	else
+	{*/
+	if (mdls.size() && !(targetLumps & FL_LIGHTING))
+	{
+		renderer->loadLightmaps();
+	}
 	for (auto& mdl : mdls)
 	{
-		renderer->refreshModel(mdl);
+		renderer->refreshModel(mdl, false);
 	}
+	//}
+
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -111,7 +134,6 @@ void EditBspCommand::execute()
 			newLumps.lumps[i] = compressData(newLumps.lumps[i]);
 		}
 	}
-
 }
 
 void EditBspCommand::undo()
@@ -146,41 +168,35 @@ void EditBspCommand::undo()
 
 	map->replace_lumps(oldLumps);
 
-	if (targetLumps & FL_TEXTURES)
+	refresh(renderer);
+
+	auto mdls = getDiffModels(newLumps, oldLumps);
+	auto faces = getDiffFaces(newLumps, oldLumps);
+	for (auto& face : faces)
 	{
-		if (renderer)
+		if (std::find(mdls.begin(), mdls.end(), map->get_model_from_face(face)) == mdls.end())
 		{
-			renderer->reuploadTextures();
+			mdls.push_back(map->get_model_from_face(face));
 		}
 	}
 
-	if (targetLumps & FL_LIGHTING)
+	/*if (mdls.size() > 5)
 	{
-		if (renderer)
-		{
-			renderer->loadLightmaps();
-		}
+		renderer->genRenderFaces();
 	}
-
-	if (targetLumps & FL_VERTICES || targetLumps & FL_TEXTURES)
+	else
+	{*/
+	if (mdls.size() && !(targetLumps & FL_LIGHTING))
 	{
-		if (renderer)
-		{
-			renderer->preRenderFaces();
-		}
+		renderer->loadLightmaps();
 	}
-
-
-	auto mdls = getDiffModels(oldLumps, newLumps);
 	for (auto& mdl : mdls)
 	{
-		renderer->refreshModel(mdl);
+		renderer->refreshModel(mdl, false);
 	}
+	//}
 
-	pickCount++;
-	vertPickCount++;
 
-	
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		if (oldLumps.lumps[i].size())
@@ -193,6 +209,30 @@ void EditBspCommand::undo()
 			newLumps.lumps[i] = compressData(newLumps.lumps[i]);
 		}
 	}
+}
+
+void EditBspCommand::refresh(BspRenderer* renderer)
+{
+	if (renderer)
+	{
+		if (targetLumps & FL_TEXTURES)
+		{
+			renderer->reuploadTextures();
+		}
+
+		if (targetLumps & FL_LIGHTING)
+		{
+			renderer->loadLightmaps();
+		}
+
+		if (targetLumps & FL_VERTICES || targetLumps & FL_TEXTURES)
+		{
+			renderer->preRenderFaces();
+		}
+	}
+
+	pickCount++;
+	vertPickCount++;
 }
 
 size_t EditBspCommand::memoryUsageZip()

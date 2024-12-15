@@ -1262,6 +1262,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool triangul
 		refreshFace(model.iFirstFace + i);
 	}
 
+	delete renderModels[modelIdx];
 	renderModels[modelIdx] = renderModel;
 
 	if (refreshClipnodes)
