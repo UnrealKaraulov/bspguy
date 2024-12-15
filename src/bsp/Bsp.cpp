@@ -1320,32 +1320,34 @@ bool Bsp::should_resize_lightmap(LIGHTMAP& oldLightmap, LIGHTMAP& newLightmap)
 }
 
 
-void Bsp::resize_all_lightmaps(bool logged)
+void Bsp::resize_all_lightmaps(bool logged) 
 {
-	if (logged)
+	if (logged) 
+	{
 		g_progress.update("Resize lightmaps", faceCount);
-	if (!undo_lightmaps.size())
+	}
+	if (!undo_lightmaps.size()) 
+	{
 		save_undo_lightmaps(true);
+	}
+
 	std::vector<COLOR3> newLightData;
 
-	for (int faceId = 0; faceId < faceCount; faceId++)
+	for (int faceId = 0; faceId < faceCount; faceId++) 
 	{
 		BSPFACE32& face = faces[faceId];
-		int newLightMapOffset = (int)newLightData.size();
-		for (int lightId = 0; lightId < MAX_LIGHTMAPS; lightId++)
+		int newLightMapOffset = static_cast<int>(newLightData.size());
+		for (int lightId = 0; lightId < MAX_LIGHTMAPS; lightId++) 
 		{
-			if (face.nStyles[lightId] == 255 || face.nLightmapOffset < 0)
+			if (face.nStyles[lightId] == 255 || face.nLightmapOffset < 0) 
+			{
 				continue;
-			int size[2];
-
-			if (faceId < (int)undo_lightmaps.size())
+			}
+			int size[2] = { 0, 0 };
+			if (faceId < static_cast<int>(undo_lightmaps.size())) 
 			{
 				size[0] = undo_lightmaps[faceId].width;
 				size[1] = undo_lightmaps[faceId].height;
-			}
-			else
-			{
-				size[0] = size[1] = 0;
 			}
 			int newsize[2];
 			GetFaceLightmapSize(faceId, newsize);
@@ -1356,43 +1358,42 @@ void Bsp::resize_all_lightmaps(bool logged)
 			COLOR3* data = (COLOR3*)(lightdata + offset);
 
 			std::vector<COLOR3> newdata;
-
-			if (newsize[0] == size[0] && size[1] == newsize[1])
+			if (newsize[0] == size[0] && newsize[1] == size[1]) 
 			{
-				if (lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers)
+				if (lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers) 
 				{
 					newdata.insert(newdata.end(), data, data + size[0] * size[1]);
 				}
-				else
+				else 
 				{
-					newdata.resize(size[0] * size[1]);
-					std::fill(newdata.begin(), newdata.end(), COLOR3(255, 255, 255));
+					newdata.resize(size[0] * size[1], COLOR3(255, 255, 255));
 				}
 			}
-			else
+			else 
 			{
-				if (lightmapSz > 0 && lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers)
+				if (lightmapSz > 0 && lightdata && offset < lightDataLength && lightId < undo_lightmaps[faceId].layers) 
 				{
 					scaleImage(data, newdata, size[0], size[1], newsize[0], newsize[1]);
 				}
-				else
+				else 
 				{
-					newdata.resize(newsize[0] * newsize[1]);
-					std::fill(newdata.begin(), newdata.end(), COLOR3(255, 255, 255));
+					newdata.resize(newsize[0] * newsize[1], COLOR3(255, 255, 255));
 				}
 			}
 			newLightData.insert(newLightData.end(), newdata.begin(), newdata.end());
 		}
 
-		if (face.nLightmapOffset >= 0)
+		if (face.nLightmapOffset >= 0) 
 		{
 			face.nLightmapOffset = newLightMapOffset * sizeof(COLOR3);
 		}
-		if (logged)
+		if (logged) 
+		{
 			g_progress.tick();
+		}
 	}
 
-	if (logged)
+	if (logged) 
 	{
 		g_progress.clear();
 		g_progress = ProgressMeter();
@@ -1402,6 +1403,7 @@ void Bsp::resize_all_lightmaps(bool logged)
 	memcpy(tmpLump, newLightData.data(), newLightData.size() * sizeof(COLOR3));
 	replace_lump(LUMP_LIGHTING, tmpLump, newLightData.size() * sizeof(COLOR3));
 	save_undo_lightmaps(logged);
+	
 	delete[] tmpLump;
 }
 
@@ -9432,6 +9434,9 @@ bool Bsp::cull_leaf_faces(int leafIdx)
 	g_progress.clear();
 	g_progress = ProgressMeter();
 
+	save_undo_lightmaps();
+	resize_all_lightmaps();
+
 	STRUCTCOUNT count_2(this);
 	count_1.sub(count_2);
 	count_1.print_delete_stats(1);
@@ -9565,6 +9570,9 @@ void Bsp::remove_faces_by_content(int content)
 		removedFaces++;
 	}
 
+	save_undo_lightmaps();
+	resize_all_lightmaps();
+
 	g_progress.clear();
 	g_progress = ProgressMeter();
 
@@ -9577,6 +9585,16 @@ bool Bsp::remove_face(int faceIdx, bool fromModels)
 	if (faceIdx < 0 || faceIdx >= faceCount)
 	{
 		return false;
+	}
+
+	// Create a vector to hold all the faces except the one to be removed
+	std::vector<BSPFACE32> all_faces;
+	for (int f = 0; f < faceCount; f++)
+	{
+		if (f != faceIdx)
+		{
+			all_faces.push_back(faces[f]);
+		}
 	}
 
 	// Shift face count in models
@@ -9607,16 +9625,6 @@ bool Bsp::remove_face(int faceIdx, bool fromModels)
 
 	if (!fromModels)
 	{
-		// Create a vector to hold all the faces except the one to be removed
-		std::vector<BSPFACE32> all_faces;
-		for (int f = 0; f < faceCount; f++)
-		{
-			if (f != faceIdx)
-			{
-				all_faces.push_back(faces[f]);
-			}
-		}
-
 		// Shift face count in nodes
 		for (int n = 0; n < nodeCount; n++)
 		{
@@ -11395,7 +11403,10 @@ void Bsp::ExportToObjWIP(const std::string& path, int iscale, bool lightmapmode,
 	print_log(PRINT_RED, " Merged {} verts \n", merged);
 	remove_unused_model_structures(CLEAN_EDGES_FORCE | CLEAN_TEXINFOS_FORCE);
 
+
+	save_undo_lightmaps();
 	resize_all_lightmaps();
+
 	bsprend->reuploadTextures();
 	bsprend->loadLightmaps();
 
@@ -12036,6 +12047,10 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 		{
 			remove_faces_by_content(CONTENTS_SKY);
 			remove_faces_by_content(CONTENTS_SOLID);
+
+
+			save_undo_lightmaps();
+			resize_all_lightmaps();
 
 			remove_unused_model_structures();
 		}

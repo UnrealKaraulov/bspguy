@@ -4970,12 +4970,8 @@ void Gui::drawMenuBar()
 				{
 					map->remove_faces_by_content(CONTENTS_SKY);
 
+					map->save_undo_lightmaps();
 					map->resize_all_lightmaps();
-					rend->loadLightmaps();
-					rend->preRenderFaces();
-
-					map->update_ent_lump();
-					map->update_lump_pointers();
 
 					rend->pushUndoState("REMOVE FACES FROM SKY", EDIT_MODEL_LUMPS);
 				}
@@ -4990,13 +4986,9 @@ void Gui::drawMenuBar()
 				{
 					map->remove_faces_by_content(CONTENTS_SOLID);
 
-
+					map->save_undo_lightmaps();
 					map->resize_all_lightmaps();
-					rend->loadLightmaps();
-					rend->preRenderFaces();
 
-					map->update_ent_lump();
-					map->update_lump_pointers();
 					rend->pushUndoState("REMOVE FACES FROM SOLID", EDIT_MODEL_LUMPS);
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -5724,6 +5716,9 @@ void Gui::drawMenuBar()
 							}
 						}
 					}
+
+					map->save_undo_lightmaps();
+					map->resize_all_lightmaps();
 
 					rend->loadLightmaps();
 					rend->preRenderFaces();
@@ -12535,11 +12530,8 @@ void Gui::drawFaceEditorWidget()
 						app->pickInfo.selectedFaces.pop_back();
 					}
 
-					mapRenderer->loadLightmaps();
-					mapRenderer->preRenderFaces();
-
-					map->update_ent_lump();
-					map->update_lump_pointers();
+					map->save_undo_lightmaps();
+					map->resize_all_lightmaps();
 
 					mapRenderer->pushUndoState("DELETE FACES", EDIT_MODEL_LUMPS);
 				}
