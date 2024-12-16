@@ -62,7 +62,7 @@ public:
 	void copyLightmap();
 	void pasteLightmap();
 	void refresh();
-
+	void OpenFile(const std::string& file);
 
 
 	bool polycount = false;
@@ -152,7 +152,6 @@ private:
 	void drawEntityReport();
 	StatInfo calcStat(std::string name, unsigned int val, unsigned int max, bool isMem);
 	ModelInfo calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val, unsigned int max, bool isMem);
-	void OpenFile(const std::string& file);
 	void checkValidHulls();
 	void reloadLimits();
 	void ExportOneBigLightmap(Bsp* map);

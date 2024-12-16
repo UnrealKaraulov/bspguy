@@ -101,30 +101,7 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 		if (fileExists(tmpPath.string()))
 		{
 			g_settings.AddRecentFile(tmpPath.string());
-			if (ends_with(lowerPath, ".bsp"))
-			{
-				print_log(get_localized_string(LANG_0896), tmpPath.string());
-				g_app->addMap(new Bsp(tmpPath.string()));
-			}
-			else if (ends_with(lowerPath, ".mdl"))
-			{
-				print_log(get_localized_string(LANG_0897), tmpPath.string());
-				g_app->addMap(new Bsp(tmpPath.string()));
-			}
-			else if (ends_with(lowerPath, ".spr"))
-			{
-				print_log(get_localized_string(LANG_0897), tmpPath.string());
-				g_app->addMap(new Bsp(tmpPath.string()));
-			}
-			else if (ends_with(lowerPath, ".csm"))
-			{
-				print_log(get_localized_string(LANG_0897), tmpPath.string());
-				g_app->addMap(new Bsp(tmpPath.string()));
-			}
-			else
-			{
-				print_log(get_localized_string(LANG_0898), tmpPath.string());
-			}
+			g_app->gui->OpenFile(tmpPath.string());
 		}
 		else
 		{
@@ -1379,9 +1356,10 @@ void Renderer::renderLoop()
 					make_screenshot_target++;
 
 
-					if (make_screenshot <= 0 && !ortho_save_tga)
+					if (make_screenshot <= 0)
 					{
-						is_closing = true;
+						if (!ortho_save_tga)
+							is_closing = true;
 					}
 				}
 				else

@@ -59,13 +59,13 @@ struct cell
 	cell_type type;
 };
 
-
 int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int cell_y, int cell_layers, int layer) {
-	int y = static_cast<int>(floatRound((pos.x - mins.x) / cell_size));
-	int x = static_cast<int>(floatRound((pos.y - mins.y) / cell_size));
-	int lvl = static_cast<int>(floatRound((pos.z - mins.z) / cell_size));
+	int x = static_cast<int>(std::round((pos.x - mins.x) / cell_size));
+	int y = static_cast<int>(std::round((pos.y - mins.y) / cell_size));
+	int lvl = static_cast<int>(std::round((pos.z - mins.z) / cell_size));
+	y = cell_y - 1 - y; 
 	int index = (lvl * cell_layers + layer) * cell_y * cell_x + y * cell_x + x;
-	return index < 0 ? 0 : index;
+	return index;
 }
 
 void IMGUI_TOOLTIP(ImGuiContext& g, const std::string& IMGUI_TOOLTIP)
@@ -1756,9 +1756,6 @@ void Gui::drawBspContexMenu()
 void Gui::OpenFile(const std::string& file)
 {
 	Bsp* map = app->getSelectedMap();
-	BspRenderer* rend = map ? map->getBspRender() : NULL;
-	if (!rend)
-		return;
 
 	std::string pathlowercase = toLowerCase(file);
 	if (ends_with(pathlowercase, ".wad"))
@@ -1772,6 +1769,9 @@ void Gui::OpenFile(const std::string& file)
 
 		if (map)
 		{
+			BspRenderer* rend = map ? map->getBspRender() : NULL;
+			if (!rend)
+				return;
 			bool foundInMap = false;
 			for (auto& wad : rend->wads)
 			{
@@ -1825,8 +1825,12 @@ void Gui::OpenFile(const std::string& file)
 		app->addMap(tmpMap);
 		app->selectMap(tmpMap);
 	}
-	else
+	else 
 	{
+		if (!ends_with(pathlowercase, ".bsp"))
+		{
+			print_log(get_localized_string(LANG_0898), file);
+		}
 		Bsp* tmpMap = new Bsp(file);
 		app->addMap(tmpMap);
 		app->selectMap(tmpMap);
@@ -3165,10 +3169,12 @@ void Gui::drawMenuBar()
 						}
 
 						FlushConsoleLog();
+
 						mins += rend->mapOffset;
 						maxs += rend->mapOffset;
-						mins -= cell_size * 1.0f;
-						maxs += cell_size * 1.0f;
+
+						mins -= cell_size * 0.5f;
+						maxs += cell_size * 0.5f;
 
 						print_log("Found real world mins/maxs! Map offsets {},{},{}\n", rend->mapOffset.x, rend->mapOffset.y, rend->mapOffset.z);
 
@@ -3177,29 +3183,32 @@ void Gui::drawMenuBar()
 						int hull = hull_for_export;
 
 						int cell_x = 0;
-						for (float x = mins.x; x < maxs.x; x += cell_size)
+						for (float x = mins.x; x <= maxs.x; x += cell_size)
 						{
 							cell_x += 1;
 						}
 						int cell_y = 0;
-						for (float y = mins.y; y < maxs.y; y += cell_size)
+						for (float y = mins.y; y <= maxs.y; y += cell_size)
 						{
 							cell_y += 1;
 						}
+
 						int cell_levels = 0;
-						for (float z = mins.z; z < maxs.z; z += cell_size)
+						for (float z = mins.z; z <= maxs.z; z += cell_size)
 						{
 							cell_levels += 1;
 						}
-						int cell_layers = 2;
+
+						int cell_layers = 1;
 
 						std::vector<std::string> umdTextures{};
 
 
 						std::vector<cell> cell_list(cell_x * cell_y * cell_levels * cell_layers);
+
 						memset(&cell_list[0], 0, cell_list.size() * sizeof(cell));
 
-						print_log("Pre vars calculated. Map mins/maxs {},{},{} / {},{},{}!\n", mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z);
+						print_log("Pre vars calculated. CellX/Y {}/{} /\n Map mins/maxs {},{},{} / {},{},{}!\n", cell_x, cell_y, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z);
 						FlushConsoleLog();
 
 						for (size_t entIdx = 0; entIdx < map->ents.size(); entIdx++)
@@ -3211,7 +3220,14 @@ void Gui::drawMenuBar()
 							auto entity = map->ents[entIdx];
 							if (modelIdx < 0)
 							{
-								int idx = cell_idx(entity->origin, mins, cell_size * 1.0f, cell_x, cell_y, cell_layers, 1);
+								int idx = cell_idx(entity->origin, mins, cell_size * 1.0f, cell_x, cell_y, cell_layers, cell_layers - 1);
+
+								if ((size_t)idx >= cell_list.size())
+								{
+									print_log("Fatal crash[#3], index {} out of bounds {}\n", idx, cell_list.size());
+									return;
+								}
+
 								if (idx < (int)cell_list.size())
 								{
 									if (entity->classname.find("light") != std::string::npos)
@@ -3289,14 +3305,18 @@ void Gui::drawMenuBar()
 							std::vector<vec3> offsets =
 							{
 								{0, 0, 0},
-								{cell_size / 3.f, 0, 0},
-								{-cell_size / 3.f, 0, 0},
-								{0, cell_size / 3.f, 0},
-								{0, -cell_size / 3.f, 0},
-								{0, 0, cell_size / 3.f},
-								{0, 0, -cell_size / 3.f},
-								{0, 0, cell_size / 2.2f},
-								{0, 0, -cell_size / 2.2f}
+								{cell_size / 4.f, 0, 0},
+								{-cell_size / 4.f, 0, 0},
+								{0, cell_size / 4.f, 0},
+								{0, -cell_size / 4.f, 0},
+								{0, 0, cell_size / 4.f},
+								{0, 0, -cell_size / 4.f},
+								{cell_size / 2.f, 0, 0},
+								{-cell_size / 2.f, 0, 0},
+								{0, cell_size / 2.f, 0},
+								{0, -cell_size / 2.f, 0},
+								{0, 0, cell_size / 2.f},
+								{0, 0, -cell_size / 2.f},
 							};
 
 							std::vector<float> parallel_X{};
@@ -3319,7 +3339,7 @@ void Gui::drawMenuBar()
 
 								for (int layer = 0; layer < cell_layers; layer++)
 								{
-									if (layer != 0)
+									if (layer != cell_layers - 1)
 									{
 										continue;
 									}
@@ -3345,7 +3365,10 @@ void Gui::drawMenuBar()
 												int index = cell_idx(pos, mins, (float)cell_size, cell_x, cell_y, cell_layers, layer);
 
 												if ((size_t)index >= cell_list.size())
+												{
+													print_log("Fatal crash[#2], index {} out of bounds {}\n", index, cell_list.size());
 													return;
+												}
 												cell& cur_cell = cell_list[index];
 												expandBoundingBox(pos, pos_debug_mins, pos_debug_maxs);
 
@@ -8298,7 +8321,7 @@ void Gui::drawTransformWidget()
 
 	if (ImGui::Begin(fmt::format("{}###TRANSFORM_WIDGET", get_localized_string(LANG_0688)).c_str(), &showTransformWidget, 0))
 	{
-		if (!ent || modelIdx == 0)
+		if (!ent || modelIdx < 0)
 		{
 			ImGui::Text(get_localized_string(LANG_1180).c_str());
 		}
@@ -8405,7 +8428,7 @@ void Gui::drawTransformWidget()
 			ImGui::Text(get_localized_string(LANG_0690).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			if (!app->isTransformableSolid || app->modelUsesSharedStructures || app->transformMode != TRANSFORM_MODE_SCALE)
+			if (modelIdx==0 ||!app->isTransformableSolid || app->modelUsesSharedStructures || app->transformMode != TRANSFORM_MODE_SCALE)
 			{
 				ImGui::BeginDisabled();
 			}
@@ -8429,7 +8452,7 @@ void Gui::drawTransformWidget()
 			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 				guiHoverAxis = 2;
 
-			if (!app->isTransformableSolid || app->modelUsesSharedStructures || app->transformMode != TRANSFORM_MODE_SCALE)
+			if (modelIdx == 0 || !app->isTransformableSolid || app->modelUsesSharedStructures || app->transformMode != TRANSFORM_MODE_SCALE)
 			{
 				ImGui::EndDisabled();
 			}
@@ -8451,7 +8474,7 @@ void Gui::drawTransformWidget()
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text(get_localized_string(LANG_0694).c_str()); ImGui::NextColumn();
 
-			if (app->transformMode == TRANSFORM_MODE_NONE)
+			if (modelIdx == 0 || app->transformMode == TRANSFORM_MODE_NONE)
 			{
 				ImGui::BeginDisabled();
 			}
@@ -8463,7 +8486,7 @@ void Gui::drawTransformWidget()
 			}
 
 			ImGui::NextColumn();
-			if (modelIdx < 0)
+			if (modelIdx <= 0)
 			{
 				ImGui::BeginDisabled();
 				if (app->transformTarget == TRANSFORM_ORIGIN
@@ -8472,7 +8495,7 @@ void Gui::drawTransformWidget()
 					app->transformTarget = TRANSFORM_OBJECT;
 				}
 			}
-			if (!app->isTransformableSolid || app->modelUsesSharedStructures)
+			if (modelIdx == 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
 				if (app->transformTarget == TRANSFORM_VERTEX)
 				{
@@ -8485,12 +8508,12 @@ void Gui::drawTransformWidget()
 				pickCount++;
 				vertPickCount++;
 			}
-			if (!app->isTransformableSolid || app->modelUsesSharedStructures)
+			if (modelIdx == 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
 				ImGui::EndDisabled();
 			}
 
-			if (app->transformMode == TRANSFORM_MODE_SCALE)
+			if (modelIdx == 0 || app->transformMode == TRANSFORM_MODE_SCALE)
 			{
 				ImGui::BeginDisabled();
 				if (app->transformTarget == TRANSFORM_ORIGIN)
@@ -8506,16 +8529,16 @@ void Gui::drawTransformWidget()
 				pickCount++;
 				vertPickCount++;
 			}
-			if (modelIdx < 0)
+			if (modelIdx <= 0)
 			{
 				ImGui::EndDisabled();
 			}
 			ImGui::NextColumn();
-			if (app->transformMode == TRANSFORM_MODE_SCALE)
+			if (modelIdx == 0 || app->transformMode == TRANSFORM_MODE_SCALE)
 			{
 				ImGui::EndDisabled();
 			}
-			if (app->transformMode == TRANSFORM_MODE_NONE)
+			if (modelIdx == 0 || app->transformMode == TRANSFORM_MODE_NONE)
 			{
 				ImGui::EndDisabled();
 			}
@@ -8524,7 +8547,7 @@ void Gui::drawTransformWidget()
 			ImGui::NextColumn();
 			ImGui::RadioButton(get_localized_string(LANG_1111).c_str(), &app->transformMode, TRANSFORM_MODE_MOVE);
 			ImGui::NextColumn();
-			if (modelIdx < 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
+			if (modelIdx <= 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
 				if (app->transformMode == TRANSFORM_MODE_SCALE)
 					app->transformMode = TRANSFORM_MODE_MOVE;
@@ -8532,7 +8555,7 @@ void Gui::drawTransformWidget()
 			}
 			ImGui::RadioButton(get_localized_string(LANG_1112).c_str(), &app->transformMode, TRANSFORM_MODE_SCALE);
 			ImGui::NextColumn();
-			if (modelIdx < 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
+			if (modelIdx <= 0 || !app->isTransformableSolid || app->modelUsesSharedStructures)
 			{
 				ImGui::EndDisabled();
 			}
@@ -8573,10 +8596,10 @@ void Gui::drawTransformWidget()
 			}
 
 			ImGui::SameLine();
-			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT || app->modelUsesSharedStructures)
+			if (modelIdx == 0 || app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT || app->modelUsesSharedStructures)
 				ImGui::BeginDisabled();
 			ImGui::Checkbox(get_localized_string(LANG_0703).c_str(), &app->moveOrigin);
-			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT || app->modelUsesSharedStructures)
+			if (modelIdx == 0 || app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT || app->modelUsesSharedStructures)
 				ImGui::EndDisabled();
 
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_::ImGuiHoveredFlags_AllowWhenDisabled))
@@ -8603,7 +8626,7 @@ void Gui::drawTransformWidget()
 				ImGui::Text(fmt::format("Model origin: {:.2f} {:.2f} {:.2f}", map->models[modelIdx].vOrigin.x, map->models[modelIdx].vOrigin.y, map->models[modelIdx].vOrigin.z).c_str());
 				vec3 modelCenter = getCenter(map->models[modelIdx].nMins, map->models[modelIdx].nMaxs);
 				ImGui::Text(fmt::format("Model center: {:.2f} {:.2f} {:.2f}", modelCenter.x, modelCenter.y, modelCenter.z).c_str());
-				ImGui::Text(fmt::format("Model bounds: \n{:.2f} {:.2f} {:.2f} / {:.2f} {:.2f} {:.2f}", map->models[modelIdx].nMins.x, map->models[modelIdx].nMins.y, map->models[modelIdx].nMins.z, map->models[modelIdx].nMaxs.x, map->models[modelIdx].nMaxs.y, map->models[modelIdx].nMaxs.z).c_str());
+				ImGui::Text(fmt::format("Model size/bounds: {:.2f} {:.2f} {:.2f} \n{:.2f} {:.2f} {:.2f} / {:.2f} {:.2f} {:.2f}", map->models[modelIdx].nMaxs.x - map->models[modelIdx].nMins.x, map->models[modelIdx].nMaxs.y - map->models[modelIdx].nMins.y, map->models[modelIdx].nMaxs.z - map->models[modelIdx].nMins.z, map->models[modelIdx].nMins.x, map->models[modelIdx].nMins.y, map->models[modelIdx].nMins.z, map->models[modelIdx].nMaxs.x, map->models[modelIdx].nMaxs.y, map->models[modelIdx].nMaxs.z).c_str());
 			}
 
 			if (currentTransformMode != app->transformMode || currentTransformTarget != app->transformTarget)
