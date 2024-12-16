@@ -382,6 +382,7 @@ public:
 	int get_model_from_face(int faceIdx);
 	int get_model_from_leaf(int leafIdx);
 
+	std::vector<int> get_faces_from_model(int modelIdx);
 	std::vector<int> get_face_edges(int faceIdx);
 	std::vector<vec3> get_face_verts(int faceIdx, int limited = INT_MAX);
 	std::vector<int> get_face_verts_idx(int faceIdx, int limited = INT_MAX);

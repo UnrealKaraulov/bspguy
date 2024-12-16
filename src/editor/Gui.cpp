@@ -63,8 +63,16 @@ int cell_idx(const vec3& pos, const vec3& mins, float cell_size, int cell_x, int
 	int x = static_cast<int>(std::round((pos.x - mins.x) / cell_size));
 	int y = static_cast<int>(std::round((pos.y - mins.y) / cell_size));
 	int lvl = static_cast<int>(std::round((pos.z - mins.z) / cell_size));
-	y = cell_y - 1 - y; 
-	int index = (lvl * cell_layers + layer) * cell_y * cell_x + y * cell_x + x;
+
+	if (x < 0 || x >= cell_x || y < 0 || y >= cell_y || layer < 0 || layer >= cell_layers) {
+		return -1;
+	}
+
+	int lvlIdx = lvl * cell_x * cell_y * cell_layers;
+
+	y = cell_y - 1 - y;
+
+	int index = lvlIdx + layer * cell_x * cell_y + y * cell_x + x;
 	return index;
 }
 
@@ -603,7 +611,7 @@ void ExportModel(Bsp* src_map, const std::string& export_path, int model_id, int
 	}
 	int textureCount = 0;
 
-	bspModel->replace_lump(LUMP_TEXTURES,&textureCount, sizeof(int));
+	bspModel->replace_lump(LUMP_TEXTURES, &textureCount, sizeof(int));
 
 	bspModel->textureCount = 0;
 
@@ -1219,7 +1227,7 @@ void Gui::drawBspContexMenu()
 				auto mdlIdx = map->create_model();
 				BSPMODEL& mdl = map->models[mdlIdx];
 				mdl.nFaces = (int)faces.size();
-				
+
 				int sharedSolidLeaf = 0;
 				int anyEmptyLeaf = map->create_leaf(CONTENTS_EMPTY);
 
@@ -1261,7 +1269,7 @@ void Gui::drawBspContexMenu()
 
 				mdl.vOrigin = vec3();
 				mdl.nVisLeafs = 1;
-				
+
 				auto & vertlist = map->get_face_verts(f);
 
 			}*/
@@ -1825,7 +1833,7 @@ void Gui::OpenFile(const std::string& file)
 		app->addMap(tmpMap);
 		app->selectMap(tmpMap);
 	}
-	else 
+	else
 	{
 		if (!ends_with(pathlowercase, ".bsp"))
 		{
@@ -3056,6 +3064,7 @@ void Gui::drawMenuBar()
 					static bool texture_support = true;
 					static bool fill_all_space = true;
 					static bool NO_OPTIMIZE = false;
+					static bool scan_faces = true;
 
 					if (ImGui::BeginMenu("Options###1"))
 					{
@@ -3115,6 +3124,18 @@ void Gui::drawMenuBar()
 							ImGui::EndTooltip();
 						}
 
+						if (ImGui::MenuItem("Scan faces", NULL, scan_faces))
+						{
+							scan_faces = !scan_faces;
+						}
+
+						if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+						{
+							ImGui::BeginTooltip();
+							ImGui::TextUnformatted("Scanning faces instead of leaves, faster than leaves.");
+							ImGui::EndTooltip();
+						}
+
 						if (ImGui::MenuItem("NO OPTIMIZE [!!WARN!!]", NULL, NO_OPTIMIZE))
 						{
 							NO_OPTIMIZE = !NO_OPTIMIZE;
@@ -3136,6 +3157,7 @@ void Gui::drawMenuBar()
 					if (ImGui::MenuItem("Do Export [MAP]###2", NULL))
 					{
 						hull_for_export = 0;
+						rend->calcFaceMaths();
 					}
 
 					if (ImGui::MenuItem("Do Export [HEAD_HULL]###3", NULL))
@@ -3147,9 +3169,20 @@ void Gui::drawMenuBar()
 					{
 						print_log("Start exporting to UnrealMapDrawTool....\n");
 
+						int lightEnts = 0;
+						for (size_t e = 0; e < map->ents.size(); e++)
+						{
+							if (map->ents[e]->classname.find("light") != std::string::npos)
+							{
+								lightEnts++;
+							}
+						}
 
-						mapFixLightEnts(map);
-						rend->pushUndoState("Create lights", FL_ENTITIES);
+						if (lightEnts < 5)
+						{
+							mapFixLightEnts(map);
+						}
+
 						FlushConsoleLog();
 						vec3 mins{}, maxs{};
 						/*map->get_bounding_box(mins, maxs);*/
@@ -3173,12 +3206,18 @@ void Gui::drawMenuBar()
 						mins += rend->mapOffset;
 						maxs += rend->mapOffset;
 
-						mins -= cell_size * 0.5f;
-						maxs += cell_size * 0.5f;
+						if (scan_faces)
+						{
+							mins -= cell_size * 1.5f;
+							maxs += cell_size * 1.5f;
+						}
+						else
+						{
+							mins -= cell_size * 0.5f;
+							maxs += cell_size * 0.5f;
+						}
 
 						print_log("Found real world mins/maxs! Map offsets {},{},{}\n", rend->mapOffset.x, rend->mapOffset.y, rend->mapOffset.z);
-
-						rend->calcFaceMaths();
 
 						int hull = hull_for_export;
 
@@ -3203,9 +3242,7 @@ void Gui::drawMenuBar()
 
 						std::vector<std::string> umdTextures{};
 
-
-						std::vector<cell> cell_list(cell_x * cell_y * cell_levels * cell_layers);
-
+						std::vector<cell> cell_list((cell_x * cell_y * cell_levels) * cell_layers);
 						memset(&cell_list[0], 0, cell_list.size() * sizeof(cell));
 
 						print_log("Pre vars calculated. CellX/Y {}/{} /\n Map mins/maxs {},{},{} / {},{},{}!\n", cell_x, cell_y, mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z);
@@ -3220,7 +3257,7 @@ void Gui::drawMenuBar()
 							auto entity = map->ents[entIdx];
 							if (modelIdx < 0)
 							{
-								int idx = cell_idx(entity->origin, mins, cell_size * 1.0f, cell_x, cell_y, cell_layers, cell_layers - 1);
+								int idx = cell_idx(entity->origin, mins, cell_size * 1.0f, cell_x, cell_y, cell_layers, 0);
 
 								if ((size_t)idx >= cell_list.size())
 								{
@@ -3254,95 +3291,92 @@ void Gui::drawMenuBar()
 								continue;
 							}
 
-							int headNode = map->models[modelIdx].iHeadnodes[hull];
-							if (headNode < 0)
-								continue;
-
-							BSPMODEL& model = map->models[modelIdx];
-
-							vec3 model_mins{}, model_maxs{};
-
-							if (modelIdx == 0)
-							{
-								model_mins = mins;
-								model_maxs = maxs;
-							}
-							else
-							{
-								for (int i = 0; i < model.nFaces; i++)
-								{
-									BSPFACE32& face = map->faces[model.iFirstFace + i];
-									for (int e = 0; e < face.nEdges; e++)
-									{
-										int edgeIdx = map->surfedges[face.iFirstEdge + e];
-										BSPEDGE32& edge = map->edges[abs(edgeIdx)];
-										int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
-										expandBoundingBox(map->verts[vertIdx], model_mins, model_maxs);
-									}
-								}
-
-								model_mins += entity->origin;
-								model_maxs += entity->origin;
-							}
-
-							auto faceIndices =
-#ifndef WIN_XP_86
-								std::views::iota(map->models[modelIdx].iFirstFace, map->models[modelIdx].iFirstFace + map->models[modelIdx].nFaces);
-#else 
-								std::vector<int>();
-							for (int i = 0; i < model.nFaces; i++)
-							{
-								faceIndices.push_back(model.iFirstFace + i);
-							}
-#endif
-
-							std::vector<std::vector<vec3>> faceVecs(faceIndices.size());
-							for (size_t i = 0; i < faceIndices.size(); i++)
-							{
-								faceVecs[i] = map->get_face_verts(faceIndices[i]);
-							}
-
-							std::vector<vec3> offsets =
-							{
-								{0, 0, 0},
-								{cell_size / 4.f, 0, 0},
-								{-cell_size / 4.f, 0, 0},
-								{0, cell_size / 4.f, 0},
-								{0, -cell_size / 4.f, 0},
-								{0, 0, cell_size / 4.f},
-								{0, 0, -cell_size / 4.f},
-								{cell_size / 2.f, 0, 0},
-								{-cell_size / 2.f, 0, 0},
-								{0, cell_size / 2.f, 0},
-								{0, -cell_size / 2.f, 0},
-								{0, 0, cell_size / 2.f},
-								{0, 0, -cell_size / 2.f},
-							};
-
-							std::vector<float> parallel_X{};
-							for (float x = mins.x; x < maxs.x; x += cell_size)
-							{
-								parallel_X.push_back(x);
-							}
 
 							std::mutex paralel_muta;
 
-							for (float z = mins.z; z < maxs.z; z += cell_size)
-							{
-								print_log("\rProcess {} entity of {}... [{} of {}].........", entIdx, map->ents.size(), z, maxs.z);
-								FlushConsoleLog();
+							BSPMODEL& model = map->models[modelIdx];
 
-								if (z > model_maxs.z || z < model_mins.z)
+							int headNode = model.iHeadnodes[hull];
+							if (headNode < 0)
+								continue;
+
+							if (!scan_faces)
+							{
+								vec3 model_mins{}, model_maxs{};
+
+								if (modelIdx == 0)
 								{
-									continue;
+									model_mins = mins;
+									model_maxs = maxs;
+								}
+								else
+								{
+									for (int i = 0; i < model.nFaces; i++)
+									{
+										BSPFACE32& face = map->faces[model.iFirstFace + i];
+										for (int e = 0; e < face.nEdges; e++)
+										{
+											int edgeIdx = map->surfedges[face.iFirstEdge + e];
+											BSPEDGE32& edge = map->edges[abs(edgeIdx)];
+											int vertIdx = edgeIdx > 0 ? edge.iVertex[0] : edge.iVertex[1];
+											expandBoundingBox(map->verts[vertIdx], model_mins, model_maxs);
+										}
+									}
+
+									model_mins += entity->origin;
+									model_maxs += entity->origin;
 								}
 
-								for (int layer = 0; layer < cell_layers; layer++)
+								auto faceIndices =
+#ifndef WIN_XP_86
+									std::views::iota(model.iFirstFace, model.iFirstFace + model.nFaces);
+#else 
+									std::vector<int>();
+								for (int i = 0; i < model.nFaces; i++)
 								{
-									if (layer != cell_layers - 1)
+									faceIndices.push_back(model.iFirstFace + i);
+								}
+#endif
+
+								std::vector<std::vector<vec3>> faceVecs(faceIndices.size());
+								for (size_t i = 0; i < faceIndices.size(); i++)
+								{
+									faceVecs[i] = map->get_face_verts(faceIndices[i]);
+								}
+
+								std::vector<vec3> offsets =
+								{
+									{0, 0, 0},
+									{cell_size / 4.f, 0, 0},
+									{-cell_size / 4.f, 0, 0},
+									{0, cell_size / 4.f, 0},
+									{0, -cell_size / 4.f, 0},
+									{0, 0, cell_size / 4.f},
+									{0, 0, -cell_size / 4.f},
+									{cell_size / 2.f, 0, 0},
+									{-cell_size / 2.f, 0, 0},
+									{0, cell_size / 2.f, 0},
+									{0, -cell_size / 2.f, 0},
+									{0, 0, cell_size / 2.f},
+									{0, 0, -cell_size / 2.f},
+								};
+
+								std::vector<float> parallel_X{};
+								for (float x = mins.x; x < maxs.x; x += cell_size)
+								{
+									parallel_X.push_back(x);
+								}
+
+								for (float z = mins.z; z < maxs.z; z += cell_size)
+								{
+									print_log("\rProcess {} entity of {}... [{} of {}].........", entIdx, map->ents.size(), z, maxs.z);
+									FlushConsoleLog();
+
+									if (z > model_maxs.z || z < model_mins.z)
 									{
 										continue;
 									}
+
 									for (float y = mins.y; y < maxs.y; y += cell_size)
 									{
 										if (y > model_maxs.y || y < model_mins.y)
@@ -3362,7 +3396,7 @@ void Gui::drawMenuBar()
 
 												vec3 pos = vec3(x, y, z);
 
-												int index = cell_idx(pos, mins, (float)cell_size, cell_x, cell_y, cell_layers, layer);
+												int index = cell_idx(pos, mins, (float)cell_size, cell_x, cell_y, cell_layers, 0);
 
 												if ((size_t)index >= cell_list.size())
 												{
@@ -3557,9 +3591,150 @@ void Gui::drawMenuBar()
 											}
 										);
 									}
-
 								}
 							}
+							else
+							{
+								// get face list
+								auto faces = map->get_faces_from_model(modelIdx);
+								for (auto f : faces)
+								{
+									// convert face to Polygon3D
+									std::vector<vec3> face_verts = map->get_face_verts(f);
+
+									Polygon3D poly(face_verts);
+
+									// 2D mins/maxs
+									vec2 fmins = poly.localMins;
+									fmins -= cell_size;
+									vec2 fmaxs = poly.localMaxs;
+									fmaxs += cell_size;
+
+									// Normalize plane normal
+									vec3 plane_z_normalized = map->getPlaneFromFace(&map->faces[f]).vNormal.normalize();
+
+									// Scan in 2D
+									for (float x = fmins.x; x <= fmaxs.x; )
+									{
+										bool foundall = true;
+										for (float y = fmins.y; y <= fmaxs.y; )
+										{
+											vec2 point = { x, y };
+											if (poly.isInside(point)) 
+											{
+												y += cell_size / 1.1f;
+												// convert 2D to 3D
+												vec3 point_3d = poly.unproject(point);
+												//// move point to back face
+												point_3d -= plane_z_normalized * 0.1f;
+
+												point_3d += map->ents[entIdx]->origin;
+
+												//// clamp to mins/maxs
+												point_3d.x = std::max(mins.x, std::min(maxs.x, point_3d.x));
+												point_3d.y = std::max(mins.y, std::min(maxs.y, point_3d.y));
+												point_3d.z = std::max(mins.z, std::min(maxs.z, point_3d.z));
+
+												bool found = false;
+												int leafIdx = 0;
+												int planeIdx = -1;
+												int content = map->pointLeaf(headNode, point_3d, hull, leafIdx, planeIdx);
+												if (CONTENTS_SOLID == content || (modelIdx > 0 && content == CONTENTS_WATER))
+												{
+
+												}
+												else continue;
+
+
+												// Process...
+												int index = cell_idx(point_3d, mins, cell_size * 1.0f, cell_x, cell_y, cell_layers, 0);
+
+												if ((size_t)index >= cell_list.size())
+												{
+													print_log("Fatal crash[#2], index {} out of bounds {}\n", index, cell_list.size());
+													print_log("Point : {}/{}/{}\n", point_3d.x, point_3d.y, point_3d.z);
+													continue;
+												}
+
+												cell& cur_cell = cell_list[index];
+												expandBoundingBox(point_3d, pos_debug_mins, pos_debug_maxs);
+
+												unsigned char texid = 0;
+												int minFace = f;
+
+												if (minFace >= 0) {
+													BSPFACE32& face = map->faces[minFace];
+													if (face.iTextureInfo >= 0) {
+														BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+														BSPMIPTEX* tex = NULL;
+
+														if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount) {
+															int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+															if (texOffset >= 0) {
+																tex = ((BSPMIPTEX*)(map->textures + texOffset));
+																std::lock_guard<std::mutex> lock(paralel_muta);
+																bool hasTex = false;
+																for (size_t t = 0; t < umdTextures.size(); t++) {
+																	if (umdTextures[t] == tex->szName) {
+																		if (t <= 0xFF) {
+																			texid = (unsigned char)t;
+																			hasTex = true;
+																			break;
+																		}
+																	}
+																}
+
+																if (!hasTex && umdTextures.size() < 0xFF) {
+																	umdTextures.push_back(tex->szName);
+																	texid = (unsigned char)(umdTextures.size() - 1);
+																}
+															}
+														}
+													}
+												}
+
+												if (minFace >= 0 || fill_all_space) {
+													if (worldspawn) {
+														cur_cell = { 100, 0, texid, cell_brush };
+													}
+													else if (minFace >= 0) {
+														if (entity->classname == "func_wall") {
+															cur_cell = { 100, 0, texid, cell_wall };
+														}
+														else if (entity->classname == "func_water") {
+															cur_cell = { 100, 0, texid, cell_waterzone };
+														}
+														else if (entity->classname == "func_buyzone") {
+															cur_cell = { 100, 0, texid, cell_buyzone };
+														}
+														else if (entity->classname == "func_bomb_target") {
+															cur_cell = { 100, 0, texid, cell_bombzone };
+														}
+														else {
+															cur_cell = { 100, 0, texid, cell_wall };
+														}
+													}
+												}
+											}
+											else
+											{
+												y += 1.5f;
+												foundall = false;
+											}
+										}
+										if (foundall)
+										{
+											x += cell_size / 1.1f;
+										}
+										else
+										{
+											x += 1.5f;
+										}
+									}
+								}
+
+							}
+
 						}
 
 
@@ -3627,6 +3802,8 @@ void Gui::drawMenuBar()
 
 						print_log("Success! Pos debug mins/maxs {},{},{} / {},{},{}!\n", pos_debug_mins.x, pos_debug_mins.y, pos_debug_mins.z, pos_debug_maxs.x, pos_debug_maxs.y, pos_debug_maxs.z);
 
+						rend->pushUndoState("Export to .umd", EDIT_MODEL_LUMPS | FL_ENTITIES);
+						rend->undo();
 					}
 					ImGui::EndMenu();
 				}
@@ -3857,7 +4034,7 @@ void Gui::drawMenuBar()
 					"generate a playable map without you having to make any manual edits (Sven Co-op only).").c_str());
 
 			*/
-			if (ImGui::BeginMenu("Recent Files",g_settings.lastOpened.size()))
+			if (ImGui::BeginMenu("Recent Files", g_settings.lastOpened.size()))
 			{
 				for (auto& file : g_settings.lastOpened)
 				{
@@ -4424,7 +4601,7 @@ void Gui::drawMenuBar()
 				IMGUI_TOOLTIP(g, "Shrinks textures that exceed the max texture size and adjusts texture coordinates accordingly. Does not work with WAD textures yet.\n");
 				if (ImGui::BeginMenu("Fix Bad Surface Extents", !app->isLoading && app->getSelectedMap()))
 				{
-					if (ImGui::MenuItem("Shrink Textures (512)", 0, false, !app->isLoading && app->getSelectedMap())) 
+					if (ImGui::MenuItem("Shrink Textures (512)", 0, false, !app->isLoading && app->getSelectedMap()))
 					{
 						map->fix_bad_surface_extents(false, true, 512);
 						rend->pushUndoState("Shrink Textures (512)", FL_TEXINFO | FL_TEXTURES | FL_FACES);
@@ -4433,7 +4610,7 @@ void Gui::drawMenuBar()
 						"This alone will likely not be enough to fix all faces with bad surface extents."
 						"You may also have to apply the Subdivide or Scale methods.");
 
-					if (ImGui::MenuItem("Shrink Textures (256)", 0, false, !app->isLoading && app->getSelectedMap())) 
+					if (ImGui::MenuItem("Shrink Textures (256)", 0, false, !app->isLoading && app->getSelectedMap()))
 					{
 						map->fix_bad_surface_extents(false, true, 256);
 						rend->pushUndoState("Shrink Textures (256)", FL_TEXINFO | FL_TEXTURES | FL_FACES);
@@ -4450,7 +4627,7 @@ void Gui::drawMenuBar()
 						"This alone will likely not be enough to fix all faces with bad surface extents."
 						"You may also have to apply the Subdivide or Scale methods.");
 
-					if (ImGui::MenuItem("Shrink Textures (64)", 0, false, !app->isLoading && app->getSelectedMap())) 
+					if (ImGui::MenuItem("Shrink Textures (64)", 0, false, !app->isLoading && app->getSelectedMap()))
 					{
 						map->fix_bad_surface_extents(false, true, 512);
 						rend->pushUndoState("Shrink Textures (64)", FL_TEXINFO | FL_TEXTURES | FL_FACES);
@@ -4461,7 +4638,7 @@ void Gui::drawMenuBar()
 
 					ImGui::Separator();
 
-					if (ImGui::MenuItem("Scale", 0, false, !app->isLoading && app->getSelectedMap())) 
+					if (ImGui::MenuItem("Scale", 0, false, !app->isLoading && app->getSelectedMap()))
 					{
 						map->fix_bad_surface_extents(true, false, 0);
 						rend->pushUndoState("Scale Textures", FL_TEXINFO | FL_TEXTURES | FL_FACES);
@@ -6923,7 +7100,7 @@ void Gui::drawOverviewWidget()
 		ImGui::DragInt("Height###3", &ortho_tga_h, 1.0f, 256, 4096);
 		ImGui::PopItemWidth();
 
-		if (ImGui::Button("Save .tga")) 
+		if (ImGui::Button("Save .tga"))
 		{
 			ortho_save_tga = true;
 			imgFormat = ".tga";
@@ -8428,7 +8605,7 @@ void Gui::drawTransformWidget()
 			ImGui::Text(get_localized_string(LANG_0690).c_str());
 			ImGui::PushItemWidth(inputWidth);
 
-			if (modelIdx==0 ||!app->isTransformableSolid || app->modelUsesSharedStructures || app->transformMode != TRANSFORM_MODE_SCALE)
+			if (modelIdx == 0 || !app->isTransformableSolid || app->modelUsesSharedStructures || app->transformMode != TRANSFORM_MODE_SCALE)
 			{
 				ImGui::BeginDisabled();
 			}
@@ -9818,7 +9995,7 @@ void Gui::drawSettings()
 	ImGui::End();
 
 
-	if ((oldShowSettings && !showSettingsWidget) || apply_settings_pressed )
+	if ((oldShowSettings && !showSettingsWidget) || apply_settings_pressed)
 	{
 		g_settings.selected_lang = langForSelect;
 		g_settings.palette_name = palForSelect;
@@ -10378,7 +10555,7 @@ void Gui::drawLimits()
 	ImGui::End();
 }
 
-void Gui::drawUndoMemUsage(BspRenderer * rend)
+void Gui::drawUndoMemUsage(BspRenderer* rend)
 {
 	ImGui::SeparatorText((get_localized_string(LANG_0721) + " " + std::to_string(rend->undoHistory.size())).c_str());
 	float mb = rend->undoMemoryUsage / (1024.0f * 1024.0f);

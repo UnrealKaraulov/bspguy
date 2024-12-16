@@ -9871,7 +9871,7 @@ int Bsp::merge_two_models_idx(int src_model, int dst_model, int& tryanotherway)
 	amax = models[src_model].nMaxs;
 	bmin = models[dst_model].nMins;
 	bmax = models[dst_model].nMaxs;
-
+	
 	vec3 ent_offset = vec3();
 
 	vec3 verts_offset = getCenter(amax, amin) - getCenter(bmax, bmin);
@@ -10411,6 +10411,17 @@ int Bsp::get_model_from_face(int faceIdx)
 		}
 	}
 	return -1;
+}
+
+std::vector<int> Bsp::get_faces_from_model(int modelIdx)
+{
+	std::vector<int> result{};
+	BSPMODEL& mdl = models[modelIdx];
+	for (int i = 0; i < mdl.nFaces; i++)
+	{
+		result.push_back(mdl.iFirstFace + i);
+	}
+	return result;
 }
 
 int Bsp::get_model_from_leaf(int leafIdx)

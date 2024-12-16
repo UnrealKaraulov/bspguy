@@ -95,19 +95,22 @@ void Polygon3D::init() {
 	isValid = true;
 }
 
-vec2 Polygon3D::project(vec3 p) {
+vec2 Polygon3D::project(const vec3& p) const
+{
 	return (worldToLocal * vec4(p, 1)).xy();
 }
 
-vec3 Polygon3D::unproject(vec2 p) {
+vec3 Polygon3D::unproject(const vec2& p) const
+{
 	return (localToWorld * vec4(p.x, p.y, fdist, 1)).xyz();
 }
 
-float Polygon3D::distance(const vec3& p) {
+float Polygon3D::distance(const vec3& p) const{
 	return dotProduct(p - verts[0], plane_z);
 }
 
-bool Polygon3D::isInside(vec3 p) {
+bool Polygon3D::isInside(const vec3& p) const
+{
 	if (fabs(distance(p)) > EPSILON) {
 		return false;
 	}
@@ -120,7 +123,8 @@ float isLeft(const vec2& p1, const vec2& p2, const vec2& point) {
 }
 
 // winding method
-bool Polygon3D::isInside(vec2 p, bool includeEdge) {
+bool Polygon3D::isInside(const vec2& p, bool includeEdge) const 
+{
 	int windingNumber = 0;
 
 	for (size_t i = 0; i < localVerts.size(); i++) {
@@ -565,11 +569,13 @@ Polygon3D Polygon3D::coplanerIntersectArea(Polygon3D otherPoly) {
 	return outVerts;
 }
 
-bool Polygon3D::intersects(Polygon3D& otherPoly) {
+bool Polygon3D::intersects(const Polygon3D& otherPoly) const 
+{
 	return false;
 }
 
-bool Polygon3D::intersect(vec3 p1, vec3 p2, vec3& ipos) {
+bool Polygon3D::intersect(const vec3 & p1, const vec3 & p2, vec3& ipos) const
+{
 	float t1 = dotProduct(plane_z, p1) - fdist;
 	float t2 = dotProduct(plane_z, p2) - fdist;
 
@@ -589,7 +595,8 @@ bool Polygon3D::intersect(vec3 p1, vec3 p2, vec3& ipos) {
 	return isInside(project(ipos));
 }
 
-bool Polygon3D::intersect2D(vec3 p1, vec3 p2, vec3& ipos) {
+bool Polygon3D::intersect2D(const vec3 & p1, const vec3 & p2, vec3& ipos) const 
+{
 	vec2 p1_2d = project(p1);
 	vec2 p2_2d = project(p2);
 
