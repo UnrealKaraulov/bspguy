@@ -1648,13 +1648,11 @@ void Gui::drawBspContexMenu()
 							ents_to_erase.pop_back();
 						}
 
-						map->update_ent_lump();
-						map->update_lump_pointers();
-
 						rend->loadLightmaps();
-						rend->preRenderEnts();
 
 						rend->pushUndoState("MERGE {} and {} SELECTED BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
+
+						rend->preRenderEnts();
 
 						if (merge_errors > 0)
 						{
@@ -2786,13 +2784,7 @@ void Gui::drawMenuBar()
 					}
 
 					print_log(get_localized_string(LANG_0342), entFilePath);
-					std::ofstream entFile(entFilePath, std::ios::trunc);
-					map->update_ent_lump();
-					if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
-					{
-						std::string entities = std::string(map->lumps[LUMP_ENTITIES].data(), map->lumps[LUMP_ENTITIES].data() + map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
-						entFile.write(entities.c_str(), entities.size());
-					}
+					map->export_entities(entFilePath);
 				}
 				if (ImGui::MenuItem(get_localized_string(LANG_0534).c_str(), NULL, false, map && !map->is_mdl_model))
 				{
@@ -3996,11 +3988,9 @@ void Gui::drawMenuBar()
 					map->write(mapPath);
 					map->update_ent_lump(false); // add the nodes back in for conditional loading in the ent file
 
-					std::ofstream entFile(entPath, std::ios::trunc);
-					if (entFile.is_open())
+					if (map->export_entities(entPath))
 					{
 						print_log(get_localized_string(LANG_1053), entPath);
-						entFile.write((const char*)map->lumps[LUMP_ENTITIES].data(), map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
 					}
 					else
 					{
@@ -4336,6 +4326,7 @@ void Gui::drawMenuBar()
 			}
 
 			static int generateClipnodes = 0;
+			static bool meshToBrush = false;
 
 			if (ImGui::BeginMenu("MDL to BSP (WIP)", app->pickInfo.selectedEnts.size() == 1 &&
 				rend->renderEnts[app->pickInfo.selectedEnts[0]].mdl))
@@ -4352,13 +4343,19 @@ void Gui::drawMenuBar()
 				}
 
 
+				if (ImGui::MenuItem("Meshes to brushes", NULL, meshToBrush))
+				{
+					meshToBrush = !meshToBrush;
+				}
+
 				ImGui::Separator();
 
 				if (ImGui::MenuItem("Convert selected to BSP"))
 				{
-					int ent = app->pickInfo.selectedEnts[0];
-
-					map->import_mdl_to_bspmodel(ent, generateClipnodes);
+					for (auto ent : app->pickInfo.selectedEnts)
+					{
+						map->import_mdl_to_bsp(ent, generateClipnodes);
+					}
 
 					map->remove_unused_model_structures();
 
@@ -4504,11 +4501,7 @@ void Gui::drawMenuBar()
 				}
 
 				map->resize_all_lightmaps();
-
 				rend->loadLightmaps();
-
-				map->update_ent_lump();
-				map->update_lump_pointers();
 
 				map->is_protected = true;
 
@@ -5153,9 +5146,6 @@ void Gui::drawMenuBar()
 							rend->preRenderEnts();
 							rend->reloadClipnodes();
 
-							map->update_ent_lump();
-							map->update_lump_pointers();
-
 							rend->pushUndoState(fmt::format("MAP SCALE TO {:2}", scale_val), EDIT_MODEL_LUMPS | FL_ENTITIES);
 						}
 					}
@@ -5206,9 +5196,6 @@ void Gui::drawMenuBar()
 
 						rend->loadLightmaps();
 						rend->preRenderFaces();
-
-						map->update_ent_lump();
-						map->update_lump_pointers();
 
 						rend->pushUndoState(fmt::format("REMOVE FACES FROM {} LEAF", rend->curLeafIdx), EDIT_MODEL_LUMPS);
 					}
@@ -8242,11 +8229,14 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	{
 		if (!ent->hasKey(keyName))
 		{
+			map->export_entities("test1.ent");
 			ent->addKeyvalue(keyName, "");
 			map->getBspRender()->refreshEnt(entIdx);
-			app->updateEntConnections();
 			keyName.clear();
-			map->getBspRender()->pushEntityUndoStateDelay("Add Keyvalue");
+			map->export_entities("test2.ent");
+			map->getBspRender()->pushUndoState("TESTA!", FL_ENTITIES);
+			map->export_entities("test3.ent");
+
 		}
 	}
 	ImGui::SameLine();
@@ -10373,11 +10363,9 @@ void Gui::drawImportMapWidget()
 						Entity* newEnt = new Entity("func_wall");
 						newEnt->addKeyvalue("model", "*" + std::to_string(import_model));
 						map->ents.push_back(newEnt);
-						map->update_ent_lump();
-						if (map->ents.size() > 0)
-						{
-							map->getBspRender()->refreshEnt((int)(map->ents.size()) - 1);
-						}
+						map->getBspRender()->refreshEnt((int)(map->ents.size()) - 1);
+
+						map->getBspRender()->pushUndoState("Import BSP", 0xFFFFFFFF);
 					}
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_ENTITY)
@@ -10398,9 +10386,8 @@ void Gui::drawImportMapWidget()
 							map->ents[map->ents.size() - 1]->setOrAddKeyvalue("gibmodel", std::string("models/") + basename(mapPath));
 							map->ents[map->ents.size() - 1]->setOrAddKeyvalue("model", std::string("models/") + basename(mapPath));
 							map->ents[map->ents.size() - 1]->setOrAddKeyvalue("spawnflags", "1");
-							map->update_ent_lump();
-							map->update_lump_pointers();
 							print_log(get_localized_string(LANG_0402), std::string("models/") + basename(mapPath));
+							map->getBspRender()->pushUndoState("Import BSP", 0xFFFFFFFF);
 							app->updateEnts();
 							app->reloadBspModels();
 						}
@@ -12754,10 +12741,6 @@ void Gui::drawFaceEditorWidget()
 					}
 
 					mapRenderer->preRenderFaces();
-
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
 					mapRenderer->pushUndoState("REMOVE FACES FROM PVS", EDIT_MODEL_LUMPS);
 				}
 				if (ImGui::IsItemHovered())
@@ -12802,9 +12785,6 @@ void Gui::drawFaceEditorWidget()
 
 					mapRenderer->preRenderFaces();
 
-					map->update_ent_lump();
-					map->update_lump_pointers();
-
 					mapRenderer->pushUndoState("MAKE FACES INVISIBLE FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
 				}
 				if (ImGui::IsItemHovered())
@@ -12825,9 +12805,6 @@ void Gui::drawFaceEditorWidget()
 					}
 
 					mapRenderer->preRenderFaces();
-
-					map->update_ent_lump();
-					map->update_lump_pointers();
 
 					mapRenderer->pushUndoState("MAKE FACES VISIBLE FOR CURRENT LEAF", FL_LEAVES | FL_MARKSURFACES);
 				}

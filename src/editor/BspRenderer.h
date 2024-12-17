@@ -332,7 +332,6 @@ public:
 	void clearUndoCommands();
 	void clearRedoCommands();
 	void calcUndoMemoryUsage();
-	void saveLumpState();
 	void clearDrawCache();
 
 	vec3 renderCameraOrigin;

@@ -989,8 +989,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 	if (!noscript)
 	{
-		std::ofstream entFile(output_name + ".ent", std::ios::trunc);
-		entFile.write((const char*)mergedMap->lumps[LUMP_ENTITIES].data(), mergedMap->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
+		mergedMap->export_entities(output_name + ".ent");
 	}
 }
 

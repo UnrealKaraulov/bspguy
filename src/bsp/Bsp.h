@@ -335,6 +335,8 @@ public:
 	bool export_wad_to_pngs(const std::string& wadpath, const std::string& targetdir);
 	bool import_textures_to_wad(const std::string& wadpath, const std::string& texpath, bool dithering);
 
+	bool export_entities(const std::string& entpath);
+
 	void replace_lump(int lumpIdx, void* newData, size_t newLength);
 	void append_lump(int lumpIdx, void* newData, size_t appendLength);
 
@@ -423,7 +425,7 @@ public:
 
 	void ExportToMapWIP(const std::string& path, bool selected, bool merge_faces, bool use_one_back_vert, bool create_worldbox);
 
-	int import_mdl_to_bspmodel(int ent, int generateClipnodes);
+	void import_mdl_to_bsp(int ent, int generateClipnodes, bool splitMeshes = false);
 	int import_mdl_to_bspmodel(std::vector<StudioMesh>& meshes,mat4x4 angles, bool & valid_nodes);
 
 	int merge_all_planes();
@@ -475,6 +477,7 @@ public:
 	int CalcFaceTextureStep(int facenum);
 	int GetTriggerTexture();
 	int AddTriggerTexture();
+	void gen_clipnodes(std::vector<vec3>& all_verts, int newModelIdx);
 
 	unsigned int remove_unused_lightmaps(std::vector<bool> & usedFaces);
 	unsigned int remove_unused_visdata(BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves

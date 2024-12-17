@@ -2982,7 +2982,11 @@ std::vector<Entity*> load_ents(const std::string& entLump, const std::string& ma
 			if (ent->keyvalues.count("classname"))
 				ents.push_back(ent);
 			else
+			{
+				ent->classname = "bad_classname";
+				ents.push_back(ent);
 				print_log(get_localized_string(LANG_0105));
+			}
 
 			ent = NULL;
 
@@ -3002,6 +3006,7 @@ std::vector<Entity*> load_ents(const std::string& entLump, const std::string& ma
 		if (lastBracket == 0 && ent) // currently defining an entity
 		{
 			Keyvalues k(line);
+
 			for (size_t i = 0; i < k.keys.size(); i++)
 			{
 				ent->addKeyvalue(k.keys[i], k.values[i], true);

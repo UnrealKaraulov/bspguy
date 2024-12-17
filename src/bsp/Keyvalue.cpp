@@ -28,7 +28,9 @@ Keyvalues::Keyvalues(std::string& line)
 	}
 	line.clear();
 	if (!allstrings.empty())
+	{
 		line = allstrings[allstrings.size() - 1];
+	}
 }
 
 Keyvalues::Keyvalues(void)
@@ -37,7 +39,7 @@ Keyvalues::Keyvalues(void)
 	values.clear();
 }
 
-Keyvalues::Keyvalues(std::string key, std::string value)
+Keyvalues::Keyvalues(const std::string & key, const std::string & value)
 {
 	keys.push_back(key);
 	values.push_back(value);

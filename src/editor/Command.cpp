@@ -87,10 +87,7 @@ void EditBspCommand::execute()
 		}
 	}
 
-	if (targetLumps & FL_ENTITIES)
-	{
-		map->update_ent_lump();
-	}
+	
 	map->replace_lumps(newLumps);
 
 	refresh(renderer);

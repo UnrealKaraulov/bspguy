@@ -232,8 +232,7 @@ BspRenderer::BspRenderer(Bsp* _map) : undoLumpState(LumpState(_map))
 		map->ents[i]->getTargets();
 	}
 
-	undoLumpState = LumpState(map);
-	saveLumpState();
+	undoLumpState = map->duplicate_lumps();
 }
 
 void BspRenderer::loadTextures()
@@ -3700,15 +3699,6 @@ int BspRenderer::getBestClipnodeHull(int modelIdx)
 	return -1;
 }
 
-
-void BspRenderer::saveLumpState()
-{
-	if (g_settings.verboseLogs)
-		print_log("SAVE LUMP STATES TO BACKUP\n");
-	undoLumpState = map->duplicate_lumps();
-}
-
-
 void BspRenderer::pushUndoState(const std::string& actionDesc, unsigned int targets)
 {
 	if (g_settings.verboseLogs)
@@ -3720,25 +3710,26 @@ void BspRenderer::pushUndoState(const std::string& actionDesc, unsigned int targ
 	}
 
 	LumpState newLumps = map->duplicate_lumps(targets);
+	LumpState oldLumps = undoLumpState;
 
 	bool differences[HEADER_LUMPS] = { false };
 
-	int targetLumps = 0;
+	unsigned int targetLumps = 0;
 
 	bool anyDifference = false;
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		if (targets & (1 << i))
 		{
-			if (newLumps.lumps[i].size() != undoLumpState.lumps[i].size() ||
+			if (newLumps.lumps[i].size() != oldLumps.lumps[i].size() ||
 				!std::equal(newLumps.lumps[i].begin(), newLumps.lumps[i].end(),
-					undoLumpState.lumps[i].begin()))
+					oldLumps.lumps[i].begin()))
 			{
 				anyDifference = true;
 				differences[i] = true;
 				if (g_settings.verboseLogs)
 				{
-					print_log(get_localized_string(LANG_0291), g_lump_names[i], undoLumpState.lumps[i].size(), newLumps.lumps[i].size());
+					print_log(get_localized_string(LANG_0291), g_lump_names[i], oldLumps.lumps[i].size(), newLumps.lumps[i].size());
 				}
 				targetLumps = targetLumps | (1 << i);
 			}
@@ -3756,12 +3747,13 @@ void BspRenderer::pushUndoState(const std::string& actionDesc, unsigned int targ
 	{
 		if (!differences[i])
 		{
-			undoLumpState.lumps[i].clear();
+			oldLumps.lumps[i].clear();
 			newLumps.lumps[i].clear();
 		}
 	}
 
-	EditBspCommand* editCommand = new EditBspCommand(actionDesc, undoLumpState, newLumps, targetLumps);
+
+	EditBspCommand* editCommand = new EditBspCommand(actionDesc, oldLumps, newLumps, targetLumps);
 	pushUndoCommand(editCommand);
 
 	if (differences[LUMP_ENTITIES])
@@ -3772,19 +3764,18 @@ void BspRenderer::pushUndoState(const std::string& actionDesc, unsigned int targ
 
 void BspRenderer::pushUndoCommand(EditBspCommand* cmd)
 {
-	cmd->execute();
-
-	undoLumpState = map->duplicate_lumps();
-
-	undoHistory.push_back(cmd);
 	clearRedoCommands();
 
-	while (!undoHistory.empty() && (int)undoHistory.size() > g_settings.undoLevels)
+	while (!undoHistory.empty() && (int)undoHistory.size() >= g_settings.undoLevels)
 	{
 		delete undoHistory[0];
 		undoHistory.erase(undoHistory.begin());
 	}
 
+	undoHistory.push_back(cmd);
+	cmd->execute();
+
+	undoLumpState = map->duplicate_lumps();
 	calcUndoMemoryUsage();
 }
 
@@ -3795,7 +3786,7 @@ void BspRenderer::undo()
 		return;
 	}
 
-	EditBspCommand* undoCommand = undoHistory[undoHistory.size() - 1];
+	EditBspCommand* undoCommand = undoHistory.back();
 	if (g_app->isLoading)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0293), undoCommand->desc);
@@ -3808,8 +3799,6 @@ void BspRenderer::undo()
 	g_app->updateEnts();
 
 	undoLumpState = map->duplicate_lumps();
-
-
 	calcUndoMemoryUsage();
 }
 
@@ -3820,7 +3809,7 @@ void BspRenderer::redo()
 		return;
 	}
 
-	EditBspCommand * redoCommand = redoHistory[redoHistory.size() - 1];
+	EditBspCommand* redoCommand = redoHistory.back();
 	if (g_app->isLoading)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0294), redoCommand->desc);
@@ -3832,19 +3821,7 @@ void BspRenderer::redo()
 	undoHistory.push_back(redoCommand);
 	g_app->updateEnts();
 
-
-	calcUndoMemoryUsage();
-	
-}
-
-void BspRenderer::clearUndoCommands()
-{
-	for (size_t i = 0; i < undoHistory.size(); i++)
-	{
-		delete undoHistory[i];
-	}
-
-	undoHistory.clear();
+	undoLumpState = map->duplicate_lumps();
 	calcUndoMemoryUsage();
 }
 
@@ -3856,6 +3833,17 @@ void BspRenderer::clearRedoCommands()
 	}
 
 	redoHistory.clear();
+	calcUndoMemoryUsage();
+}
+
+void BspRenderer::clearUndoCommands()
+{
+	for (size_t i = 0; i < undoHistory.size(); i++)
+	{
+		delete undoHistory[i];
+	}
+
+	undoHistory.clear();
 	calcUndoMemoryUsage();
 }
 
