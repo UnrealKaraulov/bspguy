@@ -8,7 +8,6 @@
 
 void StudioModel::CalcBoneAdj()
 {
-
 	 mstudiobonecontroller_t* pbonecontroller = (mstudiobonecontroller_t*)
 		 ((unsigned char*)m_pstudiohdr + m_pstudiohdr->bonecontrollerindex);
 
@@ -30,14 +29,12 @@ void StudioModel::CalcBoneAdj()
 				if (value > 1.0f) value = 1.0f;
 				value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
-			// print_log("{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt );
 		}
 		else
 		{
 			value = m_mouth / 64.0f;
 			if (value > 1.0f) value = 1.0f;
 			value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
-			// print_log("{} {}\n", mouthopen, value );
 		}
 		switch (pbonecontroller[j].type & STUDIO_TYPES)
 		{
@@ -50,6 +47,8 @@ void StudioModel::CalcBoneAdj()
 		case STUDIO_Y:
 		case STUDIO_Z:
 			m_adj[j] = value;
+			break;
+		default:
 			break;
 		}
 	}
@@ -75,7 +74,6 @@ void StudioModel::CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, m
 				k -= panimvalue->num.total;
 				panimvalue += panimvalue->num.valid + 1;
 			}
-			// Bah, missing blend!
 			if (panimvalue->num.valid > k)
 			{
 				angle1[j] = panimvalue[k + 1].value;
@@ -347,7 +345,6 @@ void StudioModel::SetUpBones(void)
 
 /*
 Not used
-*/
 void StudioModel::Lighting(float* lv, int bone, int flags, const vec3& normal)
 {
 	float 	illum;
@@ -386,10 +383,9 @@ void StudioModel::Lighting(float* lv, int bone, int flags, const vec3& normal)
 		illum = 255.0f;
 	*lv = illum / 255.0f;	// Light from 0 to 1.0
 }
-
+*/
 /*
 Not used
-*/
 void StudioModel::Chrome(int* pchrome, int bone, const vec3& normal)
 {
 	float n;
@@ -423,11 +419,11 @@ void StudioModel::Chrome(int* pchrome, int bone, const vec3& normal)
 	n = dotProduct(normal, g_chromeup[bone]);
 	pchrome[1] = (int)round((n + 1.0f) * 32.0f);
 }
-
+*/
 
 /*
  not used
-*/
+
 void StudioModel::SetupLighting()
 {
 	int i;
@@ -436,7 +432,7 @@ void StudioModel::SetupLighting()
 	{
 		VectorIRotate(g_lightvec, g_bonetransform[i], g_blightvec[i]);
 	}
-}
+}*/
 
 void StudioModel::SetupModel(int bodypart)
 {
@@ -500,7 +496,10 @@ void StudioModel::UpdateModelMeshList()
 
 	SetUpBones();
 
-	//SetupLighting();
+	/*if (needForceUpdate)
+	{
+		SetupLighting();
+	}*/
 
 	if ((int)mdl_mesh_groups.size() < m_pstudiohdr->numbodyparts)
 		mdl_mesh_groups.resize(m_pstudiohdr->numbodyparts);
@@ -517,7 +516,7 @@ void StudioModel::RefreshMeshList(int body)
 	if (!m_pstudiohdr)
 		return;
 	StudioMesh tmpStudioMesh = StudioMesh();
-	float lv_tmp = 0.0f;
+	//float lv_tmp = 0.0f;
 
 	if (needForceUpdate)
 	{
@@ -526,15 +525,39 @@ void StudioModel::RefreshMeshList(int body)
 	}
 
 	unsigned char* pvertbone = ((unsigned char*)m_pstudiohdr + m_pmodel->vertinfoindex);
-	unsigned char* pnormbone = ((unsigned char*)m_pstudiohdr + m_pmodel->norminfoindex);
+	//unsigned char* pnormbone = ((unsigned char*)m_pstudiohdr + m_pmodel->norminfoindex);
 	mstudiotexture_t* ptexture = m_ptexturehdr ? (mstudiotexture_t*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->textureindex) : NULL;
 
 	mstudiomesh_t* pmesh = (mstudiomesh_t*)((unsigned char*)m_pstudiohdr + m_pmodel->meshindex);
 
 	vec3* pstudioverts = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->vertindex);
-	vec3* pstudionorms = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->normindex);
+	//vec3* pstudionorms = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->normindex);
 
 	short* pskinref = m_ptexturehdr ? (short*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->skinindex) : NULL;
+
+	/*if (needForceUpdate)
+	{
+		for (int j = 0; j < m_pmodel->nummesh; j++)
+		{
+			int flags = 0;
+			if (ptexture && pskinref)
+			{
+				flags = ptexture[pskinref[pmesh[j].skinref]].flags;
+			}
+			for (int i = 0; i < pmesh[j].numnorms; i++, pstudionorms++, pnormbone++)
+			{
+				Lighting(&lv_tmp, *pnormbone, flags, *pstudionorms);
+
+				// FIX: move this check out of the inner loop
+				if (flags & STUDIO_NF_CHROME)
+					Chrome(g_chrome[i], *pnormbone, *pstudionorms);
+
+				g_lightvalues[i][0] = g_lightcolor[0] * lv_tmp;
+				g_lightvalues[i][1] = g_lightcolor[1] * lv_tmp;
+				g_lightvalues[i][2] = g_lightcolor[2] * lv_tmp;
+			}
+		}
+	}*/
 
 	if (m_ptexturehdr && m_ptexturehdr->skinindex < 0)
 	{
@@ -572,27 +595,6 @@ void StudioModel::RefreshMeshList(int body)
 	//
 	// clip and draw all triangles
 	//
-
-	for (int j = 0; j < m_pmodel->nummesh; j++)
-	{
-		int flags = 0;
-		if (ptexture && pskinref)
-		{
-			flags = ptexture[pskinref[pmesh[j].skinref]].flags;
-		}
-		for (int i = 0; i < pmesh[j].numnorms; i++, pstudionorms++, pnormbone++)
-		{
-			Lighting(&lv_tmp, *pnormbone, flags, *pstudionorms);
-
-			// FIX: move this check out of the inner loop
-			if (flags & STUDIO_NF_CHROME)
-				Chrome(g_chrome[i], *pnormbone, *pstudionorms);
-
-			g_lightvalues[i][0] = g_lightcolor[0] * lv_tmp;
-			g_lightvalues[i][1] = g_lightcolor[1] * lv_tmp;
-			g_lightvalues[i][2] = g_lightcolor[2] * lv_tmp;
-		}
-	}
 
 	if ((int)mdl_mesh_groups[body].size() < m_pmodel->nummesh)
 	{
@@ -653,16 +655,16 @@ void StudioModel::RefreshMeshList(int body)
 					int v2PosIdx = vertexIdx - 3 * 1;
 					int v1TexIdx = fanStartTexIdx;
 					int v2TexIdx = texCoordIdx - 2 * 1;
-					//int v1ColorIdx = fanStartColorIdx;
-					//int v2ColorIdx = colorIdx - 4 * 1;
+				/*	int v1ColorIdx = fanStartColorIdx;
+					int v2ColorIdx = colorIdx - 4 * 1;*/
 
 					if (drawMode == GL_TRIANGLE_STRIP) {
 						v1PosIdx = vertexIdx - 3 * 2;
 						v2PosIdx = vertexIdx - 3 * 1;
 						v1TexIdx = texCoordIdx - 2 * 2;
 						v2TexIdx = texCoordIdx - 2 * 1;
-						//v1ColorIdx = colorIdx - 4 * 2;
-						//v2ColorIdx = colorIdx - 4 * 1;
+					/*	v1ColorIdx = colorIdx - 4 * 2;
+						v2ColorIdx = colorIdx - 4 * 1;*/
 					}
 
 					texCoordData[texCoordIdx++] = texCoordData[v1TexIdx];
@@ -712,12 +714,12 @@ void StudioModel::RefreshMeshList(int body)
 					texCoordData[texCoordIdx++] = ptricmds[3] * t;
 				}
 
-				/*lv = &g_pvlightvalues[ptricmds[1]];
+				/*vec3 *lv = &g_lightvalues[ptricmds[1]];
 				colorData[colorIdx++] = lv->x;
 				colorData[colorIdx++] = lv->y;
 				colorData[colorIdx++] = lv->z;
-				colorData[colorIdx++] = 1.0;*/
-
+				colorData[colorIdx++] = 1.0;
+				*/
 				vec3* av = &g_xformverts[ptricmds[0]];
 				vertexData[vertexIdx++] = av->x;
 				vertexData[vertexIdx++] = av->y;

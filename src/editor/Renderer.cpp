@@ -90,6 +90,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	g_app->pressed[key] = action != GLFW_RELEASE;
 }
 
+static bool g_settings_changed = false;
+
 void drop_callback(GLFWwindow* window, int count, const char** paths)
 {
 	if (!g_app->isLoading && count > 0 && paths[0] && paths[0][0] != '\0')
@@ -102,6 +104,7 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 		{
 			g_settings.AddRecentFile(tmpPath.string());
 			g_app->gui->OpenFile(tmpPath.string());
+			g_settings_changed = true;
 		}
 		else
 		{
@@ -116,23 +119,35 @@ void drop_callback(GLFWwindow* window, int count, const char** paths)
 
 void window_size_callback(GLFWwindow* window, int width, int height)
 {
-	if (g_settings.maximized || width == 0 || height == 0)
+	if (g_settings.maximized || width == 0 || height == 0
+		|| (g_settings.windowWidth == width && g_settings.windowHeight == height))
 	{
 		return; // ignore size change when maximized, or else iconifying doesn't change size at all
 	}
 	g_settings.windowWidth = width;
 	g_settings.windowHeight = height;
+	g_settings_changed = true;
 }
 
 void window_pos_callback(GLFWwindow* window, int x, int y)
 {
-	g_settings.windowX = x;
-	g_settings.windowY = y;
+	if (g_settings.windowX != x || g_settings.windowY != y)
+	{
+		g_settings.windowX = x;
+		g_settings.windowY = y;
+		g_settings_changed = true;
+	}
 }
 
 void window_maximize_callback(GLFWwindow* window, int maximized)
 {
-	g_settings.maximized = maximized == GLFW_TRUE;
+	bool maximize = maximized == GLFW_TRUE;
+
+	if (maximize != g_settings.maximized)
+	{
+		g_settings.maximized = maximized == GLFW_TRUE;
+		g_settings_changed = true;
+	}
 }
 
 void window_minimize_callback(GLFWwindow* window, int iconified)
@@ -1487,11 +1502,11 @@ void Renderer::renderLoop()
 
 			if (is_closing)
 			{
-				saveGuiSettings();
-				g_settings.saveSettings();
-
-				using namespace std::chrono_literals;
-				std::this_thread::sleep_for(100ms);
+				if (g_settings_changed)
+				{
+					saveGuiSettings();
+					g_settings.saveSettings();
+				}
 
 				print_log(get_localized_string(LANG_0901));
 

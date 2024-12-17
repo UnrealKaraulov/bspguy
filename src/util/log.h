@@ -30,7 +30,7 @@ void showConsoleWindow(bool show);
 void set_console_colors(unsigned int colors = DEFAULT_CONSOLE_COLOR);
 
 template<class ...Args>
-void print_log(unsigned int colors, const std::string& format, Args ...args) noexcept
+void print_log(unsigned int colors, const std::string& format, Args ...args) 
 {
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 
@@ -103,7 +103,7 @@ void print_log(unsigned int colors, const std::string& format, Args ...args) noe
 }
 
 template<class ...Args>
-void print_log(const std::string& format, Args ...args) noexcept
+void print_log(const std::string& format, Args ...args) 
 {
 	std::string line = fmt::vformat(format, fmt::make_format_args(args...));
 	print_log(DEFAULT_CONSOLE_COLOR, "{}", line);

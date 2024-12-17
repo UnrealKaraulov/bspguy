@@ -29,6 +29,12 @@ struct COLOR3
 	bool operator==(const COLOR3& other) const {
 		return r == other.r && g == other.g && b == other.b;
 	}
+	bool operator<(const COLOR3& other) const {
+		return r < other.r && g < other.g && b < other.b;
+	}
+	bool operator>(const COLOR3& other) const {
+		return other < *this;
+	}
 
 	COLOR3 operator*(float scale)
 	{

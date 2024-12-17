@@ -3606,9 +3606,9 @@ void Gui::drawMenuBar()
 
 									// 2D mins/maxs
 									vec2 fmins = poly.localMins;
-									fmins -= cell_size;
+									fmins -= cell_size * 1.0f;
 									vec2 fmaxs = poly.localMaxs;
-									fmaxs += cell_size;
+									fmaxs += cell_size * 1.0f;
 
 									// Normalize plane normal
 									vec3 plane_z_normalized = map->getPlaneFromFace(&map->faces[f]).vNormal.normalize();
@@ -3620,7 +3620,7 @@ void Gui::drawMenuBar()
 										for (float y = fmins.y; y <= fmaxs.y; )
 										{
 											vec2 point = { x, y };
-											if (poly.isInside(point)) 
+											if (poly.isInside(point))
 											{
 												y += cell_size / 1.1f;
 												// convert 2D to 3D
@@ -3635,7 +3635,6 @@ void Gui::drawMenuBar()
 												point_3d.y = std::max(mins.y, std::min(maxs.y, point_3d.y));
 												point_3d.z = std::max(mins.z, std::min(maxs.z, point_3d.z));
 
-												bool found = false;
 												int leafIdx = 0;
 												int planeIdx = -1;
 												int content = map->pointLeaf(headNode, point_3d, hull, leafIdx, planeIdx);

@@ -3242,6 +3242,7 @@ void BspRenderer::drawModel(RenderEnt* ent, int pass, bool highlight, bool edges
 void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 {
 	// skip worldspawn
+	bool isAltPressed = g_app->pressed[GLFW_KEY_LEFT_ALT] || g_app->pressed[GLFW_KEY_RIGHT_ALT];
 
 	g_app->modelShader->pushMatrix();
 	g_app->colorShader->pushMatrix();
@@ -3347,6 +3348,13 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts, int pass)
 					else if (renderEnts[i].spr && !ortho_overview)
 					{
 						renderEnts[i].spr->DrawSprite();
+
+						if (isAltPressed)
+						{
+							renderEnts[i].spr->DrawAxes();
+							renderEnts[i].spr->DrawBBox();
+						}
+
 					}
 				}
 				else if (pass == REND_PASS_COLORSHADER)

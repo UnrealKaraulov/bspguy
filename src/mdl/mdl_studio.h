@@ -368,16 +368,16 @@ public:
 	vec3 mins, maxs;
 
 	vec3			g_xformverts[MAXSTUDIOVERTS];	// transformed vertices
-	vec3			g_lightvalues[MAXSTUDIOVERTS];	// light surface normals
 
-	vec3			g_lightvec;						// light vector in model reference frame
+	//vec3			g_lightvec;						// light vector in model reference frame
+	//vec3			g_lightvalues[MAXSTUDIOVERTS];	// light surface normals
+	//vec3			g_lightcolor;
+
 	vec3			g_blightvec[MAXSTUDIOBONES];	// light vectors in bone reference frames
 	int				g_ambientlight;					// ambient world light
 	float			g_shadelight;					// direct world light
-	vec3			g_lightcolor;
 
 	int				g_smodels_total;				// cookie
-
 	float			g_bonetransform[MAXSTUDIOBONES][3][4];	// bone transformation matrix
 
 	int				g_chrome[MAXSTUDIOVERTS][2];	// texture coords for surface normals
@@ -439,7 +439,7 @@ public:
 		g_ambientlight = 32;
 		g_shadelight = 192.0f;
 
-		g_lightvec[0] = 0.0f;
+		/*g_lightvec[0] = 0.0f;
 		g_lightvec[1] = 0.0f;
 		g_lightvec[2] = -1.0f;
 
@@ -452,7 +452,7 @@ public:
 			g_lightvalues[i][0] = 1.0f;
 			g_lightvalues[i][1] = 1.0f;
 			g_lightvalues[i][2] = 1.0f;
-		}
+		}*/
 
 		Init(filename);
 		SetSkin(0);
@@ -538,9 +538,9 @@ public:
 	mstudioanim_t* GetAnim(mstudioseqdesc_t* pseqdesc);
 	void SlerpBones(vec4 * q1, vec3 * pos1, vec4 * q2, vec3 * pos2, float s);
 	void SetUpBones(void);
-	void Lighting(float* lv, int bone, int flags, const vec3& normal);
-	void Chrome(int* chrome, int bone, const vec3& normal);
-	void SetupLighting(void);
+	//void Lighting(float* lv, int bone, int flags, const vec3& normal);
+	//void Chrome(int* chrome, int bone, const vec3& normal);
+	//void SetupLighting(void);
 	void SetupModel(int bodypart);
 	void UploadTexture(mstudiotexture_t* ptexture, unsigned char* data, COLOR3* pal);
 private:
@@ -554,12 +554,9 @@ private:
 	vec4 static_q4[MAXSTUDIOBONES];
 
 	float static_bonematrix[3][4];
-	//vec3 vertexData[MAX_VERTS_PER_CALL];
-	//vec2 texCoordData[MAX_VERTS_PER_CALL];
-	//vec3 colorData[MAX_VERTS_PER_CALL];
-
 	float vertexData[MAX_VERTS_PER_CALL * 3];
 	float texCoordData[MAX_VERTS_PER_CALL * 2];
+	//enable light support?
 	//float colorData[MAX_VERTS_PER_CALL * 4];
 };
 

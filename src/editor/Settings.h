@@ -60,11 +60,11 @@ struct Settings
 	int windowHeight;
 	int windowX;
 	int windowY;
-	int maximized;
 	int undoLevels;
 	int fpslimit;
 	int settings_tab;
 	int render_flags;
+
 
 	float fov;
 	float zfar;
@@ -86,6 +86,7 @@ struct Settings
 
 	int pal_id;
 
+	bool maximized;
 	bool settingLoaded; // Settings loaded
 	bool verboseLogs;
 	bool save_windows;

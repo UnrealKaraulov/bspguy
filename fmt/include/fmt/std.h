@@ -27,7 +27,8 @@
 
 // Check FMT_CPLUSPLUS to suppress a bogus warning in MSVC.
 #  if FMT_CPLUSPLUS >= 201703L
-#    if FMT_HAS_INCLUDE(<filesystem>)
+#    if FMT_HAS_INCLUDE(<filesystem>) && \
+        (!defined(FMT_CPP_LIB_FILESYSTEM) || FMT_CPP_LIB_FILESYSTEM != 0)
 #      include <filesystem>
 #    endif
 #    if FMT_HAS_INCLUDE(<variant>)

@@ -357,12 +357,9 @@ template <typename R>
 using maybe_const_range =
     conditional_t<has_const_begin_end<R>::value, const R, R>;
 
-// Workaround a bug in MSVC 2015 and earlier.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
 template <typename R, typename Char>
 struct is_formattable_delayed
     : is_formattable<uncvref_type<maybe_const_range<R>>, Char> {};
-#endif
 }  // namespace detail
 
 template <typename...> struct conjunction : std::true_type {};
@@ -498,13 +495,8 @@ struct formatter<
             range_format_kind<R, Char>::value != range_format::disabled &&
             range_format_kind<R, Char>::value != range_format::map &&
             range_format_kind<R, Char>::value != range_format::string &&
-            range_format_kind<R, Char>::value != range_format::debug_string>
-// Workaround a bug in MSVC 2015 and earlier.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
-        ,
-        detail::is_formattable_delayed<R, Char>
-#endif
-        >::value>> {
+            range_format_kind<R, Char>::value != range_format::debug_string>,
+        detail::is_formattable_delayed<R, Char>>::value>> {
  private:
   using range_type = detail::maybe_const_range<R>;
   range_formatter<detail::uncvref_type<range_type>, Char> range_formatter_;
@@ -646,9 +638,9 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
 #endif
   formatter<remove_cvref_t<value_type>, Char> value_formatter_;
 
-  using view_ref = conditional_t<std::is_copy_constructible<It>::value,
-                                 const join_view<It, Sentinel, Char>&,
-                                 join_view<It, Sentinel, Char>&&>;
+  using view = conditional_t<std::is_copy_constructible<It>::value,
+                             const join_view<It, Sentinel, Char>,
+                             join_view<It, Sentinel, Char>>;
 
  public:
   using nonlocking = void;
@@ -658,9 +650,10 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
   }
 
   template <typename FormatContext>
-  auto format(view_ref& value, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    auto it = std::forward<view_ref>(value).begin;
+  auto format(view& value, FormatContext& ctx) const -> decltype(ctx.out()) {
+    using iter =
+        conditional_t<std::is_copy_constructible<view>::value, It, It&>;
+    iter it = value.begin;
     auto out = ctx.out();
     if (it == value.end) return out;
     out = value_formatter_.format(*it, ctx);
@@ -674,34 +667,6 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
     return out;
   }
 };
-
-/// Returns a view that formats the iterator range `[begin, end)` with elements
-/// separated by `sep`.
-template <typename It, typename Sentinel>
-auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
-  return {std::move(begin), end, sep};
-}
-
-/**
- * Returns a view that formats `range` with elements separated by `sep`.
- *
- * **Example**:
- *
- *     auto v = std::vector<int>{1, 2, 3};
- *     fmt::print("{}", fmt::join(v, ", "));
- *     // Output: 1, 2, 3
- *
- * `fmt::join` applies passed format specifiers to the range elements:
- *
- *     fmt::print("{:02}", fmt::join(v, ", "));
- *     // Output: 01, 02, 03
- */
-template <typename Range, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
-auto join(Range&& r, string_view sep)
-    -> join_view<decltype(detail::range_begin(r)),
-                 decltype(detail::range_end(r))> {
-  return {detail::range_begin(r), detail::range_end(r), sep};
-}
 
 template <typename Char, typename Tuple> struct tuple_join_view : detail::view {
   const Tuple& tuple;
@@ -818,6 +783,34 @@ struct formatter<
 };
 
 FMT_BEGIN_EXPORT
+
+/// Returns a view that formats the iterator range `[begin, end)` with elements
+/// separated by `sep`.
+template <typename It, typename Sentinel>
+auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
+  return {std::move(begin), end, sep};
+}
+
+/**
+ * Returns a view that formats `range` with elements separated by `sep`.
+ *
+ * **Example**:
+ *
+ *     auto v = std::vector<int>{1, 2, 3};
+ *     fmt::print("{}", fmt::join(v, ", "));
+ *     // Output: 1, 2, 3
+ *
+ * `fmt::join` applies passed format specifiers to the range elements:
+ *
+ *     fmt::print("{:02}", fmt::join(v, ", "));
+ *     // Output: 01, 02, 03
+ */
+template <typename Range, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
+auto join(Range&& r, string_view sep)
+    -> join_view<decltype(detail::range_begin(r)),
+                 decltype(detail::range_end(r))> {
+  return {detail::range_begin(r), detail::range_end(r), sep};
+}
 
 /**
  * Returns an object that formats `std::tuple` with elements separated by `sep`.

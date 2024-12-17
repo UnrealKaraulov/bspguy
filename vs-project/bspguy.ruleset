@@ -23,5 +23,8 @@
     <Rule Id="C26496" Action="None" />
     <Rule Id="C26497" Action="None" />
     <Rule Id="C26821" Action="None" />
+    <Rule Id="C6240" Action="None" />
+    <Rule Id="C6297" Action="None" />
+    <Rule Id="C6326" Action="None" />
   </Rules>
 </RuleSet>

@@ -419,17 +419,17 @@ template <> constexpr auto num_bits<uint128_fallback>() -> int { return 128; }
 // and 128-bit pointers to uint128_fallback.
 template <typename To, typename From, FMT_ENABLE_IF(sizeof(To) > sizeof(From))>
 inline auto bit_cast(const From& from) -> To {
-  constexpr auto size = static_cast<int>(sizeof(From) / sizeof(unsigned));
+  constexpr auto size = static_cast<int>(sizeof(From) / sizeof(unsigned short));
   struct data_t {
-    unsigned value[static_cast<unsigned>(size)];
+    unsigned short value[static_cast<unsigned>(size)];
   } data = bit_cast<data_t>(from);
   auto result = To();
   if (const_check(is_big_endian())) {
     for (int i = 0; i < size; ++i)
-      result = (result << num_bits<unsigned>()) | data.value[i];
+      result = (result << num_bits<unsigned short>()) | data.value[i];
   } else {
     for (int i = size - 1; i >= 0; --i)
-      result = (result << num_bits<unsigned>()) | data.value[i];
+      result = (result << num_bits<unsigned short>()) | data.value[i];
   }
   return result;
 }
@@ -891,7 +891,7 @@ class basic_memory_buffer : public detail::buffer<T> {
 using memory_buffer = basic_memory_buffer<char>;
 
 template <size_t SIZE>
-FMT_NODISCARD auto to_string(basic_memory_buffer<char, SIZE>& buf)
+FMT_NODISCARD auto to_string(const basic_memory_buffer<char, SIZE>& buf)
     -> std::string {
   auto size = buf.size();
   detail::assume(size < std::string().max_size());

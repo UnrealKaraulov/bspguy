@@ -27,6 +27,7 @@ struct modelVert
 	vec3 pos;
 	// texture coordinates
 	float u, v;
+	//float r, g, b, a;
 };
 
 

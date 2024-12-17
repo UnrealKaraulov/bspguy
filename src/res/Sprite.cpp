@@ -194,7 +194,7 @@ Sprite::Sprite(const std::string& filename, const vec3& mins , const vec3& maxs 
 				{
 					tmpSpriteImage.image[s] = COLOR4(0, 0, 0, 0);
 				}
-				else if (header.texFormat == SPR_ADDITIVE && palette[raw_image[s]] == COLOR3(0, 0, 0))
+				else if (header.texFormat == SPR_ADDITIVE && palette[raw_image[s]] < COLOR3(35, 35, 35))
 				{
 					tmpSpriteImage.image[s] = COLOR4(0, 0, 0, 0);
 				}

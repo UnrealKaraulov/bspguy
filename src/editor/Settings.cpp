@@ -25,7 +25,7 @@ void Settings::loadDefaultSettings()
 #else
 	windowY = 0;
 #endif
-	maximized = 0;
+	maximized = false;
 	fontSize = 22.f;
 	gamedir = std::string();
 	workingdir = "./bspguy_work/";
@@ -340,7 +340,7 @@ void Settings::loadSettings()
 	g_settings.windowHeight = settings_ini->Get<int>("GENERAL", "window_height", 600);
 	g_settings.windowX = settings_ini->Get<int>("GENERAL", "window_x", 0);
 	g_settings.windowY = settings_ini->Get<int>("GENERAL", "window_y", 0);
-	g_settings.maximized = settings_ini->Get<int>("GENERAL", "window_maximized", 0);
+	g_settings.maximized = settings_ini->Get<int>("GENERAL", "window_maximized", 0) != 0;
 	g_settings.start_at_entity = settings_ini->Get<int>("GENERAL", "start_at_entity", 0) != 0;
 	g_settings.savebackup = settings_ini->Get<int>("GENERAL", "savebackup", 0) != 0;
 	g_settings.save_crc = settings_ini->Get<int>("GENERAL", "save_crc", 1) != 0;
@@ -664,6 +664,8 @@ void Settings::loadSettings()
 
 void Settings::saveSettings(std::string path) 
 {
+	std::lock_guard<std::mutex> lock(g_mutex_list[7]);
+
 	removeFile(path);
 
 	std::ofstream iniFile(path, std::ios::binary);
@@ -841,7 +843,14 @@ void Settings::saveSettings(std::string path)
 	writeListSection("TRANSPARENT_TEXTURES", transparentTextures);
 	writeListSection("TRANSPARENT_ENTITIES", transparentEntities);
 
+	iniData.flush();
+
 	iniFile.write(iniData.str().c_str(), iniData.str().size());
+	iniFile.flush();
+	iniFile.close();
+
+	using namespace std::chrono_literals;
+	std::this_thread::sleep_for(100ms);
 }
 
 void Settings::saveSettings()
