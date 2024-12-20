@@ -159,8 +159,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
     <LibraryWPath />
-    <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSdk_71A_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSdk_71A_LibraryPath_x86);</LibraryPath>
     <IntDir>bspguy.dir\ReleaseXP\</IntDir>
     <OutDir>.\..\vs-project\Release\</OutDir>
   </PropertyGroup>
@@ -755,8 +755,7 @@ del "$(TargetDir)bspguy.ini_bak"</Command>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010000
-;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1;_CRT_SECURE_NO_WARNINGS;GLEW_NO_GLU;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010000;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1;_CRT_SECURE_NO_WARNINGS;GLEW_NO_GLU</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -795,7 +794,7 @@ del "$(TargetDir)bspguy.ini_bak"</Command>
       <ProxyFileName>%(Filename)_p.c</ProxyFileName>
     </Midl>
     <Link>
-      <AdditionalDependencies>glfw\src\ReleaseXPx86\glfw3.lib;fmt\fmt\ReleaseXPx86\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript.lib</AdditionalDependencies>
+      <AdditionalDependencies>glfw\src\ReleaseXPx86\glfw3.lib;fmt\fmt\ReleaseXPx86\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptXP.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>

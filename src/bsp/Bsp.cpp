@@ -5744,9 +5744,15 @@ void Bsp::reload_ents()
 {
 	for (size_t i = 0; i < ents.size(); i++)
 		delete ents[i];
-	ents.clear();
-	
+	std::ofstream entFile("ent1.ent", std::ios::trunc);
+	if (entFile && bsp_header.lump[LUMP_ENTITIES].nLength > 0)
+	{
+		std::string entities = std::string(lumps[LUMP_ENTITIES].data(), lumps[LUMP_ENTITIES].data() + bsp_header.lump[LUMP_ENTITIES].nLength - 1);
+		entFile.write(entities.c_str(), entities.size());
+	}
 	ents = load_ents(std::string((char*)lumps[LUMP_ENTITIES].data(), (char*)lumps[LUMP_ENTITIES].data() + bsp_header.lump[LUMP_ENTITIES].nLength), bsp_name);
+	update_ent_lump();
+	export_entities("ent2.ent");
 }
 
 void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem)
@@ -8034,7 +8040,6 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 bool Bsp::export_entities(const std::string& entpath)
 {
 	std::ofstream entFile(entpath, std::ios::trunc);
-	update_ent_lump();
 	if (entFile && bsp_header.lump[LUMP_ENTITIES].nLength > 0)
 	{
 		std::string entities = std::string(lumps[LUMP_ENTITIES].data(), lumps[LUMP_ENTITIES].data() + bsp_header.lump[LUMP_ENTITIES].nLength - 1);

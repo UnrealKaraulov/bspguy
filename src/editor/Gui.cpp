@@ -8229,14 +8229,10 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 	{
 		if (!ent->hasKey(keyName))
 		{
-			map->export_entities("test1.ent");
 			ent->addKeyvalue(keyName, "");
 			map->getBspRender()->refreshEnt(entIdx);
 			keyName.clear();
-			map->export_entities("test2.ent");
 			map->getBspRender()->pushUndoState("TESTA!", FL_ENTITIES);
-			map->export_entities("test3.ent");
-
 		}
 	}
 	ImGui::SameLine();

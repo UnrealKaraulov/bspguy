@@ -5,7 +5,6 @@ Keyvalues::Keyvalues(std::string& line)
 {
 	keys.clear();
 	values.clear();
-
 	std::vector<std::string> allstrings = splitString(line, "\"");
 	if (allstrings.size() > 1)
 	{
@@ -13,13 +12,16 @@ Keyvalues::Keyvalues(std::string& line)
 		{
 			allstrings.erase(allstrings.begin());
 		}
-		while (allstrings.size() > 2)
+		while (allstrings.size() >= 2)
 		{
 			std::string tmpkey = allstrings[0];
-			std::string tmpvalue = allstrings[2];
+			std::string tmpvalue = "";
+			if (allstrings.size() > 2)
+				tmpvalue = allstrings[2];
 			allstrings.erase(allstrings.begin());
 			allstrings.erase(allstrings.begin());
-			allstrings.erase(allstrings.begin());
+			if (allstrings.size() > 1)
+				allstrings.erase(allstrings.begin());
 			if (allstrings.size() > 1)
 				allstrings.erase(allstrings.begin());
 			keys.push_back(tmpkey);
@@ -39,7 +41,7 @@ Keyvalues::Keyvalues(void)
 	values.clear();
 }
 
-Keyvalues::Keyvalues(const std::string & key, const std::string & value)
+Keyvalues::Keyvalues(const std::string& key, const std::string& value)
 {
 	keys.push_back(key);
 	values.push_back(value);
