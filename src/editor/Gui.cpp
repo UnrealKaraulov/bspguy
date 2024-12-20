@@ -8232,7 +8232,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			ent->addKeyvalue(keyName, "");
 			map->getBspRender()->refreshEnt(entIdx);
 			keyName.clear();
-			map->getBspRender()->pushUndoState("TESTA!", FL_ENTITIES);
+			map->getBspRender()->pushEntityUndoStateDelay("Add Keyvalue");
 		}
 	}
 	ImGui::SameLine();

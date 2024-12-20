@@ -3005,24 +3005,10 @@ std::vector<Entity*> load_ents(const std::string& entLump, const std::string& ma
 		}
 		if (lastBracket == 0 && ent) // currently defining an entity
 		{
-			bool foundLine = false;
-			if (line.find("new") != std::string::npos)
-			{
-				foundLine = true;
-				print_log("Found line {}\n", line);
-			}
 			Keyvalues k(line);
-			if (foundLine)
-			{
-				print_log("After read {}\n", line);
-			}
 
 			for (size_t i = 0; i < k.keys.size(); i++)
 			{
-				if (foundLine)
-				{
-					print_log("Key {} val {}\n", k.keys[i], k.values[i]);
-				}
 				ent->addKeyvalue(k.keys[i], k.values[i], true);
 			}
 
