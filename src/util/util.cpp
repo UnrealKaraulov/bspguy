@@ -3052,3 +3052,22 @@ std::vector<Entity*> load_ents(const std::string& entLump, const std::string& ma
 
 	return ents;
 }
+
+int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string & bsp_name)
+{
+	std::vector<Entity*> ent1List{};
+	if (oldLump.lumps[LUMP_ENTITIES].size())
+		ent1List = load_ents(std::string((char*)oldLump.lumps[LUMP_ENTITIES].data(), (char*)oldLump.lumps[LUMP_ENTITIES].data() + oldLump.lumps[LUMP_ENTITIES].size()), bsp_name);
+	int ent1Count = (int)ent1List.size();
+	for (auto& ent : ent1List)
+		delete ent;
+
+	std::vector<Entity*> ent2List{};
+	if (newLump.lumps[LUMP_ENTITIES].size())
+		ent2List = load_ents(std::string((char*)newLump.lumps[LUMP_ENTITIES].data(), (char*)newLump.lumps[LUMP_ENTITIES].data() + newLump.lumps[LUMP_ENTITIES].size()), bsp_name);
+	int ent2Count = (int)ent2List.size();
+	for (auto& ent : ent2List)
+		delete ent;
+	
+	return ent2Count - ent1Count;
+}

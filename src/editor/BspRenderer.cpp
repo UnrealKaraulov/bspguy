@@ -1809,6 +1809,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			}
 
 			COLOR4 faceColor = color * (dot);
+			faceColor.a = (g_render_flags & RENDER_TRANSPARENT) ? 128 : 255;
 
 			// convert from TRIANGLE_FAN style verts to TRIANGLES
 			for (size_t k = 2; k < faceVerts.size(); k++)

@@ -293,3 +293,4 @@ unsigned char FixBounds(float i);
 unsigned char FixBounds(double i);
 
 std::vector<Entity*> load_ents(const std::string& entLump, const std::string& mapName);
+int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_name);

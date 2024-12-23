@@ -1648,6 +1648,8 @@ void Gui::drawBspContexMenu()
 							ents_to_erase.pop_back();
 						}
 
+						g_app->pickInfo.selectedEnts.clear();
+
 						rend->loadLightmaps();
 
 						rend->pushUndoState("MERGE {} and {} SELECTED BSP ENTITIES", EDIT_MODEL_LUMPS | FL_ENTITIES);
@@ -5675,6 +5677,7 @@ void Gui::drawMenuBar()
 
 				map->resize_all_lightmaps();
 				rend->pushUndoState(get_localized_string(LANG_0590), dupLumps);
+				rend->refreshModel(modelIdx);
 			}
 
 			if (ImGui::MenuItem("BSP Clip model", 0, false, !app->isLoading && map))
@@ -5728,6 +5731,8 @@ void Gui::drawMenuBar()
 							}
 						}
 						//todo....
+
+						g_app->pickInfo.selectedEnts.clear();
 					}
 					ImGui::EndMenu();
 				}
@@ -8483,7 +8488,7 @@ void Gui::drawTransformWidget()
 
 	if (ImGui::Begin(fmt::format("{}###TRANSFORM_WIDGET", get_localized_string(LANG_0688)).c_str(), &showTransformWidget, 0))
 	{
-		if (!ent || modelIdx < 0)
+		if (!ent)
 		{
 			ImGui::Text(get_localized_string(LANG_1180).c_str());
 		}
@@ -9871,10 +9876,12 @@ void Gui::drawSettings()
 			{
 				g_render_flags ^= RENDER_WORLD_CLIPNODES;
 			}
+
 			if (ImGui::Checkbox(get_localized_string(LANG_0791).c_str(), &renderEntClipnodes))
 			{
 				g_render_flags ^= RENDER_ENT_CLIPNODES;
 			}
+
 			if (ImGui::Checkbox(get_localized_string(LANG_0792).c_str(), &transparentNodes))
 			{
 				g_render_flags ^= RENDER_TRANSPARENT;
@@ -9883,6 +9890,7 @@ void Gui::drawSettings()
 					mapRenderers[i]->updateClipnodeOpacity(transparentNodes ? 128 : 255);
 				}
 			}
+
 			if (ImGui::Checkbox("Map boundary", &renderMapBoundary))
 			{
 				g_render_flags ^= RENDER_MAP_BOUNDARY;
@@ -10674,7 +10682,6 @@ void Gui::drawEntityReport()
 		}
 		else
 		{
-			ImGui::BeginGroup();
 			static float startFrom = 0.0f;
 			static int MAX_FILTERS = 1;
 			static std::vector<std::string> keyFilter = std::vector<std::string>();
@@ -10688,6 +10695,8 @@ void Gui::drawEntityReport()
 			static bool selectAllItems = false;
 
 			float footerHeight = ImGui::GetFrameHeightWithSpacing() * 5.f + 16.f;
+
+			ImGui::BeginGroup();
 			ImGui::BeginChild(get_localized_string(LANG_0848).c_str(), ImVec2(0.f, -footerHeight));
 
 			if (filterNeeded)
@@ -10856,16 +10865,6 @@ void Gui::drawEntityReport()
 
 						if (isHovered)
 						{
-							ImGui::BeginTooltip();
-							if (!app->fgd || !app->fgd->getFgdClass(cname))
-							{
-								ImGui::Text(fmt::format(fmt::runtime(get_localized_string(LANG_0404)), cname).c_str());
-							}
-							else
-							{
-								ImGui::Text(fmt::format("{}", "This entity is hidden on map, press 'unhide' to show it!").c_str());
-							}
-							ImGui::EndTooltip();
 						}
 						ImGui::PopStyleColor();
 					}

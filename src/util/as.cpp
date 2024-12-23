@@ -282,6 +282,7 @@ bool Native_RemoveEntity(int entIdx)
 				{
 					rend->map->ents.erase(rend->map->ents.begin() + i);
 					rend->map->update_ent_lump();
+					g_app->pickInfo.selectedEnts.clear();
 					return true;
 				}
 			}

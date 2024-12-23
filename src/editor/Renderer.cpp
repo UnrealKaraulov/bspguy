@@ -4621,41 +4621,26 @@ void Renderer::grabEnt()
 
 void Renderer::cutEnt()
 {
-	auto ents = pickInfo.selectedEnts;
-	if (ents.empty())
-		return;
-
-	std::sort(ents.begin(), ents.end());
-	std::reverse(ents.begin(), ents.end());
-
 	Bsp* map = SelectedMap;
-	if (!map)
-		return;
-	BspRenderer * rend = map->getBspRender();
-
-	std::ostringstream ss;
-
-	for (size_t i = 0; i < ents.size(); i++)
+	if (map && pickInfo.selectedEnts.size() > 0)
 	{
-		if (ents[i] <= 0)
-			continue;
-		ss << map->ents[ents[i]]->serialize();
-
-		if (map->ents[ents[i]]->getBspModelIdx() > 0)
+		auto ents = pickInfo.selectedEnts;
+		std::ostringstream ss;
+		for (size_t i = 0; i < ents.size(); i++)
 		{
-			removeFile(g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp");
-			ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
+			if (ents[i] <= 0)
+				continue;
+			ss << map->ents[ents[i]]->serialize();
+
+			if (map->ents[ents[i]]->getBspModelIdx() > 0)
+			{
+				removeFile(g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp");
+				ExportModel(map, g_working_dir + "copyModel" + std::to_string(map->ents[ents[i]]->getBspModelIdx()) + ".bsp", map->ents[ents[i]]->getBspModelIdx(), 2, true);
+			}
 		}
+		ImGui::SetClipboardText(ss.str().c_str());
 	}
-
-	for (int i = (int)ents.size() - 1; i >= 0; i--)
-	{
-		delete map->ents[i];
-		map->ents.erase(map->ents.begin() + i);
-	}
-
-	rend->pushUndoState("Cut Entity", FL_ENTITIES);
-	ImGui::SetClipboardText(ss.str().c_str());
+	deleteEnts();
 }
 
 void Renderer::copyEnt()
@@ -4827,7 +4812,7 @@ void Renderer::deleteEnts()
 		{
 			reloadBspModels();
 		}
-
+		g_app->pickInfo.selectedEnts.clear();
 		map->getBspRender()->pushUndoState("Delete ents", FL_ENTITIES);
 	}
 }

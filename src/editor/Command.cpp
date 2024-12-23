@@ -102,6 +102,11 @@ void EditBspCommand::execute()
 		}
 	}
 
+	auto entAdded = GetEntsAdded(oldLumps, newLumps, map->bsp_name);
+
+	if (entAdded < 0)
+		g_app->pickInfo.selectedEnts.clear();
+
 	/*if (mdls.size() > 5)
 	{
 		renderer->genRenderFaces();
@@ -176,6 +181,10 @@ void EditBspCommand::undo()
 			mdls.push_back(map->get_model_from_face(face));
 		}
 	}
+	auto entAdded = GetEntsAdded(newLumps, oldLumps, map->bsp_name);
+
+	if (entAdded < 0)
+		g_app->pickInfo.selectedEnts.clear();
 
 	/*if (mdls.size() > 5)
 	{

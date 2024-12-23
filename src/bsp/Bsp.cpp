@@ -5744,7 +5744,7 @@ void Bsp::reload_ents()
 {
 	for (size_t i = 0; i < ents.size(); i++)
 		delete ents[i];
-	ents = load_ents(std::string((char*)lumps[LUMP_ENTITIES].data(), (char*)lumps[LUMP_ENTITIES].data() + bsp_header.lump[LUMP_ENTITIES].nLength), bsp_name);
+	ents = load_ents(std::string((char*)lumps[LUMP_ENTITIES].data(), (char*)lumps[LUMP_ENTITIES].data() + lumps[LUMP_ENTITIES].size()), bsp_name);
 	update_ent_lump();
 }
 
