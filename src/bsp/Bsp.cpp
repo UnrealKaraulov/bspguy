@@ -13764,6 +13764,7 @@ int Bsp::getEmbeddedTexCount()
 bool Bsp::ExportEmbeddedWad(const std::string& path)
 {
 	bool retval = true;
+	update_lump_pointers();
 	if (textureCount > 0)
 	{
 		if (fileExists(path))

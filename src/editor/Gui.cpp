@@ -12050,7 +12050,7 @@ void Gui::drawFaceEditorWidget()
 		static bool lockRotate = true;
 		static int bestplane;
 		static bool isSpecial;
-		static int width, height;
+		static int width = 256, height = 256;
 		static std::vector<vec3> edgeVerts;
 		static ImTextureID textureId = NULL; // OpenGL ID
 		static char textureName[MAXTEXTURENAME];
@@ -12520,8 +12520,14 @@ void Gui::drawFaceEditorWidget()
 					rndColor.r = 50 + rand() % 206;
 					rndColor.g = 50 + rand() % 206;
 					rndColor.b = 50 + rand() % 206;
+
+					width = 256;
+					height = 256;
+
 					std::vector<COLOR3> img(width * height, rndColor);
-					newMiptex = map->add_texture(textureName, (unsigned char*)img.data(), width, height);
+
+					newMiptex = map->add_texture(textureName, (unsigned char*)&img[0], width, height);
+
 					mapRenderer->reuploadTextures();
 					mapRenderer->preRenderFaces();
 				}
