@@ -2393,7 +2393,7 @@ void Renderer::moveGrabbedEnt()
 			Entity* ent = map->ents[i];
 
 			vec3 tmpOrigin = grabStartEntOrigin;
-			vec3 offset = getEntOffset(map, ent);
+			vec3 offset = map->getEntOffset(ent);
 			vec3 newOrigin = (tmpOrigin + delta) - offset;
 			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
@@ -2655,7 +2655,7 @@ bool Renderer::transformAxisControls()
 		curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE)
 	{
 		deltaMoveOffset = vec3();
-		axisDragEntOriginStart = getEntOrigin(map, ent);
+		axisDragEntOriginStart = map->getEntOrigin(ent);
 		axisDragStart = getAxisDragPoint(axisDragEntOriginStart);
 	}
 
@@ -2718,7 +2718,7 @@ bool Renderer::transformAxisControls()
 								if (!tmpEnt)
 									continue;
 
-								vec3 ent_offset = getEntOffset(map, tmpEnt);
+								vec3 ent_offset = map->getEntOffset(tmpEnt);
 
 								vec3 offset = tmpEnt->origin + delta + ent_offset;
 
@@ -3406,26 +3406,6 @@ void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane
 	}
 }
 
-vec3 Renderer::getEntOrigin(Bsp* map, Entity* ent)
-{
-	vec3 origin = ent->origin;
-	return origin + getEntOffset(map, ent);
-}
-
-vec3 Renderer::getEntOffset(Bsp* map, Entity* ent)
-{
-	if (ent->isBspModel())
-	{
-		int mdl = ent->getBspModelIdx();
-		if (mdl >= 0 && mdl < map->modelCount)
-		{
-			BSPMODEL& tmodel = map->models[ent->getBspModelIdx()];
-			return tmodel.nMins + (tmodel.nMaxs - tmodel.nMins) * 0.5f;
-		}
-	}
-	return vec3();
-}
-
 void Renderer::updateDragAxes()
 {
 	Bsp* map = SelectedMap;
@@ -3509,7 +3489,7 @@ void Renderer::updateDragAxes()
 			}
 			else
 			{
-				moveAxes.origin = getEntOrigin(map, ent);
+				moveAxes.origin = map->getEntOrigin(ent);
 				moveAxes.origin += deltaMoveOffset;
 			}
 		}
@@ -3913,7 +3893,7 @@ void Renderer::updateEntConnections()
 	const COLOR4 callerColor = { 0, 255, 255, 255 };
 	const COLOR4 bothColor = { 0, 255, 0, 255 };
 
-	vec3 srcPos = getEntOrigin(map, ent).flip();
+	vec3 srcPos = map->getEntOrigin(ent).flip();
 	size_t idx = 0;
 	size_t cidx = 0;
 	float s = 1.5f;
@@ -3921,7 +3901,7 @@ void Renderer::updateEntConnections()
 
 	for (size_t i = 0; i < targets.size(); i++)
 	{
-		vec3 ori = getEntOrigin(map, targets[i]).flip();
+		vec3 ori = map->getEntOrigin(targets[i]).flip();
 		if (cidx < numPoints) {
 			points[cidx++] = cCube(ori - extent, ori + extent, targetColor);
 		}
@@ -3932,7 +3912,7 @@ void Renderer::updateEntConnections()
 	}
 	for (size_t i = 0; i < callers.size(); i++)
 	{
-		vec3 ori = getEntOrigin(map, callers[i]).flip();
+		vec3 ori = map->getEntOrigin(callers[i]).flip();
 		if (cidx < numPoints) {
 			points[cidx++] = cCube(ori - extent, ori + extent, callerColor);
 		}
@@ -3944,7 +3924,7 @@ void Renderer::updateEntConnections()
 
 	for (size_t i = 0; i < callerAndTarget.size(); i++)
 	{
-		vec3 ori = getEntOrigin(map, callerAndTarget[i]).flip();
+		vec3 ori = map->getEntOrigin(callerAndTarget[i]).flip();
 		if (cidx < numPoints) {
 			points[cidx++] = cCube(ori - extent, ori + extent, bothColor);
 		}
@@ -3964,10 +3944,10 @@ void Renderer::updateEntConnections()
 void Renderer::updateEntConnectionPositions()
 {
 	auto entIdx = pickInfo.selectedEnts;
-	if (entConnections && entIdx.size())
+	if (SelectedMap && entConnections && entIdx.size())
 	{
 		Entity* ent = SelectedMap->ents[entIdx[0]];
-		vec3 pos = getEntOrigin(getSelectedMap(), ent).flip();
+		vec3 pos = SelectedMap->getEntOrigin(ent).flip();
 
 		cVert* verts = (cVert*)entConnections->get_data();
 		for (int i = 0; i < entConnections->numVerts; i += 2)
@@ -4614,7 +4594,7 @@ void Renderer::grabEnt()
 	Bsp* map = SelectedMap;
 	vec3 mapOffset = map->getBspRender()->mapOffset;
 	vec3 localCamOrigin = cameraOrigin - mapOffset;
-	grabDist = (getEntOrigin(map, map->ents[entIdx[0]]) - localCamOrigin).length();
+	grabDist = (map->getEntOrigin(map->ents[entIdx[0]]) - localCamOrigin).length();
 	grabStartOrigin = localCamOrigin + cameraForward * grabDist;
 	grabStartEntOrigin = localCamOrigin + cameraForward * grabDist;
 }
@@ -4712,11 +4692,11 @@ void Renderer::pasteEnt(bool noModifyOrigin, bool copyModel)
 			rend->refreshModelClipnodes(mdlIdx);
 		}
 
-		vec3 baseOrigin = copyModel ? copiedEnts[0]->origin : getEntOffset(map, copiedEnts[0]);
+		vec3 baseOrigin = copyModel ? copiedEnts[0]->origin : map->getEntOffset(copiedEnts[0]);
 
 		if (!noModifyOrigin)
 		{
-			vec3 entOrigin = copyModel ? copiedEnts[i]->origin : getEntOrigin(map, copiedEnts[i]);
+			vec3 entOrigin = copyModel ? copiedEnts[i]->origin : map->getEntOrigin(copiedEnts[i]);
 			vec3 offset = entOrigin - baseOrigin;
 			vec3 mapOffset = map->getBspRender()->mapOffset;
 			vec3 moveDist = (cameraOrigin + cameraForward * 100) - entOrigin;
@@ -5026,7 +5006,7 @@ void Renderer::goToEnt(Bsp* map, int entIdx)
 		size = cube->maxs - cube->mins * 0.5f;
 	}
 
-	cameraOrigin = getEntOrigin(map, ent) - cameraForward * (size.length() + 64.0f);
+	cameraOrigin = map->getEntOrigin(ent) - cameraForward * (size.length() + 64.0f);
 }
 
 void Renderer::ungrabEnt()

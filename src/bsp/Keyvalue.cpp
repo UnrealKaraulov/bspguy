@@ -1,38 +1,24 @@
 #include "Keyvalue.h"
 #include "util.h"
 
+const std::regex Keyvalues::kv_regex("\"(.*?)\"\\s*\"(.*?)\"");
+
 Keyvalues::Keyvalues(std::string& line)
 {
-	keys.clear();
-	values.clear();
-	std::vector<std::string> allstrings = splitString(line, "\"");
-	if (allstrings.size() > 1)
-	{
-		if (allstrings[0].find('{') != std::string::npos)
-		{
-			allstrings.erase(allstrings.begin());
-		}
-		while (allstrings.size() >= 2)
-		{
-			std::string tmpkey = allstrings[0];
-			std::string tmpvalue = "";
-			if (allstrings.size() > 2)
-				tmpvalue = allstrings[2];
-			allstrings.erase(allstrings.begin());
-			allstrings.erase(allstrings.begin());
-			if (allstrings.size() > 1)
-				allstrings.erase(allstrings.begin());
-			if (allstrings.size() > 1)
-				allstrings.erase(allstrings.begin());
-			keys.push_back(tmpkey);
-			values.push_back(tmpvalue);
-		}
-	}
-	line.clear();
-	if (!allstrings.empty())
-	{
-		line = allstrings[allstrings.size() - 1];
-	}
+    keys.clear();
+    values.clear();
+
+    std::smatch matches;
+    std::string remaining_line = line;
+
+    while (std::regex_search(remaining_line, matches, kv_regex))
+    {
+        keys.push_back(matches[1]);
+        values.push_back(matches[2]);
+        remaining_line = matches.suffix().str();
+    }
+
+    line = remaining_line;
 }
 
 Keyvalues::Keyvalues(void)

@@ -4535,7 +4535,7 @@ void Bsp::update_ent_lump(bool stripNodes)
 
 vec3 Bsp::get_model_center(int modelIdx)
 {
-	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / (int)sizeof(BSPMODEL))
+	if (modelIdx < 0 || modelIdx >= modelCount)
 	{
 		print_log(get_localized_string(LANG_0072), modelIdx);
 		return vec3();
@@ -6461,7 +6461,7 @@ void Bsp::print_clipnode_tree(int iNode, int depth)
 
 void Bsp::print_model_hull(int modelIdx, int hull_number)
 {
-	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / (int)sizeof(BSPMODEL))
+	if (modelIdx < 0 || modelIdx >= modelCount)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1024), modelIdx);
 		return;
@@ -8581,7 +8581,7 @@ int Bsp::create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetMod
 {
 	int sharedSolidLeaf = 0;
 	int anyEmptyLeaf = leafIdx;
-	if (anyEmptyLeaf == 0)
+	if (anyEmptyLeaf == -1)
 	{
 		for (int i = 0; i < leafCount; i++)
 		{
@@ -8591,7 +8591,7 @@ int Bsp::create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetMod
 				break;
 			}
 		}
-		if (anyEmptyLeaf == 0)
+		if (anyEmptyLeaf == -1)
 		{
 			anyEmptyLeaf = create_leaf(CONTENTS_EMPTY);
 			targetModel->nVisLeafs += 1;
@@ -14803,6 +14803,67 @@ bool Bsp::is_texture_with_pal(int textureid)
 	return is_texture_has_pal;
 }
 
+void Bsp::fix_all_duplicate_vertices()
+{
+	std::set<int> verts_usage;
+	std::set<int> edges_usage;
+
+	for (int faceIdx = 0; faceIdx < faceCount; faceIdx++)
+	{
+		BSPFACE32 face = faces[faceIdx];
+
+		for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
+		{
+			int edgeIdx = surfedges[e];
+			BSPEDGE32& edge = edges[abs(edgeIdx)];
+
+			if (edges_usage.count(abs(edgeIdx)))
+			{
+				int newedge_id = create_edge();
+
+				if (edgeIdx >= 0)
+				{
+					edgeIdx = newedge_id;
+				}
+				else
+				{
+					edgeIdx = -newedge_id;
+				}
+
+				BSPEDGE32& newedge = edges[newedge_id];
+				newedge = edge;
+
+				int v1 = create_vert();
+				verts[v1] = verts[edge.iVertex[0]];
+				newedge.iVertex[0] = v1;
+
+				int v2 = create_vert();
+				verts[v2] = verts[edge.iVertex[1]];
+				newedge.iVertex[1] = v1;
+			}
+			else
+			{
+				int vert1 = edge.iVertex[0];
+				int vert2 = edge.iVertex[1];
+
+				if (verts_usage.count(vert1) || verts_usage.count(vert2))
+				{
+					int v1 = create_vert();
+					verts[v1] = verts[vert1];
+					edge.iVertex[0] = v1;
+					int v2 = create_vert();
+					verts[v2] = verts[vert2];
+					edge.iVertex[1] = v2;
+				}
+
+				edges_usage.insert(abs(edgeIdx));
+				verts_usage.insert(vert2);
+				verts_usage.insert(vert1);
+			}
+		}
+	}
+}
+
 void Bsp::face_fix_duplicate_edges_index(int faceIdx)
 {
 	if (faceIdx < 0 || faceIdx >= faceCount)
@@ -15071,4 +15132,23 @@ int Bsp::AddTriggerTexture()
 {
 	//print_log(get_localized_string(LANG_0295));
 	return add_texture("aaatrigger", aaatriggerTex->get_data(), aaatriggerTex->width, aaatriggerTex->height);
+}
+
+vec3 Bsp::getEntOrigin(Entity* ent)
+{
+	vec3 origin = ent->origin;
+	return origin + getEntOffset(ent);
+}
+
+vec3 Bsp::getEntOffset(Entity* ent)
+{
+	if (ent->isBspModel())
+	{
+		int mdl = ent->getBspModelIdx();
+		if (mdl >= 0 && mdl < modelCount)
+		{
+			return get_model_center(mdl);
+		}
+	}
+	return vec3();
 }

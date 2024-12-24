@@ -1,5 +1,6 @@
 #pragma once
 #include "util.h"
+#include <regex>
 
 class Keyvalues
 {
@@ -11,5 +12,7 @@ public:
 	Keyvalues(const std::string& key, const std::string& value);
 	Keyvalues(void);
 	~Keyvalues(void) = default;
+private:
+	static const std::regex kv_regex;
 };
 

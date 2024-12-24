@@ -4516,7 +4516,7 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::BeginMenu("Porting tools"))
+			if (ImGui::BeginMenu("Additional tools"))
 			{
 				if (ImGui::BeginMenu("Delete OOB Data", !app->isLoading && app->getSelectedMap() && rend))
 				{
@@ -4662,6 +4662,122 @@ void Gui::drawMenuBar()
 					rend->pushUndoState("Cull Entity", FL_ENTITIES);
 				}
 				IMGUI_TOOLTIP(g, "Create a point entity for use with the culling tool. 2 of these define the bounding box for structure culling operations.\n");
+
+
+
+
+				if (ImGui::MenuItem("Make map overlay"))
+				{
+					for (int m = map->modelCount - 1; m >= 1; m--)
+					{
+						int e = map->get_ent_from_model(m);
+						if (e >= 0 && !starts_with(map->ents[e]->classname, "func_wa") &&
+							!starts_with(map->ents[e]->classname, "func_ill"))
+						{
+							map->delete_model(m);
+						}
+					}
+
+					map->remove_faces_by_content(CONTENTS_SKY);
+					map->remove_faces_by_content(CONTENTS_SOLID);
+
+					for (int f = map->faceCount - 1; f >= 0; f--)
+					{
+						BSPFACE32 face = map->faces[f];
+
+						if (face.iTextureInfo >= 0)
+						{
+							BSPTEXTUREINFO texinfo = map->texinfos[face.iTextureInfo];
+							if (texinfo.iMiptex >= 0)
+							{
+								int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+								if (texOffset >= 0)
+								{
+									BSPMIPTEX tex = *((BSPMIPTEX*)(map->textures + texOffset));
+									std::string texname = toLowerCase(tex.szName);
+									if (starts_with(texname, "sky"))
+									{
+										map->remove_face(f);
+									}
+								}
+							}
+						}
+					}
+
+					map->remove_unused_model_structures();
+
+					for (int i = map->modelCount - 1; i >= 1; i--)
+					{
+						int e = map->get_ent_from_model(i);
+
+						map->duplicate_model_structures(i);
+						auto offset = map->ents[e]->origin;
+						auto verts = map->getModelVertsIds(i);
+						for (int v : verts)
+						{
+							map->verts[v] += offset;
+						}
+						map->remove_unused_model_structures();
+					}
+
+					map->remove_unused_model_structures();
+
+					map->save_undo_lightmaps();
+
+					// MAGIC! :)
+					map->fix_all_duplicate_vertices();
+
+					for (int f = 0; f < map->faceCount; f++)
+					{
+						auto verts = map->get_face_verts_idx(f);
+						vec3 plane_z_normalized = map->getPlaneFromFace(&map->faces[f]).vNormal.normalize();
+
+						for (auto v : verts)
+						{
+							map->verts[v] += plane_z_normalized * 0.15f;
+						}
+					}
+
+					map->remove_unused_model_structures();
+					map->resize_all_lightmaps();
+
+					rend->loadLightmaps();
+					rend->preRenderFaces();
+
+					BSPMODEL tmpMdl{};
+					tmpMdl.iFirstFace = 0;
+					tmpMdl.nFaces = map->faceCount;
+					map->get_bounding_box(tmpMdl.nMins, tmpMdl.nMaxs);
+
+					tmpMdl.vOrigin = map->models[0].vOrigin;
+					tmpMdl.nVisLeafs = 0;
+					tmpMdl.iHeadnodes[0] = tmpMdl.iHeadnodes[1] = tmpMdl.iHeadnodes[2] = tmpMdl.iHeadnodes[3] = -1;
+					map->replace_lump(LUMP_MODELS, &tmpMdl, sizeof(BSPMODEL));
+
+
+					tmpMdl.iHeadnodes[0] = map->create_node_box(map->models[0].nMins, map->models[0].nMaxs, &map->models[0], true, 0);
+
+					map->ents.erase(map->ents.begin() + 1, map->ents.end());
+					map->update_ent_lump();
+
+					map->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
+						CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MODELS);
+
+
+					BSPLEAF32 tmpLeaf{};
+					tmpLeaf.iFirstMarkSurface = 0;
+					tmpLeaf.nMarkSurfaces = map->marksurfCount;
+					tmpLeaf.nContents = CONTENTS_EMPTY;
+					tmpLeaf.nVisOffset = -1;
+					tmpLeaf.nMins = tmpMdl.nMins;
+					tmpLeaf.nMaxs = tmpMdl.nMaxs;
+					map->replace_lump(LUMP_LEAVES, &tmpLeaf, sizeof(BSPLEAF32));
+
+
+					rend->pushUndoState("Create map BSP model overlay", EDIT_MODEL_LUMPS);
+				}
+
+				IMGUI_TOOLTIP(g, "Create overlay for every map face.\n");
 
 				ImGui::EndMenu();
 			}

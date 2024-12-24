@@ -322,7 +322,7 @@ public:
 	void create_solid_nodes(Solid& solid, BSPMODEL* targetModel);
 	// returns index of the solid node
 
-	int create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, bool empty = false, int leafIdx = 0);
+	int create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, bool empty = false, int leafIdx = -1);
 	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false, bool empty = false);
 	// copies a model from the sourceMap into this one
 	void add_model(Bsp* sourceMap, int modelIdx);
@@ -388,6 +388,8 @@ public:
 	std::vector<int> get_face_edges(int faceIdx);
 	std::vector<vec3> get_face_verts(int faceIdx, int limited = INT_MAX);
 	std::vector<int> get_face_verts_idx(int faceIdx, int limited = INT_MAX);
+
+	void fix_all_duplicate_vertices();
 
 	bool is_worldspawn_ent(int entIdx);
 
@@ -498,6 +500,9 @@ public:
 	std::string get_model_usage(int modelIdx);
 	std::vector<Entity*> get_model_ents(int modelIdx);
 	std::vector<int> get_model_ents_ids(int modelIdx);
+
+	vec3 getEntOrigin(Entity* ent);
+	vec3 getEntOffset(Entity* ent);
 
 	void write_csg_polys(int nodeIdx, FILE* fout, int flipPlaneSkip, bool debug);
 

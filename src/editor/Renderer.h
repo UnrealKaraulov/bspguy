@@ -337,9 +337,6 @@ public:
 	void drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset = vec3());
 	void drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset = vec3());
 
-	vec3 getEntOrigin(Bsp* map, Entity* ent);
-	vec3 getEntOffset(Bsp* map, Entity* ent);
-
 	vec3 getAxisDragPoint(vec3 origin);
 
 	void updateDragAxes();

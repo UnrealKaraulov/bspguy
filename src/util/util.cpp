@@ -129,8 +129,8 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
 		}
 		s.erase(0, pos + delimiter.length());
 	}
-	if (!s.empty())
-		split.push_back(s);
+	split.push_back(s);
+
 	return split;
 }
 
