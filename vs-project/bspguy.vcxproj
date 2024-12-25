@@ -36,14 +36,6 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleasXP_git|Win32">
-      <Configuration>ReleasXP_git</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleasXP_git|x64">
-      <Configuration>ReleasXP_git</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}</ProjectGuid>
@@ -98,20 +90,7 @@
     <PlatformToolset>v141_xp</PlatformToolset>
     <EnableUnitySupport>false</EnableUnitySupport>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141_xp</PlatformToolset>
-    <EnableUnitySupport>false</EnableUnitySupport>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141_xp</PlatformToolset>
-    <EnableUnitySupport>false</EnableUnitySupport>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v141_xp</PlatformToolset>
@@ -149,35 +128,25 @@
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='DebugGithub|Win32'">true</GenerateManifest>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\..\vs-project\Release\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">.\..\vs-project\Release\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">.\..\vs-project\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bspguy.dir\Release\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">bspguy.dir\Release\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">bspguy.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">bspguy</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">bspguy</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">bspguy</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">bspguy</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">bspguy</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">bspguy</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.exe</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">.exe</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">.exe</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">.exe</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     </LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'" />
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'" />
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'" />
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'" />
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</GenerateManifest>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">true</GenerateManifest>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">true</GenerateManifest>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">true</GenerateManifest>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">true</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">
     <ExecutablePath>$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
@@ -188,23 +157,7 @@
     <LibraryWPath>
     </LibraryWPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">
-    <ExecutablePath>$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
-    <ReferencePath>$(VC_ReferencesPath_x86);</ReferencePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(WindowsSdk_71A_LibraryPath_x86);</LibraryPath>
-    <ExcludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(MSBuild_ExecutablePath);$(VC_LibraryPath_x86);$(SystemRoot)</ExcludePath>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);.</IncludePath>
-    <LibraryWPath />
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
-    <LibraryWPath />
-    <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
-    <LibraryPath>$(WindowsSdk_71A_LibraryPath_x86);$(VC_LibraryPath_x86);$(LibraryPath)</LibraryPath>
-    <IntDir>bspguy.dir\ReleaseXP\</IntDir>
-    <OutDir>.\..\vs-project\Release\</OutDir>
-    <ExcludePath>$(WindowsSDK_ExecutablePath);$(WindowsSDK_IncludePath);$(WindowsSDK_LibraryPath_x86);$(WindowsSDK_LibraryPath);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\shared\;C:\Program Files (x86)\Windows Kits\10\;$(ExcludePath)</ExcludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">
     <LibraryWPath />
     <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
     <LibraryPath>$(WindowsSdk_71A_LibraryPath_x86);$(VC_LibraryPath_x86);$(LibraryPath)</LibraryPath>
@@ -789,95 +742,6 @@ copy "$(TargetDir)bspguy.ini_bak" "$(TargetDir)bspguy.ini"
 del "$(TargetDir)bspguy.ini_bak"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <DisableSpecificWarnings>
-      </DisableSpecificWarnings>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <Optimization>Custom</Optimization>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <UseFullPaths>false</UseFullPaths>
-      <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010000
-;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1;_CRT_SECURE_NO_WARNINGS;GLEW_NO_GLU;</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <SDLCheck>false</SDLCheck>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <BufferSecurityCheck>
-      </BufferSecurityCheck>
-      <CallingConvention>Cdecl</CallingConvention>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ControlFlowGuard>
-      </ControlFlowGuard>
-      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <GuardEHContMetadata>
-      </GuardEHContMetadata>
-      <GuardSignedReturns>
-      </GuardSignedReturns>
-      <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalOptions> /wd4100 /utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
-      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
-    </Midl>
-    <Link>
-      <AdditionalDependencies>glfw\src\Release\glfw3.lib;fmt\fmt\Release\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;..\ascript\angelscript\lib\angelscript64.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscript64.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>Release/bspguy.lib</ImportLibrary>
-      <ProgramDataBaseFile>Release/bspguy.pdb</ProgramDataBaseFile>
-      <SubSystem>Console</SubSystem>
-      <SetChecksum>true</SetChecksum>
-      <StackReserveSize>
-      </StackReserveSize>
-      <LargeAddressAware>
-      </LargeAddressAware>
-      <BaseAddress>
-      </BaseAddress>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>false</DataExecutionPrevention>
-      <SectionAlignment>
-      </SectionAlignment>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <TargetMachine>MachineX86</TargetMachine>
-      <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
-    </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>
-      </LinkLibraryDependencies>
-    </ProjectReference>
-    <PostBuildEvent>
-      <Command>copy "$(TargetDir)bspguy.ini" "$(TargetDir)bspguy.ini_bak" 
-xcopy /I /E /Y  "$(SolutionDir)..\resources\*" "$(TargetDir)"
-del "$(TargetDir)bspguy.ini"
-copy "$(TargetDir)bspguy.ini_bak" "$(TargetDir)bspguy.ini" 
-del "$(TargetDir)bspguy.ini_bak"</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -918,95 +782,6 @@ del "$(TargetDir)bspguy.ini_bak"</Command>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <SmallerTypeCheck />
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\src\nav;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdl;.\..\src\nav;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
-      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
-    </Midl>
-    <Link>
-      <AdditionalDependencies>glfw\src\ReleaseXPx86\glfw3.lib;fmt\fmt\ReleaseXPx86\fmt.lib;opengl32.lib;..\glew\lib\Release\Win32\glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;..\ascript\angelscript\lib\angelscriptXP.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>Release/bspguy.lib</ImportLibrary>
-      <ProgramDataBaseFile>Release/bspguy.pdb</ProgramDataBaseFile>
-      <SubSystem>Console</SubSystem>
-      <SetChecksum>true</SetChecksum>
-      <StackReserveSize>
-      </StackReserveSize>
-      <LargeAddressAware>
-      </LargeAddressAware>
-      <BaseAddress>
-      </BaseAddress>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>false</DataExecutionPrevention>
-      <SectionAlignment>
-      </SectionAlignment>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
-      <MinimumRequiredVersion>5.01</MinimumRequiredVersion>
-    </Link>
-    <ProjectReference>
-      <LinkLibraryDependencies>
-      </LinkLibraryDependencies>
-    </ProjectReference>
-    <PostBuildEvent>
-      <Command>copy "$(TargetDir)bspguy.cfg" "$(TargetDir)bspguy.cfg_bak" 
-xcopy /I /E /Y  "$(SolutionDir)..\resources\*" "$(TargetDir)"
-del "$(TargetDir)bspguy.cfg"
-copy "$(TargetDir)bspguy.cfg_bak" "$(TargetDir)bspguy.cfg" 
-del "$(TargetDir)bspguy.cfg_bak"</Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\res;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\nav;.\..\src\mdl;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;.\..\fmt\include;.\..\ascript\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <DisableSpecificWarnings>
-      </DisableSpecificWarnings>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <Optimization>Custom</Optimization>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <UseFullPaths>false</UseFullPaths>
-      <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;GLEW_STATIC;NOMINMAX;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010100;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1;_CRT_SECURE_NO_WARNINGS;GLEW_NO_GLU</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <SDLCheck>false</SDLCheck>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <BufferSecurityCheck>
-      </BufferSecurityCheck>
-      <CallingConvention>Cdecl</CallingConvention>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
-      <ControlFlowGuard>
-      </ControlFlowGuard>
-      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <GuardEHContMetadata>
-      </GuardEHContMetadata>
-      <GuardSignedReturns>
-      </GuardSignedReturns>
-      <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalOptions> /wd4100 /utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <SmallerTypeCheck>
-      </SmallerTypeCheck>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>

@@ -186,7 +186,7 @@ jobs:
           arch: Win32
       - name: Build XP
         run: |
-          msbuild ${{ env.solution }} -m /p:Configuration=ReleaseXP_git /p:Platform=Win32
+          msbuild ${{ env.solution }} -m /p:Configuration=ReleaseXPx86 /p:Platform=Win32
       - name: Create Windows release WinXP archive
         run: >
           mkdir -p build\win32_release

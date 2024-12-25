@@ -37,14 +37,6 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleasXP_git|Win32">
-      <Configuration>ReleasXP_git</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="ReleasXP_git|x64">
-      <Configuration>ReleasXP_git</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FD691EA2-CABA-3BE3-8AD8-8BD2CBE64BCF}</ProjectGuid>
@@ -90,17 +82,7 @@
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v143</PlatformToolset>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141_xp</PlatformToolset>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v141_xp</PlatformToolset>
@@ -128,22 +110,16 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='DebugGithub|Win32'">.lib</TargetExt>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\fmt\Release\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">.\fmt\Release\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">.\fmt\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">fmt.dir\Release\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">fmt.dir\Release\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">fmt.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">fmt</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fmt</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">fmt</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">fmt</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">fmt</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">fmt</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">.lib</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">.lib</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">.lib</TargetExt>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">
     <ExecutablePath>$(VC_ExecutablePath_x86);$(CommonExecutablePath)</ExecutablePath>
@@ -151,21 +127,7 @@
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
     <ExcludePath>$(CommonExcludePath);$(VC_ExecutablePath_x86);$(VC_LibraryPath_x86)</ExcludePath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">
-    <ExecutablePath>$(VC_ExecutablePath_x86);$(CommonExecutablePath)</ExecutablePath>
-    <ReferencePath>$(VC_ReferencesPath_x86);</ReferencePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-    <ExcludePath>$(CommonExcludePath);$(VC_ExecutablePath_x86);$(VC_LibraryPath_x86)</ExcludePath>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
-    <ExecutablePath>$(VC_ExecutablePath_x86);$(CommonExecutablePath)</ExecutablePath>
-    <LibraryPath>$(WindowsSdk_71A_LibraryPath_x86);$(VC_LibraryPath_x86);$(LibraryPath)</LibraryPath>
-    <ExcludePath>$(WindowsSDK_ExecutablePath);$(WindowsSDK_IncludePath);$(WindowsSDK_LibraryPath_x86);$(WindowsSDK_LibraryPath);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\shared\;C:\Program Files (x86)\Windows Kits\10\;$(ExcludePath)</ExcludePath>
-    <OutDir>.\fmt\ReleaseXPx86\</OutDir>
-    <IntDir>fmt.dir\ReleaseXP\</IntDir>
-    <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">
     <ExecutablePath>$(VC_ExecutablePath_x86);$(CommonExecutablePath)</ExecutablePath>
     <LibraryPath>$(WindowsSdk_71A_LibraryPath_x86);$(VC_LibraryPath_x86);$(LibraryPath)</LibraryPath>
     <ExcludePath>$(WindowsSDK_ExecutablePath);$(WindowsSDK_IncludePath);$(WindowsSDK_LibraryPath_x86);$(WindowsSDK_LibraryPath);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\shared\;C:\Program Files (x86)\Windows Kits\10\;$(ExcludePath)</ExcludePath>
@@ -456,94 +418,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>.\..\..\src;.\..\..\src\bsp;.\..\..\src\cli;.\..\..\src\data;.\..\..\src\editor;.\..\..\src\filedialog;.\..\..\src\gl;.\..\..\src\qtools;.\..\..\src\util;.\..\..\src\mdl;.\..\..\imgui;.\..\..\imgui\examples;.\..\..\imgui\misc\cpp;.\..\..\imgui\backends;.\..\..\fmt;.\..\..\fmt\include;.\..\..\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <Optimization>Custom</Optimization>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <UseFullPaths>false</UseFullPaths>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
-      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <SDLCheck>false</SDLCheck>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalOptions> /utf-8 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\..\src;.\..\..\src\bsp;.\..\..\src\cli;.\..\..\src\data;.\..\..\src\editor;.\..\..\src\filedialog;.\..\..\src\gl;.\..\..\src\qtools;.\..\..\src\util;.\..\..\src\mdl;.\..\..\imgui;.\..\..\imgui\examples;.\..\..\imgui\misc\cpp;.\..\..\imgui\backends;.\..\..\fmt;.\..\..\fmt\include;.\..\..\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Midl>
-      <AdditionalIncludeDirectories>.\..\..\src;.\..\..\src\bsp;.\..\..\src\cli;.\..\..\src\data;.\..\..\src\editor;.\..\..\src\filedialog;.\..\..\src\gl;.\..\..\src\qtools;.\..\..\src\util;.\..\..\src\mdl;.\..\..\imgui;.\..\..\imgui\examples;.\..\..\imgui\misc\cpp;.\..\..\imgui\backends;.\..\..\fmt;.\..\..\fmt\include;.\..\..\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
-      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
-    </Midl>
-    <Lib>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x86</AdditionalOptions>
-      <TargetMachine>MachineX86</TargetMachine>
-    </Lib>
-  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>.\..\..\src;.\..\..\src\bsp;.\..\..\src\cli;.\..\..\src\data;.\..\..\src\editor;.\..\..\src\filedialog;.\..\..\src\gl;.\..\..\src\qtools;.\..\..\src\util;.\..\..\src\mdl;.\..\..\imgui;.\..\..\imgui\examples;.\..\..\imgui\misc\cpp;.\..\..\imgui\backends;.\..\..\fmt;.\..\..\fmt\include;.\..\..\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <Optimization>Custom</Optimization>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <UseFullPaths>false</UseFullPaths>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;GLEW_STATIC;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010100;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1</PreprocessorDefinitions>
-      <ObjectFileName>$(IntDir)</ObjectFileName>
-      <DebugInformationFormat>
-      </DebugInformationFormat>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <BufferSecurityCheck>
-      </BufferSecurityCheck>
-      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <SDLCheck>false</SDLCheck>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalOptions> /utf-8 %(AdditionalOptions)</AdditionalOptions>
-    </ClCompile>
-    <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\..\src;.\..\..\src\bsp;.\..\..\src\cli;.\..\..\src\data;.\..\..\src\editor;.\..\..\src\filedialog;.\..\..\src\gl;.\..\..\src\qtools;.\..\..\src\util;.\..\..\src\mdl;.\..\..\imgui;.\..\..\imgui\examples;.\..\..\imgui\misc\cpp;.\..\..\imgui\backends;.\..\..\fmt;.\..\..\fmt\include;.\..\..\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
-    <Midl>
-      <AdditionalIncludeDirectories>.\..\..\src;.\..\..\src\bsp;.\..\..\src\cli;.\..\..\src\data;.\..\..\src\editor;.\..\..\src\filedialog;.\..\..\src\gl;.\..\..\src\qtools;.\..\..\src\util;.\..\..\src\mdl;.\..\..\imgui;.\..\..\imgui\examples;.\..\..\imgui\misc\cpp;.\..\..\imgui\backends;.\..\..\fmt;.\..\..\fmt\include;.\..\..\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
-      <HeaderFileName>%(Filename).h</HeaderFileName>
-      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
-      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
-    </Midl>
-    <Lib>
-      <AdditionalOptions>%(AdditionalOptions) /machine:x86</AdditionalOptions>
-      <TargetMachine>MachineX86</TargetMachine>
-    </Lib>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\..\src;.\..\..\src\bsp;.\..\..\src\cli;.\..\..\src\data;.\..\..\src\editor;.\..\..\src\filedialog;.\..\..\src\gl;.\..\..\src\qtools;.\..\..\src\util;.\..\..\src\mdl;.\..\..\imgui;.\..\..\imgui\examples;.\..\..\imgui\misc\cpp;.\..\..\imgui\backends;.\..\..\fmt;.\..\..\fmt\include;.\..\..\glew\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
