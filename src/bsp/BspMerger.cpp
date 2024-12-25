@@ -14,6 +14,7 @@ MergeResult BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std:
 	if (maps.size() < 2)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0219));
+		FlushConsoleLog(true);
 		return result;
 	}
 	result.fpath = maps[1]->bsp_path;
@@ -1061,6 +1062,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 	if (separationPlane.nType == -1 && !modelMerge)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0236));
+		FlushConsoleLog(true);
 		return false;
 	}
 	thisWorldLeafCount = mapA.models[0].nVisLeafs; // excludes solid leaf 0

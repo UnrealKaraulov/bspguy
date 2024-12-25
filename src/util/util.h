@@ -294,3 +294,8 @@ unsigned char FixBounds(double i);
 
 std::vector<Entity*> load_ents(const std::string& entLump, const std::string& mapName);
 int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_name);
+
+
+
+void findDirsWithHasFileExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& dirList, bool relative = false);
+void findFilesWithExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& fileList, bool relative = false);

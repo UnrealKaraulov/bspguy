@@ -9036,6 +9036,7 @@ void Gui::loadFonts()
 
 	if (!fs::exists(fontPath) || !fs::is_directory(fontPath)) {
 		print_log(PRINT_RED, "Font directory does not exist or is not accessible.\n");
+		FlushConsoleLog(true);
 		return;
 	}
 
@@ -9323,6 +9324,35 @@ void Gui::drawSettings()
 		if (settingsTab == 0)
 		{
 			ImGui::Text(get_localized_string(LANG_0713).c_str());
+			if (ImGui::Button("Auto detect fgd/wad"))
+			{
+				if (!dirExists(g_settings.gamedir))
+				{
+					print_log("No gamedir found!\n");
+				}
+				else
+				{
+					std::vector<std::string> wadDirList;
+					std::vector<std::string> fgdFileList;
+					findDirsWithHasFileExtension(g_settings.gamedir, ".wad", wadDirList, true);
+					findFilesWithExtension(g_settings.gamedir, ".fgd", fgdFileList, true);
+
+					g_settings.fgdPaths.clear();
+					PathToggleStruct tmpPath("", true);
+					for (auto& f : fgdFileList)
+					{
+						tmpPath.path = f;
+						g_settings.fgdPaths.push_back(tmpPath);
+					}
+
+					g_settings.resPaths.clear();
+					for (auto& w : wadDirList)
+					{
+						tmpPath.path = w;
+						g_settings.resPaths.push_back(tmpPath);
+					}
+				}
+			}
 			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::InputText(get_localized_string(LANG_0714).c_str(), &g_settings.gamedir);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay && g_settings.gamedir.size())

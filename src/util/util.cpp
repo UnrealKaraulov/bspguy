@@ -36,7 +36,7 @@ bool fileExists(const std::string& fileName)
 	try
 	{
 		std::error_code err{};
-		
+
 		return fs::exists(fileName, err) && fs::is_regular_file(fileName, err);
 	}
 	catch (...)
@@ -817,8 +817,8 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 bool boxesIntersect(const vec3& mins1, const vec3& maxs1, const vec3& mins2, const vec3& maxs2) {
 	return  (maxs1.x >= mins2.x && mins1.x <= maxs2.x) &&
-			(maxs1.y >= mins2.y && mins1.y <= maxs2.y) &&
-			(maxs1.z >= mins2.z && mins1.z <= maxs2.z);
+		(maxs1.y >= mins2.y && mins1.y <= maxs2.y) &&
+		(maxs1.z >= mins2.z && mins1.z <= maxs2.z);
 }
 
 bool pointInBox(const vec3& p, const vec3& mins, const vec3& maxs) {
@@ -829,7 +829,7 @@ bool pointInBox(const vec3& p, const vec3& mins, const vec3& maxs) {
 
 bool isBoxContained(const vec3& innerMins, const vec3& innerMaxs, const vec3& outerMins, const vec3& outerMaxs) {
 	return (innerMins.x >= outerMins.x && innerMins.y >= outerMins.y && innerMins.z >= outerMins.z &&
-			innerMaxs.x <= outerMaxs.x && innerMaxs.y <= outerMaxs.y && innerMaxs.z <= outerMaxs.z);
+		innerMaxs.x <= outerMaxs.x && innerMaxs.y <= outerMaxs.y && innerMaxs.z <= outerMaxs.z);
 }
 
 vec3 getNormalFromVerts(std::vector<vec3>& verts)
@@ -1192,7 +1192,7 @@ bool createDir(const std::string& dirName)
 		return true;
 
 	std::error_code err;
-	fs::create_directories(dirName,err);
+	fs::create_directories(dirName, err);
 	if (dirExists(dirName))
 		return true;
 	return false;
@@ -1828,8 +1828,7 @@ void scaleImage(const COLOR3* inputImage, std::vector<COLOR3>& outputImage,
 
 std::string GetExecutableDirInternal(std::string arg_0_dir)
 {
-	std::string retdir = arg_0_dir;
-	retdir = stripFileName(retdir);
+	std::string retdir = stripFileName(arg_0_dir);
 	fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
 	{
@@ -1853,17 +1852,20 @@ std::string GetExecutableDirInternal(std::string arg_0_dir)
 #ifdef WIN32
 		char path[MAX_PATH];
 		GetModuleFileName(NULL, path, MAX_PATH);
-		retdir = stripFileName(std::filesystem::canonical(path).string());
+		retdir = stripFileName(path);
 #else
 		retdir = stripFileName(std::filesystem::canonical("/proc/self/exe").string());
+#endif
+		fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 		if (dirExists(retdir + "languages") && dirExists(retdir + "fonts"))
 		{
 			return retdir;
 		}
-#endif
 	}
+	retdir = stripFileName(arg_0_dir);
+	fixupPath(retdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	return retdir;
-	}
+}
 
 std::string GetExecutableDir(const std::string& arg_0)
 {
@@ -3053,7 +3055,7 @@ std::vector<Entity*> load_ents(const std::string& entLump, const std::string& ma
 	return ents;
 }
 
-int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string & bsp_name)
+int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_name)
 {
 	std::vector<Entity*> ent1List{};
 	if (oldLump.lumps[LUMP_ENTITIES].size())
@@ -3068,6 +3070,36 @@ int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string & bsp
 	int ent2Count = (int)ent2List.size();
 	for (auto& ent : ent2List)
 		delete ent;
-	
+
 	return ent2Count - ent1Count;
+}
+
+
+void findFilesWithExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& fileList, bool relative) 
+{
+	for (const auto& entry : fs::recursive_directory_iterator(rootPath)) 
+	{
+		if (entry.is_regular_file() && entry.path().extension() == extension) 
+		{
+			fileList.push_back(relative ? fs::relative(entry.path(), rootPath).string() : entry.path().string());
+		}
+	}
+}
+
+void findDirsWithHasFileExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& dirList, bool relative)
+{
+	for (const auto& entry : fs::recursive_directory_iterator(rootPath)) 
+	{
+		if (entry.is_directory()) 
+		{
+			for (const auto& subEntry : fs::directory_iterator(entry)) 
+			{
+				if (subEntry.is_regular_file() && subEntry.path().extension() == extension)
+				{
+					dirList.push_back(relative ? fs::relative(entry.path(), rootPath).string() : entry.path().string());
+					break; 
+				}
+			}
+		}
+	}
 }

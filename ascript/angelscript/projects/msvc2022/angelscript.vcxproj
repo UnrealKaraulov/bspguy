@@ -271,8 +271,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
     <TargetExt>XP.lib</TargetExt>
-    <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(MSBuild_ExecutablePath);$(VC_LibraryPath_x86);</IncludePath>
-    <ExcludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(MSBuild_ExecutablePath);$(VC_LibraryPath_x86);</ExcludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
+    <LibraryPath>$(WindowsSdk_71A_LibraryPath_x86);$(VC_LibraryPath_x86);$(LibraryPath)</LibraryPath>
+    <ExcludePath>$(WindowsSDK_ExecutablePath);$(WindowsSDK_IncludePath);$(WindowsSDK_LibraryPath_x86);$(WindowsSDK_LibraryPath);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\shared\;C:\Program Files (x86)\Windows Kits\10\;$(ExcludePath)</ExcludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -448,11 +449,12 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
     <ClCompile>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <PreprocessorDefinitions>ANGELSCRIPT_EXPORT;WIN32;NDEBUG;_LIB;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010000;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ANGELSCRIPT_EXPORT;WIN32;NDEBUG;_LIB;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010100;_WIN32_IE_ 0x0501;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <BufferSecurityCheck>
+      </BufferSecurityCheck>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Full</Optimization>
@@ -460,7 +462,11 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <SDLCheck>false</SDLCheck>
     </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <ClCompile>

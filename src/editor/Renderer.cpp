@@ -183,6 +183,7 @@ Renderer::Renderer()
 	if (!glfwInit())
 	{
 		print_log(get_localized_string(LANG_0902));
+		FlushConsoleLog(true);
 		return;
 	}
 
@@ -209,6 +210,7 @@ Renderer::Renderer()
 	if (!window)
 	{
 		print_log(get_localized_string(LANG_0903));
+		FlushConsoleLog(true);
 		return;
 	}
 
@@ -223,13 +225,18 @@ Renderer::Renderer()
 	glfwSetWindowMaximizeCallback(window, window_maximize_callback);
 	glfwSetWindowFocusCallback(window, window_focus_callback);
 
-	glewInit();
+	GLenum err = glewInit();
+	if (GLEW_OK != err)
+	{
+		print_log("Glew: {}", (const char*)glewGetErrorString(err));
+		FlushConsoleLog(true);
+		return;
+	}
 
 	glHint(GL_FRAGMENT_SHADER_DERIVATIVE_HINT, GL_FASTEST);
 	glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
 	glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
 	glHint(GL_TEXTURE_COMPRESSION_HINT, GL_FASTEST);
-
 
 	unsigned char* img_dat = NULL;
 	unsigned int w, h;
@@ -281,7 +288,6 @@ Renderer::Renderer()
 	lodepng_decode24_file(&img_dat, &w, &h, "./pictures/blue.png");
 	blueTex = new Texture(w, h, img_dat, "blue");
 	img_dat = NULL;
-
 
 	missingTex_rgba->upload();
 	aaatriggerTex_rgba->upload();
@@ -351,8 +357,6 @@ Renderer::Renderer()
 	clearSelection();
 
 	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;
-
-	//blockMoving = false;
 
 	gui->init();
 
@@ -1539,6 +1543,7 @@ void Renderer::postLoadFgdsAndTextures()
 	if (reloading)
 	{
 		print_log(get_localized_string(LANG_0906));
+		FlushConsoleLog(true);
 		return;
 	}
 	reloading = reloadingGameDir = true;
@@ -3219,6 +3224,7 @@ void Renderer::addMap(Bsp* map)
 	if (!map->bsp_valid)
 	{
 		print_log(get_localized_string(LANG_0912));
+		FlushConsoleLog(true);
 		return;
 	}
 
@@ -4011,7 +4017,9 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 		if (verts.size() < 2)
 		{
 			if (g_settings.verboseLogs)
+			{
 				print_log(get_localized_string(LANG_0914)); // hl_c00 pipe in green water place
+			}
 			return false;
 		}
 
@@ -4082,7 +4090,9 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 			if (planeCount != 2)
 			{
 				if (g_settings.verboseLogs)
+				{
 					print_log(get_localized_string(LANG_0915), planeCount);
+				}
 				return false;
 			}
 

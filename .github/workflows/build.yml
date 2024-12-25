@@ -92,26 +92,6 @@ jobs:
           }
       - name: Set up Visual Studio shell
         uses: egor-tensin/vs-shell@v2
-      - name: Build release
-        run: |
-          msbuild ${{ env.solution }} -m /p:Configuration=Release /p:Platform=x64
-      - name: Create Windows release archive
-        run: >
-          mkdir -p build\win64_release
-          
-          cp vs-project\Release\bspguy.exe build\win64_release\
-          
-          xcopy /I /E /Y "resources\*" "build\win64_release\"
-          
-          Compress-Archive -Path "build\win64_release\*" -DestinationPath "build\newbspguy_win7_x64_release.zip"
-      - name: Publish nightly release binaries for windows 7+
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
-          files: |
-            build/newbspguy_win7_x64_release.zip
-      - name: Set up Visual Studio shell
-        uses: egor-tensin/vs-shell@v2
         with:
           arch: Win32
       - name: Build XP
@@ -134,10 +114,25 @@ jobs:
             build/newbspguy_winxp_x86_release.zip
       - name: Set up Visual Studio shell
         uses: egor-tensin/vs-shell@v2
-      - name: Clean build directory
+      - name: Build release
         run: |
-          msbuild ${{ env.solution }} /t:Clean /p:Configuration=Debug /p:Platform=x64\
-          msbuild ${{ env.solution }} /t:Clean /p:Configuration=DebugGithub /p:Platform=x64
+          msbuild ${{ env.solution }} -m /p:Configuration=Release /p:Platform=x64
+      - name: Create Windows release archive
+        run: >
+          mkdir -p build\win64_release
+          
+          cp vs-project\Release\bspguy.exe build\win64_release\
+          
+          xcopy /I /E /Y "resources\*" "build\win64_release\"
+          
+          Compress-Archive -Path "build\win64_release\*" -DestinationPath "build\newbspguy_win7_x64_release.zip"
+      - name: Publish nightly release binaries for windows 7+
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+          files: |
+            build/newbspguy_win7_x64_release.zip
+
       - name: Build Debug
         run: |
           msbuild ${{ env.solution }} -m /p:Configuration=DebugGithub /p:Platform=x64

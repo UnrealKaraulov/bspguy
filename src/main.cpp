@@ -24,7 +24,7 @@
 // Notes: (newbspguy):
 // ...
 
-std::string g_version_string = "NewBSPGuy v4.49";
+std::string g_version_string = "NewBSPGuy v4.50";
 
 
 #ifdef WIN32
@@ -44,6 +44,7 @@ bool start_viewer(const char* map)
 		return false;
 	}
 	Renderer renderer{};
+
 	if (map && map[0] != '\0')
 	{
 		g_settings.AddRecentFile(map);
@@ -119,6 +120,7 @@ int merge_maps()
 	if (input_maps.size() < 2)
 	{
 		print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_0003));
+		FlushConsoleLog(true);
 		return 1;
 	}
 
@@ -411,6 +413,7 @@ int simplify()
 		if (modelIdx < 0 || modelIdx >= map->modelCount)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, get_localized_string(LANG_1018), map->modelCount);
+			FlushConsoleLog(true);
 			return 1;
 		}
 
@@ -1005,6 +1008,7 @@ int main(int argc, char* argv[])
 			sizeof(COLOR4) != 4)
 		{
 			print_log(PRINT_RED | PRINT_INTENSITY, "sizeof() fatal error!\n");
+			FlushConsoleLog(true);
 			return 1;
 		}
 
@@ -1234,6 +1238,7 @@ int main(int argc, char* argv[])
 			print_log(get_localized_string(LANG_0033), g_settings_path);
 
 			FlushConsoleLog(true);
+
 			if (!start_viewer(g_cmdLine.bspfile.c_str()))
 			{
 				print_log(get_localized_string(LANG_0034), g_cmdLine.bspfile);

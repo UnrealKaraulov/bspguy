@@ -244,12 +244,14 @@ Bsp::Bsp(std::string fpath)
 	if (!fileExists(fpath))
 	{
 		print_log(get_localized_string(LANG_0036), fpath);
+		FlushConsoleLog(true);
 		return;
 	}
 
 	if (!load_lumps(fpath))
 	{
 		print_log(get_localized_string(LANG_0037), fpath);
+		FlushConsoleLog(true);
 		return;
 	}
 
