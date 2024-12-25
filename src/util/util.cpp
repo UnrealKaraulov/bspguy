@@ -3077,7 +3077,8 @@ int GetEntsAdded(LumpState& oldLump, LumpState& newLump, const std::string& bsp_
 
 void findFilesWithExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& fileList, bool relative) 
 {
-	for (const auto& entry : fs::recursive_directory_iterator(rootPath)) 
+	std::error_code err{};
+	for (const auto& entry : fs::recursive_directory_iterator(rootPath,err)) 
 	{
 		if (entry.is_regular_file() && entry.path().extension() == extension) 
 		{
@@ -3088,11 +3089,12 @@ void findFilesWithExtension(const fs::path& rootPath, const std::string& extensi
 
 void findDirsWithHasFileExtension(const fs::path& rootPath, const std::string& extension, std::vector<std::string>& dirList, bool relative)
 {
-	for (const auto& entry : fs::recursive_directory_iterator(rootPath)) 
+	std::error_code err{};
+	for (const auto& entry : fs::recursive_directory_iterator(rootPath,err)) 
 	{
 		if (entry.is_directory()) 
 		{
-			for (const auto& subEntry : fs::directory_iterator(entry)) 
+			for (const auto& subEntry : fs::directory_iterator(entry,err)) 
 			{
 				if (subEntry.is_regular_file() && subEntry.path().extension() == extension)
 				{

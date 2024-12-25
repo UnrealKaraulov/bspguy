@@ -69,49 +69,6 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-      - uses: microsoft/setup-msbuild@v2
-      - name: Install Windows XP Support for Visual Studio
-        run: |
-          Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"
-          $InstallPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          $componentsToAdd = @(
-            "Microsoft.VisualStudio.Component.WinXP"
-          )
-          [string]$workloadArgs = $componentsToAdd | ForEach-Object {" --add " +  $_}
-          $Arguments = ('/c', "vs_installer.exe", 'modify', '--installPath', "`"$InstallPath`"",$workloadArgs, '--quiet', '--norestart', '--nocache')
-          $process = Start-Process -FilePath cmd.exe -ArgumentList $Arguments -Wait -PassThru -WindowStyle Hidden
-          if ($process.ExitCode -eq 0)
-          {
-              Write-Host "components have been successfully added"
-              Get-ChildItem C:\ProgramData\Microsoft\VisualStudio\Packages\Microsoft.Windows.XPSupport.*
-          }
-          else
-          {
-              Write-Host "components were not installed"
-              exit 1
-          }
-      - name: Set up Visual Studio shell
-        uses: egor-tensin/vs-shell@v2
-        with:
-          arch: Win32
-      - name: Build XP
-        run: |
-          msbuild ${{ env.solution }} -m /p:Configuration=ReleaseXPx86 /p:Platform=Win32
-      - name: Create Windows release WinXP archive
-        run: >
-          mkdir -p build\win32_release
-          
-          cp vs-project\Release\bspguy.exe build\win32_release\
-          
-          xcopy /I /E /Y "resources\*" "build\win32_release\"
-          
-          Compress-Archive -Path "build\win32_release\*" -DestinationPath "build\newbspguy_winxp_x86_release.zip"
-      - name: Publish nightly release binaries for windows XP 32bit
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
-          files: |
-            build/newbspguy_winxp_x86_release.zip
       - name: Set up Visual Studio shell
         uses: egor-tensin/vs-shell@v2
       - name: Build release
@@ -210,3 +167,32 @@ jobs:
           tag_name: ${{ needs.get_time_build.outputs.release_tag }}
           files: |
             build/newbspguy_win7_x64_gcc_release.zip
+  window_xp_build:
+    name: Windows XP
+    needs: get_time_build
+    runs-on: windows-2019
+    env:
+      solution: vs-project/bspguy.sln
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: Win32
+      - name: Build XP
+        run: |
+          msbuild ${{ env.solution }} -m /p:Configuration=ReleaseXP_git /p:Platform=Win32
+      - name: Create Windows release WinXP archive
+        run: >
+          mkdir -p build\win32_release
+          
+          cp vs-project\Release\bspguy.exe build\win32_release\
+          
+          xcopy /I /E /Y "resources\*" "build\win32_release\"
+          
+          Compress-Archive -Path "build\win32_release\*" -DestinationPath "build\newbspguy_winxp_x86_release.zip"

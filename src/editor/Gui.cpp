@@ -9039,8 +9039,9 @@ void Gui::loadFonts()
 		FlushConsoleLog(true);
 		return;
 	}
+	std::error_code err{};
 
-	for (const auto& entry : fs::directory_iterator(fontPath)) {
+	for (const auto& entry : fs::directory_iterator(fontPath,err)) {
 		if (entry.is_regular_file()) {
 			auto extension = entry.path().extension().string();
 			extension = toLowerCase(extension);

@@ -7952,7 +7952,9 @@ bool Bsp::import_textures_to_wad(const std::string& wadpath, const std::string& 
 
 		std::vector<std::string> files{};
 
-		for (auto& dir_entry : std::filesystem::directory_iterator(texpath))
+		std::error_code err{};
+
+		for (auto& dir_entry : std::filesystem::directory_iterator(texpath,err))
 		{
 			if (!dir_entry.is_directory() && ends_with(toLowerCase(dir_entry.path().string()), ".png"))
 			{

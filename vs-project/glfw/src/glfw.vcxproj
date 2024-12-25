@@ -37,6 +37,14 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleasXP_git|Win32">
+      <Configuration>ReleasXP_git</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleasXP_git|x64">
+      <Configuration>ReleasXP_git</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{94C10DCA-6ED7-3AC5-87DF-14B22017E799}</ProjectGuid>
@@ -82,7 +90,18 @@
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v141_xp</PlatformToolset>
+    <ConformanceMode>false</ConformanceMode>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v141_xp</PlatformToolset>
@@ -134,16 +153,22 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='DebugGithub|Win32'">.lib</TargetExt>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\..\..\..\vs-project\glfw\src\Release\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">.\..\..\..\vs-project\glfw\src\ReleaseXP\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">.\..\..\..\vs-project\glfw\src\ReleaseXP\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glfw.dir\Release\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">glfw.dir\ReleaseXP\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">glfw.dir\ReleaseXP\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">glfw3</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glfw3</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">glfw3</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">glfw3</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">glfw3</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">glfw3</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.lib</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|x64'">.lib</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">.lib</TargetExt>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">.lib</TargetExt>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">.lib</TargetExt>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.\..\..\..\vs-project\glfw\src\MinSizeRel\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">glfw.dir\MinSizeRel\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">glfw3</TargetName>
@@ -164,7 +189,22 @@
     <ExcludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(MSBuild_ExecutablePath);$(VC_LibraryPath_x86);$(SystemRoot)</ExcludePath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);.</IncludePath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">
+    <ExecutablePath>$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+    <ReferencePath>$(VC_ReferencesPath_x86);</ReferencePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(WindowsSdk_71A_LibraryPath_x86);</LibraryPath>
+    <ExcludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(MSBuild_ExecutablePath);$(VC_LibraryPath_x86);$(SystemRoot)</ExcludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);.</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
+    <ExecutablePath>$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+    <LibraryPath>$(WindowsSdk_71A_LibraryPath_x86);$(VC_LibraryPath_x86);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
+    <OutDir>.\..\..\..\vs-project\glfw\src\ReleaseXPx86\</OutDir>
+    <IntDir>glfw.dir\ReleaseXP\</IntDir>
+    <ExcludePath>$(WindowsSDK_ExecutablePath);$(WindowsSDK_IncludePath);$(WindowsSDK_LibraryPath_x86);$(WindowsSDK_LibraryPath);$(WindowsSDK_LibraryPath_x64);C:\Program Files (x86)\Windows Kits\10\Include\10.0.22621.0\shared\;C:\Program Files (x86)\Windows Kits\10\;$(ExcludePath)</ExcludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">
     <ExecutablePath>$(VC_ExecutablePath_x86);$(WindowsSdk_71A_ExecutablePath);$(WindowsSDK_ExecutablePath);$(VS_ExecutablePath);$(MSBuild_ExecutablePath);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
     <LibraryPath>$(WindowsSdk_71A_LibraryPath_x86);$(VC_LibraryPath_x86);$(LibraryPath)</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSdk_71A_IncludePath);</IncludePath>
@@ -469,7 +509,104 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>Custom</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;OEMRESOURCE</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <OmitFramePointers>true</OmitFramePointers>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <SDLCheck>false</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalOptions> /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ConformanceMode>Default</ConformanceMode>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x86</AdditionalOptions>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseXPx86|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>Custom</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;WIN_XP_86;_WINDOWS;NDEBUG;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;_WIN32_WINNT=0x0501;WINVER=0x0501;NTDDI_VERSION=0x05010100;VC_EXTRALEAN;_ATL_XP_TARGETING;WIN32_LEAN_AND_MEAN;PSAPI_VERSION=1</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <OmitFramePointers>true</OmitFramePointers>
+      <BufferSecurityCheck>
+      </BufferSecurityCheck>
+      <SDLCheck>false</SDLCheck>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalOptions> /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <ConformanceMode>false</ConformanceMode>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_GLFW_WIN32;UNICODE;_UNICODE;_CRT_SECURE_NO_WARNINGS;GLEW_STATIC;</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Lib>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x86</AdditionalOptions>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleasXP_git|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>.\..\..\..\src;.\..\..\..\src\bsp;.\..\..\..\src\cli;.\..\..\..\src\data;.\..\..\..\src\editor;.\..\..\..\src\filedialog;.\..\..\..\src\gl;.\..\..\..\src\qtools;.\..\..\..\src\util;.\..\..\..\src\mdlviewer;.\..\..\..\imgui;.\..\..\..\imgui\examples;.\..\..\..\imgui\backends;.\..\..\..\glew\include;.\..\..\..\glfw\include;.\..\..\..\glfw\src;.\..\..\..\vs-project\glfw\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
