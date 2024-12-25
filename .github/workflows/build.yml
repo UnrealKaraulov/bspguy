@@ -196,3 +196,9 @@ jobs:
           xcopy /I /E /Y "resources\*" "build\win32_release\"
           
           Compress-Archive -Path "build\win32_release\*" -DestinationPath "build\newbspguy_winxp_x86_release.zip"
+      - name: Publish nightly debug binaries for windows XP
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+          files: |
+            build/newbspguy_winxp_x86_release.zip
