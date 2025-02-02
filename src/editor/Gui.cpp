@@ -5386,6 +5386,17 @@ void Gui::drawMenuBar()
 
 			if (ImGui::BeginMenu(get_localized_string(LANG_0572).c_str(), !app->isLoading && map))
 			{
+				if (ImGui::MenuItem("Missing entities classes"))
+				{
+					for (auto& ent : map->ents)
+					{
+						if (!app->fgd->getFgdClass(ent->classname))
+						{
+							print_log(PRINT_RED, "Found missing {} classname! Renamed to info_target\n", ent->classname);
+							ent->setOrAddKeyvalue("classname", "info_target");
+						}
+					}
+				}
 				if (ImGui::MenuItem(get_localized_string(LANG_0573).c_str()))
 				{
 					for (int i = 0; i < map->faceCount; i++)
@@ -5564,6 +5575,7 @@ void Gui::drawMenuBar()
 								memcpy(newlump, map->textures, map->bsp_header.lump[LUMP_TEXTURES].nLength);
 								map->replace_lump(LUMP_TEXTURES, newlump, dataOffset + texOffset + texlen);
 								delete[] newlump;
+								tex = (BSPMIPTEX*)(map->textures + texOffset);
 								foundfixes = true;
 							}
 							int texdata = (int)(((unsigned char*)tex) - map->textures) + tex->nOffsets[0] + texlen - sizeof(BSPMIPTEX);

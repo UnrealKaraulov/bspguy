@@ -3991,14 +3991,11 @@ void Bsp::fix_bad_surface_extents(bool scaleNotSubdivide, bool downscaleOnly, in
 			BSPFACE32& face = faces[faceIdx];
 			BSPTEXTUREINFO& info = texinfos[face.iTextureInfo];
 
-			if (info.nFlags & TEX_SPECIAL) {
-				continue;
-			}
-
 			int size[2];
-			if (GetFaceLightmapSize(faceIdx, size)) {
+			bool validFace = GetFaceLightmapSize(faceIdx, size);
+
+			if (size[0] < 0 || size[1] < 0)
 				continue;
-			}
 
 			if (maxTextureDim > 0 && downscale_texture(info.iMiptex, maxTextureDim, false)) {
 				// retry after downscaling
@@ -4007,7 +4004,7 @@ void Bsp::fix_bad_surface_extents(bool scaleNotSubdivide, bool downscaleOnly, in
 				continue;
 			}
 
-			if (downscaleOnly) {
+			if (downscaleOnly || info.nFlags & TEX_SPECIAL || validFace) {
 				continue;
 			}
 
