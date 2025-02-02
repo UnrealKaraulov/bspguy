@@ -4304,6 +4304,7 @@ void Gui::drawMenuBar()
 
 			if (ImGui::BeginMenu(get_localized_string(LANG_0566).c_str(), map))
 			{
+				auto oldHull = app->clipnodeRenderHull;
 				if (ImGui::MenuItem(get_localized_string(LANG_0567).c_str(), NULL, app->clipnodeRenderHull == -1))
 				{
 					app->clipnodeRenderHull = -1;
@@ -4324,6 +4325,11 @@ void Gui::drawMenuBar()
 				{
 					app->clipnodeRenderHull = 3;
 				}
+				if (app->clipnodeRenderHull != oldHull)
+				{
+					rend->curLeafIdx = 0;
+				}
+
 				ImGui::EndMenu();
 			}
 
@@ -4645,7 +4651,7 @@ void Gui::drawMenuBar()
 					}
 					IMGUI_TOOLTIP(g, "Subdivides faces until they have valid extents. The drawback to this method is reduced in-game performace from higher poly counts.");
 
-					ImGui::MenuItem("##", "WIP");
+					ImGui::MenuItem("[WARNING]", "WIP");
 					IMGUI_TOOLTIP(g, "Anything you choose here will break lightmaps. "
 						"Run the map through a RAD compiler to fix, and pray that the mapper didn't "
 						"customize compile settings much.");
@@ -5304,7 +5310,7 @@ void Gui::drawMenuBar()
 					ImGui::TextUnformatted("WARNING! Can remove unexpected faces if VIS has been edited previously.");
 					ImGui::EndTooltip();
 				}
-				if (rend->curLeafIdx > 0)
+				if (rend->curLeafIdx > 0 && app->clipnodeRenderHull <= 0)
 				{
 					if (ImGui::MenuItem(fmt::format("Delete from [{} leaf]", rend->curLeafIdx).c_str()))
 					{
@@ -6302,7 +6308,10 @@ void Gui::drawMenuBar()
 				{
 					ImGui::TextUnformatted(fmt::format("Click [{:^5},{:^5},{:^5}]", floatRound(rend->intersectVec.x), floatRound(rend->intersectVec.y), floatRound(rend->intersectVec.z)).c_str());
 
-					ImGui::TextUnformatted(fmt::format("Leaf [{}]", rend->curLeafIdx).c_str());
+					if (app->clipnodeRenderHull <= 0)
+						ImGui::TextUnformatted(fmt::format("Leaf [{}]", rend->curLeafIdx).c_str());
+					else
+						ImGui::TextUnformatted(fmt::format("Contents [{}]", rend->curLeafIdx).c_str());
 
 					ImGui::TextUnformatted(fmt::format("Dist [{:^5}]", floatRound(rend->intersectDist)).c_str());
 				}
@@ -9041,7 +9050,7 @@ void Gui::loadFonts()
 	}
 	std::error_code err{};
 
-	for (const auto& entry : fs::directory_iterator(fontPath,err)) {
+	for (const auto& entry : fs::directory_iterator(fontPath, err)) {
 		if (entry.is_regular_file()) {
 			auto extension = entry.path().extension().string();
 			extension = toLowerCase(extension);
@@ -12773,7 +12782,7 @@ void Gui::drawFaceEditorWidget()
 
 		if ((last_leaf != mapRenderer->curLeafIdx && auto_update_leaf) || new_last_leaf)
 		{
-			if (auto_update_leaf)
+			if (auto_update_leaf && app->clipnodeRenderHull <= 0)
 			{
 				if (last_leaf != mapRenderer->curLeafIdx)
 				{

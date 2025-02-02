@@ -2713,11 +2713,12 @@ void BspRenderer::render(bool modelVertsDraw, int clipnodeHull)
 		std::vector<int> nodeBranch;
 		int childIdx = -1;
 		int headNode = map->models[0].iHeadnodes[0];
-		map->pointContents(headNode, localCameraOrigin, 0, nodeBranch, curLeafIdx, childIdx);
-		if (curLeafIdx < 0)
-			curLeafIdx = 0;
+		int hull = g_app->clipnodeRenderHull;
+		if (hull < 0)
+			hull = 0;
+		map->pointContents(headNode, localCameraOrigin, hull, nodeBranch, curLeafIdx, childIdx);
 
-		if (g_app->pickMode == PICK_FACE_LEAF)
+		if (g_app->pickMode == PICK_FACE_LEAF && hull == 0)
 		{
 			if (!g_app->gui->showFaceEditWidget)
 			{

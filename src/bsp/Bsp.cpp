@@ -6740,7 +6740,7 @@ int Bsp::pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nod
 				childIdx = 0;
 			}
 		}
-
+		leafIdx = iNode;
 		return iNode;
 	}
 }
@@ -12723,7 +12723,7 @@ void Bsp::ExportToMapWIP(const std::string& path, bool selected, bool merge_face
 				int headNode = models[0].iHeadnodes[0];
 				int contents = pointContents(headNode, test_vert, 0, nodeBranch, leafIdx, childIdx);
 
-				if (contents != CONTENTS_SOLID && leafIdx != 0)
+				if (contents != CONTENTS_SOLID && leafIdx > 0)
 				{
 					back_face_is_empty = false;
 				}
